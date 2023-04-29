@@ -45,7 +45,7 @@ while True:
     frame = imutils.resize(frame, width=640)
 
     fgMask = backSub.apply(frame)
-    fgMask = cv2.GaussianBlur(fgMask, (3, 3), 0)
+    # fgMask = cv2.GaussianBlur(fgMask, (3, 3), 0)
     contours, hierarchy = cv2.findContours(
         fgMask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE
     )
@@ -57,6 +57,8 @@ while True:
             pt1 = (int(x0 - width / 2), int(y0 - height / 2))
             pt2 = (int(x0 + width / 2), int(y0 + height / 2))
             cv2.rectangle(frame, pt1, pt2, (255, 0, 0), 1)
+    zero_mask = fgMask == 0
+    frame[zero_mask] = frame[zero_mask] // 2
 
     cv2.rectangle(frame, (10, 2), (100, 20), (255, 255, 255), -1)
     cv2.putText(
@@ -68,8 +70,9 @@ while True:
         (0, 0, 0),
     )
 
+    frame = imutils.resize(frame, width=1280)
     cv2.imshow("Frame", frame)
-    cv2.imshow("FG Mask", fgMask)
+    # cv2.imshow("FG Mask", fgMask)
 
     keyboard = cv2.waitKey(1)
     if keyboard == "q" or keyboard == 27:
