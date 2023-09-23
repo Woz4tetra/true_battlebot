@@ -25,6 +25,7 @@ services:
       - ${PROJECT_DIR}:/opt/${ORGANIZATION}/${PROJECT_NAME}:rw
       - ${PROJECT_DIR}/scripts:/opt/${ORGANIZATION}/scripts:rw
       # TODO: mount in training data
+      - /media/storage/torch-cache:/home/bwbots/.torch:rw
       - /media/storage/true-battlebot-media:/media/storage:rw
       - /home/${USER}/.robot:/opt/${ORGANIZATION}/robot:rw
       - /tmp/.X11-unix:/tmp/.X11-unix
