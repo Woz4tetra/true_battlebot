@@ -1,6 +1,136 @@
 {
-    "[python]": {
-        "editor.defaultFormatter": "ms-python.black-formatter"
-    },
-    "python.formatting.provider": "none"
+  "explorer.confirmDragAndDrop": false,
+  "explorer.confirmDelete": false,
+  "editor.suggestSelection": "first",
+  "python.languageServer": "Pylance",
+  "workbench.tree.indent": 15,
+  "workbench.editorAssociations": {
+    "*.ipynb": "jupyter-notebook"
+  },
+  "cmake.configureOnOpen": false,
+  "redhat.telemetry.enabled": false,
+  "notebook.cellToolbarLocation": {
+    "default": "right",
+    "jupyter-notebook": "left"
+  },
+  "[cpp]": {
+    "editor.defaultFormatter": "ms-iot.vscode-ros"
+  },
+  "omnisharp.monoPath": "/usr/bin/mono",
+  "omnisharp.useModernNet": false,
+  "omnisharp.dotnetPath": "/usr/bin/dotnet",
+  "editor.formatOnSave": true,
+  "python.analysis.typeCheckingMode": "basic",
+  "python.formatting.provider": "none",
+  "python.linting.flake8CategorySeverity.E": "Hint",
+  "python.linting.flake8CategorySeverity.F": "Hint",
+  "python.linting.flake8CategorySeverity.W": "Hint",
+  "C_Cpp.formatting": "disabled",
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "[json]": {
+    "editor.defaultFormatter": "vscode.json-language-features"
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "vscode.typescript-language-features"
+  },
+  "git.openRepositoryInParentFolders": "always",
+  "[python]": {
+    "editor.defaultFormatter": "ms-python.black-formatter",
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": true
+    }
+  },
+  "isort.args": ["--profile", "black"],
+  "editor.rulers": [120],
+  "python.linting.enabled": true,
+  "python.linting.flake8Enabled": true,
+  "python.linting.lintOnSave": true,
+  "python.linting.flake8Args": ["--max-line-length=120"],
+  "python.autoComplete.extraPaths": [
+    "/home/ben/ros_ws/devel/lib/python3.8/site-packages",
+    "/opt/ros/${ROS_DISTRO}/lib/python3/dist-packages"
+  ],
+  "python.analysis.extraPaths": [
+    "/home/ben/ros_ws/devel/lib/python3.8/site-packages",
+    "/opt/ros/${ROS_DISTRO}/lib/python3/dist-packages"
+  ],
+  "files.associations": {
+    "iosfwd": "cpp",
+    "cctype": "cpp",
+    "clocale": "cpp",
+    "cmath": "cpp",
+    "csignal": "cpp",
+    "cstdarg": "cpp",
+    "cstddef": "cpp",
+    "cstdio": "cpp",
+    "cstdlib": "cpp",
+    "cstring": "cpp",
+    "ctime": "cpp",
+    "cwchar": "cpp",
+    "cwctype": "cpp",
+    "array": "cpp",
+    "atomic": "cpp",
+    "hash_map": "cpp",
+    "hash_set": "cpp",
+    "strstream": "cpp",
+    "*.tcc": "cpp",
+    "bitset": "cpp",
+    "chrono": "cpp",
+    "complex": "cpp",
+    "condition_variable": "cpp",
+    "cstdint": "cpp",
+    "deque": "cpp",
+    "list": "cpp",
+    "unordered_map": "cpp",
+    "unordered_set": "cpp",
+    "vector": "cpp",
+    "exception": "cpp",
+    "algorithm": "cpp",
+    "functional": "cpp",
+    "iterator": "cpp",
+    "map": "cpp",
+    "memory": "cpp",
+    "memory_resource": "cpp",
+    "numeric": "cpp",
+    "optional": "cpp",
+    "random": "cpp",
+    "ratio": "cpp",
+    "set": "cpp",
+    "string": "cpp",
+    "string_view": "cpp",
+    "system_error": "cpp",
+    "tuple": "cpp",
+    "type_traits": "cpp",
+    "utility": "cpp",
+    "fstream": "cpp",
+    "initializer_list": "cpp",
+    "iomanip": "cpp",
+    "iostream": "cpp",
+    "istream": "cpp",
+    "limits": "cpp",
+    "mutex": "cpp",
+    "new": "cpp",
+    "ostream": "cpp",
+    "shared_mutex": "cpp",
+    "sstream": "cpp",
+    "stdexcept": "cpp",
+    "streambuf": "cpp",
+    "thread": "cpp",
+    "cfenv": "cpp",
+    "cinttypes": "cpp",
+    "typeindex": "cpp",
+    "typeinfo": "cpp",
+    "valarray": "cpp",
+    "variant": "cpp",
+    "bit": "cpp",
+    "*.ipp": "cpp",
+    "geometry": "cpp"
+  },
+  "files.watcherExclude": {
+    "**/.git/objects/**": true,
+    "**/.git/subtree-cache/**": true,
+    "**/node_modules/*/**": true
+  },
+  "ros.distro": "noetic"
 }

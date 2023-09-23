@@ -1,0 +1,8 @@
+#!/bin/bash
+BASE_DIR=$(realpath "$(dirname $0)")
+
+PROJECT_DIR=$(realpath "${BASE_DIR}/../")
+PROJECT_NAME=$(basename ${PROJECT_DIR})
+
+echo ${PROJECT_NAME}
+

@@ -1,0 +1,61 @@
+#!/bin/bash
+BASE_DIR=$(realpath "$(dirname $0)")
+DOCKERUSER=$1
+
+if [ "$EUID" -ne 0 ]
+    then echo "Please run as root"
+    exit
+fi
+
+
+if [ -z "$DOCKERUSER" ]
+    then echo "Provide user name"
+    exit
+fi
+
+
+cd ..
+
+apt-get remove -y docker docker-engine docker.io containerd runc docker-compose docker-compose-plugin
+python3 -m pip uninstall docker-compose
+
+apt install -y apt-transport-https ca-certificates curl \
+	gnupg-agent software-properties-common
+
+# Repo Key
+mkdir -p /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+  $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+apt-get update
+apt-get install -y docker-ce docker-ce-cli containerd.io
+
+#Install Docker Compose
+export DOCKER_COMPOSE_INSTALL_PATH=/usr/local/lib/docker/cli-plugins
+export DOCKER_COMPOSE_URL=https://github.com/docker/compose/releases/download/v2.11.2/docker-compose-linux-x86_64
+
+sudo mkdir -p ${DOCKER_COMPOSE_INSTALL_PATH}
+sudo curl -SL ${DOCKER_COMPOSE_URL} -o ${DOCKER_COMPOSE_INSTALL_PATH}/docker-compose
+sudo chmod +x ${DOCKER_COMPOSE_INSTALL_PATH}/docker-compose
+curl -fL https://raw.githubusercontent.com/docker/compose-switch/master/install_on_linux.sh | sudo sh
+sudo ln -s /usr/local/bin/compose-switch /usr/local/bin/docker-compose
+
+usermod -aG docker $DOCKERUSER
+systemctl enable docker
+
+udevadm control --reload-rules && udevadm trigger
+
+systemctl restart docker
+
+groupadd docker
+usermod -aG docker ${DOCKERUSER}
+chown "$DOCKERUSER":"$DOCKERUSER" ${HOME}/.docker -R
+chmod g+rwx "${HOME}/.docker" -R
+setfacl --modify user:${DOCKERUSER}:rw /var/run/docker.sock
+
+docker login
+
+docker run hello-world

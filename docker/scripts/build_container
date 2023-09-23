@@ -1,0 +1,15 @@
+#!/bin/bash
+set -e
+BASE_DIR=$(realpath "$(dirname $0)")
+
+cd ${BASE_DIR}/../resources
+
+IMAGE_VERSION=$(${BASE_DIR}/../get_image_tag)
+PROJECT_NAME=$(${BASE_DIR}/../get_project_name)
+ORGANIZATION=$(${BASE_DIR}/../get_organization)
+docker build \
+    -f ./Dockerfile \
+    --build-arg ROS_DISTRO=noetic \
+    --build-arg PROJECT_NAME=${PROJECT_NAME} \
+    --build-arg ORGANIZATION=${ORGANIZATION} \
+    -t ${IMAGE_VERSION} .

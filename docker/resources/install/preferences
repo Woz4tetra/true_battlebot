@@ -1,0 +1,7 @@
+Package: python3-opencv
+Pin: release *
+Pin-Priority: -1
+
+Package: libopencv-dev
+Pin: release *
+Pin-Priority: -1

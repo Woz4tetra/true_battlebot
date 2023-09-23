@@ -71,7 +71,7 @@ def read_roi(path):
 
 
 def main():
-    min_area = 350.0
+    min_area = 250.0
     resize_width = 800
 
     roi = None
@@ -118,36 +118,18 @@ def main():
         frame = imutils.resize(frame, width=resize_width)
         fg_mask = back_sub.apply(frame)
         fg_mask[roi_mask == 0] = 0
-        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
-        sure_fg = cv2.morphologyEx(fg_mask, cv2.MORPH_OPEN, kernel, iterations=5)
-        sure_fg = cv2.erode(sure_fg, kernel, iterations=7)
-        sure_bg = cv2.dilate(fg_mask, kernel, iterations=7)
-        unknown = cv2.subtract(sure_bg, sure_fg)
+        fg_mask = cv2.medianBlur(fg_mask, ksize=5)
+        # kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
+        # fg_mask = cv2.morphologyEx(fg_mask, cv2.MORPH_OPEN, kernel, iterations=3)
 
-        ret, markers = cv2.connectedComponents(sure_fg)
-        markers = markers + 1
-        markers[unknown == 255] = 0
-
-        markers = cv2.watershed(frame, markers)
-
-        labels = np.unique(markers)
-
-        zero_mask = fg_mask == 0
-        frame[zero_mask] = frame[zero_mask] // 2
-
+        contours, hierarchy = cv2.findContours(
+            fg_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+        )
         objects = []
-        for index, label in enumerate(labels[2:]):
-            # Create a binary image in which only the area of the label is in the foreground
-            # and the rest of the image is in the background
-            target = np.where(markers == label, 255, 0).astype(np.uint8)
-
-            # Perform contour extraction on the created binary image
-            contours, hierarchy = cv2.findContours(
-                target, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-            )
-            if cv2.contourArea(contours[0]) < min_area:
+        for contour in contours:
+            if cv2.contourArea(contour) < min_area:
                 continue
-            rectangle = cv2.boxPoints(cv2.minAreaRect(contours[0]))
+            rectangle = cv2.boxPoints(cv2.minAreaRect(contour))
             rectangle = rectangle.astype(np.int32)
             bbox = (
                 np.min(rectangle[:, 0]),
@@ -158,18 +140,7 @@ def main():
             cv2.rectangle(frame, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (0, 255, 0), 2)
             objects.append(bbox)
 
-            # frame = cv2.drawContours(
-            #     frame,
-            #     [contours[0]],
-            #     -1,
-            #     # color=colors[index % (len(colors) - 1)],
-            #     color=(255, 255, 0),
-            #     thickness=2,
-            # )
-
         for objectID, centroid in tracker.update(objects).items():
-            # draw both the ID of the object and the centroid of the
-            # object on the output frame
             text = "ID {}".format(objectID)
             cv2.putText(
                 frame,
@@ -182,7 +153,17 @@ def main():
             )
             cv2.circle(frame, (centroid[0], centroid[1]), 4, (0, 255, 0), -1)
 
-        cv2.polylines(frame, [polygon_roi], True, (0, 0, 255), 1)
+        # zero_mask = fg_mask == 0
+        # frame[zero_mask] = frame[zero_mask] // 2
+        # cv2.polylines(frame, [polygon_roi], True, (0, 0, 255), 1)
+        # frame = cv2.drawContours(
+        #     frame,
+        #     contours,
+        #     -1,
+        #     # color=colors[index % (len(colors) - 1)],
+        #     color=(255, 255, 0),
+        #     thickness=2,
+        # )
 
         frame = imutils.resize(frame, width=1280)
         cv2.imshow(window_name, frame)

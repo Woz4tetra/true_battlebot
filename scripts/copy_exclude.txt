@@ -1,0 +1,8 @@
+bw_tools/build/
+bw_tools/dist/
+bw_tools/bw_tools.egg-info/
+bw_data/data/
+__pycache__
+.pytest_cache/
+*.egg-info/
+*.pyc

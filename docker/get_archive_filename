@@ -1,0 +1,14 @@
+#!/bin/bash
+set -e
+
+BASE_DIR=$(realpath "$(dirname $0)")
+export IMAGE_TAG=woz4tetra/$(${BASE_DIR}/get_image_tag)
+
+python3 <<EOF
+import os
+import re
+tag = os.environ["IMAGE_TAG"]
+filename = re.sub(r"\W", "_", tag)
+filename += ".tar.gz"
+print(filename, end='')
+EOF

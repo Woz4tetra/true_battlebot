@@ -1,0 +1,30 @@
+#!/bin/bash
+BASE_DIR=$(realpath "$(dirname $0)")
+
+PROJECT_DIR=$(realpath "${BASE_DIR}/../../")
+
+cd ${BASE_DIR}/../resources
+
+IMAGE_VERSION=$(${BASE_DIR}/../get_image_tag)
+ORGANIZATION=$(${BASE_DIR}/../get_organization)
+PROJECT_NAME=$(${BASE_DIR}/../get_project_name)
+
+VALUE=`docker volume ls -f name=${PROJECT_NAME}_build`
+if ! echo ${VALUE} | grep -q "${PROJECT_NAME}_build"; then
+    echo "Creating volume"
+    docker volume create ${PROJECT_NAME}_build
+fi
+
+docker run -it \
+    --user ${ORGANIZATION} \
+    --name build_${PROJECT_NAME} \
+    --restart="no" \
+    --net="host" \
+    --privileged \
+    --stop-signal=SIGINT \
+    -v=${PROJECT_NAME}_build:/home/${ORGANIZATION}/ros_ws:rw \
+    -v=${PROJECT_DIR}:/opt/${ORGANIZATION}/${PROJECT_NAME}:rw \
+    -v=${PROJECT_DIR}/scripts:/opt/${ORGANIZATION}/scripts:rw \
+    --rm \
+    ${IMAGE_VERSION} \
+    /opt/${ORGANIZATION}/scripts/copy_project.sh

@@ -1,0 +1,29 @@
+version: "3"
+
+volumes:
+  true_battlebot_build:
+    name: ${PROJECT_NAME}_build
+    external: true
+
+services:
+  true_battlebot:
+    image: ${IMAGE_PREFIX}_${IMAGE_VERSION}
+    container_name: ${IMAGE_PREFIX}_${PROJECT_NAME}
+    restart: "no"
+    network_mode: "host"
+    privileged: true
+    stop_signal: SIGINT
+    ports: ["9090:9090", "10000:10000"]
+    environment:
+      - DISPLAY=${DISPLAY}
+      - XAUTHORITY=${XAUTHORITY}
+    # Share IPC with the host: enables us to request X to draw things, see
+    # https://askubuntu.com/questions/1237400/how-to-fix-x-error-badaccess-baddrawable-badshmseg-while-running-graphical-ap
+    ipc: host
+    volumes:
+      - ${PROJECT_NAME}_build:/home/${ORGANIZATION}/ros_ws:rw
+      - ${PROJECT_DIR}:/opt/${ORGANIZATION}/${PROJECT_NAME}:rw=
+      - ${PROJECT_DIR}/scripts:/opt/${ORGANIZATION}/scripts:rw
+      - /media/storage/true-battlebot-media:/media/storage:rw
+      - /home/${USER}/.robot:/opt/${ORGANIZATION}/robot:rw
+    command: ["/opt/${ORGANIZATION}/launch.sh"]

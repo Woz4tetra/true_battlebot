@@ -1,0 +1,29 @@
+
+- git:
+    local-name: ROS-TCP-Endpoint
+    uri: https://github.com/Unity-Technologies/ROS-TCP-Endpoint.git
+    version: main
+- git:
+    local-name: marker_rviz_plugin
+    uri: https://github.com/tuw-robotics/marker_rviz_plugin.git
+    version: master
+- git:
+    local-name: serial
+    uri: https://github.com/wjwwood/serial
+    version: main
+- git:
+    local-name: apriltag_ros
+    uri: https://github.com/AprilRobotics/apriltag_ros.git
+    version: master
+- git:
+    local-name: urdf_parser_py
+    uri: https://github.com/ros/urdf_parser_py.git
+    version: melodic-devel
+- git:
+    local-name: camera_info_manager_py
+    uri: https://github.com/mllofriu/camera_info_manager_py.git
+    version: be1046dc8acc3d37f43052bfd4fc8d1db9619d93
+- git:
+    local-name: zed-ros-wrapper
+    uri: https://github.com/stereolabs/zed-ros-wrapper.git
+    version: v4.0.5

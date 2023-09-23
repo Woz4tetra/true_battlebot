@@ -1,0 +1,6 @@
+#!/bin/bash
+while [ 1 ]; do
+    wget "${@:3}" --retry-connrefused --waitretry=1 --read-timeout=20 --timeout=15 -t 0 --continue -O "$1" "$2"
+    if [ $? = 0 ]; then break; fi; # check return value, break if successful (0)
+    sleep 1s;
+done;
