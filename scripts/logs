@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -e
+
 LINE_NO_FORMAT=""
 TAIL_LINES=500
 PARSE_ALL=""
@@ -15,29 +17,38 @@ usage() {
 }
 
 # Process command-line arguments
-while getopts "lhta" opt; do
-  case $opt in
-    l)
-        LINE_NO_FORMAT="\"[\" + .file + \":\" + (.line | (tostring)) + \"] \" +"
-        ;;
-    t)
-        TAIL_LINES=${OPTARG}
-        ;;
-    a)
-        PARSE_ALL="yes"
-        ;;
-    h)
-        usage
-        ;;
-    \?)
-        # Invalid option
-         echo "Invalid option: -$OPTARG" >&2
-         usage
-         ;;
-  esac
+params="$(getopt -o l:h:t:a -- "$@")"
+eval set -- "$params"
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+        -l)
+            LINE_NO_FORMAT="\"[\" + .file + \":\" + (.line | (tostring)) + \"] \" +"
+            shift
+            ;;
+        -t)
+            TAIL_LINES=${2}
+            shift 2
+            ;;
+        -a)
+            PARSE_ALL="yes"
+            shift
+            ;;
+        -h)
+            usage
+            ;;
+        --) 
+            shift
+            break
+            ;;
+        *) 
+            echo "Invalid option: $1" >&2
+            usage
+            ;;
+    esac
 done
 
-LOGPATH=${*:$OPTIND:1}
+LOGPATH=$@
+
 
 # Timestamp is 19 characters -> 22
 # Level can be up to 7       -> 29
@@ -99,10 +110,19 @@ if [ -z "${LOGPATH}" ]; then
     LOGPATH=$(find ${LOGS_DIR} -type f -printf '%T@ %p\n' | sort -n | tail -1 | cut -f2- -d" ")
 fi
 
-trap ' ' INT
+if [ "${TAIL_LINES}" -gt 0 ]; then
+    LINES_ARG="-n ${TAIL_LINES}"
+else
+    LINES_ARG='-n +1'
+fi
+
+int_handler() {
+    printf "\nLog path:\n%s\n" "${LOGPATH}"
+}
+
 if [ -z "${PARSE_ALL}" ]; then
-    tail -F -n "${TAIL_LINES}" "${LOGPATH}" | jq -Rr "$JQ_PROG"
+    trap 'int_handler' INT
+    tail -F ${LINES_ARG} "${LOGPATH}" | jq -Rr "$JQ_PROG"
 else
     jq -Rr "$JQ_PROG" "${LOGPATH}" | less -R
 fi
-printf "\n\n%s\n" "${LOGPATH}"
