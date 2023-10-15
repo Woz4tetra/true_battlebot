@@ -119,5 +119,8 @@
     "**/.git/*/**": true,
     "**/node_modules/*/**": true
   },
+  "files.exclude": {
+    "**/*.csproj": true
+  },
   "ros.distro": "noetic"
 }

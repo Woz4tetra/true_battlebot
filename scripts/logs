@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-LOGPATH=${*:$OPTIND:1}
-
 LINE_NO_FORMAT=""
 TAIL_LINES=500
 PARSE_ALL=""
@@ -20,7 +18,7 @@ usage() {
 while getopts "lhta" opt; do
   case $opt in
     l)
-        LINE_NO_FORMAT="(.line[27:]) + \"\t\" +"
+        LINE_NO_FORMAT="\"[\" + .file + \":\" + (.line | (tostring)) + \"] \" +"
         ;;
     t)
         TAIL_LINES=${OPTARG}
@@ -38,6 +36,8 @@ while getopts "lhta" opt; do
          ;;
   esac
 done
+
+LOGPATH=${*:$OPTIND:1}
 
 # Timestamp is 19 characters -> 22
 # Level can be up to 7       -> 29
@@ -66,8 +66,8 @@ def colors:
 # A mapping of log levels to colors
 def level_colors:
  {
-    \"DEBUG\": \"white\",
-    \"INFO\": \"green\",
+    \"DEBUG\": \"green\",
+    \"INFO\": \"white\",
     \"WARNING\": \"yellow\",
     \"ERROR\": \"red\"
  };
@@ -75,16 +75,18 @@ def level_colors:
 def format_log_line:
     # Clear any color setting
     colors.reset +
-    # Format the timestamp
-    (.time | (strftime(\"%F %T\"))) + \"\t\" +
     # Color the log level
-    colors[level_colors[.severity]] + .level + colors.reset + \"\t\" +
+    colors[level_colors[.severity]] + \" \" +
+    # Log the node name
+    \"[\" + .node + \"] \" +
+    # Log the severity
+    \"[\" + .severity + \"] \" +
+    # Format the timestamp
+    \"[\" + (.time | (strftime(\"%F %T\"))) + \"] \" +
     # Log the line the log originated from
     ${LINE_NO_FORMAT}
-    # Log the node name
-    .node + \"\t\" +
     # Log the message
-    .message  + (if (.exc_info | length) > 0 then \"\n\" else \"\" end);
+    .message + colors.reset;
 
 # If the line can be interpreted as json, run the formatter
 # If it is not JSON (the //), assume its some type of error/traceback,
