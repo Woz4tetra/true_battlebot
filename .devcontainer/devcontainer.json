@@ -13,8 +13,9 @@
         "ms-python.python",
         "ms-python.vscode-pylance",
         "ms-vscode.cpptools",
-        "ms-python.black-formatter",
         "jtr.vscode-position",
+        "github.copilot",
+        "github.copilot-labs",
         "dbaeumer.vscode-eslint",
         "bierner.folder-source-actions",
         "mhutchie.git-graph",
@@ -31,12 +32,10 @@
         "ms-vscode-remote.remote-containers",
         "alpha4.jsonl",
         "hashicorp.terraform",
-        "zchrissirhcz.cmake-highlight",
-        "ms-python.isort",
-        "ms-vscode.cpptools-extension-pack",
+        "timonwong.shellcheck",
+        "charliermarsh.ruff",
         "matangover.mypy",
-        "ms-python.flake8",
-        "ms-azuretools.vscode-docker"
+        "ms-python.black-formatter"
       ]
     }
   }

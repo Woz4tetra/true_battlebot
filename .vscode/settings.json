@@ -7,7 +7,6 @@
   "workbench.editorAssociations": {
     "*.ipynb": "jupyter-notebook"
   },
-  "cmake.configureOnOpen": false,
   "redhat.telemetry.enabled": false,
   "notebook.cellToolbarLocation": {
     "default": "right",
@@ -16,16 +15,9 @@
   "[cpp]": {
     "editor.defaultFormatter": "ms-iot.vscode-ros"
   },
-  "omnisharp.monoPath": "/usr/bin/mono",
-  "omnisharp.useModernNet": false,
-  "omnisharp.dotnetPath": "/usr/bin/dotnet",
   "editor.formatOnSave": true,
   "python.analysis.typeCheckingMode": "basic",
-  "python.formatting.provider": "none",
-  "python.linting.flake8CategorySeverity.E": "Hint",
-  "python.linting.flake8CategorySeverity.F": "Hint",
-  "python.linting.flake8CategorySeverity.W": "Hint",
-  "C_Cpp.formatting": "disabled",
+  "C_Cpp.formatting": "default",
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "[json]": {
     "editor.defaultFormatter": "vscode.json-language-features"
@@ -35,18 +27,14 @@
   },
   "git.openRepositoryInParentFolders": "always",
   "[python]": {
-    "editor.defaultFormatter": "ms-python.black-formatter",
-    "editor.formatOnSave": true,
     "editor.codeActionsOnSave": {
-      "source.organizeImports": true
-    }
+      "source.organizeImports": true,
+      "source.fixAll": true
+    },
+    "editor.defaultFormatter": "ms-python.black-formatter",
+    "editor.formatOnSave": true
   },
-  "isort.args": ["--profile", "black"],
   "editor.rulers": [120],
-  "python.linting.enabled": true,
-  "python.linting.flake8Enabled": true,
-  "python.linting.lintOnSave": true,
-  "python.linting.flake8Args": ["--max-line-length=120"],
   "python.autoComplete.extraPaths": [
     "/home/ben/ros_ws/devel/lib/python3.8/site-packages",
     "/opt/ros/${ROS_DISTRO}/lib/python3/dist-packages"

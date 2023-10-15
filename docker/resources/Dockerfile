@@ -144,7 +144,7 @@ ENV FLASK_ENV=development \
 # launch environment
 # ---
 
-COPY --chown=1000:1000 ./install/client_bashrc ${HOME}/.bashrc
+COPY --chown=1000:1000 ./install/bashrc ${HOME}/.bashrc
 
 COPY --chown=1000:1000 \
     ./launch/entrypoint.sh \

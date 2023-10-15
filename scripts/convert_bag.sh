@@ -9,5 +9,5 @@ if [ -z ${CONVERT_BAG} ]; then
 else
     CONVERT_BAG=$LOGS_DIR/$CONVERT_BAG
 fi
-cd ~/bwbots/bw_tools/bw_tools/rosbag_to_file
+cd /opt/${ORGANIZATION}/${PROJECT_NAME}/src/bw_tools/bw_tools/rosbag_to_file
 python3 convert.py -a -o /media/storage/bags --path $CONVERT_BAG

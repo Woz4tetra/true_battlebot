@@ -1,0 +1,31 @@
+{
+  "recommendations": [
+    "editorconfig.editorconfig",
+    "ms-python.python",
+    "ms-python.vscode-pylance",
+    "ms-vscode.cpptools",
+    "jtr.vscode-position",
+    "github.copilot",
+    "github.copilot-labs",
+    "dbaeumer.vscode-eslint",
+    "bierner.folder-source-actions",
+    "mhutchie.git-graph",
+    "eamodio.gitlens",
+    "ms-iot.vscode-ros",
+    "visualstudioexptteam.vscodeintellicode",
+    "visualstudioexptteam.intellicode-api-usage-examples",
+    "ms-vscode-remote.vscode-remote-extensionpack",
+    "ms-vsliveshare.vsliveshare",
+    "esbenp.prettier-vscode",
+    "styled-components.vscode-styled-components",
+    "redhat.vscode-yaml",
+    "ms-toolsai.jupyter-keymap",
+    "ms-vscode-remote.remote-containers",
+    "alpha4.jsonl",
+    "hashicorp.terraform",
+    "timonwong.shellcheck",
+    "charliermarsh.ruff",
+    "matangover.mypy",
+    "ms-python.black-formatter"
+  ]
+}

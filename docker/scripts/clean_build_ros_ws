@@ -1,8 +1,11 @@
 #!/bin/bash
 BASE_DIR=$(realpath "$(dirname $0)")
 
+ROBOT_NAME="${1}"
+MAP_NAME="${2}"
+
 PROJECT_NAME=$(${BASE_DIR}/../get_project_name)
 ${BASE_DIR}/stop_all_containers
 docker rm $(docker ps -aq)
 docker volume rm ${PROJECT_NAME}_build
-${BASE_DIR}/build_ros_ws
+${BASE_DIR}/build_ros_ws "${ROBOT_NAME}" "${MAP_NAME}"

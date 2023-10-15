@@ -1,0 +1,36 @@
+[tool.black]
+line-length = 120
+skip-string-normalization = true
+target-version = ['py39']
+
+[tool.ruff]
+exclude = [
+    ".git",
+    "__pycache__",
+    "build",
+    "dist",
+]
+ignore = [
+    "E402", # Module level import not at top of file
+    "Q003", # avoidable-escaped-quote
+]
+fix = true
+unfixable = [
+    "F401", # unused imports
+    "F841", # unused variables
+]
+line-length = 120
+select = [
+    "C9", # mccabe complexity
+    "E", # pycodestyle error
+    "F", # pyflakes
+    "N", # pep8-naming
+    "Q", # flake8-quotes
+    "W", # pycodestyle warnings
+    "I", # isort
+]
+
+[tool.ruff.flake8-quotes]
+multiline-quotes = "double"
+avoid-escape = false
+inline-quotes = "double"

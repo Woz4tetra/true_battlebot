@@ -1,5 +1,5 @@
 #!/bin/bash
-cat <<EOT > ${HOME}/.robot
+cat <<EOT > ${ROS_WS_ROOT}/robot
 export ROBOT=$1
-export ROS_MAP_NAME=$2
+export MAP_NAME=$2
 EOT
