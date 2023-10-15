@@ -2,18 +2,25 @@
 
 set -e
 
-export ROBOT="${1}"
+touch "${ROS_WS_ROOT}"/robot
+source "${ROS_WS_ROOT}"/robot
 
 if [ -z "${ROBOT}" ]
-    then echo "Provide robot name"
-    exit
+    then export ROBOT="${1}"
 fi
 
-export MAP_NAME="${2}"
+if [ -z "${MAP_NAME}" ]
+    then export MAP_NAME="${2}"
+fi
+
+if [ -z "${ROBOT}" ]
+    then echo "Error: Provide robot name"
+    exit 1
+fi
 
 if [ -z "${MAP_NAME}" ]
-    then echo "Provide map name"
-    exit
+    then echo "Error: Provide map name"
+    exit 1
 fi
 
 export FOUND_LAUNCHES=$(ls -1 /opt/"${ORGANIZATION}"/"${PROJECT_NAME}"/src/bw_bringup/launch)
@@ -32,6 +39,9 @@ if [ -z "${MATCH_FOUND}" ]; then
     echo "Robot ${ROBOT} not found"
     exit 1
 fi
+
+echo "Robot name: ${ROBOT}"
+echo "Map name: ${MAP_NAME}"
 
 cat <<EOT > "${ROS_WS_ROOT}"/robot
 export ROBOT=${ROBOT}

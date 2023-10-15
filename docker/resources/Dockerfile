@@ -89,6 +89,25 @@ COPY --chown=1000:1000 \
 RUN bash /opt/${ORGANIZATION}/install/install_libraries.sh
 
 # ---
+# Torch packages
+# ---
+
+COPY --chown=1000:1000 \
+    ./install/torch-requirements.txt \
+    ./install/install_python_torch.sh \
+    /opt/${ORGANIZATION}/install/
+RUN cd /opt/${ORGANIZATION}/install && bash ./install_python_torch.sh
+
+# ---
+# GPU image dependencies
+# ---
+
+COPY --chown=1000:1000 \
+    ./install/install_torchscript.sh \
+    /opt/${ORGANIZATION}/install/
+RUN bash -x /opt/${ORGANIZATION}/install/install_torchscript.sh
+
+# ---
 # ROS dependency workspace
 # ---
 
@@ -111,15 +130,6 @@ COPY --chown=1000:1000 \
     ./install/install_python_extras.sh \
     /opt/${ORGANIZATION}/install/
 RUN cd /opt/${ORGANIZATION}/install && bash ./install_python_extras.sh
-
-# ---
-# GPU image dependencies
-# ---
-
-COPY --chown=1000:1000 \
-    ./install/install_torchscript.sh \
-    /opt/${ORGANIZATION}/install/
-RUN bash -x /opt/${ORGANIZATION}/install/install_torchscript.sh
 
 # ---
 # Environment variables
