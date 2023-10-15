@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+    <include if="$(eval env('ROBOT') == 'simulation')" file="$(find bw_bringup)/launch/simulation.launch"/>
+</launch>

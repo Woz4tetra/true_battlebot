@@ -55,7 +55,8 @@ sudo apt-get install -y --ignore-missing \
     python3-venv \
     v4l-utils \
     qtbase5-dev \
-    qtdeclarative5-dev
+    qtdeclarative5-dev \
+    jq
 
 sudo apt-get upgrade -y
 

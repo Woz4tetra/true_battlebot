@@ -84,4 +84,4 @@ alias rm="rm -I"
 
 source ${DEP_ROS_WS_ROOT}/devel/setup.bash
 source ${ROS_WS_ROOT}/devel/setup.bash
-source /opt/${ORGANIZATION}/robot
+source ${ROS_WS_ROOT}/robot

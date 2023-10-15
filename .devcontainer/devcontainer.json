@@ -35,7 +35,9 @@
         "timonwong.shellcheck",
         "charliermarsh.ruff",
         "matangover.mypy",
-        "ms-python.black-formatter"
+        "ms-python.black-formatter",
+        "twxs.cmake",
+        "ms-azuretools.vscode-docker"
       ]
     }
   }

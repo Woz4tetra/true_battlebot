@@ -2,7 +2,7 @@ version: "3"
 
 services:
   roscore:
-    image: ${IMAGE_PREFIX}_${IMAGE_VERSION}
+    image: ${IMAGE_VERSION}
     container_name: roscore
     restart: "no"
     network_mode: "host"

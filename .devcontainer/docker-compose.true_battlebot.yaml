@@ -27,7 +27,6 @@ services:
       # TODO: mount in training data
       - /media/storage/torch-cache:/home/bwbots/.torch:rw
       - /media/storage/true-battlebot-media:/media/storage:rw
-      - /home/${USER}/.robot:/opt/${ORGANIZATION}/robot:rw
       - /tmp/.X11-unix:/tmp/.X11-unix
       - /home/${USER}/.Xauthority:/home/${ORGANIZATION}/.Xauthority:rw
       # Allow container to control docker
@@ -35,4 +34,4 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - /dev:/dev:rw
 
-    command: bash /opt/${ORGANIZATION}/scripts/watch_for_changes.sh
+    command: bash /opt/${ORGANIZATION}/scripts/lib/watch_for_changes.sh

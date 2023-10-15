@@ -1,1 +1,0 @@
-launch-prefix="gdb -ex run --args"

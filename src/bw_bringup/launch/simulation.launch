@@ -1,0 +1,6 @@
+<launch>
+    <arg name="map" default="$(env MAP_NAME)"/>
+    <arg name="robot" default="$(env ROBOT)"/>
+
+    <include file="$(find ros_tcp_endpoint)/launch/endpoint.launch" />
+</launch>

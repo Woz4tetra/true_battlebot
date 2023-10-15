@@ -22,7 +22,6 @@ docker run -it \
     -v=${PROJECT_NAME}_build:/home/${ORGANIZATION}/ros_ws:rw \
     -v=${PROJECT_DIR}:/opt/${ORGANIZATION}/${PROJECT_NAME}:rw \
     -v=${PROJECT_DIR}/scripts:/opt/${ORGANIZATION}/scripts:rw \
-    -v=${HOME}/.robot:/opt/${ORGANIZATION}/robot:rw \
     --rm \
     ${IMAGE_VERSION} \
     /opt/${ORGANIZATION}/entrypoint.sh roslaunch bw_viz ${LAUNCH_FILE}

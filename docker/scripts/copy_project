@@ -27,4 +27,4 @@ docker run -it \
     -v=${PROJECT_DIR}/scripts:/opt/${ORGANIZATION}/scripts:rw \
     --rm \
     ${IMAGE_VERSION} \
-    /opt/${ORGANIZATION}/scripts/copy_project.sh
+    /opt/${ORGANIZATION}/scripts/lib/copy_project.sh

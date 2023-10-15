@@ -1,13 +1,106 @@
 #!/usr/bin/env bash
 
-if [ -z $1 ]; then
+LOGPATH=${*:$OPTIND:1}
+
+LINE_NO_FORMAT=""
+TAIL_LINES=500
+PARSE_ALL=""
+
+usage() {
+    echo "Usage: $0 [-l] [-h] [-t=<int>] [-a] [LOGPATH]"
+    echo "Options:"
+    echo "  -l    Show line numbers"
+    echo "  -h    Display usage information"
+    echo "  -t    Number of lines to tail (default: 500)"
+    echo "  -a    Parse all lines. Don't tail."
+    exit 1
+}
+
+# Process command-line arguments
+while getopts "lhta" opt; do
+  case $opt in
+    l)
+        LINE_NO_FORMAT="(.line[27:]) + \"\t\" +"
+        ;;
+    t)
+        TAIL_LINES=${OPTARG}
+        ;;
+    a)
+        PARSE_ALL="yes"
+        ;;
+    h)
+        usage
+        ;;
+    \?)
+        # Invalid option
+         echo "Invalid option: -$OPTARG" >&2
+         usage
+         ;;
+  esac
+done
+
+# Timestamp is 19 characters -> 22
+# Level can be up to 7       -> 29
+# App Name can be a bit big  -> 40
+# Rest are just safety buffers
+tabs 22,29,40,45,50,55
+
+
+# OMG Wizardry
+JQ_PROG="
+
+# Define some ascii colors
+def colors:
+ {
+ \"black\": \"\u001b[30m\",
+ \"red\": \"\u001b[31m\",
+ \"green\": \"\u001b[32m\",
+ \"yellow\": \"\u001b[33m\",
+ \"blue\": \"\u001b[34m\",
+ \"magenta\": \"\u001b[35m\",
+ \"cyan\": \"\u001b[36m\",
+ \"white\": \"\u001b[37m\",
+ \"reset\": \"\u001b[0m\",
+};
+
+# A mapping of log levels to colors
+def level_colors:
+ {
+    \"DEBUG\": \"white\",
+    \"INFO\": \"green\",
+    \"WARNING\": \"yellow\",
+    \"ERROR\": \"red\"
+ };
+
+def format_log_line:
+    # Clear any color setting
+    colors.reset +
+    # Format the timestamp
+    (.time | (strftime(\"%F %T\"))) + \"\t\" +
+    # Color the log level
+    colors[level_colors[.severity]] + .level + colors.reset + \"\t\" +
+    # Log the line the log originated from
+    ${LINE_NO_FORMAT}
+    # Log the node name
+    .node + \"\t\" +
+    # Log the message
+    .message  + (if (.exc_info | length) > 0 then \"\n\" else \"\" end);
+
+# If the line can be interpreted as json, run the formatter
+# If it is not JSON (the //), assume its some type of error/traceback,
+# so make it red and dump it out.
+(fromjson? | format_log_line) // colors.red + .
+"
+
+if [ -z "${LOGPATH}" ]; then
     LOGS_DIR=/media/storage/logs
-    CURRENT_FILE=`find $LOGS_DIR -type f -printf '%T@ %p\n' | sort -n | tail -1 | cut -f2- -d" "`
-    echo $CURRENT_FILE
-else
-    CURRENT_FILE=$1
+    LOGPATH=$(find ${LOGS_DIR} -type f -printf '%T@ %p\n' | sort -n | tail -1 | cut -f2- -d" ")
 fi
 
 trap ' ' INT
-tail -F -n 500 $CURRENT_FILE | grep -vE 'levenbergIter=|cumTime=|TF_REPEATED_DATA|-tf2-0.7.6/src/buffer_core.cpp|geometry2/tf2/src/buffer_core.cpp'
-printf "\n\n$CURRENT_FILE\n"
+if [ -z "${PARSE_ALL}" ]; then
+    tail -F -n "${TAIL_LINES}" "${LOGPATH}" | jq -Rr "$JQ_PROG"
+else
+    jq -Rr "$JQ_PROG" "${LOGPATH}" | less -R
+fi
+printf "\n\n%s\n" "${LOGPATH}"
