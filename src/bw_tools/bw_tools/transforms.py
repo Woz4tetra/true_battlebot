@@ -6,23 +6,30 @@ import tf2_geometry_msgs
 import tf2_ros
 from geometry_msgs.msg import Pose, PoseStamped, TransformStamped
 
+from bw_tools.typing.basic import seconds_to_time
+
 
 def lookup_transform(
-    tf_buffer, parent_link, child_link, time_window=None, timeout=None, silent=False
+    tf_buffer: tf2_ros.Buffer,
+    parent_link: str,
+    child_link: str,
+    time_window: Optional[rospy.Duration] = None,
+    timeout: Optional[rospy.Duration] = None,
+    silent: bool = False,
 ) -> Optional[TransformStamped]:
     """
     Call tf_buffer.lookup_transform. Return None if the look up fails
     """
     if time_window is None:
-        time_window = rospy.Time(0)
+        time_lookup = seconds_to_time(0)
     else:
-        time_window = rospy.Time.now() - time_window
+        time_lookup = rospy.Time.now() - time_window
 
     if timeout is None:
         timeout = rospy.Duration(1.0)  # type: ignore
 
     try:
-        return tf_buffer.lookup_transform(parent_link, child_link, time_window, timeout)
+        return tf_buffer.lookup_transform(parent_link, child_link, time_lookup, timeout)
     except (
         tf2_ros.LookupException,  # type: ignore
         tf2_ros.ConnectivityException,  # type: ignore
@@ -35,12 +42,12 @@ def lookup_transform(
 
 
 def lookup_pose_in_frame(
-    tf_buffer,
+    tf_buffer: tf2_ros.Buffer,
     pose_stamped: PoseStamped,
     destination_frame: str,
-    time_window=None,
-    timeout=None,
-    silent=False,
+    time_window: Optional[rospy.Duration] = None,
+    timeout: Optional[rospy.Duration] = None,
+    silent: bool = False,
 ) -> Optional[PoseStamped]:
     """
     Put pose_stamped into the destination frame. Return None if the look up fails.
@@ -59,12 +66,12 @@ def lookup_pose_in_frame(
 
 
 def lookup_pose(
-    tf_buffer,
+    tf_buffer: tf2_ros.Buffer,
     child_frame: str,
     parent_frame: str,
-    time_window=None,
-    timeout=None,
-    silent=False,
+    time_window: Optional[rospy.Duration] = None,
+    timeout: Optional[rospy.Duration] = None,
+    silent: bool = False,
 ) -> Optional[PoseStamped]:
     pose_stamped = PoseStamped()
     pose_stamped.header.frame_id = child_frame

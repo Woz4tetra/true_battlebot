@@ -32,7 +32,7 @@ class Header:
     def to_msg(self) -> RosHeader:
         return RosHeader(stamp=seconds_to_duration(self.stamp), frame_id=self.frame_id, seq=self.seq)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "%s(stamp=%0.3f, frame_id=%s, seq=%d)" % (self.__class__.__name__, self.stamp, self.frame_id, self.seq)
 
     __repr__ = __str__

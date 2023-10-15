@@ -36,11 +36,9 @@
   },
   "editor.rulers": [120],
   "python.autoComplete.extraPaths": [
-    "/home/ben/ros_ws/devel/lib/python3.8/site-packages",
     "/opt/ros/${ROS_DISTRO}/lib/python3/dist-packages"
   ],
   "python.analysis.extraPaths": [
-    "/home/ben/ros_ws/devel/lib/python3.8/site-packages",
     "/opt/ros/${ROS_DISTRO}/lib/python3/dist-packages"
   ],
   "files.associations": {
