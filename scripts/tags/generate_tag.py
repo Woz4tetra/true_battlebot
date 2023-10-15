@@ -1,14 +1,13 @@
-import pickle
-import io
 import argparse
+import io
 import os
+import pickle
 from dataclasses import dataclass
 from typing import Dict, Optional
 
 import requests
-from PIL.Image import open as open_image
 from PIL.Image import Image, Resampling
-
+from PIL.Image import open as open_image
 
 image_formats = {
     "tag16h5": "tag16_05_%05d.png",
@@ -99,12 +98,8 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="tag")
 
     parser.add_argument("tag", choices=list(image_formats.keys()), help="tag family")
-    parser.add_argument(
-        "codes", nargs="+", type=int, default=[], help="codes to generate"
-    )
-    parser.add_argument(
-        "-p", "--pixels_per_mm", type=float, default=20.0, help="pixels per mm"
-    )
+    parser.add_argument("codes", nargs="+", type=int, default=[], help="codes to generate")
+    parser.add_argument("-p", "--pixels_per_mm", type=float, default=20.0, help="pixels per mm")
     parser.add_argument(
         "-l",
         "--length_mm",

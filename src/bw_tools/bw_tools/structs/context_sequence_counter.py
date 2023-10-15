@@ -7,10 +7,10 @@ from typing import Dict, Optional
 def _jump_up_n_frames(frame: Optional[FrameType], num_parents: int) -> FrameType:
     for _ in range(num_parents):
         if frame is None:
-            raise RuntimeError('Cannot get caller id')
+            raise RuntimeError("Cannot get caller id")
         frame = frame.f_back
     if frame is None:
-        raise RuntimeError('Cannot get caller id')
+        raise RuntimeError("Cannot get caller id")
     return frame
 
 

@@ -1,15 +1,13 @@
-from imutils.video import VideoStream, FileVideoStream
-from imutils.video import FPS
 import argparse
-import imutils
 import time
+
 import cv2
+import imutils
+from imutils.video import FPS, FileVideoStream, VideoStream
 
 ap = argparse.ArgumentParser()
 ap.add_argument("-v", "--video", type=str, help="path to input video file")
-ap.add_argument(
-    "-t", "--tracker", type=str, default="kcf", help="OpenCV object tracker type"
-)
+ap.add_argument("-t", "--tracker", type=str, default="kcf", help="OpenCV object tracker type")
 args = vars(ap.parse_args())
 
 # extract the OpenCV version info

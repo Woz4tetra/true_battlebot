@@ -1,11 +1,12 @@
+import argparse
+import csv
 import os
+
+import cv2
+import imutils
+import numpy as np
 from centroid_tracker import CentroidTracker
 from imutils.video import FileVideoStream
-import numpy as np
-import argparse
-import imutils
-import cv2
-import csv
 from poly_roi_selector import OrientedROISelector
 
 
@@ -122,9 +123,7 @@ def main():
         # kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
         # fg_mask = cv2.morphologyEx(fg_mask, cv2.MORPH_OPEN, kernel, iterations=3)
 
-        contours, hierarchy = cv2.findContours(
-            fg_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-        )
+        contours, hierarchy = cv2.findContours(fg_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         objects = []
         for contour in contours:
             if cv2.contourArea(contour) < min_area:

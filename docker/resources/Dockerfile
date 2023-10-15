@@ -138,6 +138,7 @@ ENV ROS_WS_SRC=${ROS_WS_ROOT}/src
 ENV FLASK_ENV=development \
     PATH=${HOME}/.local/bin:/opt/${ORGANIZATION}/scripts${PATH:+:${PATH}} \
     PYTHONPATH=/opt/${ORGANIZATION}/${PROJECT_NAME}/src/bw_tools${PYTHONPATH:+:${PYTHONPATH}} \
+    MYPYPATH=/opt/${ORGANIZATION}/${PROJECT_NAME}/src/bw_tools${MYPYPATH:+:${MYPYPATH}} \
     PYTHONIOENCODING=utf-8
 
 # ---

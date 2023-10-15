@@ -1,17 +1,20 @@
+# type: ignore
 import json
+from optparse import Values
 
 from . import utils
 
-def bag_to_json(options):
+
+def bag_to_json(options: Values):
     stream_array = StreamArray(json_generator(options))
     path = utils.get_output_path(options)
     path += ".json"
-    with open(path, 'w') as outfile:
+    with open(path, "w") as outfile:
         for chunk in json.JSONEncoder(indent=4).iterencode(stream_array):
             outfile.write(chunk)
 
 
-def json_generator(options):
+def json_generator(options: Values):
     for topic, msg, timestamp in utils.enumerate_bag(options):
         msg_dict = utils.msg_to_dict(msg)
 
@@ -21,6 +24,7 @@ def json_generator(options):
             msg_dict,
         ]
 
+
 class StreamArray(list):
     """
     Converts a generator into a list object that can be json serialisable
@@ -29,6 +33,7 @@ class StreamArray(list):
     IE. It converts it to a list without having to exhaust the generator
     and keep it's contents in memory.
     """
+
     def __init__(self, generator):
         self.generator = generator
         self._len = 1

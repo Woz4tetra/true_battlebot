@@ -1,9 +1,9 @@
-import torch
-from matplotlib import pyplot as plt
 import cv2
 import numpy as np
-from supervision import MaskAnnotator, Detections
-from segment_anything import SamPredictor, SamAutomaticMaskGenerator, sam_model_registry
+import torch
+from matplotlib import pyplot as plt
+from segment_anything import SamAutomaticMaskGenerator, SamPredictor, sam_model_registry
+from supervision import Detections, MaskAnnotator
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Using device: {device}")

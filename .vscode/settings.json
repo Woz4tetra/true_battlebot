@@ -116,8 +116,7 @@
     "geometry": "cpp"
   },
   "files.watcherExclude": {
-    "**/.git/objects/**": true,
-    "**/.git/subtree-cache/**": true,
+    "**/.git/*/**": true,
     "**/node_modules/*/**": true
   },
   "ros.distro": "noetic"

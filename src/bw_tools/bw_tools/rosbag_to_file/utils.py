@@ -1,10 +1,14 @@
-from dataclasses import dataclass
-import os
-import tqdm
+# type: ignore
 import copy
-import rospy
-import rosbag
+import os
+from dataclasses import dataclass
 from datetime import datetime
+from optparse import Values
+
+import rosbag
+import rospy
+import tqdm
+
 
 @dataclass
 class Options:
@@ -24,26 +28,29 @@ def to_datestr(timestamp):
 
 def msg_to_dict(msg):
     msg_dict = {}
-    
+
     for key, value in iter_msg(msg):
         assign_key(msg_dict, key, value)
-    
+
     return msg_dict
+
 
 def assign_key(tree, key, value, index=0):
     subfield = key[index]
-    
+
     if len(key) == index + 1:
         tree[subfield] = value
         return
-    
+
     if subfield not in tree:
         tree[subfield] = {}
 
     assign_key(tree[subfield], key, value, index + 1)
 
+
 def is_list(obj):
-    return type(obj) == list or type(obj) == tuple
+    return isinstance(obj, list) or isinstance(obj, tuple)
+
 
 def iter_msg(msg, key=None):
     msg_type = type(msg)
@@ -66,55 +73,58 @@ def iter_msg(msg, key=None):
                 yield result
 
     else:
-        if type(msg) == bytes:
+        if isinstance(msg, bytes):
             msg = msg.decode()
         yield key, msg
 
-def get_output_path(options, topic_name=None):
+
+def get_output_path(options: Values, topic_name=None):
     bag_path = options.path
     bag_filename = os.path.basename(bag_path)
     bag_name = os.path.splitext(bag_filename)[0]
-    
+
     if topic_name is None:
         output_filename = bag_name
     else:
         topic_name = topic_name.replace("/", "-")
         output_filename = "%s-%s" % (bag_name, topic_name)
-    
+
     return os.path.join(options.output_dir, output_filename)
 
-def get_topic_list(path):
+
+def get_topic_list(path: str):
     bag = rosbag.Bag(path)
-    
+
     # index 0 is msg type mapped to msg hash
     # index 1 is topic name mapped to TopicTuple (contains msg type, message count, etc)
-    topic_tuples = bag.get_type_and_topic_info()[1]  # type: dict[TopicTuple]
+    topic_tuples = bag.get_type_and_topic_info()[1]
     topics = list(topic_tuples.keys())
     return topics
 
 
-def enumerate_bag(options):
-
+def enumerate_bag(options: Values):
+    bag = open_bag(options)
     try:
         num_messages = get_bag_length(options)
-        bag = open_bag(options)
         bag_iter = get_bag_iter(bag, options)
         for _ in tqdm.trange(num_messages):
-            topic, msg, time = next(bag_iter)
+            topic, msg, time = next(bag_iter)  # type: ignore
 
             yield topic, msg, time
     finally:
         bag.close()
 
-def open_bag(options):
+
+def open_bag(options: Values):
     try:
         bag = rosbag.Bag(options.path)
     except Exception as e:
-        rospy.logfatal('failed to load bag file: %s', e)
+        rospy.logfatal("failed to load bag file: %s", e)
         exit(1)
     return bag
 
-def get_bag_iter(bag, options):
+
+def get_bag_iter(bag: rosbag.Bag, options: Values):
     bag_start = rospy.Time(bag.get_start_time())
     if options.start_time:
         stime = bag_start + rospy.Duration(options.start_time)
@@ -126,7 +136,8 @@ def get_bag_iter(bag, options):
         etime = rospy.Time(bag.get_end_time())
     return bag.read_messages(topics=options.topic_names, start_time=stime, end_time=etime)
 
-def get_bag_length(options):
+
+def get_bag_length(options: Values):
     bag = open_bag(options)
     bag_iter = get_bag_iter(bag, options)
     num_messages = sum(1 for _ in bag_iter)

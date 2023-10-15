@@ -3,10 +3,9 @@ from dataclasses import dataclass
 from typing import Optional
 
 import rospy
-from std_msgs.msg import Header as RosHeader
-
 from bw_tools.structs.context_sequence_counter import ContextSequenceCounter
 from bw_tools.typing.basic import seconds_to_duration
+from std_msgs.msg import Header as RosHeader
 
 
 @dataclass(frozen=True, eq=True)
@@ -16,7 +15,7 @@ class Header:
     seq: int
 
     @classmethod
-    def auto(cls, frame_id: str = '', stamp: float = float("nan"), seq: Optional[int] = None) -> "Header":
+    def auto(cls, frame_id: str = "", stamp: float = float("nan"), seq: Optional[int] = None) -> "Header":
         if stamp != stamp:
             if rospy.core.is_initialized():
                 stamp = rospy.Time.now().to_sec()

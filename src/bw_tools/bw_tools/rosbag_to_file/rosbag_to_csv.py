@@ -1,10 +1,13 @@
+# type: ignore
 import csv
+from optparse import Values
 
 from . import utils
 
-def bag_to_csv(options):
+
+def bag_to_csv(options: Values):
     writers = dict()
-    for topic, msg, timestamp in utils.enumerate_bag(options, options.path):
+    for topic, msg, timestamp in utils.enumerate_bag(options):
         if topic in writers:
             writer = writers[topic][0]
         else:
@@ -17,20 +20,17 @@ def bag_to_csv(options):
                 message_type_to_csv(header_row, msg)
                 writer.writerow(header_row)
 
-        row = [
-            utils.to_datestr(timestamp.to_time()),
-            timestamp.to_time()
-        ]
+        row = [utils.to_datestr(timestamp.to_time()), timestamp.to_time()]
         message_to_csv(row, msg, flatten=not options.header)
         writer.writerow(row)
     for writer, f in writers.values():
         f.close()
 
 
-def open_csv(options, topic_name):
+def open_csv(options: Values, topic_name):
     path = utils.get_output_path(options, topic_name)
     path += ".csv"
-    return open(path, 'w')
+    return open(path, "w")
 
 
 def message_to_csv(row, msg, flatten=False):
@@ -53,7 +53,7 @@ def message_to_csv(row, msg, flatten=False):
 def format_header_key(key):
     header = ""
     for index, subfield in enumerate(key):
-        if type(subfield) == int:
+        if isinstance(subfield, int):
             header += "[%s]" % subfield
         else:
             if index == 0:
@@ -61,6 +61,7 @@ def format_header_key(key):
             else:
                 header += "." + subfield
     return header
+
 
 def message_type_to_csv(row, msg, parent_content_name=""):
     """

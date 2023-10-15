@@ -1,6 +1,8 @@
-import os
+# type: ignore
 import json
+import os
 import pickle
+
 from scipy.spatial.transform import Rotation
 
 
@@ -29,12 +31,12 @@ def get_key_recurse(tree, key, index):
 
 
 def yaw_from_quat(quat):
-    r_mat = Rotation.from_quat([quat["x"], quat["y"], quat["z"], quat["w"]])
+    r_mat = Rotation.from_quat([quat["x"], quat["y"], quat["z"], quat["w"]])  # type: ignore
     return r_mat.as_euler("xyz")[2]
 
 
 def header_to_stamp(header):
-    return header["secs"] + header["nsecs"] * 1E-9
+    return header["secs"] + header["nsecs"] * 1e-9
 
 
 def get_pkl_path(path):
@@ -49,7 +51,7 @@ def make_pkl(path, get_states):
     states = get_states(path)
 
     pickle_path = get_pkl_path(path)
-    with open(pickle_path, 'wb') as file:
+    with open(pickle_path, "wb") as file:
         pickle.dump(states, file)
 
     return states
@@ -60,5 +62,5 @@ def read_pkl(path, get_states, repickle=False):
     if not os.path.isfile(pkl_path) or repickle:
         return make_pkl(path, get_states)
     else:
-        with open(pkl_path, 'rb') as file:
+        with open(pkl_path, "rb") as file:
             return pickle.load(file)
