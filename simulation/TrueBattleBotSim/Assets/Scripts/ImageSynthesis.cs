@@ -26,7 +26,7 @@ public class ImageSynthesis : MonoBehaviour
 
     // pass configurations
     private CapturePass[] capturePasses = new CapturePass[] {
-        new CapturePass() { name = "image" },
+        new CapturePass() { name = "image", publish = true  },
         // new CapturePass() { name = "id", supportsAntialiasing = false, mode = ReplacelementModes.ObjectId, publish = true },
         new CapturePass() { name = "layer", supportsAntialiasing = false, mode = ReplacelementModes.CatergoryId, publish = true },
         new CapturePass() { name = "depth", mode = ReplacelementModes.DepthMultichannel, publish = true, encoding = Encodings.MONO16 },
@@ -97,6 +97,8 @@ public class ImageSynthesis : MonoBehaviour
     // cached materials
     private Material opticalFlowMaterial;
 
+    private Renderer[] prevRenderers = new Renderer[0];
+
     void Start()
     {
         Camera mainCamera = GetComponent<Camera>();
@@ -124,7 +126,8 @@ public class ImageSynthesis : MonoBehaviour
             capturePasses[q].camera = CreateHiddenCamera(capturePasses[q].name);
 
         OnCameraChange();
-        OnSceneChange();
+        Renderer[] renderers = FindObjectsOfType<Renderer>();
+        OnSceneChange(renderers);
 
         InvokeRepeating("PublishTimerCallback", publishStartDelay, 1.0f / publishRate);
     }
@@ -180,13 +183,13 @@ public class ImageSynthesis : MonoBehaviour
 
     void LateUpdate()
     {
-#if UNITY_EDITOR
-        if (DetectPotentialSceneChangeInEditor())
-            OnSceneChange();
-#endif // UNITY_EDITOR
+        Renderer[] renderers = FindObjectsOfType<Renderer>();
 
-        // @TODO: detect if camera properties actually changed
-        OnCameraChange();
+        // OnCameraChange();   // don't change camera parameters at run time
+        if (DidSceneChange(renderers))
+        {
+            OnSceneChange(renderers);
+        }
     }
 
     private void PublishTimerCallback()
@@ -268,18 +271,21 @@ public class ImageSynthesis : MonoBehaviour
         opticalFlowMaterial.SetFloat("_Sensitivity", opticalFlowSensitivity);
     }
 
-
-    public void OnSceneChange(bool grayscale = false)
+    bool DidSceneChange(Renderer[] renderers)
     {
-        var renderers = FindObjectsOfType<Renderer>();
+        return renderers.Length != prevRenderers.Length;
+    }
+
+    public void OnSceneChange(Renderer[] renderers, bool grayscale = false)
+    {
         var mpb = new MaterialPropertyBlock();
         labelsMsg = new LabelsMsg();
         List<string> layers = new List<string>();
         List<uint> layerCodes = new List<uint>();
-        foreach (var r in renderers)
+        foreach (Renderer render in renderers)
         {
-            var id = r.gameObject.GetInstanceID();
-            var layer = r.gameObject.layer;
+            var id = render.gameObject.GetInstanceID();
+            var layer = render.gameObject.layer;
             layers.Add(LayerMask.LayerToName(layer));
 
             Color objectColor = ColorEncoding.EncodeIDAsColor(id);
@@ -288,7 +294,7 @@ public class ImageSynthesis : MonoBehaviour
 
             mpb.SetColor("_ObjectColor", objectColor);
             mpb.SetColor("_CategoryColor", layerColor);
-            r.SetPropertyBlock(mpb);
+            render.SetPropertyBlock(mpb);
         }
         labelsMsg.labels = layers.ToArray();
         labelsMsg.ids = layerCodes.ToArray();
@@ -445,44 +451,14 @@ public class ImageSynthesis : MonoBehaviour
     (byte, byte) convertBytesToMillimeters(byte lowerByte, byte higherByte)
     {
         uint unscaledRawDepth = (uint)(lowerByte | (higherByte << 8));
+        if (unscaledRawDepth == 0)
+        {
+            return (0, 0);
+        }
         float depthMeters = (maxDepth - minDepth) / 0xffff * unscaledRawDepth + minDepth;
         uint depthMillimeters = (uint)(1000.0f * depthMeters);
         byte rawDepthLowerByte = (byte)(depthMillimeters & 0xff);
         byte rawDepthHigherByte = (byte)((depthMillimeters >> 8) & 0xff);
         return (rawDepthLowerByte, rawDepthHigherByte);
     }
-
-#if UNITY_EDITOR
-    private GameObject lastSelectedGO;
-    private int lastSelectedGOLayer = -1;
-    private string lastSelectedGOTag = "unknown";
-    private bool DetectPotentialSceneChangeInEditor()
-    {
-        bool change = false;
-        // there is no callback in Unity Editor to automatically detect changes in scene objects
-        // as a workaround lets track selected objects and check, if properties that are 
-        // interesting for us (layer or tag) did not change since the last frame
-        if (UnityEditor.Selection.transforms.Length > 1)
-        {
-            // multiple objects are selected, all bets are off!
-            // we have to assume these objects are being edited
-            change = true;
-            lastSelectedGO = null;
-        }
-        else if (UnityEditor.Selection.activeGameObject)
-        {
-            var go = UnityEditor.Selection.activeGameObject;
-            // check if layer or tag of a selected object have changed since the last frame
-            var potentialChangeHappened = lastSelectedGOLayer != go.layer || lastSelectedGOTag != go.tag;
-            if (go == lastSelectedGO && potentialChangeHappened)
-                change = true;
-
-            lastSelectedGO = go;
-            lastSelectedGOLayer = go.layer;
-            lastSelectedGOTag = go.tag;
-        }
-
-        return change;
-    }
-#endif // UNITY_EDITOR
 }
