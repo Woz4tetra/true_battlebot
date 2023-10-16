@@ -1,12 +1,10 @@
 using UnityEngine;
 using UnityEngine.Rendering;
 using System.Collections;
-using System.IO;
 using RosMessageTypes.Sensor;
 using RosMessageTypes.Std;
 using Unity.Robotics.ROSTCPConnector;
 using Unity.Robotics.ROSTCPConnector.MessageGeneration;
-using RosMessageTypes.BuiltinInterfaces;
 
 // @TODO:
 // . support custom color wheels in optical flow via lookup textures
@@ -29,7 +27,7 @@ public class ImageSynthesis : MonoBehaviour
         new CapturePass() { name = "image" },
         // new CapturePass() { name = "id", supportsAntialiasing = false, mode = ReplacelementModes.ObjectId, publish = true },
         new CapturePass() { name = "layer", supportsAntialiasing = false, mode = ReplacelementModes.CatergoryId, publish = true },
-        new CapturePass() { name = "depth", mode = ReplacelementModes.DepthMultichannel, publish = true, encoding = Encodings.F16 },
+        new CapturePass() { name = "depth", mode = ReplacelementModes.DepthMultichannel, publish = true, encoding = Encodings.MONO16 },
         // new CapturePass() { name = "normals", mode = ReplacelementModes.Normals, publish = true },
         // new CapturePass() { name = "flow", supportsAntialiasing = false, needsRescale = true, publish = true, mode = ReplacelementModes.Flow }, // (see issue with Motion Vectors in @KNOWN ISSUES)
     };
@@ -47,7 +45,7 @@ public class ImageSynthesis : MonoBehaviour
     enum Encodings
     {
         RGB8 = 0,
-        F16 = 1,
+        MONO16 = 1,
     }
 
     struct CapturePass
@@ -80,6 +78,8 @@ public class ImageSynthesis : MonoBehaviour
     [SerializeField] private uint imageWidth = 1920;
     [SerializeField] private uint imageHeight = 1080;
     [SerializeField] private float publishRate = 10.0f;
+    [SerializeField] private float minDepth = 0.5f;
+    [SerializeField] private float maxDepth = 4.4062f;
     private float publishStartDelay = 1.0f;
     private CameraInfoMsg cameraInfoMsg;
     private uint seq = 0;
@@ -105,6 +105,7 @@ public class ImageSynthesis : MonoBehaviour
             }
         }
         cameraInfoMsg = CameraInfoGenerator.ConstructCameraInfoMessage(mainCamera, new HeaderMsg { frame_id = frameId });
+        resizeCameraInfo(cameraInfoMsg, imageWidth, imageHeight);
 
         // default fallbacks, if shaders are unspecified
         if (!uberReplacementShader)
@@ -122,6 +123,32 @@ public class ImageSynthesis : MonoBehaviour
         OnSceneChange();
 
         InvokeRepeating("PublishTimerCallback", publishStartDelay, 1.0f / publishRate);
+    }
+
+    private void resizeCameraInfo(CameraInfoMsg cameraInfoMsg, uint destinationWidth, uint destinationHeight)
+    {
+        float scale_y;
+        float scale_x;
+        scale_y = (float)destinationHeight / cameraInfoMsg.height;
+        scale_x = (float)destinationWidth / cameraInfoMsg.width;
+        cameraInfoMsg.height = destinationHeight;
+        cameraInfoMsg.width = destinationWidth;
+
+        cameraInfoMsg.K[0] *= scale_x;  // fx
+        cameraInfoMsg.K[2] *= scale_x;  // cx
+        cameraInfoMsg.K[4] *= scale_y;  // fy
+        cameraInfoMsg.K[5] *= scale_y;  // cy
+
+        cameraInfoMsg.P[0] *= scale_x;  // fx
+        cameraInfoMsg.P[2] *= scale_x;  // cx
+        cameraInfoMsg.P[3] *= scale_x;  // T
+        cameraInfoMsg.P[5] *= scale_y;  // fy
+        cameraInfoMsg.P[6] *= scale_y;  // cy
+
+        cameraInfoMsg.roi.x_offset = (uint)(cameraInfoMsg.roi.x_offset * scale_x);
+        cameraInfoMsg.roi.y_offset = (uint)(cameraInfoMsg.roi.y_offset * scale_y);
+        cameraInfoMsg.roi.width = (uint)(cameraInfoMsg.roi.width * scale_x);
+        cameraInfoMsg.roi.height = (uint)(cameraInfoMsg.roi.height * scale_y);
     }
 
     private string GetImageTopic(string name)
@@ -147,7 +174,7 @@ public class ImageSynthesis : MonoBehaviour
 
     private void PublishTimerCallback()
     {
-        Publish();
+        Publish(imageWidth, imageHeight);
     }
 
     private Camera CreateHiddenCamera(string name)
@@ -188,11 +215,11 @@ public class ImageSynthesis : MonoBehaviour
 
     public void OnCameraChange()
     {
+        Camera mainCamera = GetComponent<Camera>();
         int targetDisplay = 1;
-        var mainCamera = GetComponent<Camera>();
         foreach (var pass in capturePasses)
         {
-            if (pass.camera == mainCamera)
+            if (pass.camera == mainCamera || pass.camera == null)
                 continue;
 
             // cleanup capturing camera
@@ -238,18 +265,6 @@ public class ImageSynthesis : MonoBehaviour
         }
     }
 
-    public void Publish()
-    {
-        // execute as coroutine to wait for the EndOfFrame before starting capture
-        StartCoroutine(WaitForEndOfFrameAndPublish(imageWidth, imageHeight));
-    }
-
-    private IEnumerator WaitForEndOfFrameAndPublish(uint width, uint height)
-    {
-        yield return new WaitForEndOfFrame();
-        Publish(width, height);
-    }
-
     private void Publish(uint width, uint height)
     {
         foreach (var pass in capturePasses)
@@ -272,8 +287,8 @@ public class ImageSynthesis : MonoBehaviour
 
     private void Publish(CapturePass pass, HeaderMsg header, string topic, int width, int height)
     {
+        Camera mainCamera = GetComponent<Camera>();
         Camera cam = pass.camera;
-        var mainCamera = GetComponent<Camera>();
         var readWrite = RenderTextureReadWrite.Default;
         TextureFormat textureFormat;
         int depth;
@@ -289,10 +304,10 @@ public class ImageSynthesis : MonoBehaviour
                 format = RenderTextureFormat.Default;
                 depth = 24;
                 break;
-            case Encodings.F16:
+            case Encodings.MONO16:
                 textureFormat = TextureFormat.R16;
-                rosImageChannels = 4;
-                encodingString = "32SC1";
+                rosImageChannels = 2;
+                encodingString = "16UC1";
                 format = RenderTextureFormat.R16;
                 depth = 16;
                 break;
@@ -341,26 +356,20 @@ public class ImageSynthesis : MonoBehaviour
 
 
         // extract bytes
-        byte[] bytes;
+        byte[] bytes = texture.GetRawTextureData();
+
 
         switch (pass.encoding)
         {
             case Encodings.RGB8:
-                bytes = texture.GetRawTextureData();
                 break;
-            case Encodings.F16:
-                Color[] pixels = texture.GetPixels();
-                float[] pixelFloats = new float[pixels.Length];
-                for (int i = 0; i < pixels.Length; i++)
+            case Encodings.MONO16:
+                for (int i = 0; i < bytes.Length; i += 2)
                 {
-                    pixelFloats[i] = pixels[i].r;
+                    (bytes[i], bytes[i + 1]) = convertBytesToMillimeters(bytes[i], bytes[i + 1]);
                 }
-
-                bytes = new byte[pixelFloats.Length * sizeof(float)];
-                System.Buffer.BlockCopy(pixelFloats, 0, bytes, 0, bytes.Length);
                 break;
             default:
-                bytes = new byte[0];
                 break;
         }
 
@@ -382,6 +391,16 @@ public class ImageSynthesis : MonoBehaviour
 
         Destroy(texture);
         RenderTexture.ReleaseTemporary(finalRT);
+    }
+
+    (byte, byte) convertBytesToMillimeters(byte lowerByte, byte higherByte)
+    {
+        uint unscaledRawDepth = (uint)(lowerByte | (higherByte << 8));
+        float depthMeters = (maxDepth - minDepth) / 0xffff * unscaledRawDepth + minDepth;
+        uint depthMillimeters = (uint)(1000.0f * depthMeters);
+        byte rawDepthLowerByte = (byte)(depthMillimeters & 0xff);
+        byte rawDepthHigherByte = (byte)((depthMillimeters >> 8) & 0xff);
+        return (rawDepthLowerByte, rawDepthHigherByte);
     }
 
 #if UNITY_EDITOR
