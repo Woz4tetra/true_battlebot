@@ -304,6 +304,7 @@ GameObject:
   m_Component:
   - component: {fileID: 360641441}
   - component: {fileID: 360641442}
+  - component: {fileID: 360641443}
   m_Layer: 3
   m_Name: Right Wheel
   m_TagString: Untagged
@@ -338,8 +339,8 @@ ArticulationBody:
   m_Enabled: 1
   serializedVersion: 5
   m_Mass: 0.2
-  m_ParentAnchorPosition: {x: 0.15, y: 0.05, z: 0}
-  m_ParentAnchorRotation: {x: 1, y: 0, z: 0, w: 0}
+  m_ParentAnchorPosition: {x: 0.15, y: 0.050000004, z: 0}
+  m_ParentAnchorRotation: {x: 0, y: 0, z: -1, w: 0}
   m_AnchorPosition: {x: 0, y: 0, z: 0}
   m_AnchorRotation: {x: 0, y: 0.70710677, z: 0, w: 0.70710677}
   m_MatchAnchors: 1
@@ -394,6 +395,20 @@ ArticulationBody:
   m_Immovable: 0
   m_UseGravity: 1
   m_CollisionDetectionMode: 1
+--- !u!114 &360641443
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 360641440}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8ded925f1af29c171ab41237d10cdbe4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxWheelSpeed: 10
+  wheelRadius: 0.05
 --- !u!1 &391612779
 GameObject:
   m_ObjectHideFlags: 0
@@ -1151,6 +1166,7 @@ GameObject:
   m_Component:
   - component: {fileID: 794211839}
   - component: {fileID: 794211840}
+  - component: {fileID: 794211841}
   m_Layer: 3
   m_Name: Left Wheel
   m_TagString: Untagged
@@ -1185,7 +1201,7 @@ ArticulationBody:
   m_Enabled: 1
   serializedVersion: 5
   m_Mass: 0.2
-  m_ParentAnchorPosition: {x: -0.15, y: 0.05, z: 0}
+  m_ParentAnchorPosition: {x: -0.15, y: 0.050000004, z: 0}
   m_ParentAnchorRotation: {x: 1, y: 0, z: 0, w: 0}
   m_AnchorPosition: {x: 0, y: 0, z: 0}
   m_AnchorRotation: {x: 0, y: 0.70710677, z: 0, w: 0.70710677}
@@ -1241,6 +1257,20 @@ ArticulationBody:
   m_Immovable: 0
   m_UseGravity: 1
   m_CollisionDetectionMode: 1
+--- !u!114 &794211841
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 794211838}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8ded925f1af29c171ab41237d10cdbe4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxWheelSpeed: 10
+  wheelRadius: 0.05
 --- !u!1 &839855758
 GameObject:
   m_ObjectHideFlags: 0
@@ -1587,6 +1617,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1392186115}
   - component: {fileID: 1392186116}
+  - component: {fileID: 1392186117}
   m_Layer: 3
   m_Name: BattleBot
   m_TagString: Untagged
@@ -1602,7 +1633,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1392186114}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 0.1, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -1676,6 +1707,22 @@ ArticulationBody:
   m_Immovable: 0
   m_UseGravity: 1
   m_CollisionDetectionMode: 1
+--- !u!114 &1392186117
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1392186114}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f9b26e993356c0fa1a59dbfbda2f0b1a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  cmdVelTopic: cmd_vel
+  baseWidth: 1
+  leftWheel: {fileID: 794211841}
+  rightWheel: {fileID: 360641443}
 --- !u!1 &1405314066
 GameObject:
   m_ObjectHideFlags: 0

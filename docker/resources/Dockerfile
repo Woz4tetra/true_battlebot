@@ -114,12 +114,21 @@ RUN bash -x /opt/${ORGANIZATION}/install/install_torchscript.sh
 ENV DEP_ROS_WS_ROOT=${HOME}/dep_ws \
     DEP_ROS_WS_SRC=${HOME}/dep_ws/src
 
-COPY --chown=1000:1000 ./install/rosdep_install.sh /opt/${ORGANIZATION}/install
 COPY --chown=1000:1000 \
-    ./install/install_ros_packages.sh \
+    ./install/rosdep_install.sh \
+    ./install/install_ros_base_packages.sh \
     ./install/${PROJECT_NAME}.rosinstall \
     /opt/${ORGANIZATION}/install/
-RUN bash /opt/${ORGANIZATION}/install/install_ros_packages.sh /opt/${ORGANIZATION}/install/${PROJECT_NAME}.rosinstall y
+RUN bash /opt/${ORGANIZATION}/install/install_ros_base_packages.sh /opt/${ORGANIZATION}/install/${PROJECT_NAME}.rosinstall
+
+# ---
+# ROS project dependencies
+# ---
+
+COPY --chown=1000:1000 \
+    ./install/install_ros_project_packages.sh \
+    /opt/${ORGANIZATION}/install/
+RUN bash /opt/${ORGANIZATION}/install/install_ros_project_packages.sh
 
 # ---
 # Python extra packages

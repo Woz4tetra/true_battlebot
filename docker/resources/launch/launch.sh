@@ -6,7 +6,7 @@ SESSION=${PROJECT_NAME}
 tmux has-session -t "${SESSION}" > /dev/null
 
 if [ $? != 0 ]; then
-    tmux new -s "${SESSION}" -d
+    tmux new -s "${SESSION}" -d -x 200 -y 24
 fi
 
 if [ ! -f /opt/"${ORGANIZATION}"/roslaunch_pid ]; then

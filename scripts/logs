@@ -70,7 +70,8 @@ def colors:
  \"blue\": \"\u001b[34m\",
  \"magenta\": \"\u001b[35m\",
  \"cyan\": \"\u001b[36m\",
- \"white\": \"\u001b[37m\",
+ \"grey\": \"\u001b[37m\",
+ \"white\": \"\u001b[38m\",
  \"reset\": \"\u001b[0m\",
 };
 
@@ -79,7 +80,7 @@ def level_colors:
  {
     \"DEBUG\": \"green\",
     \"INFO\": \"white\",
-    \"WARNING\": \"yellow\",
+    \"WARN\": \"yellow\",
     \"ERROR\": \"red\"
  };
 
@@ -87,7 +88,7 @@ def format_log_line:
     # Clear any color setting
     colors.reset +
     # Color the log level
-    colors[level_colors[.severity]] + \" \" +
+    colors[level_colors[.severity]] +
     # Log the node name
     \"[\" + .node + \"] \" +
     # Log the severity
@@ -102,7 +103,7 @@ def format_log_line:
 # If the line can be interpreted as json, run the formatter
 # If it is not JSON (the //), assume its some type of error/traceback,
 # so make it red and dump it out.
-(fromjson? | format_log_line) // colors.red + .
+(fromjson? | format_log_line) // colors.white + .
 "
 
 if [ -z "${LOGPATH}" ]; then

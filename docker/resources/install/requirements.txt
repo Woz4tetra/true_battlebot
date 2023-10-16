@@ -1,4 +1,3 @@
-py-trees==2.2.3
 jsonlines
 ezdxf
 filterpy
@@ -6,3 +5,5 @@ mypy
 pynput
 opencv-python
 types-requests
+py-trees==2.2.3
+control==0.9.3.post2

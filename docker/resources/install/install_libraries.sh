@@ -22,13 +22,6 @@ cmake ..
 make -j4
 sudo make install
 
-# foxglove
-cd /tmp
-sudo apt-get -y install xdg-utils libnotify4
-download foxglove-studio.deb https://github.com/foxglove/studio/releases/download/v1.71.0/foxglove-studio-1.71.0-linux-amd64.deb
-sudo dpkg -i foxglove-studio.deb
-sudo apt-get -y install foxglove-studio
-
 # nlopt
 cd /tmp
 git clone https://github.com/stevengj/nlopt.git

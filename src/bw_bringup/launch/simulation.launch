@@ -3,4 +3,5 @@
     <arg name="robot" default="$(env ROBOT)"/>
 
     <include file="$(find ros_tcp_endpoint)/launch/endpoint.launch" />
+    <include file="$(find bw_teleop)/launch/simple_teleop.launch" />
 </launch>
