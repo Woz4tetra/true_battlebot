@@ -1,24 +1,10 @@
 <launch>
     <group ns="simulated_camera">
         <node pkg="nodelet" type="nodelet" args="manager" name="synthetic_relay_manager" output="screen"/>
-        <!-- <node pkg="nodelet" type="nodelet" name="synthetic_rectify_depth"
-            args="load image_proc/rectify synthetic_relay_manager">
-            <remap from="image_mono" to="depth/image_raw"/>
-            <remap from="camera_info" to="depth/camera_info"/>
-            <remap from="image_rect" to="depth/image_rect"/>
-        </node> -->
-        <!-- <node pkg="nodelet" type="nodelet" name="synthetic_cloudify"
-                args="load depth_image_proc/point_cloud_xyzrgb synthetic_relay_manager">
-            <remap from="depth_registered/image_rect" to="depth/image_raw"/>
-            <remap from="depth_registered/points" to="points"/>
-            <remap from="rgb/image_rect_color" to="layer/image_raw"/>
-            <remap from="rgb/camera_info" to="layer/camera_info"/>
-        </node> -->
         <node pkg="nodelet" type="nodelet" name="synthetic_cloudify" output="screen"
             args="load depth_image_proc/point_cloud_xyz synthetic_relay_manager --no-bond">
             <remap from="image_rect" to="depth/image_raw"/>
             <remap from="camera_info" to="depth/camera_info"/>
-            <!-- <remap from="points" to="points"/> -->
         </node>
     </group>
 </launch>

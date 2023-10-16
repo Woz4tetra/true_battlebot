@@ -5,6 +5,8 @@ using RosMessageTypes.Sensor;
 using RosMessageTypes.Std;
 using Unity.Robotics.ROSTCPConnector;
 using Unity.Robotics.ROSTCPConnector.MessageGeneration;
+using RosMessageTypes.BwInterfaces;
+using System.Collections.Generic;
 
 // @TODO:
 // . support custom color wheels in optical flow via lookup textures
@@ -84,6 +86,9 @@ public class ImageSynthesis : MonoBehaviour
     private CameraInfoMsg cameraInfoMsg;
     private uint seq = 0;
 
+    [SerializeField] private string labelTopic = "labels";
+    private LabelsMsg labelsMsg;
+
     [SerializeField] private Shader uberReplacementShader;
     [SerializeField] private Shader opticalFlowShader;
 
@@ -104,6 +109,7 @@ public class ImageSynthesis : MonoBehaviour
                 ros.RegisterPublisher<CameraInfoMsg>(GetInfoTopic(pass.name));
             }
         }
+        ros.RegisterPublisher<LabelsMsg>(baseTopic + "/" + labelTopic);
 
         // default fallbacks, if shaders are unspecified
         if (!uberReplacementShader)
@@ -185,7 +191,8 @@ public class ImageSynthesis : MonoBehaviour
 
     private void PublishTimerCallback()
     {
-        Publish();
+        PublishRenders();
+        PublishLabels();
     }
 
     private Camera CreateHiddenCamera(string name)
@@ -264,20 +271,44 @@ public class ImageSynthesis : MonoBehaviour
 
     public void OnSceneChange(bool grayscale = false)
     {
-        var renderers = Object.FindObjectsOfType<Renderer>();
+        var renderers = FindObjectsOfType<Renderer>();
         var mpb = new MaterialPropertyBlock();
+        labelsMsg = new LabelsMsg();
+        List<string> layers = new List<string>();
+        List<uint> layerCodes = new List<uint>();
         foreach (var r in renderers)
         {
             var id = r.gameObject.GetInstanceID();
             var layer = r.gameObject.layer;
+            layers.Add(LayerMask.LayerToName(layer));
 
-            mpb.SetColor("_ObjectColor", ColorEncoding.EncodeIDAsColor(id));
-            mpb.SetColor("_CategoryColor", ColorEncoding.EncodeLayerAsColor(layer, grayscale));
+            Color objectColor = ColorEncoding.EncodeIDAsColor(id);
+            Color layerColor = ColorEncoding.EncodeLayerAsColor(layer, grayscale);
+            layerCodes.Add(GetLayerCode(layerColor));
+
+            mpb.SetColor("_ObjectColor", objectColor);
+            mpb.SetColor("_CategoryColor", layerColor);
             r.SetPropertyBlock(mpb);
         }
+        labelsMsg.labels = layers.ToArray();
+        labelsMsg.ids = layerCodes.ToArray();
     }
 
-    private void Publish()
+    private uint GetLayerCode(Color layerColor)
+    {
+        uint layerCode = 0;
+        layerCode |= (uint)(layerColor.r * 255) << 16;
+        layerCode |= (uint)(layerColor.g * 255) << 8;
+        layerCode |= (uint)(layerColor.b * 255);
+        return layerCode;
+    }
+
+    private void PublishLabels()
+    {
+        ros.Publish(baseTopic + "/" + labelTopic, labelsMsg);
+    }
+
+    private void PublishRenders()
     {
         Camera mainCamera = GetComponent<Camera>();
 

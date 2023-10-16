@@ -4515,6 +4515,7 @@ MonoBehaviour:
   publishRate: 10
   minDepth: 0.5
   maxDepth: 4.4062
+  labelTopic: labels
   uberReplacementShader: {fileID: 4800000, guid: b1b5f33c8b6ddb6f38ade45484478858, type: 3}
   opticalFlowShader: {fileID: 4800000, guid: 382790d66e210253eb2a15e3240b485e, type: 3}
   opticalFlowSensitivity: 1
