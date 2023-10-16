@@ -7,17 +7,17 @@ TAIL_LINES=500
 PARSE_ALL=""
 
 usage() {
-    echo "Usage: $0 [-l] [-h] [-t=<int>] [-a] [LOGPATH]"
+    echo "Usage: $0 [-l] [-h] [-n=<int>] [-a] [LOGPATH]"
     echo "Options:"
     echo "  -l    Show line numbers"
     echo "  -h    Display usage information"
-    echo "  -t    Number of lines to tail (default: 500)"
+    echo "  -n    Number of lines to tail (default: 500)"
     echo "  -a    Parse all lines. Don't tail."
     exit 1
 }
 
 # Process command-line arguments
-params="$(getopt -o l:h:t:a -- "$@")"
+params="$(getopt -o l:h:n:a -- "$@")"
 eval set -- "$params"
 while [ "$#" -gt 0 ]; do
     case "$1" in
@@ -25,7 +25,7 @@ while [ "$#" -gt 0 ]; do
             LINE_NO_FORMAT="\"[\" + .file + \":\" + (.line | (tostring)) + \"] \" +"
             shift
             ;;
-        -t)
+        -n)
             TAIL_LINES=${2}
             shift 2
             ;;
@@ -80,7 +80,9 @@ def level_colors:
  {
     \"DEBUG\": \"green\",
     \"INFO\": \"white\",
+    \" INFO\": \"white\",
     \"WARN\": \"yellow\",
+    \" WARN\": \"yellow\",
     \"ERROR\": \"red\"
  };
 
@@ -103,7 +105,7 @@ def format_log_line:
 # If the line can be interpreted as json, run the formatter
 # If it is not JSON (the //), assume its some type of error/traceback,
 # so make it red and dump it out.
-(fromjson? | format_log_line) // colors.white + .
+(fromjson? | format_log_line) // colors.grey + .
 "
 
 if [ -z "${LOGPATH}" ]; then
@@ -121,9 +123,13 @@ int_handler() {
     printf "\nLog path:\n%s\n" "${LOGPATH}"
 }
 
+strip_color () {
+    sed -E "s/\x1B\[([0-9]{1,2}(;[0-9]{1,2})*)?[m,K,H,f,J]//gm"
+}
+
 if [ -z "${PARSE_ALL}" ]; then
     trap 'int_handler' INT
-    tail -F ${LINES_ARG} "${LOGPATH}" | jq -Rr "$JQ_PROG"
+    tail -F ${LINES_ARG} "${LOGPATH}" | strip_color | jq -Rr "$JQ_PROG"
 else
-    jq -Rr "$JQ_PROG" "${LOGPATH}" | less -R
+    cat "${LOGPATH}" | strip_color | jq -Rr "$JQ_PROG" | less -R
 fi
