@@ -104,8 +104,6 @@ public class ImageSynthesis : MonoBehaviour
                 ros.RegisterPublisher<CameraInfoMsg>(GetInfoTopic(pass.name));
             }
         }
-        cameraInfoMsg = CameraInfoGenerator.ConstructCameraInfoMessage(mainCamera, new HeaderMsg { frame_id = frameId });
-        resizeCameraInfo(cameraInfoMsg, imageWidth, imageHeight);
 
         // default fallbacks, if shaders are unspecified
         if (!uberReplacementShader)
@@ -125,12 +123,25 @@ public class ImageSynthesis : MonoBehaviour
         InvokeRepeating("PublishTimerCallback", publishStartDelay, 1.0f / publishRate);
     }
 
+    private (uint, uint) FixedAspectResize(uint cameraWidth, uint cameraHeight, uint destinationWidth, uint destinationHeight)
+    {
+        uint width = destinationWidth;
+        uint height = destinationHeight;
+        if (cameraWidth * destinationHeight > cameraHeight * destinationWidth)
+        {
+            height = destinationWidth * cameraHeight / cameraWidth;
+        }
+        else
+        {
+            width = destinationHeight * cameraWidth / cameraHeight;
+        }
+        return (width, height);
+    }
+
     private void resizeCameraInfo(CameraInfoMsg cameraInfoMsg, uint destinationWidth, uint destinationHeight)
     {
-        float scale_y;
-        float scale_x;
-        scale_y = (float)destinationHeight / cameraInfoMsg.height;
-        scale_x = (float)destinationWidth / cameraInfoMsg.width;
+        float scale_y = (float)destinationHeight / cameraInfoMsg.height;
+        float scale_x = (float)destinationWidth / cameraInfoMsg.width;
         cameraInfoMsg.height = destinationHeight;
         cameraInfoMsg.width = destinationWidth;
 
@@ -174,13 +185,15 @@ public class ImageSynthesis : MonoBehaviour
 
     private void PublishTimerCallback()
     {
-        Publish(imageWidth, imageHeight);
+        Publish();
     }
 
     private Camera CreateHiddenCamera(string name)
     {
-        var go = new GameObject(name, typeof(Camera));
-        go.hideFlags = HideFlags.HideAndDontSave;
+        var go = new GameObject(name, typeof(Camera))
+        {
+            hideFlags = HideFlags.HideAndDontSave
+        };
         go.transform.parent = transform;
 
         var newCamera = go.GetComponent<Camera>();
@@ -257,7 +270,6 @@ public class ImageSynthesis : MonoBehaviour
         {
             var id = r.gameObject.GetInstanceID();
             var layer = r.gameObject.layer;
-            var tag = r.gameObject.tag;
 
             mpb.SetColor("_ObjectColor", ColorEncoding.EncodeIDAsColor(id));
             mpb.SetColor("_CategoryColor", ColorEncoding.EncodeLayerAsColor(layer, grayscale));
@@ -265,8 +277,14 @@ public class ImageSynthesis : MonoBehaviour
         }
     }
 
-    private void Publish(uint width, uint height)
+    private void Publish()
     {
+        Camera mainCamera = GetComponent<Camera>();
+
+        cameraInfoMsg = CameraInfoGenerator.ConstructCameraInfoMessage(mainCamera, new HeaderMsg { frame_id = frameId });
+        (uint resizeWidth, uint resizeHeight) = FixedAspectResize(cameraInfoMsg.width, cameraInfoMsg.height, imageWidth, imageHeight);
+        resizeCameraInfo(cameraInfoMsg, resizeWidth, resizeHeight);
+
         foreach (var pass in capturePasses)
         {
             if (pass.publish)
@@ -278,14 +296,14 @@ public class ImageSynthesis : MonoBehaviour
                     seq = seq,
                 };
                 seq++;
-                Publish(pass, header, GetImageTopic(pass.name), (int)width, (int)height);
+                PublishImage(pass, header, GetImageTopic(pass.name), (int)resizeWidth, (int)resizeHeight);
                 cameraInfoMsg.header = header;
                 ros.Publish(GetInfoTopic(pass.name), cameraInfoMsg);
             }
         }
     }
 
-    private void Publish(CapturePass pass, HeaderMsg header, string topic, int width, int height)
+    private void PublishImage(CapturePass pass, HeaderMsg header, string topic, int width, int height)
     {
         Camera mainCamera = GetComponent<Camera>();
         Camera cam = pass.camera;

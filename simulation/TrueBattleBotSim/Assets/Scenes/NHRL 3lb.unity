@@ -4422,6 +4422,7 @@ GameObject:
   - component: {fileID: 1911593352}
   - component: {fileID: 1911593351}
   - component: {fileID: 1911593354}
+  - component: {fileID: 1911593355}
   m_Layer: 0
   m_Name: Camera Sensor
   m_TagString: MainCamera
@@ -4517,6 +4518,26 @@ MonoBehaviour:
   uberReplacementShader: {fileID: 4800000, guid: b1b5f33c8b6ddb6f38ade45484478858, type: 3}
   opticalFlowShader: {fileID: 4800000, guid: 382790d66e210253eb2a15e3240b485e, type: 3}
   opticalFlowSensitivity: 1
+--- !u!114 &1911593355
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1911593349}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6a160d838ff8b4b4693ac20007e008c7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_AssetsPPU: 1
+  m_RefResolutionX: 480
+  m_RefResolutionY: 270
+  m_UpscaleRT: 0
+  m_PixelSnapping: 1
+  m_CropFrameX: 1
+  m_CropFrameY: 1
+  m_StretchFill: 0
 --- !u!1 &1934248766
 GameObject:
   m_ObjectHideFlags: 0
