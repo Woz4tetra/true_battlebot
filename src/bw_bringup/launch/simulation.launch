@@ -5,5 +5,5 @@
     <include file="$(find ros_tcp_endpoint)/launch/endpoint.launch" />
     <include file="$(find bw_teleop)/launch/simple_teleop.launch" />
     <include file="$(find bw_simulation_relay)/launch/synthetic_depth_to_cloud.launch" />
-    <include file="$(find bw_simulation_relay)/launch/segmentation_relay.launch" />
+    <include file="$(find bw_segmentation)/launch/segmentation_relay.launch" />
 </launch>

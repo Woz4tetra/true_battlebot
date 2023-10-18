@@ -10,7 +10,6 @@ download torchscript.zip https://download.pytorch.org/libtorch/cu118/libtorch-cx
 unzip torchscript.zip
 sudo mv libtorch /usr/local/libtorch
 
-
 # clean up
 sudo ldconfig
 rm -r /tmp/*

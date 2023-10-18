@@ -88,6 +88,8 @@ COPY --chown=1000:1000 \
     /opt/${ORGANIZATION}/install/
 RUN bash /opt/${ORGANIZATION}/install/install_libraries.sh
 
+RUN sudo chown -R 1000:1000 ${HOME}/.local
+
 # ---
 # Torch packages
 # ---
