@@ -129,7 +129,9 @@ public class ImageSynthesis : MonoBehaviour
         Renderer[] renderers = FindObjectsOfType<Renderer>();
         OnSceneChange(renderers);
 
-        InvokeRepeating("PublishTimerCallback", publishStartDelay, 1.0f / publishRate);
+        if (publishRate > 0) {
+            InvokeRepeating("PublishTimerCallback", publishStartDelay, 1.0f / publishRate);
+        }
     }
 
     private (uint, uint) FixedAspectResize(uint cameraWidth, uint cameraHeight, uint destinationWidth, uint destinationHeight)
@@ -189,6 +191,10 @@ public class ImageSynthesis : MonoBehaviour
         if (DidSceneChange(renderers))
         {
             OnSceneChange(renderers);
+        }
+        if (publishRate <= 0)
+        {
+            PublishTimerCallback();
         }
     }
 

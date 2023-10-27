@@ -4512,7 +4512,7 @@ MonoBehaviour:
   frameId: camera
   imageWidth: 480
   imageHeight: 270
-  publishRate: 10
+  publishRate: 0
   minDepth: 0.5
   maxDepth: 4.4062
   labelTopic: labels
