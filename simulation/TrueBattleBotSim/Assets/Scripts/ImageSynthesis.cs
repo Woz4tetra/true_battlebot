@@ -1,6 +1,5 @@
 using UnityEngine;
 using UnityEngine.Rendering;
-using System.Collections;
 using RosMessageTypes.Sensor;
 using RosMessageTypes.Std;
 using Unity.Robotics.ROSTCPConnector;
@@ -75,19 +74,17 @@ public class ImageSynthesis : MonoBehaviour
     };
 
     private ROSConnection ros;
-    [SerializeField] private string baseTopic = "simulated_camera";
-    [SerializeField] private string frameId = "camera";
+    [SerializeField] private string baseTopic = "camera";
     [SerializeField] private uint imageWidth = 1920;
     [SerializeField] private uint imageHeight = 1080;
     [SerializeField] private float publishRate = 10.0f;
-    [SerializeField] private float minDepth = 0.5f;
-    [SerializeField] private float maxDepth = 4.4062f;
     private float publishStartDelay = 1.0f;
     private CameraInfoMsg cameraInfoMsg;
     private uint seq = 0;
+    private TransformFrame frame;
 
-    [SerializeField] private string labelTopic = "labels";
-    private LabelsMsg labelsMsg;
+    [SerializeField] private string segmentationTopic = "simulated_segmentation";
+    private SegmentationInstanceArrayMsg segmentationMsg = new SegmentationInstanceArrayMsg();
 
     [SerializeField] private Shader uberReplacementShader;
     [SerializeField] private Shader opticalFlowShader;
@@ -102,6 +99,7 @@ public class ImageSynthesis : MonoBehaviour
     void Start()
     {
         Camera mainCamera = GetComponent<Camera>();
+        frame = GetComponent<TransformFrame>();
         ros = ROSConnection.GetOrCreateInstance();
         foreach (var pass in capturePasses)
         {
@@ -111,7 +109,7 @@ public class ImageSynthesis : MonoBehaviour
                 ros.RegisterPublisher<CameraInfoMsg>(GetInfoTopic(pass.name));
             }
         }
-        ros.RegisterPublisher<LabelsMsg>(baseTopic + "/" + labelTopic);
+        ros.RegisterPublisher<SegmentationInstanceArrayMsg>(baseTopic + "/" + segmentationTopic);
 
         // default fallbacks, if shaders are unspecified
         if (!uberReplacementShader)
@@ -285,25 +283,40 @@ public class ImageSynthesis : MonoBehaviour
     public void OnSceneChange(Renderer[] renderers, bool grayscale = false)
     {
         var mpb = new MaterialPropertyBlock();
-        labelsMsg = new LabelsMsg();
-        List<string> layers = new List<string>();
-        List<uint> layerCodes = new List<uint>();
+        List<SegmentationInstanceMsg> segmentation = new List<SegmentationInstanceMsg>();
         foreach (Renderer render in renderers)
         {
             var id = render.gameObject.GetInstanceID();
             var layer = render.gameObject.layer;
-            layers.Add(LayerMask.LayerToName(layer));
+            string label = LayerMask.LayerToName(layer);
 
             Color objectColor = ColorEncoding.EncodeIDAsColor(id);
             Color layerColor = ColorEncoding.EncodeLayerAsColor(layer, grayscale);
-            layerCodes.Add(GetLayerCode(layerColor));
+
+            uint classId = GetLayerCode(layerColor);
 
             mpb.SetColor("_ObjectColor", objectColor);
             mpb.SetColor("_CategoryColor", layerColor);
             render.SetPropertyBlock(mpb);
+
+            segmentation.Add(new SegmentationInstanceMsg
+            {
+                score = 1.0f,
+                label = label,
+                class_index = classId,
+                object_index = (uint)id,
+                has_holes = false,
+            });
         }
-        labelsMsg.labels = layers.ToArray();
-        labelsMsg.ids = layerCodes.ToArray();
+        if (cameraInfoMsg != null)
+        {
+            segmentationMsg = new SegmentationInstanceArrayMsg {
+                header = cameraInfoMsg.header,
+                height = cameraInfoMsg.height,
+                width = cameraInfoMsg.width,
+                instances = segmentation.ToArray(),
+            };
+        }
     }
 
     private uint GetLayerCode(Color layerColor)
@@ -317,28 +330,28 @@ public class ImageSynthesis : MonoBehaviour
 
     private void PublishLabels()
     {
-        ros.Publish(baseTopic + "/" + labelTopic, labelsMsg);
+        ros.Publish(baseTopic + "/" + segmentationTopic, segmentationMsg);
     }
 
     private void PublishRenders()
     {
         Camera mainCamera = GetComponent<Camera>();
 
-        cameraInfoMsg = CameraInfoGenerator.ConstructCameraInfoMessage(mainCamera, new HeaderMsg { frame_id = frameId });
+        cameraInfoMsg = CameraInfoGenerator.ConstructCameraInfoMessage(mainCamera, new HeaderMsg { frame_id = frame.GetFrameId() });
         (uint resizeWidth, uint resizeHeight) = FixedAspectResize(cameraInfoMsg.width, cameraInfoMsg.height, imageWidth, imageHeight);
         resizeCameraInfo(cameraInfoMsg, resizeWidth, resizeHeight);
 
+        HeaderMsg header = new HeaderMsg
+        {
+            frame_id = frame.GetFrameId(),
+            stamp = RosUtil.GetTimeMsg(),
+            seq = seq,
+        };
+        seq++;
         foreach (var pass in capturePasses)
         {
             if (pass.publish)
             {
-                HeaderMsg header = new HeaderMsg
-                {
-                    frame_id = frameId,
-                    stamp = RosUtil.GetTimeMsg(),
-                    seq = seq,
-                };
-                seq++;
                 PublishImage(pass, header, GetImageTopic(pass.name), (int)resizeWidth, (int)resizeHeight);
                 cameraInfoMsg.header = header;
                 ros.Publish(GetInfoTopic(pass.name), cameraInfoMsg);
@@ -461,7 +474,8 @@ public class ImageSynthesis : MonoBehaviour
         {
             return (0, 0);
         }
-        float depthMeters = (maxDepth - minDepth) / 0xffff * unscaledRawDepth + minDepth;
+        float depthMeters = 1.0f / 0xffff * unscaledRawDepth;
+        depthMeters = 3.90625f * (depthMeters - 0.256f) + 1.0f;
         uint depthMillimeters = (uint)(1000.0f * depthMeters);
         byte rawDepthLowerByte = (byte)(depthMillimeters & 0xff);
         byte rawDepthHigherByte = (byte)((depthMillimeters >> 8) & 0xff);

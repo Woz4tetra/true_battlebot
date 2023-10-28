@@ -1,5 +1,5 @@
 <launch>
-    <group ns="simulated_camera">
+    <group ns="camera">
         <node pkg="nodelet" type="nodelet" args="manager" name="synthetic_relay_manager" output="screen"/>
         <node pkg="nodelet" type="nodelet" name="synthetic_cloudify" output="screen"
             args="load depth_image_proc/point_cloud_xyzrgb synthetic_relay_manager --no-bond">

@@ -1,0 +1,7 @@
+<launch>
+    <node pkg="bw_object_estimation" type="bw_object_estimation" name="object_estimation" output="screen">
+        <remap from="color/image_raw" to="/camera/image/image_raw"/>
+        <remap from="depth/image_raw" to="/camera/depth/image_raw"/>
+        <remap from="segmentation" to="/camera/segmentation"/>
+    </node>
+</launch>

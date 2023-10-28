@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python-torch
 import time
 from typing import List, Optional, Tuple
 

@@ -14,18 +14,15 @@ namespace RosMessageTypes.BwInterfaces
         public override string RosMessageName => k_RosMessageName;
 
         public string[] labels;
-        public uint[] ids;
 
         public LabelsMsg()
         {
             this.labels = new string[0];
-            this.ids = new uint[0];
         }
 
-        public LabelsMsg(string[] labels, uint[] ids)
+        public LabelsMsg(string[] labels)
         {
             this.labels = labels;
-            this.ids = ids;
         }
 
         public static LabelsMsg Deserialize(MessageDeserializer deserializer) => new LabelsMsg(deserializer);
@@ -33,22 +30,18 @@ namespace RosMessageTypes.BwInterfaces
         private LabelsMsg(MessageDeserializer deserializer)
         {
             deserializer.Read(out this.labels, deserializer.ReadLength());
-            deserializer.Read(out this.ids, sizeof(uint), deserializer.ReadLength());
         }
 
         public override void SerializeTo(MessageSerializer serializer)
         {
             serializer.WriteLength(this.labels);
             serializer.Write(this.labels);
-            serializer.WriteLength(this.ids);
-            serializer.Write(this.ids);
         }
 
         public override string ToString()
         {
             return "LabelsMsg: " +
-            "\nlabels: " + System.String.Join(", ", labels.ToList()) +
-            "\nids: " + System.String.Join(", ", ids.ToList());
+            "\nlabels: " + System.String.Join(", ", labels.ToList());
         }
 
 #if UNITY_EDITOR

@@ -4,9 +4,9 @@ set -e
 
 sudo chown -R 1000:1000 ${HOME}/.local
 
-python -m pip install -r ./torch-requirements.txt
+python-torch -m pip install -r ./torch-requirements.txt
 
-sudo -H python -m pip uninstall -y kiwisolver
-sudo -H python -m pip install kiwisolver
+sudo -H python-torch -m pip uninstall -y kiwisolver
+sudo -H python-torch -m pip install kiwisolver
 
 echo "Installed python torch"

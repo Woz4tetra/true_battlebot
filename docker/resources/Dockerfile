@@ -100,14 +100,10 @@ COPY --chown=1000:1000 \
     /opt/${ORGANIZATION}/install/
 RUN cd /opt/${ORGANIZATION}/install && bash ./install_python_torch.sh
 
-# ---
-# GPU image dependencies
-# ---
-
-COPY --chown=1000:1000 \
-    ./install/install_torchscript.sh \
-    /opt/${ORGANIZATION}/install/
-RUN bash -x /opt/${ORGANIZATION}/install/install_torchscript.sh
+# COPY --chown=1000:1000 \
+#     ./install/install_torchscript.sh \
+#     /opt/${ORGANIZATION}/install/
+# RUN bash -x /opt/${ORGANIZATION}/install/install_torchscript.sh
 
 # ---
 # ROS dependency workspace

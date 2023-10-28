@@ -11,7 +11,10 @@ sudo add-apt-repository -y ppa:deadsnakes/ppa
 sudo apt-get install -y python${PYTHON_INSTALL_VERSION} python${PYTHON_INSTALL_VERSION}-dev
 
 sudo rm /usr/bin/python || true
-sudo ln -s /usr/bin/python${PYTHON_INSTALL_VERSION} /usr/bin/python
+sudo rm /usr/bin/python3 || true
+sudo ln -s /usr/bin/python${PYTHON_INSTALL_VERSION} /usr/bin/python-torch
+sudo ln -s /usr/bin/python3.8 /usr/bin/python
+sudo ln -s /usr/bin/python3.8 /usr/bin/python3
 
 sudo python -m pip install --no-cache-dir --upgrade pip setuptools
 sudo python -m pip install --no-cache-dir \

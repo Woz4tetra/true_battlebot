@@ -129,7 +129,7 @@ strip_color () {
 
 if [ -z "${PARSE_ALL}" ]; then
     trap 'int_handler' INT
-    tail -F ${LINES_ARG} "${LOGPATH}" | strip_color | jq -Rr "$JQ_PROG"
+    tail -F ${LINES_ARG} "${LOGPATH}" | jq -Rr "$JQ_PROG"
 else
     cat "${LOGPATH}" | strip_color | jq -Rr "$JQ_PROG" | less -R
 fi

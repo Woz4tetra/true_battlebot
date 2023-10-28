@@ -6,7 +6,7 @@ import tf2_geometry_msgs
 import tf2_ros
 from geometry_msgs.msg import Pose, PoseStamped, TransformStamped
 
-from bw_tools.typing.basic import seconds_to_time
+from bw_tools.typing import seconds_to_time
 
 
 def lookup_transform(

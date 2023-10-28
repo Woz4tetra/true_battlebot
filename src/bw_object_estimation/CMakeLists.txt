@@ -16,6 +16,7 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
   std_msgs
   visualization_msgs
+  bw_interfaces
 )
 
 ## System dependencies are found with CMake's conventions
@@ -110,7 +111,16 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
  INCLUDE_DIRS include
 #  LIBRARIES bw_object_estimation
- CATKIN_DEPENDS cv_bridge image_geometry image_transport message_filters roscpp sensor_msgs std_msgs visualization_msgs
+ CATKIN_DEPENDS 
+  cv_bridge
+  image_geometry
+  image_transport
+  message_filters
+  roscpp
+  sensor_msgs
+  std_msgs
+  visualization_msgs
+  bw_interfaces
 #  DEPENDS system_lib
 )
 
