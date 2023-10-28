@@ -21,6 +21,9 @@
 #include "GRANSAC/PlaneModel.hpp"
 #include "GRANSAC/GRANSAC.hpp"
 
+#include <Eigen/Dense>
+#include <Eigen/Geometry>
+
 #include "base_estimation.h"
 
 

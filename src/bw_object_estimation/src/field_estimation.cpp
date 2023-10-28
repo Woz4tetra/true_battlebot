@@ -4,10 +4,15 @@
 FieldEstimation::FieldEstimation(ros::NodeHandle* nodehandle) :
     BaseEstimation(nodehandle)
 {
+    double ransac_threshold;
+    ros::param::param<double>("~ransac_threshold", ransac_threshold, 0.01);
+    int ransac_max_iterations;
+    ros::param::param<int>("~ransac_max_iterations", ransac_max_iterations, 100);
+
     _sync->registerCallback(boost::bind(&FieldEstimation::synced_callback, this, _1, _2));
 
     _estimator = new GRANSAC::RANSAC<PlaneModel, 3>();
-    _estimator->Initialize(0.5, 10); // Threshold, iterations
+    _estimator->Initialize(ransac_threshold, ransac_max_iterations);
 
     _field_pub = nh.advertise<bw_interfaces::EstimatedField>("estimation/field", 10);
     _field_pose_pub = nh.advertise<geometry_msgs::PoseStamped>("estimation/field_pose", 10);
@@ -96,7 +101,27 @@ bw_interfaces::EstimatedField FieldEstimation::find_plane(cv::Mat depth_image, c
 
     ROS_INFO("coeffs: %f, %f, %f, %f", coefs[0], coefs[1], coefs[2], coefs[3]);
 
-    return bw_interfaces::EstimatedField();
+    bw_interfaces::EstimatedField field_msg;
+
+    field_msg.center.position.x = center[0];
+    field_msg.center.position.y = center[1];
+    field_msg.center.position.z = center[2];
+
+    Eigen::Vector3d normal(coefs[0], coefs[1], coefs[2]);
+    Eigen::Vector3d up(0, 1, 0); // define up direction
+    Eigen::Vector3d axis = normal.cross(up); // get axis of rotation
+    double angle = acos(normal.dot(up)); // get angle of rotation
+    Eigen::Quaterniond q(Eigen::AngleAxisd(angle, axis)); // create quaternion
+
+    // Ensure that the quaternion is normalized
+    q.normalize();
+
+    field_msg.center.orientation.x = q.x();
+    field_msg.center.orientation.y = q.y();
+    field_msg.center.orientation.z = q.z();
+    field_msg.center.orientation.w = q.w();
+
+    return field_msg;
 }
 
 bool FieldEstimation::plane_fitting(const std::vector<Vector3VP> &points_input, double* center, double* normal)
@@ -105,10 +130,10 @@ bool FieldEstimation::plane_fitting(const std::vector<Vector3VP> &points_input, 
     std::vector<std::shared_ptr<GRANSAC::AbstractParameter>> CandPoints;
     CandPoints.resize(Num);
 #pragma omp parallel for
-    for (int i = 0; i <Num; ++i)
+    for (int i = 0; i < Num; ++i)
     {
-        Vector3VP p=points_input[i];
-        std::shared_ptr<GRANSAC::AbstractParameter> CandPt = std::make_shared<Point3D>(p[0], p[1],p[2]);
+        Vector3VP p = points_input[i];
+        std::shared_ptr<GRANSAC::AbstractParameter> CandPt = std::make_shared<Point3D>(p[0], p[1], p[2]);
         CandPoints[i]=CandPt;
     }
     
@@ -124,12 +149,12 @@ bool FieldEstimation::plane_fitting(const std::vector<Vector3VP> &points_input, 
     }
     for (int i = 0; i < 3; i++)
     {
-            center[i] = BestPlane->m_PointCenter[i];
+        center[i] = BestPlane->m_PointCenter[i];
     }
-        for (int i = 0; i < 4; i++)
-        {
-            normal[i] = BestPlane->m_PlaneCoefs[i];
-        }
+    for (int i = 0; i < 4; i++)
+    {
+        normal[i] = BestPlane->m_PlaneCoefs[i];
+    }
 
     return true;
 }
