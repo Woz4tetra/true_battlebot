@@ -152,6 +152,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   tagId: 41
+  tagName: tag
   tagRenderer: {fileID: 1706441049332916581}
 --- !u!1 &9006180163108427713
 GameObject:

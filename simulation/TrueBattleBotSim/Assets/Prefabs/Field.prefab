@@ -279,9 +279,10 @@ GameObject:
   - component: {fileID: 6553328000311583008}
   - component: {fileID: 8724955567890795751}
   - component: {fileID: 8856562677300530992}
-  - component: {fileID: 5148620465469060962}
+  - component: {fileID: 1461109400248723006}
+  - component: {fileID: 8206152552468026759}
   m_Layer: 9
-  m_Name: Quad
+  m_Name: Field Plane
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -296,7 +297,7 @@ Transform:
   m_GameObject: {fileID: 1346691915301157372}
   m_LocalRotation: {x: 1, y: 0, z: 0, w: 0}
   m_LocalPosition: {x: 0.0027, y: -0.0214, z: 0.001}
-  m_LocalScale: {x: 2.4033647, y: 2.3237915, z: 1}
+  m_LocalScale: {x: 2.4, y: 2.4, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 7979678989150243412}
@@ -352,7 +353,22 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!64 &5148620465469060962
+--- !u!114 &1461109400248723006
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1346691915301157372}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4fe9365e58ad384319bab03240401db3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  tagId: 0
+  tagName: field
+  tagRenderer: {fileID: 8856562677300530992}
+--- !u!64 &8206152552468026759
 MeshCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -367,11 +383,11 @@ MeshCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 5
-  m_Convex: 0
+  m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: 10210, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!1 &1424775241724367241
@@ -585,6 +601,7 @@ GameObject:
   - component: {fileID: 9084254460813646518}
   - component: {fileID: 2678718339236174980}
   - component: {fileID: 6913293439176213624}
+  - component: {fileID: 3276224240337202004}
   m_Layer: 0
   m_Name: Field
   m_TagString: Untagged
@@ -657,6 +674,21 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &3276224240337202004
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1955837145998446904}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4fe9365e58ad384319bab03240401db3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  tagId: 0
+  tagName: f
+  tagRenderer: {fileID: 8856562677300530992}
 --- !u!1 &2696703952456309354
 GameObject:
   m_ObjectHideFlags: 0

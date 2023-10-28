@@ -1,6 +1,6 @@
 using UnityEngine;
 
-class TransformFrame : MonoBehaviour {
+public class TransformFrame : MonoBehaviour {
     [SerializeField] private string frameId = "";
 
     public string GetFrameId() {

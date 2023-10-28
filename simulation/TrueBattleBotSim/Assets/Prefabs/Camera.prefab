@@ -44,8 +44,9 @@ GameObject:
   - component: {fileID: 3634426208279954885}
   - component: {fileID: 5139225571383000461}
   - component: {fileID: 6100837376361900848}
-  - component: {fileID: 6078746319307151026}
   - component: {fileID: 8348069309580446244}
+  - component: {fileID: 6078746319307151026}
+  - component: {fileID: 3957978623221294602}
   m_Layer: 0
   m_Name: Camera Sensor
   m_TagString: MainCamera
@@ -159,6 +160,19 @@ MonoBehaviour:
   m_CropFrameX: 1
   m_CropFrameY: 1
   m_StretchFill: 0
+--- !u!114 &8348069309580446244
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5601284787570054784}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cdcdcfb4a221bb3b68e7574f1643d4ad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  frameId: camera
 --- !u!114 &6078746319307151026
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -178,7 +192,7 @@ MonoBehaviour:
   debugRayCast: 0
   topic: /tag_detections
   publishRate: 1
---- !u!114 &8348069309580446244
+--- !u!114 &3957978623221294602
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -187,7 +201,13 @@ MonoBehaviour:
   m_GameObject: {fileID: 5601284787570054784}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cdcdcfb4a221bb3b68e7574f1643d4ad, type: 3}
+  m_Script: {fileID: 11500000, guid: 97dde157c74a4a6098ad5f0b7dbb81cd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  frameId: camera
+  maxDistance: 5
+  layerMask:
+    serializedVersion: 2
+    m_Bits: 512
+  debugRayCast: 0
+  topic: /estimation/field
+  publishRate: 1
