@@ -111,7 +111,9 @@
     "variant": "cpp",
     "bit": "cpp",
     "*.ipp": "cpp",
-    "geometry": "cpp"
+    "geometry": "cpp",
+    "codecvt": "cpp",
+    "*.txx": "cpp"
   },
   "files.watcherExclude": {
     "**/.git/*/**": true,

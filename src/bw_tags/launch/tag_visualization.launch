@@ -1,0 +1,3 @@
+<launch>
+    <node pkg="bw_tags" type="tag_marker_publisher.py" name="tag_visualization" output="screen"/>
+</launch>

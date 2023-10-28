@@ -19,6 +19,17 @@ find_package(catkin REQUIRED COMPONENTS
   bw_interfaces
 )
 
+# OpenCV
+find_package(OpenCV 4 REQUIRED)
+
+# OpenMP
+FIND_PACKAGE(OpenMP)
+IF(OPENMP_FOUND)
+  SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+  MESSAGE(STATUS "Found OpenMP")
+ENDIF()
+
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
@@ -110,7 +121,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
  INCLUDE_DIRS include
-#  LIBRARIES bw_object_estimation
+#  LIBRARIES base_estimation
  CATKIN_DEPENDS 
   cv_bridge
   image_geometry
@@ -137,19 +148,20 @@ include_directories(
 link_directories(${catkin_LIBRARY_DIRS})
 
 ## Declare a C++ library
-# add_library(${PROJECT_NAME}
-#   src/${PROJECT_NAME}/bw_object_estimation.cpp
-# )
+add_library(base_estimation
+  src/base_estimation.cpp
+)
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
-# add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(base_estimation ${base_estimation_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-add_executable(${PROJECT_NAME} src/${PROJECT_NAME}.cpp)
+add_executable(object_estimation src/object_estimation.cpp)
+add_executable(field_estimation src/field_estimation.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -159,11 +171,20 @@ add_executable(${PROJECT_NAME} src/${PROJECT_NAME}.cpp)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
-add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(object_estimation ${object_estimation_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(field_estimation ${field_estimation_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(${PROJECT_NAME}
+target_link_libraries(base_estimation
   ${catkin_LIBRARIES}
+)
+target_link_libraries(object_estimation
+  ${catkin_LIBRARIES}
+  base_estimation
+)
+target_link_libraries(field_estimation
+  ${catkin_LIBRARIES}
+  base_estimation
 )
 
 #############
@@ -182,7 +203,10 @@ target_link_libraries(${PROJECT_NAME}
 
 ## Mark executables for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_executables.html
-install(TARGETS ${PROJECT_NAME}
+install(TARGETS object_estimation
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+install(TARGETS field_estimation
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
