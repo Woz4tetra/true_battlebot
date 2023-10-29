@@ -20,6 +20,7 @@ protected:
 
     int _queue_size;
     std::string _field_label;
+    std::string _robot_label;
 
     typedef message_filters::sync_policies::ExactTime<sensor_msgs::Image, bw_interfaces::SegmentationInstanceArray> ExactSyncPolicy;
     typedef message_filters::Synchronizer<ExactSyncPolicy> Sync;

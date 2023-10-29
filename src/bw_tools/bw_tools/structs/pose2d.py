@@ -23,6 +23,9 @@ class Pose2D:
     def to_tuple(self) -> Tuple[float, float, float]:
         return (self.x, self.y, self.theta)
 
+    def to_array(self) -> np.ndarray:
+        return np.array(self.to_tuple())
+
     @classmethod
     def from_msg(cls, msg: RosPose) -> Pose2D:
         angles = tf_conversions.transformations.euler_from_quaternion(

@@ -6,6 +6,7 @@ BaseEstimation::BaseEstimation(ros::NodeHandle* nodehandle) :
 {
     ros::param::param<int>("~queue_size", _queue_size, 10);
     ros::param::param<std::string>("~field_label", _field_label, "field");
+    ros::param::param<std::string>("~robot_label", _robot_label, "robot");
 
     _depth_info_sub = nh.subscribe<sensor_msgs::CameraInfo>("depth/camera_info", 1, &BaseEstimation::camera_info_callback, this);
 

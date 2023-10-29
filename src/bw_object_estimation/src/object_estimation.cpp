@@ -33,7 +33,7 @@ void ObjectEstimation::synced_callback(
     for (size_t index = 0; index < segmentation->instances.size(); index++)
     {
         bw_interfaces::SegmentationInstance instance = segmentation->instances[index];
-        if (instance.label.compare(_field_label) == 0) {
+        if (instance.label.compare(_robot_label) != 0) {
             continue;
         }
 
