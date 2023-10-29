@@ -1,0 +1,3 @@
+[submodule "docker/scripts/wiki/true_battlebot.wiki"]
+	path = docker/scripts/wiki/true_battlebot.wiki
+	url = https://github.com/Woz4tetra/true_battlebot.wiki.git
