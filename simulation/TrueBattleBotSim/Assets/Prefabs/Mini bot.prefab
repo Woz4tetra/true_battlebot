@@ -500,7 +500,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f9b26e993356c0fa1a59dbfbda2f0b1a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  cmdVelTopic: /minibot/cmd_vel
+  cmdVelTopic: /mini_bot/cmd_vel
   baseWidth: 0.15
   leftWheel: {fileID: 5162377283688023246}
   rightWheel: {fileID: 8736597938258222992}

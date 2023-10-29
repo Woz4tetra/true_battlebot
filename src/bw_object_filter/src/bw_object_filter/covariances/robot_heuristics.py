@@ -3,11 +3,11 @@ from typing import List
 import numpy as np
 from bw_interfaces.msg import EstimatedRobot
 
-from bw_object_filter.covariances.covariance_heuristics import CovarianceHeuristics
-from bw_object_filter.src.bw_object_filter.covariances.covariance_helpers import (
+from bw_object_filter.covariances.covariance_helpers import (
     get_pose_distance,
     pose_distance_covariance_scale,
 )
+from bw_object_filter.covariances.covariance_heuristics import CovarianceHeuristics
 
 
 class RobotHeuristics(CovarianceHeuristics[EstimatedRobot]):

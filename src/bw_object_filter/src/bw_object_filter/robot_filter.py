@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 from typing import Optional
 
 import rospy
@@ -21,27 +22,27 @@ from geometry_msgs.msg import (
 from nav_msgs.msg import Odometry
 from std_msgs.msg import Header
 
+from bw_object_filter.covariances import ApriltagHeuristics, CmdVelHeuristics, RobotHeuristics
 from bw_object_filter.filter_models import DriveKalmanModel
+from bw_object_filter.robot_config import OUR_TEAM, RobotConfig, RobotFleetConfig
 from bw_object_filter.robot_measurement_sorter import RobotMeasurementSorter
-from bw_object_filter.src.bw_object_filter.covariances import ApriltagHeuristics, CmdVelHeuristics, RobotHeuristics
-from bw_object_filter.src.bw_object_filter.robot_config import OUR_TEAM, RobotConfig, RobotFleetConfig
 
 
 class RobotFilter:
     def __init__(self) -> None:
-        robot_config = get_param("robots", None)
+        robot_config = get_param("~robots", None)
         if robot_config is None:
             raise ValueError("Must specify robot_config in the parameter server")
 
-        self.update_rate = get_param("update_rate", 50.0)
+        self.update_rate = get_param("~update_rate", 50.0)
         self.update_delay = 1.0 / self.update_rate
 
-        self.map_frame = get_param("map_frame", "map")
-        self.robot_frame_prefix = get_param("robot_frame_prefix", "base_link")
+        self.map_frame = get_param("~map_frame", "map")
+        self.robot_frame_prefix = get_param("~robot_frame_prefix", "base_link")
 
-        self.apriltag_base_covariance_scalar = get_param("apriltag_base_covariance_scalar", 0.001)
-        self.robot_estimate_base_covariance_scalar = get_param("robot_estimate_base_covariance_scalar", 0.01)
-        self.cmd_vel_base_covariance_scalar = get_param("cmd_vel_base_covariance_scalar", 0.01)
+        self.apriltag_base_covariance_scalar = get_param("~apriltag_base_covariance_scalar", 0.01)
+        self.robot_estimate_base_covariance_scalar = get_param("~robot_estimate_base_covariance_scalar", 0.1)
+        self.cmd_vel_base_covariance_scalar = get_param("~cmd_vel_base_covariance_scalar", 1.0)
 
         self.robots = dataclass_deserialize(RobotFleetConfig, robot_config)
         self.check_unique(self.robots)
@@ -124,8 +125,8 @@ class RobotFilter:
             if tag_id not in self.robot_filters:
                 rospy.logwarn(f"Tag id {tag_id} is not a robot")
                 continue
-            bot_filter = self.robot_filters[tag_id]
-            bot_filter.update_landmark(detection.pose.pose)
+            robot_filter = self.robot_filters[tag_id]
+            robot_filter.update_landmark(detection.pose.pose)
 
     def rotate_tag_orientation(
         self,
@@ -189,3 +190,9 @@ class RobotFilter:
             self.predict_all_filters()
             self.publish_all_filters()
             rate.sleep()
+
+
+if __name__ == "__main__":
+    rospy.init_node("robot_filter")
+    robot_filter = RobotFilter()
+    robot_filter.run()

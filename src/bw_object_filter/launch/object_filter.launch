@@ -1,3 +1,7 @@
 <launch>
+    <arg name="robot_filter_config" default="$(find bw_object_filter)/config/robot_filter.yaml"/>
     <node pkg="bw_object_filter" type="field_filter.py" name="field_filter" output="screen"/>
+    <node pkg="bw_object_filter" type="robot_filter.py" name="robot_filter" output="screen">
+        <rosparam command="load" file="$(arg robot_filter_config)" ns="robots"/>
+    </node>
 </launch>

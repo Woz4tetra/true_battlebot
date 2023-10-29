@@ -8,5 +8,7 @@
     <include file="$(find bw_segmentation)/launch/segmentation_relay.launch" />
     <include file="$(find bw_object_estimation)/launch/object_estimation.launch" />
     <include file="$(find bw_tags)/launch/tag_visualization.launch" />
-    <include file="$(find bw_object_filter)/launch/object_filter.launch" />
+    <include file="$(find bw_object_filter)/launch/object_filter.launch">
+        <arg name="robot_filter_config" default="$(find bw_bringup)/config/$(arg robot)/robot_filter.yaml"/>
+    </include>
 </launch>

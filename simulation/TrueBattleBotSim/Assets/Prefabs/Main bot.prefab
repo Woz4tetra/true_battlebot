@@ -495,7 +495,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f9b26e993356c0fa1a59dbfbda2f0b1a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  cmdVelTopic: /mainbot/cmd_vel
+  cmdVelTopic: /main_bot/cmd_vel
   baseWidth: 1
   leftWheel: {fileID: 234145475386730121}
   rightWheel: {fileID: 8633397056333115285}

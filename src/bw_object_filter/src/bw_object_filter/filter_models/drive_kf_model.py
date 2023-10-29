@@ -42,7 +42,7 @@ class DriveKalmanModel(FilterModel):
         measurement, noise = twist_to_measurement(msg)
         self.state, self.covariance = jit_update(self.state, self.covariance, self.cmd_vel_H, measurement, noise)
 
-    def get_pose(self) -> Tuple[PoseWithCovariance, TwistWithCovariance]:
+    def get_state(self) -> Tuple[PoseWithCovariance, TwistWithCovariance]:
         twist = TwistWithCovariance()
         twist.twist.linear.x = self.state[3]
         twist.twist.linear.y = self.state[4]
