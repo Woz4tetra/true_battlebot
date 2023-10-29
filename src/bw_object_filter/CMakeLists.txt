@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.2)
-project(bw_object_estimation)
+project(bw_object_filter)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
@@ -8,30 +8,8 @@ project(bw_object_estimation)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  cv_bridge
-  image_geometry
-  image_transport
-  message_filters
-  roscpp
-  sensor_msgs
-  std_msgs
-  visualization_msgs
-  bw_interfaces
+  rospy
 )
-
-# OpenCV
-find_package(OpenCV 4 REQUIRED)
-
-# OpenMP
-FIND_PACKAGE(OpenMP)
-IF(OPENMP_FOUND)
-  SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-  MESSAGE(STATUS "Found OpenMP")
-ENDIF()
-
-# Eigen
-find_package(Eigen3 REQUIRED)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -90,7 +68,7 @@ find_package(Eigen3 REQUIRED)
 ## Generate added messages and services with any dependencies listed here
 # generate_messages(
 #   DEPENDENCIES
-#   sensor_msgs#   std_msgs#   visualization_msgs
+#   std_msgs  # Or other packages containing msgs
 # )
 
 ################################################
@@ -123,18 +101,9 @@ find_package(Eigen3 REQUIRED)
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
- INCLUDE_DIRS include
-#  LIBRARIES base_estimation
- CATKIN_DEPENDS 
-  cv_bridge
-  image_geometry
-  image_transport
-  message_filters
-  roscpp
-  sensor_msgs
-  std_msgs
-  visualization_msgs
-  bw_interfaces
+#  INCLUDE_DIRS include
+#  LIBRARIES bw_object_filter
+#  CATKIN_DEPENDS rospy
 #  DEPENDS system_lib
 )
 
@@ -145,28 +114,24 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
-  include
+# include
   ${catkin_INCLUDE_DIRS}
-  ${EIGEN3_INCLUDE_DIR}
 )
-link_directories(${catkin_LIBRARY_DIRS})
 
 ## Declare a C++ library
-add_library(base_estimation
-  src/base_estimation.cpp
-)
+# add_library(${PROJECT_NAME}
+#   src/${PROJECT_NAME}/bw_object_filter.cpp
+# )
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
-add_dependencies(base_estimation ${base_estimation_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+# add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-add_executable(object_estimation src/object_estimation.cpp)
-add_executable(field_estimation src/field_estimation.cpp)
-add_executable(recommended_plane_point src/recommended_plane_point.cpp)
+# add_executable(${PROJECT_NAME}_node src/bw_object_filter_node.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -176,26 +141,12 @@ add_executable(recommended_plane_point src/recommended_plane_point.cpp)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
-add_dependencies(object_estimation ${object_estimation_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-add_dependencies(field_estimation ${field_estimation_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-add_dependencies(recommended_plane_point ${recommended_plane_point_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+# add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(base_estimation
-  ${catkin_LIBRARIES}
-)
-target_link_libraries(object_estimation
-  ${catkin_LIBRARIES}
-  base_estimation
-)
-target_link_libraries(field_estimation
-  ${catkin_LIBRARIES}
-  base_estimation
-)
-target_link_libraries(recommended_plane_point
-  ${catkin_LIBRARIES}
-  base_estimation
-)
+# target_link_libraries(${PROJECT_NAME}_node
+#   ${catkin_LIBRARIES}
+# )
 
 #############
 ## Install ##
@@ -213,12 +164,9 @@ target_link_libraries(recommended_plane_point
 
 ## Mark executables for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_executables.html
-install(TARGETS object_estimation
-  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
-install(TARGETS field_estimation
-  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
+# install(TARGETS ${PROJECT_NAME}_node
+#   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+# )
 
 ## Mark libraries for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_libraries.html
@@ -247,7 +195,7 @@ install(TARGETS field_estimation
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_bw_object_estimation.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_bw_object_filter.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()

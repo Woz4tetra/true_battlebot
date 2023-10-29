@@ -4,16 +4,15 @@
 BaseEstimation::BaseEstimation(ros::NodeHandle* nodehandle) :
     nh(*nodehandle)
 {
-    int queue_size;
-    ros::param::param<int>("~queue_size", queue_size, 10);
+    ros::param::param<int>("~queue_size", _queue_size, 10);
     ros::param::param<std::string>("~field_label", _field_label, "field");
 
     _depth_info_sub = nh.subscribe<sensor_msgs::CameraInfo>("depth/camera_info", 1, &BaseEstimation::camera_info_callback, this);
 
-    _depth_sub.subscribe(nh, "depth/image_raw", queue_size);
-    _segmentation_sub.subscribe(nh, "segmentation", queue_size);
+    _depth_sub.subscribe(nh, "depth/image_raw", _queue_size);
+    _segmentation_sub.subscribe(nh, "segmentation", _queue_size);
 
-    _sync.reset(new Sync(ExactSyncPolicy(queue_size), _depth_sub, _segmentation_sub));
+    _sync.reset(new Sync(ExactSyncPolicy(_queue_size), _depth_sub, _segmentation_sub));
 }
 
 BaseEstimation::~BaseEstimation()

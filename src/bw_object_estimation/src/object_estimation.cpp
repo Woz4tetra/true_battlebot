@@ -6,8 +6,8 @@ ObjectEstimation::ObjectEstimation(ros::NodeHandle* nodehandle) :
 {
     _sync->registerCallback(boost::bind(&ObjectEstimation::synced_callback, this, _1, _2));
 
-    _robot_pub = nh.advertise<bw_interfaces::EstimatedRobot>("estimation/robot", 25);
-    _robot_pose_pub = nh.advertise<geometry_msgs::PoseArray>("estimation/robot_poses", 25);
+    _robot_pub = nh.advertise<bw_interfaces::EstimatedRobotArray>("estimation/robots", _queue_size);
+    _robot_pose_pub = nh.advertise<geometry_msgs::PoseArray>("estimation/robot_poses", _queue_size);
 
     ROS_INFO("ObjectEstimation node initialized");
 }
@@ -28,6 +28,8 @@ void ObjectEstimation::synced_callback(
     geometry_msgs::PoseArray robot_poses;
     robot_poses.header = segmentation->header;
 
+    bw_interfaces::EstimatedRobotArray robot_array;
+
     for (size_t index = 0; index < segmentation->instances.size(); index++)
     {
         bw_interfaces::SegmentationInstance instance = segmentation->instances[index];
@@ -40,10 +42,11 @@ void ObjectEstimation::synced_callback(
         bw_interfaces::EstimatedRobot robot_msg = find_object(depth_cv_image, cv_contours);
         robot_msg.label = instance.label;
         robot_msg.header = segmentation->header;
-        _robot_pub.publish(robot_msg);
+        robot_array.robots.push_back(robot_msg);
 
         robot_poses.poses.push_back(robot_msg.pose);
     }
+    _robot_pub.publish(robot_array);
     _robot_pose_pub.publish(robot_poses);
 }
 

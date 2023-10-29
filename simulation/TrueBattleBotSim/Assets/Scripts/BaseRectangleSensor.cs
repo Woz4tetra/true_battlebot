@@ -13,7 +13,6 @@ public abstract class BaseRectangleSensor : MonoBehaviour {
     [SerializeField] private float maxDistance = 5.0f;
     [SerializeField] private LayerMask layerMask;
     [SerializeField] private bool debugRayCast = false;
-    [SerializeField] protected string topic = "detections";
     [SerializeField] private float publishRate = 0.0f;
     private float publishStartDelay = 1.0f;
 

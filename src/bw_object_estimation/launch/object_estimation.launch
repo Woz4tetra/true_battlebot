@@ -3,6 +3,14 @@
         <remap from="depth/camera_info" to="/camera/image/camera_info"/>
         <remap from="depth/image_raw" to="/camera/depth/image_raw"/>
         <remap from="segmentation" to="/camera/segmentation"/>
+        <param name="queue_size" value="1"/>
+    </node>
+
+    <node pkg="bw_object_estimation" type="recommended_plane_point" name="recommended_plane_point" output="screen">
+        <remap from="depth/camera_info" to="/camera/image/camera_info"/>
+        <remap from="depth/image_raw" to="/camera/depth/image_raw"/>
+        <remap from="segmentation" to="/camera/segmentation"/>
+        <param name="queue_size" value="1"/>
     </node>
 
     <!-- <node pkg="bw_object_estimation" type="field_estimation" name="field_estimation" output="screen">

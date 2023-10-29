@@ -23,7 +23,6 @@ class TagMarkerPublisher:
             # log_level=rospy.DEBUG
         )
         # rospy.on_shutdown(self.shutdown_hook)
-        self.tag_pose_marker_size = get_param("~tag_pose_marker_size", 0.25)
         self.marker_publish_rate = get_param("~marker_publish_rate", 0.0)
         self.debug = get_param("~debug", False)
         self.base_frame = get_param("~base_frame", "camera")
@@ -136,23 +135,25 @@ class TagMarkerPublisher:
                 marker_color = self.marker_colors[name]
             else:
                 marker_color = self.marker_colors[None]
-            x_position_marker = self.make_marker(name, pose_stamped, marker_color)
-            y_position_marker = self.make_marker(name, pose_stamped, marker_color)
-            z_position_marker = self.make_marker(name, pose_stamped, marker_color)
-            text_marker = self.make_marker(name, pose_stamped, marker_color)
-            square_marker = self.make_marker(name, pose_stamped, marker_color)
+            x_position_marker = self.make_marker(name, pose_stamped, marker_color, size)
+            y_position_marker = self.make_marker(name, pose_stamped, marker_color, size)
+            z_position_marker = self.make_marker(name, pose_stamped, marker_color, size)
+            text_marker = self.make_marker(name, pose_stamped, marker_color, size)
+            square_marker = self.make_marker(name, pose_stamped, marker_color, size)
 
-            self.prep_position_marker("x", x_position_marker, None, (1.0, 0.0, 0.0))
+            self.prep_position_marker("x", x_position_marker, None, size, (1.0, 0.0, 0.0))
             self.prep_position_marker(
                 "y",
                 y_position_marker,
                 (0.0000, 0.0000, 0.7071, 0.7071),
+                size,
                 (0.0, 1.0, 0.0),
             )
             self.prep_position_marker(
                 "z",
                 z_position_marker,
                 (0.0000, -0.7071, 0.0000, 0.7071),
+                size,
                 (0.0, 0.0, 1.0),
             )
             self.prep_text_marker(text_marker, name)
@@ -169,16 +170,16 @@ class TagMarkerPublisher:
             )
         self.marker_pub.publish(markers)
 
-    def prep_position_marker(self, name, position_marker, rotate_quat, color: Tuple[float, float, float]):
+    def prep_position_marker(self, name, position_marker, rotate_quat, size, color: Tuple[float, float, float]):
         position_marker.type = Marker.ARROW
         position_marker.ns = "pos" + name + position_marker.ns
         position_marker.color.r = color[0]
         position_marker.color.g = color[1]
         position_marker.color.b = color[2]
         position_marker.color.a = 0.75
-        position_marker.scale.x = self.tag_pose_marker_size / 4.0
-        position_marker.scale.y = self.tag_pose_marker_size / 2.5
-        position_marker.scale.z = self.tag_pose_marker_size / 2.0
+        position_marker.scale.x = size / 4.0
+        position_marker.scale.y = size / 2.5
+        position_marker.scale.z = size / 2.0
         if rotate_quat is not None:
             position_marker.pose.orientation = self.rotate_tag_orientation(
                 position_marker.pose.orientation, rotate_quat
@@ -187,7 +188,7 @@ class TagMarkerPublisher:
         p1 = Point()
         p2 = Point()
 
-        p2.x = self.tag_pose_marker_size
+        p2.x = size
 
         position_marker.points.append(p1)
         position_marker.points.append(p2)
@@ -212,7 +213,7 @@ class TagMarkerPublisher:
         square_marker.scale.y = tag_size
         square_marker.scale.z = tag_size
 
-    def make_marker(self, name, pose, color):
+    def make_marker(self, name, pose, color, size):
         # name: str, marker name
         # pose: PoseStamped
         marker = Marker()
@@ -228,9 +229,9 @@ class TagMarkerPublisher:
         marker.frame_locked = False
 
         scale_vector = Vector3()
-        scale_vector.x = self.tag_pose_marker_size
-        scale_vector.y = self.tag_pose_marker_size
-        scale_vector.z = self.tag_pose_marker_size
+        scale_vector.x = size
+        scale_vector.y = size
+        scale_vector.z = size
         marker.scale = scale_vector
         marker.color = ColorRGBA(
             r=color[0],

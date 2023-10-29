@@ -14,8 +14,8 @@ FieldEstimation::FieldEstimation(ros::NodeHandle* nodehandle) :
     _estimator = new GRANSAC::RANSAC<PlaneModel, 3>();
     _estimator->Initialize(ransac_threshold, ransac_max_iterations);
 
-    _field_pub = nh.advertise<bw_interfaces::EstimatedField>("estimation/field", 10);
-    _field_pose_pub = nh.advertise<geometry_msgs::PoseStamped>("estimation/field_pose", 10);
+    _field_pub = nh.advertise<bw_interfaces::EstimatedField>("estimation/field", _queue_size);
+    _field_pose_pub = nh.advertise<geometry_msgs::PoseStamped>("estimation/field_pose", _queue_size);
 
     ROS_INFO("FieldEstimation node initialized");
 }

@@ -1,0 +1,3 @@
+<launch>
+    <node pkg="bw_object_filter" type="field_filter.py" name="field_filter" output="screen"/>
+</launch>

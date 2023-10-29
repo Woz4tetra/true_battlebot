@@ -15,6 +15,7 @@
 #include <bw_interfaces/SegmentationInstance.h>
 #include <bw_interfaces/Contour.h>
 #include <bw_interfaces/EstimatedRobot.h>
+#include <bw_interfaces/EstimatedRobotArray.h>
 
 #include "base_estimation.h"
 

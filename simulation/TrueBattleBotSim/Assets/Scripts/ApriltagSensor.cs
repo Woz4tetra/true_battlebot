@@ -4,8 +4,10 @@ using RosMessageTypes.Geometry;
 using Unity.Robotics.ROSTCPConnector.ROSGeometry;
 using Unity.VisualScripting;
 using RosMessageTypes.Std;
+using UnityEngine;
 
 public class ApriltagSensor : BaseRectangleSensor {
+    [SerializeField] private string topic = "detections";
     override protected void BaseRectangleSensorStart()
     {
         ros.RegisterPublisher<AprilTagDetectionArrayMsg>(topic);
@@ -32,7 +34,7 @@ public class ApriltagSensor : BaseRectangleSensor {
             AprilTagDetectionMsg tagMsg = new AprilTagDetectionMsg
             {
                 id = new int[] { target.tagId },
-                size = new double[] { target.dimensions.x },
+                size = new double[] { Mathf.Max(target.dimensions.x, target.dimensions.y, target.dimensions.z) },
                 pose = {
                     header = header,
                     pose = {

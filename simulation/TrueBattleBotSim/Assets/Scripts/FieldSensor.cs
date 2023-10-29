@@ -4,8 +4,10 @@ using Unity.Robotics.ROSTCPConnector.ROSGeometry;
 using Unity.VisualScripting;
 using RosMessageTypes.BwInterfaces;
 using RosMessageTypes.Std;
+using UnityEngine;
 
 public class FieldSensor : BaseRectangleSensor {
+    [SerializeField] private string topic = "detections";
     override protected void BaseRectangleSensorStart()
     {
         ros.RegisterPublisher<EstimatedFieldMsg>(topic);

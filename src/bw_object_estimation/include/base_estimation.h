@@ -18,6 +18,7 @@ class BaseEstimation
 protected:
     ros::NodeHandle nh;  // ROS node handle
 
+    int _queue_size;
     std::string _field_label;
 
     typedef message_filters::sync_policies::ExactTime<sensor_msgs::Image, bw_interfaces::SegmentationInstanceArray> ExactSyncPolicy;

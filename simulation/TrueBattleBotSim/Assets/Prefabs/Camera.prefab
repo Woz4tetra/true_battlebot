@@ -47,6 +47,7 @@ GameObject:
   - component: {fileID: 8348069309580446244}
   - component: {fileID: 6078746319307151026}
   - component: {fileID: 3957978623221294602}
+  - component: {fileID: 8809695231059794595}
   m_Layer: 0
   m_Name: Camera Sensor
   m_TagString: MainCamera
@@ -199,7 +200,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5601284787570054784}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 97dde157c74a4a6098ad5f0b7dbb81cd, type: 3}
   m_Name: 
@@ -211,3 +212,23 @@ MonoBehaviour:
   debugRayCast: 0
   topic: /estimation/field
   publishRate: 1
+--- !u!114 &8809695231059794595
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5601284787570054784}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 720e719b89b33ceb5b5469c48890de6e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxDistance: 5
+  layerMask:
+    serializedVersion: 2
+    m_Bits: 512
+  debugRayCast: 0
+  topic: /
+  publishRate: 0
+  plane_request_topic: plane_request
