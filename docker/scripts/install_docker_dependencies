@@ -1,5 +1,4 @@
 #!/bin/bash
-BASE_DIR=$(realpath "$(dirname $0)")
 DOCKERUSER=$1
 
 if [ "$EUID" -ne 0 ]
