@@ -118,6 +118,7 @@ def compute_residual(z, H, x, min_angle, max_angle):
 
 
 @njit
+# flake8: noqa: N803 N806
 def jit_update(x, P, H, z, R):
     y = compute_residual(z, H, x, -math.pi, math.pi)
     PHT = P @ H.T
@@ -130,6 +131,7 @@ def jit_update(x, P, H, z, R):
 
 
 @njit
+# flake8: noqa: N803 N806
 def jit_predict(x, P, Q, dt):
     n = len(x)
     n_half = n // 2

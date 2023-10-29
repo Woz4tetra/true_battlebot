@@ -24,15 +24,7 @@ from std_msgs.msg import Header
 from bw_object_filter.filter_models import DriveKalmanModel
 from bw_object_filter.robot_measurement_sorter import RobotMeasurementSorter
 from bw_object_filter.src.bw_object_filter.covariances import ApriltagHeuristics, CmdVelHeuristics, RobotHeuristics
-from bw_object_filter.src.bw_object_filter.robot_config import OUR_TEAM, THEIR_TEAM, RobotConfig, RobotFleetConfig
-
-# for each tag
-#   map tag id to robot id
-#   update filter with tag pose
-# for each robot
-#   match measurement to nearest filtered pose within a threshold
-#   if two or more measurements are too close, discard those measurements
-# for each commanded velocity, update corresponding robot
+from bw_object_filter.src.bw_object_filter.robot_config import OUR_TEAM, RobotConfig, RobotFleetConfig
 
 
 class RobotFilter:
@@ -46,6 +38,10 @@ class RobotFilter:
 
         self.map_frame = get_param("map_frame", "map")
         self.robot_frame_prefix = get_param("robot_frame_prefix", "base_link")
+
+        self.apriltag_base_covariance_scalar = get_param("apriltag_base_covariance_scalar", 0.001)
+        self.robot_estimate_base_covariance_scalar = get_param("robot_estimate_base_covariance_scalar", 0.01)
+        self.cmd_vel_base_covariance_scalar = get_param("cmd_vel_base_covariance_scalar", 0.01)
 
         self.robots = dataclass_deserialize(RobotFleetConfig, robot_config)
         self.check_unique(self.robots)
@@ -72,9 +68,9 @@ class RobotFilter:
 
         self.robot_filters = {bot.id: DriveKalmanModel(self.update_delay) for bot in self.robots.robots}
 
-        self.tag_heurstics = ApriltagHeuristics()
-        self.robot_heuristics = RobotHeuristics()
-        self.cmd_vel_heuristics = CmdVelHeuristics()
+        self.tag_heurstics = ApriltagHeuristics(self.apriltag_base_covariance_scalar)
+        self.robot_heuristics = RobotHeuristics(self.robot_estimate_base_covariance_scalar)
+        self.cmd_vel_heuristics = CmdVelHeuristics(self.cmd_vel_base_covariance_scalar)
 
         self.measurement_sorter = RobotMeasurementSorter(self.robot_filters)
 
@@ -91,8 +87,8 @@ class RobotFilter:
 
     def robot_estimation_callback(self, msg: EstimatedRobotArray) -> None:
         assigned = self.measurement_sorter.get_ids(msg)
-        covariance = self.robot_heuristics.compute_covariance(msg)
         for robot_id, measurement in assigned.items():
+            covariance = self.robot_heuristics.compute_covariance(measurement)
             map_pose = self.transform_to_map(measurement.header, measurement.pose)
             if map_pose is None:
                 rospy.logwarn(f"Could not transform pose for robot {robot_id}")
@@ -109,9 +105,9 @@ class RobotFilter:
             pose = detection.pose.pose.pose
             pose.orientation = self.rotate_tag_orientation(pose.orientation, self.apriltag_rotate_tf)
 
-        covariance = self.tag_heurstics.compute_covariance(msg)
         for detection in msg.detections:
             detection: AprilTagDetection
+            covariance = self.tag_heurstics.compute_covariance(detection)
             detection.pose.pose.covariance = covariance
             map_pose = self.transform_to_map(detection.pose.header, detection.pose.pose.pose)
             if map_pose is None:

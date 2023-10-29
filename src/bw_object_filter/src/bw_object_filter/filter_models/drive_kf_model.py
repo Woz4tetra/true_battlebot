@@ -2,7 +2,7 @@ from typing import Tuple
 
 import numpy as np
 from bw_tools.structs.pose2d import Pose2D
-from geometry_msgs.msg import Pose, PoseWithCovariance, Twist, TwistWithCovariance
+from geometry_msgs.msg import PoseWithCovariance, TwistWithCovariance
 
 from .filter_model import FilterModel
 from .helpers import (
