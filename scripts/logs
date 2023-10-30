@@ -1,135 +1,287 @@
-#!/usr/bin/env bash
+#!/usr/bin/env python
+import argparse
+import datetime
+import glob
+import json
+import os
+import re
+import sys
+import time
+from dataclasses import dataclass
+from io import BufferedReader
+from typing import Dict, Generator, Set, Tuple
 
-set -e
 
-LINE_NO_FORMAT=""
-TAIL_LINES=500
-PARSE_ALL=""
+class COLORS:
+    BLACK = "\033[30m"
+    RED = "\033[31m"
+    GREEN = "\033[32m"
+    YELLOW = "\033[33m"
+    BLUE = "\033[34m"
+    MAGENTA = "\033[35m"
+    CYAN = "\033[36m"
+    GREY = "\033[37m"
+    DEFAULT = "\033[39m"
+    RESET = "\033[00m"
 
-usage() {
-    echo "Usage: $0 [-l] [-h] [-n=<int>] [-a] [LOGPATH]"
-    echo "Options:"
-    echo "  -l    Show line numbers"
-    echo "  -h    Display usage information"
-    echo "  -n    Number of lines to tail (default: 500)"
-    echo "  -a    Parse all lines. Don't tail."
-    exit 1
+
+LOG_COLORS = {
+    "DEBUG": COLORS.GREEN,
+    "INFO": COLORS.DEFAULT,
+    "WARN": COLORS.YELLOW,
+    "ERROR": COLORS.RED,
 }
-
-# Process command-line arguments
-params="$(getopt -o l:h:n:a -- "$@")"
-eval set -- "$params"
-while [ "$#" -gt 0 ]; do
-    case "$1" in
-        -l)
-            LINE_NO_FORMAT="\"[\" + .file + \":\" + (.line | (tostring)) + \"] \" +"
-            shift
-            ;;
-        -n)
-            TAIL_LINES=${2}
-            shift 2
-            ;;
-        -a)
-            PARSE_ALL="yes"
-            shift
-            ;;
-        -h)
-            usage
-            ;;
-        --) 
-            shift
-            break
-            ;;
-        *) 
-            echo "Invalid option: $1" >&2
-            usage
-            ;;
-    esac
-done
-
-LOGPATH=$@
+SEVERITY_ORDER = ["DEBUG", "INFO", "WARN", "ERROR"]
 
 
-# Timestamp is 19 characters -> 22
-# Level can be up to 7       -> 29
-# App Name can be a bit big  -> 40
-# Rest are just safety buffers
-tabs 22,29,40,45,50,55
+class LogFilter:
+    def __init__(self, filters: Dict[str, str], inverted: Set[str]) -> None:
+        self.filters = filters
+        self.inverted = {key: False for key in filters.keys()}
+        for key in self.inverted:
+            if key in inverted:
+                self.inverted[key] = True
+        self.has_filters = any([value for value in filters.values()])
+
+    def does_match(self, log_line: Dict) -> bool:
+        if not self.has_filters:
+            return True
+        for key, pattern in self.filters.items():
+            if len(pattern) == 0:
+                continue
+            inverted = self.inverted[key]
+            match = re.search(pattern, log_line[key])
+            found = match is not None
+            if found and not inverted:
+                return True
+        return False
 
 
-# OMG Wizardry
-JQ_PROG="
+@dataclass
+class ParserInput:
+    log_level: int
+    log_filter: LogFilter
+    verbose: bool
+    num_lines: int
 
-# Define some ascii colors
-def colors:
- {
- \"black\": \"\u001b[30m\",
- \"red\": \"\u001b[31m\",
- \"green\": \"\u001b[32m\",
- \"yellow\": \"\u001b[33m\",
- \"blue\": \"\u001b[34m\",
- \"magenta\": \"\u001b[35m\",
- \"cyan\": \"\u001b[36m\",
- \"grey\": \"\u001b[37m\",
- \"white\": \"\u001b[38m\",
- \"reset\": \"\u001b[0m\",
-};
 
-# A mapping of log levels to colors
-def level_colors:
- {
-    \"DEBUG\": \"green\",
-    \"INFO\": \"white\",
-    \" INFO\": \"white\",
-    \"WARN\": \"yellow\",
-    \" WARN\": \"yellow\",
-    \"ERROR\": \"red\"
- };
+def print_line(log_line: Dict, args: ParserInput) -> None:
+    log_level = log_line["severity"].strip()
 
-def format_log_line:
-    # Clear any color setting
-    colors.reset +
-    # Color the log level
-    colors[level_colors[.severity]] +
-    # Log the node name
-    \"[\" + .node + \"] \" +
-    # Log the severity
-    \"[\" + .severity + \"] \" +
-    # Format the timestamp
-    \"[\" + (.time | (strftime(\"%F %T\"))) + \"] \" +
-    # Log the line the log originated from
-    ${LINE_NO_FORMAT}
-    # Log the message
-    .message + colors.reset;
+    try:
+        level_index = SEVERITY_ORDER.index(log_level)
+        log_color = LOG_COLORS[log_level]
+    except ValueError:
+        level_index = len(SEVERITY_ORDER)
+        log_color = COLORS.CYAN
 
-# If the line can be interpreted as json, run the formatter
-# If it is not JSON (the //), assume its some type of error/traceback,
-# so make it red and dump it out.
-(fromjson? | format_log_line) // colors.grey + .
-"
+    if level_index < args.log_level:
+        return
+    if not args.log_filter.does_match(log_line):
+        return
 
-if [ -z "${LOGPATH}" ]; then
-    LOGS_DIR=/media/storage/logs
-    LOGPATH=$(find ${LOGS_DIR} -type f -printf '%T@ %p\n' | sort -n | tail -1 | cut -f2- -d" ")
-fi
+    date = datetime.datetime.fromtimestamp(log_line["time"])
+    datestr = date.strftime("%Y-%m-%d %H:%M:%S,%f")
+    message = log_line["message"]
+    node = log_line["node"]
+    logger = log_line["logger"]
+    file = log_line["file"]
+    line = log_line["line"]
+    function = log_line["function"]
+    thread = log_line["thread"]
+    if args.verbose:
+        print(
+            f"{log_color}[{log_level.rjust(5)}] [{node}:{logger}] {datestr}: {message}\n"
+            f"    {file}:{line} ({function})\n"
+            f"    Thread: {thread}."
+        )
+    else:
+        print(f"{log_color}[{log_level.rjust(5)}] [{node}] {datestr}: {message}")
 
-if [ "${TAIL_LINES}" -gt 0 ]; then
-    LINES_ARG="-n ${TAIL_LINES}"
-else
-    LINES_ARG='-n +1'
-fi
 
-int_handler() {
-    printf "\nLog path:\n%s\n" "${LOGPATH}"
-}
+MESSAGE_START_PATTERN = r"\"<-<"
+MESSAGE_STOP_PATTERN = r">->\""
+MESSAGE_ENCLOSED_PATTERN = r"\"<-<(.*)>->\""
 
-strip_color () {
-    sed -E "s/\x1B\[([0-9]{1,2}(;[0-9]{1,2})*)?[m,K,H,f,J]//gm"
-}
 
-if [ -z "${PARSE_ALL}" ]; then
-    trap 'int_handler' INT
-    tail -F ${LINES_ARG} "${LOGPATH}" | jq -Rr "$JQ_PROG"
-else
-    cat "${LOGPATH}" | strip_color | jq -Rr "$JQ_PROG" | less -R
-fi
+def replace_multiline_chars(line: str) -> str:
+    line = line.replace("\n", "\\n")
+    line = line.replace("\r", "\\r")
+    line = line.replace("\"", "\\\"")
+    return line
+
+
+class IncompleteLineTracker:
+    def __init__(self) -> None:
+        self.lines = ""
+        self.is_tracking = False
+
+    def set_success(self) -> None:
+        self.is_tracking = False
+
+    def process(self, line: str) -> str:
+        start_match = re.search(MESSAGE_START_PATTERN, line)
+        stop_match = re.search(MESSAGE_STOP_PATTERN, line)
+        if start_match is not None and stop_match is not None:
+            return (
+                line[: start_match.start()]
+                + "\""
+                + replace_multiline_chars(line[start_match.end() : stop_match.start()])
+                + "\""
+                + line[stop_match.end() :]
+            )
+
+        if self.is_tracking and stop_match is not None:
+            line = replace_multiline_chars(line[: stop_match.start()]) + "\"" + line[stop_match.end() :]
+            return self.lines + line
+
+        if start_match is None:
+            if self.is_tracking:
+                self.lines += replace_multiline_chars(line)
+            else:
+                raise ValueError
+        else:
+            line = line[: start_match.start()] + "\"" + replace_multiline_chars(line[start_match.end() :])
+            self.is_tracking = True
+            self.lines = line
+        return ""
+
+
+def process_line(data: bytes, args: ParserInput, tracker: IncompleteLineTracker) -> None:
+    line = re.sub(b"\x1b\\[.{1,3}m", b"", data).decode()
+
+    try:
+        line = tracker.process(line)
+        if len(line) == 0:
+            return
+        log_line = json.loads(line)
+        if isinstance(log_line, dict):
+            tracker.set_success()
+            print_line(log_line, args)
+        else:
+            raise ValueError
+    except ValueError:
+        if not tracker.is_tracking:
+            lower_line = line.lower()
+            if "warn" in lower_line:
+                color_code = COLORS.YELLOW
+            elif "error" in lower_line:
+                color_code = COLORS.RED
+            else:
+                color_code = COLORS.GREY
+            sys.stdout.write(color_code + line)
+
+
+DEFAULT_DIR = "/media/storage/logs"
+
+
+def find_latest_log_file(search_dir: str) -> str:
+    list_of_files = glob.glob(os.path.join(search_dir, "*.log"))
+    latest_file = max(list_of_files, key=os.path.getctime)
+    return os.path.join(search_dir, latest_file)
+
+
+def print_entire_file(filename: str, args: ParserInput) -> None:
+    with open(filename, "rb") as file:
+        contents = file.read()
+    incomplete_line_tracker = IncompleteLineTracker()
+    for line in contents.splitlines():
+        process_line(line + b"\n", args, incomplete_line_tracker)
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("filename", default=None, nargs="?", help="File to watch")
+    parser.add_argument("-l", "--level", default="INFO", help="Levels at or above this level will be shown")
+    parser.add_argument(
+        "-n",
+        "--num",
+        default=500,
+        type=int,
+        help="Number of lines to print at the start. If zero is supplied, all lines will be printed",
+    )
+    parser.add_argument("-a", "--all", action="store_true", help="Show all lines in the file and exit")
+    parser.add_argument("-v", "--verbose", action="store_true", help="Show all info in each log line")
+    args = parser.parse_args()
+    return args
+
+
+def follow(fp: BufferedReader, num_lines: int) -> Generator[bytes, None, None]:
+    """generator function that yields new lines in a file"""
+    if num_lines == 0:
+        fp.seek(0, os.SEEK_END)
+    else:
+        if num_lines < 0:
+            offset = 0
+            for line_index, line in enumerate(fp):
+                if line_index == abs(num_lines):
+                    break
+                offset += len(line)
+        else:
+            line_offsets = []
+            offset = 0
+            for line_index, line in enumerate(fp):
+                line_offsets.append(offset)
+                offset += len(line)
+            if num_lines >= len(line_offsets):
+                offset = 0
+            else:
+                offset = line_offsets[-num_lines]
+        fp.seek(offset)
+
+    # start infinite loop
+    while True:
+        # read last line of file
+        line = fp.readline()  # sleep if file hasn't been updated
+        if not line:
+            time.sleep(0.1)
+            continue
+        yield line
+
+
+def follow_and_process(filename: str, args: ParserInput) -> None:
+    incomplete_line_tracker = IncompleteLineTracker()
+    with open(filename, "rb") as file:
+        for line in follow(file, args.num_lines):
+            process_line(line, args, incomplete_line_tracker)
+
+
+def main() -> None:
+    args = parse_args()
+    filename = args.filename
+    print_all = args.all
+    num_lines = args.num
+    try:
+        log_level = int(args.level)
+    except ValueError:
+        log_level = SEVERITY_ORDER.index(args.level.upper())
+    verbose = args.verbose
+
+    log_filter = LogFilter({}, set())
+
+    inputs = ParserInput(
+        log_level,
+        log_filter,
+        verbose,
+        num_lines,
+    )
+
+    if filename is None:
+        filename = find_latest_log_file(DEFAULT_DIR)
+
+    if print_all:
+        print_entire_file(filename, inputs)
+        if args.filename is None:
+            print(f"\nLog path: {filename}")
+        return
+    try:
+        follow_and_process(filename, inputs)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        if args.filename is None:
+            print(f"\n{COLORS.RESET}Log path: {filename}")
+
+
+if __name__ == "__main__":
+    main()

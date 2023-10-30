@@ -166,6 +166,7 @@ COPY --chown=1000:1000 \
     ./launch/set_log_format.sh \
     ./launch/launch.sh \
     ./launch/roscore.sh \
+    ./launch/rosconsole.config \
     /opt/${ORGANIZATION}/
 RUN ln -s /opt/${ORGANIZATION}/${PROJECT_NAME} ${HOME}/${PROJECT_NAME}
 
