@@ -8,7 +8,7 @@ from bw_interfaces.msg import EstimatedRobotArray
 from bw_tools.dataclass_deserialize import dataclass_deserialize
 from bw_tools.structs.transform3d import Transform3D
 from bw_tools.transforms import lookup_pose_in_frame
-from bw_tools.typing import get_param
+from bw_tools.typing import get_param, seconds_to_duration
 from geometry_msgs.msg import (
     Pose,
     PoseStamped,
@@ -40,40 +40,42 @@ class RobotFilter:
         self.map_frame = get_param("~map_frame", "map")
         self.robot_frame_prefix = get_param("~robot_frame_prefix", "base_link")
 
+        self.command_timeout = seconds_to_duration(get_param("~command_timeout", 0.5))
+
         self.apriltag_base_covariance_scalar = get_param("~apriltag_base_covariance_scalar", 0.01)
         self.robot_estimate_base_covariance_scalar = get_param("~robot_estimate_base_covariance_scalar", 0.1)
-        self.cmd_vel_base_covariance_scalar = get_param("~cmd_vel_base_covariance_scalar", 1.0)
+        self.cmd_vel_base_covariance_scalar = get_param("~cmd_vel_base_covariance_scalar", 0.1)
 
         self.robots = dataclass_deserialize(RobotFleetConfig, robot_config)
         self.check_unique(self.robots)
 
+        self.prev_cmd_time = rospy.Time.now()
         self.robot_names = {bot.id: bot.name for bot in self.robots.robots}
-
-        self.tf_buffer = tf2_ros.Buffer()
-        self.tf_listener = tf2_ros.TransformListener(self.tf_buffer)
-        self.tf_broadcaster = tf2_ros.TransformBroadcaster()
-
-        self.robots_sub = rospy.Subscriber("estimation/robots", EstimatedRobotArray, self.robot_estimation_callback)
-        self.tags_sub = rospy.Subscriber("tag_detections", AprilTagDetectionArray, self.tags_callback)
-        self.cmd_vel_subs = [
-            rospy.Subscriber(f"{bot.name}/cmd_vel", Twist, self.cmd_vel_callback, callback_args=bot)
-            for bot in self.robots.robots
-            if bot.team == OUR_TEAM
-        ]
-        self.filter_state_pubs = {
-            bot.id: rospy.Publisher(f"{bot.name}/filter_state", Odometry, queue_size=10) for bot in self.robots.robots
-        }
-
-        rotate_quat = (0.5, -0.5, -0.5, -0.5)
+        rotate_quat = (0.0, 0.0, -0.707, 0.707)
         self.apriltag_rotate_tf = Transform3D.from_position_and_quaternion(Vector3(), Quaternion(*rotate_quat))
-
         self.robot_filters = {bot.id: DriveKalmanModel(self.update_delay) for bot in self.robots.robots}
 
         self.tag_heurstics = ApriltagHeuristics(self.apriltag_base_covariance_scalar)
         self.robot_heuristics = RobotHeuristics(self.robot_estimate_base_covariance_scalar)
         self.cmd_vel_heuristics = CmdVelHeuristics(self.cmd_vel_base_covariance_scalar)
-
         self.measurement_sorter = RobotMeasurementSorter(self.robot_filters)
+
+        self.tf_buffer = tf2_ros.Buffer()
+        self.tf_listener = tf2_ros.TransformListener(self.tf_buffer)
+        self.tf_broadcaster = tf2_ros.TransformBroadcaster()
+
+        self.filter_state_pubs = {
+            robot.id: rospy.Publisher(f"{robot.name}/filter_state", Odometry, queue_size=10)
+            for robot in self.robots.robots
+        }
+
+        self.robots_sub = rospy.Subscriber("estimation/robots", EstimatedRobotArray, self.robot_estimation_callback)
+        self.tags_sub = rospy.Subscriber("tag_detections", AprilTagDetectionArray, self.tags_callback)
+        self.cmd_vel_subs = [
+            rospy.Subscriber(f"{robot.name}/cmd_vel", Twist, self.cmd_vel_callback, callback_args=robot)
+            for robot in self.robots.robots
+            if robot.team == OUR_TEAM
+        ]
 
     def check_unique(self, config: RobotFleetConfig) -> None:
         """
@@ -97,17 +99,15 @@ class RobotFilter:
             pose = PoseWithCovariance()
             pose.pose = map_pose
             pose.covariance = covariance
-            self.robot_filters[robot_id].update_landmark(pose)
+            self.robot_filters[robot_id].update_position(pose)
 
     def tags_callback(self, msg: AprilTagDetectionArray) -> None:
         assert msg.detections is not None
+
         for detection in msg.detections:
             detection: AprilTagDetection
             pose = detection.pose.pose.pose
             pose.orientation = self.rotate_tag_orientation(pose.orientation, self.apriltag_rotate_tf)
-
-        for detection in msg.detections:
-            detection: AprilTagDetection
             covariance = self.tag_heurstics.compute_covariance(detection)
             detection.pose.pose.covariance = covariance
             map_pose = self.transform_to_map(detection.pose.header, detection.pose.pose.pose)
@@ -126,7 +126,7 @@ class RobotFilter:
                 rospy.logwarn(f"Tag id {tag_id} is not a robot")
                 continue
             robot_filter = self.robot_filters[tag_id]
-            robot_filter.update_landmark(detection.pose.pose)
+            robot_filter.update_pose(detection.pose.pose)
 
     def rotate_tag_orientation(
         self,
@@ -138,6 +138,10 @@ class RobotFilter:
         return rotated_tag.quaternion
 
     def cmd_vel_callback(self, msg: Twist, robot_config: RobotConfig) -> None:
+        self.update_cmd_vel(msg, robot_config)
+        self.prev_cmd_time = rospy.Time.now()
+
+    def update_cmd_vel(self, msg: Twist, robot_config: RobotConfig):
         measurement = TwistWithCovariance(twist=msg)
         measurement.covariance = self.cmd_vel_heuristics.compute_covariance(measurement)
         self.robot_filters[robot_config.id].update_cmd_vel(measurement)
@@ -149,6 +153,13 @@ class RobotFilter:
             return None
         else:
             return result.pose
+
+    def check_cmd_timeout(self) -> None:
+        if rospy.Time.now() - self.prev_cmd_time <= self.command_timeout:
+            return
+        for config in self.robots.robots:
+            if config.team == OUR_TEAM:
+                self.update_cmd_vel(Twist(), config)
 
     def predict_all_filters(self) -> None:
         for robot_filter in self.robot_filters.values():
@@ -187,6 +198,7 @@ class RobotFilter:
     def run(self) -> None:
         rate = rospy.Rate(self.update_rate)
         while not rospy.is_shutdown():
+            self.check_cmd_timeout()
             self.predict_all_filters()
             self.publish_all_filters()
             rate.sleep()

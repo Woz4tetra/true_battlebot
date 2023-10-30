@@ -191,8 +191,8 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 1024
   debugRayCast: 0
+  publishRate: 10
   topic: /tag_detections
-  publishRate: 1
 --- !u!114 &3957978623221294602
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -210,8 +210,8 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 512
   debugRayCast: 0
-  topic: /estimation/field
   publishRate: 1
+  topic: /estimation/field
 --- !u!114 &8809695231059794595
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -229,6 +229,6 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 512
   debugRayCast: 0
-  topic: /
   publishRate: 0
   plane_request_topic: plane_request
+  plane_response_topic: plane_response

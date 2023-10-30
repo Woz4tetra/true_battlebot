@@ -13,6 +13,7 @@ class RobotMeasurementSorter:
     def __init__(self, filters: Mapping[int, FilterModel]) -> None:
         self.filters = filters
         self.filter_ids = [robot_id for robot_id in self.filters.keys()]
+        self.cached_permutations = {}
 
     def get_distance(self, measurement: EstimatedRobot, filter_model: FilterModel) -> float:
         pose = Pose2D.from_msg(measurement.pose)
@@ -40,11 +41,13 @@ class RobotMeasurementSorter:
 
         The result has one element for each filter encoding which measurement index to assign to the filter
         """
-        n = distances.shape[0]
-        m = distances.shape[1]
-        indices = np.arange(n)
-        permutations = np.array(list(itertools.permutations(indices, m)))
-        permutation_distances = np.sum(distances[permutations, tuple(np.arange(m))], axis=1)
+        num_measurements = distances.shape[0]
+        num_filters = distances.shape[1]
+        meas_indices = np.arange(num_measurements)
+        if num_measurements not in self.cached_permutations:
+            self.cached_permutations[num_measurements] = np.array(list(itertools.permutations(meas_indices)))
+        permutations = self.cached_permutations[num_measurements]
+        permutation_distances = np.sum(distances[permutations, tuple(np.arange(num_filters))], axis=1)
         min_index = np.argmin(permutation_distances)
         return permutations[min_index]
 

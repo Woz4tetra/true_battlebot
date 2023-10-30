@@ -19,7 +19,7 @@ class Wheel : MonoBehaviour
             groundVelocity = Mathf.Sign(groundVelocity) * maxWheelSpeed;
         }
         float angularVelocity = groundVelocity / wheelRadius;
-        torque = new Vector3(0.0f, 0.0f, angularVelocity);
+        torque = new Vector3(0.0f, 0.0f, -angularVelocity);
     }
 
     void Update()

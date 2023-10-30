@@ -11,7 +11,7 @@ class FilterModel:
         pass
 
     @abstractmethod
-    def update_landmark(self, msg: PoseWithCovarianceStamped) -> None:
+    def update_pose(self, msg: PoseWithCovarianceStamped) -> None:
         pass
 
     @abstractmethod

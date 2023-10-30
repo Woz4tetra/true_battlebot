@@ -25,7 +25,7 @@ def get_index(row: int, col: int, row_length: int) -> int:
     return row * row_length + col
 
 
-LANDMARK_COVARIANCE_INDICES: Dict[Tuple[int, int], int] = {
+POSE_COVARIANCE_INDICES: Dict[Tuple[int, int], int] = {
     (0, 0): get_index(0, 0, NUM_POSE_STATES_ROS),
     (1, 1): get_index(1, 1, NUM_POSE_STATES_ROS),
     (2, 2): get_index(5, 5, NUM_POSE_STATES_ROS),
@@ -35,19 +35,33 @@ TWIST_COVARIANCE_INDICES: Dict[Tuple[int, int], int] = {
     (1, 1): get_index(1, 1, NUM_POSE_STATES_ROS),
     (2, 2): get_index(5, 5, NUM_POSE_STATES_ROS),
 }  # fmt: off
+POSITION_COVARIANCE_INDICES: Dict[Tuple[int, int], int] = {
+    (0, 0): get_index(0, 0, NUM_POSE_STATES_ROS),
+    (1, 1): get_index(1, 1, NUM_POSE_STATES_ROS),
+}  # fmt: off
 
 
-def landmark_to_measurement(
+def pose_to_measurement(
     msg: PoseWithCovariance,
 ) -> Tuple[np.ndarray, np.ndarray]:
     pose = Pose2D.from_msg(msg.pose)
     measurement = pose.to_array()
 
     measurement_noise = np.eye(NUM_MEASUREMENTS)
-    for mat_index, msg_index in LANDMARK_COVARIANCE_INDICES.items():
+    for mat_index, msg_index in POSE_COVARIANCE_INDICES.items():
         measurement_noise[mat_index] = msg.covariance[msg_index]
 
     return measurement, measurement_noise
+
+
+def measurement_to_pose(state: np.ndarray, covariance: np.ndarray) -> PoseWithCovariance:
+    pose = PoseWithCovariance()
+    pose.pose = Pose2D(state[STATE_x], state[STATE_y], state[STATE_t]).to_msg()
+    ros_covariance = [0 for _ in range(NUM_POSE_STATES_ROS * NUM_POSE_STATES_ROS)]
+    for mat_index, msg_index in POSE_COVARIANCE_INDICES.items():
+        ros_covariance[msg_index] = covariance[mat_index]
+    pose.covariance = ros_covariance
+    return pose
 
 
 def twist_to_measurement(msg: TwistWithCovariance) -> Tuple[np.ndarray, np.ndarray]:
@@ -58,6 +72,18 @@ def twist_to_measurement(msg: TwistWithCovariance) -> Tuple[np.ndarray, np.ndarr
         measurement_noise[mat_index] = msg.covariance[msg_index]
 
     return measurement, measurement_noise
+
+
+def measurement_to_twist(state: np.ndarray, covariance: np.ndarray) -> TwistWithCovariance:
+    twist = TwistWithCovariance()
+    twist.twist.linear.x = state[STATE_vx]
+    twist.twist.linear.y = state[STATE_vy]
+    twist.twist.angular.z = state[STATE_vt]
+    ros_covariance = [0 for _ in range(NUM_POSE_STATES_ROS * NUM_POSE_STATES_ROS)]
+    for mat_index, msg_index in TWIST_COVARIANCE_INDICES.items():
+        ros_covariance[msg_index] = covariance[mat_index]
+    twist.covariance = ros_covariance
+    return twist
 
 
 @njit
@@ -73,7 +99,7 @@ def normalize_theta(theta):
 
 
 @njit
-def state_transition_fn(state, dt):
+def state_transition_fn(state, dt, friction_factor):
     x = state[STATE_x]
     y = state[STATE_y]
     theta = normalize_theta(state[STATE_t])
@@ -89,6 +115,9 @@ def state_transition_fn(state, dt):
     next_state[STATE_x] = x + dt * vx
     next_state[STATE_y] = y + dt * vy
     next_state[STATE_t] = theta + dt * vt
+    next_state[STATE_vx] *= friction_factor
+    next_state[STATE_vy] *= friction_factor
+    next_state[STATE_vt] *= friction_factor
 
     return next_state
 
@@ -132,11 +161,11 @@ def jit_update(x, P, H, z, R):
 
 @njit
 # flake8: noqa: N803 N806
-def jit_predict(x, P, Q, dt):
+def jit_predict(x, P, Q, dt, friction_factor):
     n = len(x)
     n_half = n // 2
     F = np.eye(n)
     F[0:n_half, n_half:n] = np.eye(n_half) * dt
-    x = state_transition_fn(x, dt)
+    x = state_transition_fn(x, dt, friction_factor)
     P = F @ P @ F.T + Q
     return x, P

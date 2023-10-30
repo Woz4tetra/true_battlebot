@@ -544,10 +544,6 @@ PrefabInstance:
       propertyPath: m_Enabled
       value: 1
       objectReference: {fileID: 0}
-    - target: {fileID: 6078746319307151026, guid: 02776528625a7739c85182f650a7f4ab, type: 3}
-      propertyPath: publishRate
-      value: 0.5
-      objectReference: {fileID: 0}
     - target: {fileID: 8007733006702411359, guid: 02776528625a7739c85182f650a7f4ab, type: 3}
       propertyPath: m_RootOrder
       value: 1
