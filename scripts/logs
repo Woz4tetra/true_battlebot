@@ -9,7 +9,7 @@ import sys
 import time
 from dataclasses import dataclass
 from io import BufferedReader
-from typing import Dict, Generator, Set, Tuple
+from typing import Dict, Generator, Set
 
 
 class COLORS:
@@ -41,7 +41,7 @@ class LogFilter:
         for key in self.inverted:
             if key in inverted:
                 self.inverted[key] = True
-        self.has_filters = any([value for value in filters.values()])
+        self.has_filters = any([len(value) != 0 for value in filters.values()])
 
     def does_match(self, log_line: Dict) -> bool:
         if not self.has_filters:
@@ -50,6 +50,8 @@ class LogFilter:
             if len(pattern) == 0:
                 continue
             inverted = self.inverted[key]
+            if key not in log_line:
+                return False
             match = re.search(pattern, log_line[key])
             found = match is not None
             if found and not inverted:
@@ -161,15 +163,20 @@ def process_line(data: bytes, args: ParserInput, tracker: IncompleteLineTracker)
         else:
             raise ValueError
     except ValueError:
-        if not tracker.is_tracking:
-            lower_line = line.lower()
-            if "warn" in lower_line:
-                color_code = COLORS.YELLOW
-            elif "error" in lower_line:
-                color_code = COLORS.RED
-            else:
-                color_code = COLORS.GREY
-            sys.stdout.write(color_code + line)
+        if tracker.is_tracking:
+            return
+        log_line = {"message": line}
+        if not args.log_filter.does_match(log_line):
+            return
+
+        lower_line = line.lower()
+        if "warn" in lower_line:
+            color_code = COLORS.YELLOW
+        elif "error" in lower_line:
+            color_code = COLORS.RED
+        else:
+            color_code = COLORS.GREY
+        sys.stdout.write(color_code + line)
 
 
 DEFAULT_DIR = "/media/storage/logs"
@@ -189,6 +196,9 @@ def print_entire_file(filename: str, args: ParserInput) -> None:
         process_line(line + b"\n", args, incomplete_line_tracker)
 
 
+FILTER_PATTERNS = ("message", "node", "logger", "file", "line", "function", "thread")
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("filename", default=None, nargs="?", help="File to watch")
@@ -202,6 +212,11 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("-a", "--all", action="store_true", help="Show all lines in the file and exit")
     parser.add_argument("-v", "--verbose", action="store_true", help="Show all info in each log line")
+
+    for pattern in FILTER_PATTERNS:
+        parser.add_argument(f"--{pattern}", type=str, help="Include by " + pattern)
+        parser.add_argument(f"--~{pattern}", type=str, help="Exclude by " + pattern)
+
     args = parser.parse_args()
     return args
 
@@ -229,10 +244,8 @@ def follow(fp: BufferedReader, num_lines: int) -> Generator[bytes, None, None]:
                 offset = line_offsets[-num_lines]
         fp.seek(offset)
 
-    # start infinite loop
     while True:
-        # read last line of file
-        line = fp.readline()  # sleep if file hasn't been updated
+        line = fp.readline()
         if not line:
             time.sleep(0.1)
             continue
@@ -246,6 +259,22 @@ def follow_and_process(filename: str, args: ParserInput) -> None:
             process_line(line, args, incomplete_line_tracker)
 
 
+def make_log_filters(args: argparse.Namespace) -> LogFilter:
+    patterns = {}
+    inverted = set()
+    for field in FILTER_PATTERNS:
+        include_pattern = getattr(args, field, "")
+        exclude_pattern = getattr(args, "~" + field, "")
+        if include_pattern and exclude_pattern:
+            raise ValueError(f"Cannot specify both --{field} and --~{field}")
+        elif include_pattern:
+            patterns[field] = include_pattern
+        elif exclude_pattern:
+            patterns[field] = exclude_pattern
+            inverted.add(field)
+    return LogFilter(patterns, inverted)
+
+
 def main() -> None:
     args = parse_args()
     filename = args.filename
@@ -257,7 +286,7 @@ def main() -> None:
         log_level = SEVERITY_ORDER.index(args.level.upper())
     verbose = args.verbose
 
-    log_filter = LogFilter({}, set())
+    log_filter = make_log_filters(args)
 
     inputs = ParserInput(
         log_level,
@@ -272,7 +301,7 @@ def main() -> None:
     if print_all:
         print_entire_file(filename, inputs)
         if args.filename is None:
-            print(f"\nLog path: {filename}")
+            print(f"\n{COLORS.RESET}Log path: {filename}")
         return
     try:
         follow_and_process(filename, inputs)
