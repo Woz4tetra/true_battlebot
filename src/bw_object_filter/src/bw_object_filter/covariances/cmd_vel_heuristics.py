@@ -12,8 +12,8 @@ class CmdVelHeuristics(CovarianceHeuristics[TwistWithCovariance]):
         self.base_covariance = np.diag([base_covariance_scalar] * 6)
 
     def compute_covariance(self, measurement: TwistWithCovariance) -> List[float]:
-        # twist = measurement.twist
-        # magnitude = np.linalg.norm([twist.linear.x, twist.linear.y, twist.angular.z])
-        covariance = self.base_covariance
-        # covariance *= math.exp(magnitude)
+        twist = measurement.twist
+        magnitude = np.linalg.norm([twist.linear.x, twist.linear.y, twist.angular.z])
+        covariance = np.copy(self.base_covariance)
+        covariance *= math.exp(magnitude * 0.1)
         return covariance.flatten().tolist()

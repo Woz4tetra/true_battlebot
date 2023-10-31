@@ -16,6 +16,7 @@ class RobotHeuristics(CovarianceHeuristics[EstimatedRobot]):
 
     def compute_covariance(self, measurement: EstimatedRobot) -> List[float]:
         distance = get_pose_distance(measurement.pose)
-        covariance = self.base_covariance
+        covariance = np.copy(self.base_covariance)
         covariance *= pose_distance_covariance_scale(distance)
+        covariance[5, 5] = 1000.0  # ignore the orientation
         return covariance.flatten().tolist()

@@ -3,8 +3,8 @@ import math
 from typing import Dict, List, Mapping
 
 import numpy as np
-from bw_interfaces.msg import EstimatedRobot, EstimatedRobotArray
 from bw_tools.structs.pose2d import Pose2D
+from geometry_msgs.msg import Pose
 
 from bw_object_filter.filter_models.filter_model import FilterModel
 
@@ -15,8 +15,8 @@ class RobotMeasurementSorter:
         self.filter_ids = [robot_id for robot_id in self.filters.keys()]
         self.cached_permutations = {}
 
-    def get_distance(self, measurement: EstimatedRobot, filter_model: FilterModel) -> float:
-        pose = Pose2D.from_msg(measurement.pose)
+    def get_distance(self, measurement: Pose, filter_model: FilterModel) -> float:
+        pose = Pose2D.from_msg(measurement)
         filter_pose = Pose2D.from_msg(filter_model.get_state()[0].pose)
         dx = pose.x - filter_pose.x
         dy = pose.y - filter_pose.y
@@ -51,12 +51,10 @@ class RobotMeasurementSorter:
         min_index = np.argmin(permutation_distances)
         return permutations[min_index]
 
-    def get_ids(self, measurements: EstimatedRobotArray) -> Dict[int, EstimatedRobot]:
+    def get_ids(self, measurements: List[Pose]) -> Dict[int, int]:
         measurement_ids = {}
-        measurement_array: List[EstimatedRobot] = measurements.robots  # type: ignore
-        distances = np.zeros((len(measurement_array), len(self.filters)))
-        for measurement_index, measurement in enumerate(measurement_array):
-            measurement: EstimatedRobot
+        distances = np.zeros((len(measurements), len(self.filters)))
+        for measurement_index, measurement in enumerate(measurements):
             measurement_ids[measurement_index] = measurement
             for filter_index, robot_id in enumerate(self.filter_ids):
                 distances[measurement_index, filter_index] = self.get_distance(measurement, self.filters[robot_id])
@@ -64,6 +62,5 @@ class RobotMeasurementSorter:
         minimized = self.minimize_permutation(distances)
         for filter_index, measurement_index in enumerate(minimized):
             robot_id = self.filter_ids[filter_index]
-            measurement = measurement_ids[measurement_index]
-            assigned_ids[robot_id] = measurement
+            assigned_ids[robot_id] = measurement_index
         return assigned_ids

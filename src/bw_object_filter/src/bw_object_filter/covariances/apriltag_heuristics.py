@@ -17,7 +17,7 @@ class ApriltagHeuristics(CovarianceHeuristics[AprilTagDetection]):
 
     def compute_covariance(self, measurement: AprilTagDetection) -> List[float]:
         distance = get_pose_distance(measurement.pose.pose.pose)
-        covariance = self.base_covariance
+        covariance = np.copy(self.base_covariance)
         covariance *= pose_distance_covariance_scale(distance)
         covariance *= pose_angle_covariance_scale(measurement.pose.pose.pose)
         return covariance.flatten().tolist()

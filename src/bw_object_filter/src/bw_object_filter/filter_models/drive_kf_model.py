@@ -18,9 +18,9 @@ from .helpers import (
 
 
 class DriveKalmanModel(FilterModel):
-    def __init__(self, dt: float, process_noise: float = 0.00001, friction_factor: float = 1e-2) -> None:
+    def __init__(self, dt: float, process_noise: float = 0.001, friction_factor: float = 0.2) -> None:
         self.dt = dt
-        self.friction_factor = 1.0 - friction_factor
+        self.friction_factor = friction_factor
         self.state = np.zeros(NUM_STATES)
         self.covariance = np.eye(NUM_STATES)
         self.process_noise_Q = np.eye(NUM_STATES) * process_noise

@@ -35,10 +35,6 @@ TWIST_COVARIANCE_INDICES: Dict[Tuple[int, int], int] = {
     (1, 1): get_index(1, 1, NUM_POSE_STATES_ROS),
     (2, 2): get_index(5, 5, NUM_POSE_STATES_ROS),
 }  # fmt: off
-POSITION_COVARIANCE_INDICES: Dict[Tuple[int, int], int] = {
-    (0, 0): get_index(0, 0, NUM_POSE_STATES_ROS),
-    (1, 1): get_index(1, 1, NUM_POSE_STATES_ROS),
-}  # fmt: off
 
 
 def pose_to_measurement(
@@ -111,13 +107,13 @@ def state_transition_fn(state, dt, friction_factor):
     vy = vx_prev * math.sin(theta) + vy_prev * math.cos(theta)
     vt = state[STATE_vt]
 
-    next_state = np.copy(state)
+    next_state = np.zeros_like(state)
     next_state[STATE_x] = x + dt * vx
     next_state[STATE_y] = y + dt * vy
     next_state[STATE_t] = theta + dt * vt
-    next_state[STATE_vx] *= friction_factor
-    next_state[STATE_vy] *= friction_factor
-    next_state[STATE_vt] *= friction_factor
+    next_state[STATE_vx] = vx_prev - np.sign(vx_prev) * friction_factor * dt
+    next_state[STATE_vy] = vy_prev - np.sign(vy_prev) * friction_factor * dt
+    next_state[STATE_vt] = vt - np.sign(vt) * friction_factor * dt
 
     return next_state
 
