@@ -1,0 +1,43 @@
+
+# The name of the base frame of the robot. This is used for determining robot
+# position on map. Mandatory.
+robot_base_frame: base_link  # base_link
+
+# Specifies topic of source nav_msgs/OccupancyGrid. Mandatory.
+# costmap_topic: /move_base/global_costmap/costmap  # costmap
+costmap_topic: /map
+
+# Specifies topic of source map_msgs/OccupancyGridUpdate. Not necessary if
+# source of map is always publishing full updates, i.e. does not provide this topic.
+# costmap_updates_topic: /move_base/global_costmap/costmap_updates  # costmap_updates
+costmap_updates_topic: /map_updates
+
+# Specifies whether or not publish visualized frontiers.
+visualize: true  # false
+
+# Rate in Hz at which new frontiers will computed and goal reconsidered.
+planner_frequency: 1.0  # 1.0
+
+# Time in seconds. When robot do not make any progress for progress_timeout,
+# current goal will be abandoned.
+progress_timeout: 10.0  # 30.0
+
+# Used for weighting frontiers. This multiplicative parameter affects frontier
+# potential component of the frontier weight (distance to frontier).
+potential_scale: 1e-3  # 1e-3
+
+# Used for weighting frontiers. This multiplicative parameter affects frontier
+# orientation component of the frontier weight. This parameter does currently
+# nothing and is provided solely for forward compatibility.
+orientation_scale: 0  # 0
+
+# Used for weighting frontiers. This multiplicative parameter affects frontier
+# gain component of the frontier weight (frontier size).
+gain_scale: 1.0
+
+# Transform tolerance to use when transforming robot pose.
+transform_tolerance: 0.3
+
+# Minimum size of the frontier to consider the frontier as the exploration goal.
+# In meters.
+min_frontier_size: 0.75

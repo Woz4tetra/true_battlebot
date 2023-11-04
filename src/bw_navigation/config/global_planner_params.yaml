@@ -1,0 +1,46 @@
+### Global planner parameters ###
+# Used if "global_planner/GlobalPlanner" is selected in
+# base_global_planner in move_base global params.
+# load with the namespace "GlobalPlanner" in the launch file
+
+# Specifies whether or not to allow the planner to create plans that traverse unknown space.
+# Must be true if using voxel or obstacle layer
+allow_unknown: false
+
+# A tolerance on the goal point for the planner.
+default_tolerance: 0.1
+
+# Specifies whether or not to visualize the potential area computed via a PointCloud2.
+visualize_potential: false
+
+# If true, use dijkstra's algorithm. Otherwise, A*.
+use_dijkstra: true
+
+# If true, use the quadratic approximation of the potential. Otherwise, use a simpler calculation.
+use_quadratic: true
+
+# If true, create a path that follows the grid boundaries. Otherwise, use a gradient descent method.
+use_grid_path: false
+
+# If for some reason, you want global_planner to exactly mirror the behavior of navfn, set this to true
+old_navfn_behavior: false
+
+# Lethal Cost (dynamic reconfigure)
+lethal_cost: 253  # 253
+
+# Neutral Cost (dynamic reconfigure)
+neutral_cost: 30  # 66
+
+# Factor to multiply each cost from costmap by (dynamic reconfigure)
+cost_factor: 0.55  # 0.55  # 3.0
+
+# Publish Potential Costmap (dynamic reconfigure)
+publish_potential: true
+
+# How to set the orientation of each point
+# (None=0, Forward=1, Interpolate=2, ForwardThenInterpolate=3, Backward=4, Leftward=5, Rightward=6) (dynamic reconfigure)
+orientation_mode: 1
+
+# What window to use to determine the orientation based on the position
+# derivative specified by the orientation mode (dynamic reconfigure)
+orientation_window_size: 255

@@ -5,7 +5,6 @@ import rospy
 import tf2_ros
 from apriltag_ros.msg import AprilTagDetection, AprilTagDetectionArray
 from bw_interfaces.msg import EstimatedRobot, EstimatedRobotArray
-from bw_tools.dataclass_deserialize import dataclass_deserialize
 from bw_tools.structs.transform3d import Transform3D
 from bw_tools.transforms import lookup_pose_in_frame
 from bw_tools.typing import get_param, seconds_to_duration
@@ -49,8 +48,7 @@ class RobotFilter:
         self.friction_factor = get_param("~friction_factor", 0.4)
         self.process_noise = get_param("~process_noise", 1e-4)
 
-        self.robots = dataclass_deserialize(RobotFleetConfig, robot_config)
-        self.check_unique(self.robots)
+        self.robots = RobotFleetConfig.from_config(robot_config)
 
         self.prev_cmd_time = rospy.Time.now()
         self.robot_names = {config.id: config.name for config in self.robots.robots}
@@ -84,17 +82,6 @@ class RobotFilter:
             for robot in self.robots.robots
             if robot.team == OUR_TEAM
         ]
-
-    def check_unique(self, config: RobotFleetConfig) -> None:
-        """
-        Check that all robot ids are unique.
-        """
-        ids = [bot.id for bot in config.robots]
-        if len(ids) != len(set(ids)):
-            raise ValueError("Robot ids must be unique")
-        names = [bot.name for bot in config.robots]
-        if len(names) != len(set(names)):
-            raise ValueError("Robot names must be unique")
 
     def robot_estimation_callback(self, msg: EstimatedRobotArray) -> None:
         map_measurements: List[Pose] = []

@@ -27,3 +27,15 @@
     local-name: zed-ros-wrapper
     uri: https://github.com/stereolabs/zed-ros-wrapper.git
     version: v4.0.5
+- git:
+    local-name: move_base_flex
+    uri: https://github.com/magazino/move_base_flex.git
+    version: 3dedf54a3f155b43c2df2c37f8405bdcd774abef
+- git:
+    local-name: teb_local_planner
+    uri: https://github.com/rst-tu-dortmund/teb_local_planner
+    version: noetic-devel
+- git:
+    local-name: costmap_converter
+    uri: https://github.com/rst-tu-dortmund/costmap_converter.git
+    version: master
