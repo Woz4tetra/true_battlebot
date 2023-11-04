@@ -5,6 +5,7 @@ import rospy
 import tf2_ros
 from apriltag_ros.msg import AprilTagDetection, AprilTagDetectionArray
 from bw_interfaces.msg import EstimatedRobot, EstimatedRobotArray
+from bw_tools.configs.robot_config import OUR_TEAM, RobotConfig, RobotFleetConfig
 from bw_tools.dataclass_deserialize import dataclass_deserialize
 from bw_tools.structs.transform3d import Transform3D
 from bw_tools.transforms import lookup_pose_in_frame
@@ -24,7 +25,6 @@ from std_msgs.msg import Header
 
 from bw_object_filter.covariances import ApriltagHeuristics, CmdVelHeuristics, RobotHeuristics
 from bw_object_filter.filter_models import DriveKalmanModel
-from bw_object_filter.robot_config import OUR_TEAM, RobotConfig, RobotFleetConfig
 from bw_object_filter.robot_measurement_sorter import RobotMeasurementSorter
 
 
@@ -46,7 +46,7 @@ class RobotFilter:
         self.our_base_covariance = get_param("~our_robot_estimate_base_covariance_scalar", 0.1)
         self.their_base_covariance = get_param("~their_robot_estimate_base_covariance_scalar", 0.01)
         self.cmd_vel_base_covariance_scalar = get_param("~cmd_vel_base_covariance_scalar", 0.01)
-        self.friction_factor = get_param("~friction_factor", 0.4)
+        self.friction_factor = get_param("~friction_factor", 0.05)
         self.process_noise = get_param("~process_noise", 1e-4)
 
         self.robots = dataclass_deserialize(RobotFleetConfig, robot_config)

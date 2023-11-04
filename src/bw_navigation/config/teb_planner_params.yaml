@@ -6,28 +6,28 @@
 ## Robot Configuration Parameters ##
 
 # Maximum translational acceleration of the robot in meters/sec^2
-acc_lim_x: 0.5 # 0.5
+acc_lim_x: 2.0 # 0.5
 
 # Maximum angular acceleration of the robot in radians/sec^2
-acc_lim_theta: 1.1 # 12.0
+acc_lim_theta: 10.0 # 12.0
 
 # Maximum translational velocity of the robot in meters/sec
-max_vel_x: 0.3 # max speed 1.0 m/s
+max_vel_x: 3.0 # max speed 1.0 m/s
 
 # Maximum absolute translational velocity of the robot while driving
 # backwards in meters/sec. See optimization parameter
 # weight_kinematics_forward_drive
-max_vel_x_backwards: 0.15 # 0.2
+max_vel_x_backwards: 3.0 # 0.2
 
 # Maximum angular velocity of the robot in radians/secThe following
 # parameters are relevant only for carlike robots:
-max_vel_theta: 3.5 # 5.0
+max_vel_theta: 6.0 # 5.0
 
 ## The following parameters are relevant only for holonomic robots:
 
 # Minimum turning radius of a carlike robot (set to zero for a diff-
 # drive robot).
-min_turning_radius: 0.25 # 0.15
+min_turning_radius: 0.0 # 0.15
 
 # The distance between the rear axle and the front axle. The value might
 # be negative for back-wheeled robots (only required if cmd_angle_instead_rotvel is set to true).
@@ -47,10 +47,10 @@ cmd_angle_instead_rotvel: false # false
 
 # Maximum strafing velocity of the robot (should be zero for non-
 # holonomic robots!)
-max_vel_y: 0.5 # 0.0
+max_vel_y: 0.0 # 0.0
 
 # Maximum strafing acceleration of the robot
-acc_lim_y: 1.0 # 0.5
+acc_lim_y: 0.0 # 0.5
 
 ## The following parameters are relevant for the footprint model used for
 ## optimization (see Tutorial Obstacle Avoidance and Robot Footprint Model).
@@ -60,12 +60,12 @@ acc_lim_y: 1.0 # 0.5
 # Different types are "point", "circular", "line", "two_circles" and
 # "polygon." The type of the model significantly influences the required
 # computation time.
-footprint_model/type: "polygon" # "point"
+footprint_model/type: "circular" # "point"
 
 # This parameter is only relevant for type "circular". It contains the
 # radius of the circle. The center of the circle is located at the
 # robot's axis of rotation.
-footprint_model/radius: 0.2 # 0.2
+footprint_model/radius: 0.1 # 0.2
 
 # This parameter is only relevant for type "line". It contains the start
 # coordinates of the line segment.
@@ -110,7 +110,7 @@ is_footprint_dynamic: false # false
 xy_goal_tolerance: 0.1 # 0.2
 
 # Allowed final orientation error in radians
-yaw_goal_tolerance: 0.05 # 0.2
+yaw_goal_tolerance: 0.1 # 0.2
 
 # Remove the goal velocity constraint such that the robot can arrive at
 # the goal with maximum speed
@@ -188,7 +188,7 @@ exact_arc_length: false # false
 shrink_horizon_min_duration: 10.0 # 10.0
 
 # Minimum desired separation from obstacles in meters
-min_obstacle_dist: 0.05 # 0.5
+min_obstacle_dist: 0.1 # 0.5
 
 # Specify if obstacles of the local costmap should be taken into
 # account. Each cell that is marked as obstacle is considered as a
@@ -248,7 +248,7 @@ obstacle_association_cutoff_factor: 5 # 5
 ## Optimization Parameters ##
 
 optimization_activate: true # true
-optimization_verbose: true # false
+optimization_verbose: false # false
 
 # Number of actual solver iterations called in each outerloop iteration.
 # See param no_outer_iterations.
@@ -404,7 +404,7 @@ switching_blocking_period: 0.0 # 0.0
 
 # Topic name of the odometry message, provided by the robot driver or
 # simulator.
-odom_topic: "/mini_bot/cmd_vel_nav" # "odom"
+odom_topic: "/mini_bot/filter_state" # "odom"
 
 # Global planning frame (in case of a static map, this parameter must be
 # usually changed to "/map".
