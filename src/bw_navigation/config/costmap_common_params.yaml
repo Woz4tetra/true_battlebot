@@ -2,44 +2,15 @@
 robot_radius: 0.0
 footprint_padding: 0.0
 
-footprint: [[-0.1375, -0.105], [-0.1375, 0.105], [0.1375, 0.105], [0.1375, -0.105]]
+footprint:
+  [[-0.1375, -0.105], [-0.1375, 0.105], [0.1375, 0.105], [0.1375, -0.105]]
 
 inflation:
-    enabled: true
-    cost_scaling_factor: 3.0
-    inflation_radius: 1.5
+  enabled: true
+  cost_scaling_factor: 3.0
+  inflation_radius: 1.5
 
 obstacle_layer:
-    enabled: true
-    origin_z: 0.0
-    z_resolution: 0.2
-    z_voxels: 10
-    publish_voxel_map: false
+  enabled: false
 
-    observation_sources: point_cloud_sensor laser_sensor
-    point_cloud_sensor:
-        sensor_frame: camera_link
-        data_type: PointCloud2
-        topic: /zed/point_cloud/cloud_registered
-        marking: true
-        clearing: true
-
-        obstacle_range: 1.0
-        raytrace_range: 1.0
-        max_obstacle_height: 0.4
-        min_obstacle_height: 0.08
-        inflation_radius: 0.005
-        track_unknown_space: true
-        combination_method: 1
-
-    laser_sensor:
-        sensor_frame: laser
-        data_type: LaserScan
-        topic: /laser/obstacle_scan
-        marking: true
-        clearing: true
-        inflation_radius: 0.005
-        raytrace_range: 1.0
-        obstacle_range: 1.0
-
-transform_tolerance: 0.25  # 0.2
+transform_tolerance: 0.25 # 0.2

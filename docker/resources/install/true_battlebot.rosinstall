@@ -39,3 +39,7 @@
     local-name: costmap_converter
     uri: https://github.com/rst-tu-dortmund/costmap_converter.git
     version: master
+- git:
+    local-name: navigation
+    uri: https://github.com/ros-planning/navigation.git
+    version: noetic-devel

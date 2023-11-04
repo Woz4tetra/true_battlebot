@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
     <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
-        <remap from="/cmd_vel" to="/mini_bot/cmd_vel_nav"/>
+        <remap from="/cmd_vel" to="/mini_bot/cmd_vel"/>
         <remap from="/odom" to="/mini_bot/filter_state"/>
         <rosparam file="$(find bw_navigation)/config/move_base_global_params.yaml" command="load"/>
 
@@ -22,4 +22,6 @@
         <param name="costmap_topic" value="/move_base/local_costmap/costmap" />
         <param name="odom_topic" value="/mini_bot/filter_state" />
     </node>
+
+    <node name="field_map_converter" pkg="bw_navigation" type="map_converter.py" output="screen"/>
 </launch>

@@ -5,6 +5,7 @@ using Unity.VisualScripting;
 using RosMessageTypes.BwInterfaces;
 using RosMessageTypes.Std;
 using UnityEngine;
+using System;
 
 public class FieldSensor : BaseRectangleSensor {
     [SerializeField] private string topic = "detections";
@@ -30,17 +31,19 @@ public class FieldSensor : BaseRectangleSensor {
         List<EstimatedFieldMsg> fields = new List<EstimatedFieldMsg>();
         foreach (VisibleTarget target in targets)
         {
+            Vector3Msg size = target.dimensions.To<FLU>();
+            size = new Vector3Msg {
+                x = Math.Abs(size.x),
+                y = Math.Abs(size.y),
+                z = Math.Abs(size.z)
+            };
             EstimatedFieldMsg msg = new EstimatedFieldMsg {
                 header = header,
                 center = new PoseMsg {
                     position = target.cameraRelativePose.GetT().To<FLU>(),
                     orientation = target.cameraRelativePose.GetR().To<FLU>()
                 },
-                size = new Vector3Msg {
-                    x = target.dimensions.x,
-                    y = target.dimensions.y,
-                    z = target.dimensions.z
-                }
+                size = size
             };
             fields.Add(msg);
         }

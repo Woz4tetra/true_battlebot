@@ -1,10 +1,6 @@
-from __future__ import annotations
-
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import Dict, List
-
-from bw_tools.dataclass_deserialize import dataclass_deserialize
+from typing import List
 
 
 class RobotTeam(Enum):
@@ -33,15 +29,3 @@ class RobotConfig:
 @dataclass
 class RobotFleetConfig:
     robots: List[RobotConfig] = field(default_factory=lambda: [])
-
-    def __post_init__(self) -> None:
-        ids = [bot.id for bot in self.robots]
-        if len(ids) != len(set(ids)):
-            raise ValueError("Robot ids must be unique")
-        names = [bot.name for bot in self.robots]
-        if len(names) != len(set(names)):
-            raise ValueError("Robot names must be unique")
-
-    @classmethod
-    def from_config(cls, config: Dict) -> RobotFleetConfig:
-        return dataclass_deserialize(RobotFleetConfig, config)  # type: ignore
