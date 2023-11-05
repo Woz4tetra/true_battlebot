@@ -6,22 +6,22 @@
 ## Robot Configuration Parameters ##
 
 # Maximum translational acceleration of the robot in meters/sec^2
-acc_lim_x: 0.25 # 0.5
+acc_lim_x: 2.0 # 0.5
 
 # Maximum angular acceleration of the robot in radians/sec^2
-acc_lim_theta: 0.25 # 12.0
+acc_lim_theta: 6.0 # 12.0
 
 # Maximum translational velocity of the robot in meters/sec
-max_vel_x: 0.5 # max speed 1.0 m/s
+max_vel_x: 2.0 # max speed 1.0 m/s
 
 # Maximum absolute translational velocity of the robot while driving
 # backwards in meters/sec. See optimization parameter
 # weight_kinematics_forward_drive
-max_vel_x_backwards: 0.5 # 0.2
+max_vel_x_backwards: 2.0 # 0.2
 
 # Maximum angular velocity of the robot in radians/secThe following
 # parameters are relevant only for carlike robots:
-max_vel_theta: 0.5 # 5.0
+max_vel_theta: 6.0 # 5.0
 
 ## The following parameters are relevant only for holonomic robots:
 
@@ -107,10 +107,10 @@ is_footprint_dynamic: false # false
 ## Goal Tolerance Parameters ##
 
 # Allowed final euclidean distance to the goal position in meters
-xy_goal_tolerance: 0.1 # 0.2
+xy_goal_tolerance: 0.15 # 0.2
 
 # Allowed final orientation error in radians
-yaw_goal_tolerance: 0.1 # 0.2
+yaw_goal_tolerance: 0.2 # 0.2
 
 # Remove the goal velocity constraint such that the robot can arrive at
 # the goal with maximum speed
@@ -126,14 +126,14 @@ teb_autosize: True
 # fixed to dt_ref since the temporal resolution is part of the
 # optimization, but the trajectory will be resized between iterations if
 # dt_ref +-dt_hysteresis is violated.
-dt_ref: 0.1 # 0.3
+dt_ref: 0.3 # 0.3
 
 # Hysteresis for automatic resizing depending on the current temporal
 # resolution, usually approx. 10% of dt_ref is recommended
-dt_hysteresis: 0.01 # 0.1
+dt_hysteresis: 0.1 # 0.1
 
 # Minimum number of samples (should be always greater than 2)
-min_samples: 5 # 3
+min_samples: 3 # 3
 
 # Overwrite orientation of local subgoals provided by the global planner
 # (since they often provide only a 2D path)
@@ -175,7 +175,7 @@ shrink_horizon_backup: true # true
 # If true, underlying trajectories might be initialized with backwards
 # motions in case the goal is behind the start within the local costmap
 # (this is only recommended if the robot is equipped with rear sensors).
-allow_init_with_backwards_motion: false # false
+allow_init_with_backwards_motion: true # false
 
 # If true, the planner uses the exact arc length in velocity,
 # acceleration and turning rate computations (-> increased cpu time),
@@ -219,7 +219,7 @@ inflation_dist: 0.08 # 0.6
 # zero velocity (provided via user-supplied obstacles on topic
 # ~/obstacles or obtained from the costmap_converter) is predicted and
 # considered during optimization via a constant velocity model. New
-include_dynamic_obstacles: false # false
+include_dynamic_obstacles: true # false
 
 # The strategy of connecting trajectory poses with obstacles for
 # optimization has been modified (see changelog). You can switch to the
@@ -252,22 +252,22 @@ optimization_verbose: false # false
 
 # Number of actual solver iterations called in each outerloop iteration.
 # See param no_outer_iterations.
-no_inner_iterations: 5 # 5
+no_inner_iterations: 6 # 5
 
 # Each outerloop iteration automatically resizes the trajectory
 # according to the desired temporal resolution dt_ref and invokes the
 # internal optimizer (that performs no_inner_iterations). The total
 # number of solver iterations in each planning cycle is therefore the
 # product of both values.
-no_outer_iterations: 4 # 4
+no_outer_iterations: 5 # 4
 
 # Add a small safety margin to penalty functions for hard-constraint
 # approximations
-penalty_epsilon: 0.1 # 0.1
+penalty_epsilon: 0.15 # 0.1
 
 # Optimization weight for satisfying the maximum allowed translational
 # velocity
-weight_max_vel_x: 1.0 # 2.0
+weight_max_vel_x: 5.0 # 2.0
 
 # Optimization weight for satisfying the maximum allowed strafing
 # velocity
@@ -275,11 +275,11 @@ weight_max_vel_y: 1.0 # 2.0
 
 # Optimization weight for satisfying the maximum allowed angular
 # velocity
-weight_max_vel_theta: 1.0 # 1.0
+weight_max_vel_theta: 5.0 # 1.0
 
 # Optimization weight for satisfying the maximum allowed translational
 # acceleration
-weight_acc_lim_x: 10.0 # 1.0
+weight_acc_lim_x: 1.0 # 1.0
 
 # Optimization weight for satisfying the maximum allowed strafing
 # acceleration
@@ -287,14 +287,14 @@ weight_acc_lim_y: 1.0 # 1.0
 
 # Optimization weight for satisfying the maximum allowed angular
 # acceleration
-weight_acc_lim_theta: 10.0 # 1.0
+weight_acc_lim_theta: 1.0 # 1.0
 
 # Optimization weight for satisfying the non-holonomic kinematics (this
 # parameter must be high since the kinematics equation constitutes an
 # equality constraint, even a value of 1000 does not imply a bad matrix
 # condition due to small 'raw' cost values in comparison to other
 # costs).
-weight_kinematics_nh: 100.0 # 1000.0
+weight_kinematics_nh: 1000.0 # 1000.0
 
 # Optimization weight for forcing the robot to choose only forward
 # directions (positive transl. velocities). A small weight (e.g. 1.0)
@@ -311,14 +311,14 @@ weight_kinematics_turning_radius: 10.0 # 1.0
 weight_optimaltime: 1.0 # 1.0
 
 # Optimization weight for keeping a minimum distance from obstacles
-weight_obstacle: 1000.0 # 50.0
+weight_obstacle: 50.0 # 50.0
 
 # Optimization weight for keeping a minimum distance from dynamic obstacles
 weight_dynamic_obstacle: 50.0 # 50.0
 
 # Optimization weight for minimizing the distance to via-points (resp.
 # reference path). New in version 0.4
-weight_viapoint: 1.0 # 1.0
+weight_viapoint: 10.0 # 1.0
 
 # Optimization weight for the inflation penalty (should be small).
 weight_inflation: 0.1 # 0.1
@@ -420,7 +420,7 @@ map_frame: "map" # "odom"
 # Define plugin name in order to convert costmap cells to
 # points/lines/polygons. Set an empty string to disable the conversion
 # such that all cells are treated as point-obstacles.
-costmap_converter_plugin: "costmap_converter::CostmapToDynamicObstacles" # ""
+costmap_converter_plugin: "" # "costmap_converter::CostmapToDynamicObstacles"
 
 # If set to true, the costmap converter invokes its callback queue in a
 # different thread.

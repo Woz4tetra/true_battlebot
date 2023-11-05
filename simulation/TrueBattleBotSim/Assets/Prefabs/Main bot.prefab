@@ -669,7 +669,7 @@ ArticulationBody:
   m_AngularDamping: 1
   m_JointFriction: 0.05
   m_CenterOfMass: {x: 0, y: 0, z: 0}
-  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaTensor: {x: 0.01, y: 0.05, z: 0.01}
   m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
   m_IncludeLayers:
     serializedVersion: 2
@@ -694,8 +694,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f9b26e993356c0fa1a59dbfbda2f0b1a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  cmdVelTopic: /main_bot/cmd_vel
-  baseWidth: 1
+  baseTopic: main_bot
+  baseWidth: 0.3
   leftWheel: {fileID: 234145475386730121}
   rightWheel: {fileID: 8633397056333115285}
 --- !u!1 &4211652632592029307
@@ -867,7 +867,7 @@ ArticulationBody:
     driveType: 0
   m_LinearDamping: 0.05
   m_AngularDamping: 0.05
-  m_JointFriction: 0.05
+  m_JointFriction: 1
   m_CenterOfMass: {x: 0, y: 0, z: 0}
   m_InertiaTensor: {x: 1, y: 1, z: 1}
   m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
@@ -895,7 +895,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxWheelSpeed: 10
-  wheelRadius: 0.05
+  wheelRadius: 0.075
 --- !u!1 &4845996480495705408
 GameObject:
   m_ObjectHideFlags: 0
@@ -1622,7 +1622,7 @@ ArticulationBody:
     driveType: 0
   m_LinearDamping: 0.05
   m_AngularDamping: 0.05
-  m_JointFriction: 0.05
+  m_JointFriction: 1
   m_CenterOfMass: {x: 0, y: 0, z: 0}
   m_InertiaTensor: {x: 1, y: 1, z: 1}
   m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
@@ -1650,7 +1650,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxWheelSpeed: 10
-  wheelRadius: 0.05
+  wheelRadius: 0.075
 --- !u!1 &8511379351425723363
 GameObject:
   m_ObjectHideFlags: 0

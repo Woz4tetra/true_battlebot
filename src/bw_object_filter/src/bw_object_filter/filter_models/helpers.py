@@ -134,18 +134,13 @@ def input_modulus(value, min_value, max_value):
 
 
 @njit
-def compute_residual(z, H, x, min_angle, max_angle):
-    y = z - H @ x  # error (residual)
-    angle_error = y[STATE_t]
-    angle_error = input_modulus(angle_error, min_angle, max_angle)
-    y[STATE_t] = angle_error
-    return y
-
-
-@njit
 # flake8: noqa: N803 N806
-def jit_update(x, P, H, z, R):
-    y = compute_residual(z, H, x, -math.pi, math.pi)
+def jit_update(x, P, H, z, R, angle_wrapped=False):
+    y = z - H @ x  # error (residual)
+    if angle_wrapped:
+        angle_error = y[STATE_t]
+        angle_error = input_modulus(angle_error, -math.pi, math.pi)
+        y[STATE_t] = angle_error
     PHT = P @ H.T
     S = H @ PHT + R  # project system uncertainty into measurement space
     SI = np.linalg.inv(S)

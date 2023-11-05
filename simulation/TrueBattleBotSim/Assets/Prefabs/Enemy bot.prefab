@@ -139,7 +139,7 @@ ArticulationBody:
     driveType: 0
   m_LinearDamping: 0.05
   m_AngularDamping: 0.05
-  m_JointFriction: 0.05
+  m_JointFriction: 1
   m_CenterOfMass: {x: 0, y: 0, z: 0}
   m_InertiaTensor: {x: 1, y: 1, z: 1}
   m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
@@ -167,7 +167,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxWheelSpeed: 10
-  wheelRadius: 0.05
+  wheelRadius: 0.075
 --- !u!1 &1360865414768079215
 GameObject:
   m_ObjectHideFlags: 0
@@ -1029,7 +1029,7 @@ ArticulationBody:
     driveType: 0
   m_LinearDamping: 0.05
   m_AngularDamping: 0.05
-  m_JointFriction: 0.05
+  m_JointFriction: 1
   m_CenterOfMass: {x: 0, y: 0, z: 0}
   m_InertiaTensor: {x: 1, y: 1, z: 1}
   m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
@@ -1057,7 +1057,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxWheelSpeed: 10
-  wheelRadius: 0.05
+  wheelRadius: 0.075
 --- !u!1 &6983949197948435579
 GameObject:
   m_ObjectHideFlags: 0

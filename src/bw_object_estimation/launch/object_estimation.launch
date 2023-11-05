@@ -1,5 +1,5 @@
 <launch>
-    <node pkg="bw_object_estimation" type="object_estimation" name="object_estimation" output="screen">
+    <node pkg="bw_object_estimation" type="object_estimation" name="object_estimation" output="screen" launch-prefix="gdb -ex run --args">
         <remap from="depth/camera_info" to="/camera/image/camera_info"/>
         <remap from="depth/image_raw" to="/camera/depth/image_raw"/>
         <remap from="segmentation" to="/camera/segmentation"/>

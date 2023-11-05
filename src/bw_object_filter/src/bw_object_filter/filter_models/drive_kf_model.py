@@ -46,12 +46,16 @@ class DriveKalmanModel(FilterModel):
     def update_pose(self, msg: PoseWithCovariance) -> None:
         measurement, noise = pose_to_measurement(msg)
         measurement = np.nan_to_num(measurement, copy=False)
-        self.state, self.covariance = jit_update(self.state, self.covariance, self.pose_H, measurement, noise)
+        self.state, self.covariance = jit_update(
+            self.state, self.covariance, self.pose_H, measurement, noise, angle_wrapped=True
+        )
 
     def update_position(self, msg: PoseWithCovariance) -> None:
         measurement, noise = pose_to_measurement(msg)
         measurement = np.nan_to_num(measurement, copy=False)
-        self.state, self.covariance = jit_update(self.state, self.covariance, self.position_H, measurement, noise)
+        self.state, self.covariance = jit_update(
+            self.state, self.covariance, self.position_H, measurement, noise, angle_wrapped=True
+        )
 
     def update_cmd_vel(self, msg: TwistWithCovariance) -> None:
         measurement, noise = twist_to_measurement(msg)

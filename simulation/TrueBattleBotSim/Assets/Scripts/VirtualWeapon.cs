@@ -25,7 +25,6 @@ public class VirtualWeapon : MonoBehaviour
         if (other.gameObject.tag == gameObject.tag) {
             ApplyForceToOther(gameObject);
             ApplyForceToOther(other.gameObject);
-            Debug.Log("weapons collided");
         }
         else if (isLayerInMask(other.gameObject.layer)) {
             ApplyForceToOther(other.gameObject);
