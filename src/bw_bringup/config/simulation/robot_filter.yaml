@@ -1,5 +1,5 @@
 robots:
-  - { name: mini_bot, id: 41 }
-  - { name: main_bot, id: 76 }
-  - { name: opponent_1, id: -1 }
-  # - { name: opponent_2, id: -1 }
+  - { name: mini_bot, up_id: 41, down_id: 76 }
+  - { name: main_bot, up_id: 42, down_id: 99 }
+  - { name: opponent_1 }
+  # - { name: opponent_2 }

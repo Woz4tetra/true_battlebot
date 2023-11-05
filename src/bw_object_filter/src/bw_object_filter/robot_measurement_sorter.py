@@ -1,6 +1,6 @@
 import itertools
 import math
-from typing import Dict, List, Mapping
+from typing import Dict, List, Mapping, Tuple
 
 import numpy as np
 from bw_tools.structs.pose2d import Pose2D
@@ -10,9 +10,9 @@ from bw_object_filter.filter_models.filter_model import FilterModel
 
 
 class RobotMeasurementSorter:
-    def __init__(self, filters: Mapping[int, FilterModel]) -> None:
+    def __init__(self, filters: Mapping[str, FilterModel]) -> None:
         self.filters = filters
-        self.filter_ids = [robot_id for robot_id in self.filters.keys()]
+        self.filter_names = [robot_name for robot_name in self.filters.keys()]
         self.cached_permutations = {}
 
     def get_distance(self, measurement: Pose, filter_model: FilterModel) -> float:
@@ -22,7 +22,7 @@ class RobotMeasurementSorter:
         dy = pose.y - filter_pose.y
         return math.sqrt(dx * dx + dy * dy)
 
-    def minimize_permutation(self, distances: np.ndarray) -> np.ndarray:
+    def minimize_permutation(self, distances: np.ndarray) -> List[Tuple[int, int]]:
         """
         this function minimizes permutations of distances
         example:
@@ -43,24 +43,37 @@ class RobotMeasurementSorter:
         """
         num_measurements = distances.shape[0]
         num_filters = distances.shape[1]
-        meas_indices = np.arange(num_measurements)
-        if num_measurements not in self.cached_permutations:
-            self.cached_permutations[num_measurements] = np.array(list(itertools.permutations(meas_indices)))
-        permutations = self.cached_permutations[num_measurements]
+        should_flip = num_measurements < num_filters
+        if should_flip:
+            num_measurements, num_filters = num_filters, num_measurements
+            distances = distances.T
+        indices = np.arange(num_measurements)
+        key = (num_measurements, num_filters)
+        if key not in self.cached_permutations:
+            self.cached_permutations[key] = np.array(list(itertools.permutations(indices, num_filters)))
+        permutations = self.cached_permutations[key]
         permutation_distances = np.sum(distances[permutations, tuple(np.arange(num_filters))], axis=1)
         min_index = np.argmin(permutation_distances)
-        return permutations[min_index]
+        mapping = []
+        for matched_column, matched_row in enumerate(permutations[min_index]):
+            if should_flip:
+                mapping.append((matched_row, matched_column))
+            else:
+                mapping.append((matched_column, matched_row))
+        return mapping
 
-    def get_ids(self, measurements: List[Pose]) -> Dict[int, int]:
+    def get_ids(self, measurements: List[Pose]) -> Dict[str, int]:
+        if len(measurements) == 0 or len(self.filters) == 0:
+            return {}
         measurement_ids = {}
         distances = np.zeros((len(measurements), len(self.filters)))
         for measurement_index, measurement in enumerate(measurements):
             measurement_ids[measurement_index] = measurement
-            for filter_index, robot_id in enumerate(self.filter_ids):
-                distances[measurement_index, filter_index] = self.get_distance(measurement, self.filters[robot_id])
+            for filter_index, robot_name in enumerate(self.filter_names):
+                distances[measurement_index, filter_index] = self.get_distance(measurement, self.filters[robot_name])
         assigned_ids = {}
         minimized = self.minimize_permutation(distances)
-        for filter_index, measurement_index in enumerate(minimized):
-            robot_id = self.filter_ids[filter_index]
-            assigned_ids[robot_id] = measurement_index
+        for filter_index, measurement_index in minimized:
+            robot_name = self.filter_names[filter_index]
+            assigned_ids[robot_name] = measurement_index
         return assigned_ids

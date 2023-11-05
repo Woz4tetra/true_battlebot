@@ -6,22 +6,22 @@
 ## Robot Configuration Parameters ##
 
 # Maximum translational acceleration of the robot in meters/sec^2
-acc_lim_x: 2.0 # 0.5
+acc_lim_x: 0.25 # 0.5
 
 # Maximum angular acceleration of the robot in radians/sec^2
-acc_lim_theta: 10.0 # 12.0
+acc_lim_theta: 0.25 # 12.0
 
 # Maximum translational velocity of the robot in meters/sec
-max_vel_x: 3.0 # max speed 1.0 m/s
+max_vel_x: 0.5 # max speed 1.0 m/s
 
 # Maximum absolute translational velocity of the robot while driving
 # backwards in meters/sec. See optimization parameter
 # weight_kinematics_forward_drive
-max_vel_x_backwards: 3.0 # 0.2
+max_vel_x_backwards: 0.5 # 0.2
 
 # Maximum angular velocity of the robot in radians/secThe following
 # parameters are relevant only for carlike robots:
-max_vel_theta: 6.0 # 5.0
+max_vel_theta: 0.5 # 5.0
 
 ## The following parameters are relevant only for holonomic robots:
 
@@ -65,7 +65,7 @@ footprint_model/type: "circular" # "point"
 # This parameter is only relevant for type "circular". It contains the
 # radius of the circle. The center of the circle is located at the
 # robot's axis of rotation.
-footprint_model/radius: 0.1 # 0.2
+footprint_model/radius: 0.15 # 0.2
 
 # This parameter is only relevant for type "line". It contains the start
 # coordinates of the line segment.
@@ -126,14 +126,14 @@ teb_autosize: True
 # fixed to dt_ref since the temporal resolution is part of the
 # optimization, but the trajectory will be resized between iterations if
 # dt_ref +-dt_hysteresis is violated.
-dt_ref: 0.25 # 0.3
+dt_ref: 0.1 # 0.3
 
 # Hysteresis for automatic resizing depending on the current temporal
 # resolution, usually approx. 10% of dt_ref is recommended
-dt_hysteresis: 0.1 # 0.1
+dt_hysteresis: 0.01 # 0.1
 
 # Minimum number of samples (should be always greater than 2)
-min_samples: 3 # 3
+min_samples: 5 # 3
 
 # Overwrite orientation of local subgoals provided by the global planner
 # (since they often provide only a 2D path)
@@ -180,7 +180,7 @@ allow_init_with_backwards_motion: false # false
 # If true, the planner uses the exact arc length in velocity,
 # acceleration and turning rate computations (-> increased cpu time),
 # otherwise the Euclidean approximation is used.
-exact_arc_length: false # false
+exact_arc_length: true # false
 
 # Specify minimum duration for the reduced horizon in case an infeasible
 # trajectory is detected (refer to parameter shrink_horizon_backup in
@@ -196,7 +196,7 @@ min_obstacle_dist: 0.1 # 0.5
 # costmap since it increases computation time. In future releases this
 # circumstance is going to be addressed as well as providing an
 # additional api for dynamic obstacles.
-include_costmap_obstacles: true # true
+include_costmap_obstacles: false # true
 
 # Limit the occupied local costmap obstacles taken into account for
 # planning behind the robot (specify distance in meters).
@@ -271,15 +271,15 @@ weight_max_vel_x: 1.0 # 2.0
 
 # Optimization weight for satisfying the maximum allowed strafing
 # velocity
-weight_max_vel_y: 2.0 # 2.0
+weight_max_vel_y: 1.0 # 2.0
 
 # Optimization weight for satisfying the maximum allowed angular
 # velocity
-weight_max_vel_theta: 50.0 # 1.0
+weight_max_vel_theta: 1.0 # 1.0
 
 # Optimization weight for satisfying the maximum allowed translational
 # acceleration
-weight_acc_lim_x: 1.0 # 1.0
+weight_acc_lim_x: 10.0 # 1.0
 
 # Optimization weight for satisfying the maximum allowed strafing
 # acceleration
@@ -287,7 +287,7 @@ weight_acc_lim_y: 1.0 # 1.0
 
 # Optimization weight for satisfying the maximum allowed angular
 # acceleration
-weight_acc_lim_theta: 50.0 # 1.0
+weight_acc_lim_theta: 10.0 # 1.0
 
 # Optimization weight for satisfying the non-holonomic kinematics (this
 # parameter must be high since the kinematics equation constitutes an

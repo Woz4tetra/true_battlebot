@@ -3,7 +3,7 @@ import cv2
 import numpy as np
 import rospy
 from bw_interfaces.msg import EstimatedField
-from bw_tools.configs.robot_config import RobotConfig, RobotFleetConfig
+from bw_tools.configs.robot_config import RobotFleetConfig
 from bw_tools.dataclass_deserialize import dataclass_deserialize
 from bw_tools.structs.header import Header
 from bw_tools.structs.occupancy_grid import OccupancyGrid
@@ -58,7 +58,7 @@ class MapConverter:
 
         image = np.full((px_height, px_width), 0, dtype=np.int8)
 
-        image = cv2.rectangle(image, (0, 0), (px_width - 1, px_height - 1), (50,), 1)
+        image = cv2.rectangle(image, (0, 0), (px_width - 1, px_height - 1), (99,), 1)
 
         map = OccupancyGrid.from_image(Header.auto("map"), image, resolution)
         self.map_msg = map.to_msg()

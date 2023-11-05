@@ -39,6 +39,9 @@ void ObjectEstimation::synced_callback(
 
         std::vector<std::vector<cv::Point>> cv_contours = get_cv_contours(instance.contours);
 
+        if (cv_contours.size() == 0) {
+            continue;
+        }
         bw_interfaces::EstimatedRobot robot_msg = find_object(depth_cv_image, cv_contours);
         robot_msg.label = instance.label;
         robot_msg.header = segmentation->header;

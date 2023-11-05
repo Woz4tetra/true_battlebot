@@ -19,11 +19,12 @@ class RobotConfig:
     """
 
     name: str
-    id: int
+    up_id: int = -1
+    down_id: int = -1
 
     @property
     def team(self) -> RobotTeam:
-        return OUR_TEAM if self.id >= 0 else THEIR_TEAM
+        return OUR_TEAM if self.up_id >= 0 or self.down_id >= 0 else THEIR_TEAM
 
 
 @dataclass

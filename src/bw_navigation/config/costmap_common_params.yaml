@@ -1,16 +1,26 @@
 ### Common costmap parameters ###
 global_frame: map
 robot_base_frame: base_link_mini_bot
-
-robot_radius: 0.1
+resolution: 0.075
+rolling_window: false
+update_frequency: 3.0
+publish_frequency: 1.0
 footprint_padding: 0.0
 
-inflation:
-  enabled: true
-  cost_scaling_factor: 3.0
-  inflation_radius: 1.5
+robot_radius: 0.15
 
 obstacle_layer:
   enabled: false
 
 transform_tolerance: 0.25 # 0.2
+
+inflation:
+  enabled: true
+  cost_scaling_factor: 5.0
+  inflation_radius: 3.0
+
+plugins:
+  - { name: static, type: "costmap_2d::StaticLayer" }
+  # - { name: obstacle_layer, type: "costmap_2d::VoxelLayer" }
+  # - { name: obstacle_layer, type: "costmap_2d::ObstacleLayer" }
+  - { name: inflation, type: "costmap_2d::InflationLayer" }

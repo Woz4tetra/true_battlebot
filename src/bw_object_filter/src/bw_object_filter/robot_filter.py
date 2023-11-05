@@ -53,12 +53,15 @@ class RobotFilter:
         self.check_unique(self.robots)
 
         self.prev_cmd_time = rospy.Time.now()
-        self.robot_names = {config.id: config.name for config in self.robots.robots}
-        self.robot_teams = {config.id: config.team for config in self.robots.robots}
+        self.robot_names = {}
+        for config in self.robots.robots:
+            self.robot_names[config.up_id] = config.name
+            self.robot_names[config.down_id] = config.name
+        self.robot_teams = {config.name: config.team for config in self.robots.robots}
         rotate_quat = (0.0, 0.0, -0.707, 0.707)
         self.apriltag_rotate_tf = Transform3D.from_position_and_quaternion(Vector3(), Quaternion(*rotate_quat))
         self.robot_filters = {
-            config.id: DriveKalmanModel(self.update_delay, self.process_noise, self.friction_factor)
+            config.name: DriveKalmanModel(self.update_delay, self.process_noise, self.friction_factor)
             for config in self.robots.robots
         }
 
@@ -73,7 +76,7 @@ class RobotFilter:
         self.tf_broadcaster = tf2_ros.TransformBroadcaster()
 
         self.filter_state_pubs = {
-            robot.id: rospy.Publisher(f"{robot.name}/filter_state", Odometry, queue_size=10)
+            robot.name: rospy.Publisher(f"{robot.name}/filter_state", Odometry, queue_size=10)
             for robot in self.robots.robots
         }
 
@@ -89,7 +92,11 @@ class RobotFilter:
         """
         Check that all robot ids are unique.
         """
-        ids = [bot.id for bot in config.robots]
+        ids = []
+        for robot in config.robots:
+            if robot.team == OUR_TEAM:
+                ids.append(robot.up_id)
+                ids.append(robot.down_id)
         if len(ids) != len(set(ids)):
             raise ValueError("Robot ids must be unique")
         names = [bot.name for bot in config.robots]
@@ -107,9 +114,9 @@ class RobotFilter:
             map_measurements.append(map_pose)
 
         assigned = self.measurement_sorter.get_ids(map_measurements)
-        for robot_id, measurement_index in assigned.items():
+        for robot_name, measurement_index in assigned.items():
             camera_measurement: EstimatedRobot = msg.robots[measurement_index]  # type: ignore
-            team = self.robot_teams[robot_id]
+            team = self.robot_teams[robot_name]
             if team == OUR_TEAM:
                 covariance = self.our_robot_heuristics.compute_covariance(camera_measurement)
             else:
@@ -119,7 +126,7 @@ class RobotFilter:
             pose = PoseWithCovariance()
             pose.pose = map_pose
             pose.covariance = covariance
-            self.robot_filters[robot_id].update_position(pose)
+            self.robot_filters[robot_name].update_position(pose)
 
     def tags_callback(self, msg: AprilTagDetectionArray) -> None:
         assert msg.detections is not None
@@ -142,10 +149,11 @@ class RobotFilter:
                 rospy.logwarn("Bundle detection not supported")
                 continue
             tag_id = detection.id[0]
-            if tag_id not in self.robot_filters:
+            robot_name = self.robot_names.get(tag_id, "")
+            if robot_name not in self.robot_filters:
                 rospy.logwarn(f"Tag id {tag_id} is not a robot")
                 continue
-            robot_filter = self.robot_filters[tag_id]
+            robot_filter = self.robot_filters[robot_name]
             robot_filter.update_pose(detection.pose.pose)
 
     def rotate_tag_orientation(
@@ -164,7 +172,7 @@ class RobotFilter:
     def update_cmd_vel(self, msg: Twist, robot_config: RobotConfig):
         measurement = TwistWithCovariance(twist=msg)
         measurement.covariance = self.cmd_vel_heuristics.compute_covariance(measurement)
-        self.robot_filters[robot_config.id].update_cmd_vel(measurement)
+        self.robot_filters[robot_config.name].update_cmd_vel(measurement)
 
     def transform_to_map(self, header: Header, pose: Pose) -> Optional[Pose]:
         pose_stamped = PoseStamped(header=header, pose=pose)
@@ -185,8 +193,8 @@ class RobotFilter:
         for robot_filter in self.robot_filters.values():
             robot_filter.predict()
 
-    def get_robot_frame_id(self, robot_id: int) -> str:
-        return self.robot_frame_prefix + "_" + self.robot_names[robot_id]
+    def get_robot_frame_id(self, robot_name: str) -> str:
+        return self.robot_frame_prefix + "_" + robot_name
 
     def odom_to_transform(self, odom: Odometry) -> TransformStamped:
         transform = TransformStamped()

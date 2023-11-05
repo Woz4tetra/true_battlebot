@@ -71,16 +71,10 @@ def dataclass_deserialize(cls, data):
         field_type = field.type
         name = field.name
 
-        is_opt = is_optional(field_type)
-        if is_opt:
+        if is_optional(field_type):
             field_type = unpack_optional(field_type)
 
-        if is_opt:
-            value = data.get(name, NotSet)
-        else:
-            # Intended to throw Key exception.
-            # If you catch, repackage into another exception.
-            value = data[name]
+        value = data.get(name, NotSet)
 
         if value is NotSet:
             continue  # for loop
