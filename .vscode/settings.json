@@ -124,5 +124,5 @@
   "files.exclude": {
     "**/*.csproj": true
   },
-  "ros.rosSetupScript": "${HOME}/base_ws/devel/setup.bash"
+  "ros.rosSetupScript": "${HOME}/base_ws/install/setup.bash"
 }
