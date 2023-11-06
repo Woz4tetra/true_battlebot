@@ -8,7 +8,7 @@ MAP_NAME="${3}"
 
 /opt/"${ORGANIZATION}"/scripts/lib/set_robot.sh "${ROBOT_NAME}" "${MAP_NAME}"
 
-source /opt/ros/"${ROS_DISTRO}"/setup.bash
+source "${BASE_ROS_WS_ROOT}"/devel/setup.bash
 source "${DEP_ROS_WS_ROOT}"/devel/setup.bash
 
 cd "${ROS_WS_ROOT}"

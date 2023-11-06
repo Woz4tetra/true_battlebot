@@ -5,7 +5,7 @@
         "databaseFilename": "${default}",
         "limitSymbolsToIncludedHeaders": false
       },
-      "includePath": ["/opt/ros/${ROS_DISTRO}/include/**", "/usr/include/**"],
+      "includePath": ["${HOME}/base_ws/install/include/**", "/usr/include/**"],
       "name": "ROS",
       "intelliSenseMode": "gcc-x64",
       "compilerPath": "/usr/bin/gcc",

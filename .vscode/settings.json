@@ -36,10 +36,12 @@
   },
   "editor.rulers": [120],
   "python.autoComplete.extraPaths": [
-    "/opt/ros/${ROS_DISTRO}/lib/python3/dist-packages"
+    "${HOME}/dep_ws/devel/lib/python3/dist-packages/",
+    "${HOME}/ros_ws/devel/lib/python3/dist-packages/"
   ],
   "python.analysis.extraPaths": [
-    "/opt/ros/${ROS_DISTRO}/lib/python3/dist-packages"
+    "${HOME}/dep_ws/devel/lib/python3/dist-packages/",
+    "${HOME}/ros_ws/devel/lib/python3/dist-packages/"
   ],
   "files.associations": {
     "iosfwd": "cpp",
@@ -122,5 +124,5 @@
   "files.exclude": {
     "**/*.csproj": true
   },
-  "ros.distro": "noetic"
+  "ros.rosSetupScript": "${HOME}/base_ws/devel/setup.bash"
 }

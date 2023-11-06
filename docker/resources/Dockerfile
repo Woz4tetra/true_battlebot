@@ -2,16 +2,6 @@ ARG ROS_DISTRO
 ARG PROJECT_NAME
 ARG ORGANIZATION
 
-FROM ros:${ROS_DISTRO}-ros-core as base_image
-
-RUN apt-get update && \
-    apt-get install -y rsync
-COPY --chown=1000:1000 \
-    ./install/copy_select_from_base.sh \
-    ./install/include_from_base.txt \
-    /tmp/
-RUN bash /tmp/copy_select_from_base.sh
-
 FROM stereolabs/zed:4.0-devel-cuda11.8-ubuntu20.04
 
 ARG ROS_DISTRO
@@ -30,6 +20,8 @@ SHELL ["/bin/bash", "-c"]
 # ---
 # Base installation steps
 # ---
+
+WORKDIR /
 
 # ---
 # User setup
@@ -55,34 +47,17 @@ USER ${USER}
 COPY --chown=1000:1000 ./install/install_basic_tools.sh /opt/${ORGANIZATION}/install/
 RUN bash /opt/${ORGANIZATION}/install/install_basic_tools.sh
 
-# ---
-# Multistage copy
-# ---
-
-COPY --from=base_image /tmp/multistage_copy /tmp/multistage_copy
-COPY --chown=1000:1000 ./install/copy_over_multistage.sh /opt/${ORGANIZATION}/install/
-RUN bash /opt/${ORGANIZATION}/install/copy_over_multistage.sh
-
-# ---
-# PyTorch CMake
-# ---
-
-ENV LD_LIBRARY_PATH=/usr/local/lib/python3.6/dist-packages/torch/lib${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}} \
-    CMAKE_PREFIX_PATH=/usr/local/lib/python3.6/dist-packages/torch/share/cmake/Torch${CMAKE_PREFIX_PATH:+:${CMAKE_PREFIX_PATH}}
-
 
 # ---
 # Basic dependencies
 # ---
 
 COPY --chown=1000:1000 \
-    ./install/install_apt_packages.sh \
-    /opt/${ORGANIZATION}/install/
-RUN bash /opt/${ORGANIZATION}/install/install_apt_packages.sh
-COPY --chown=1000:1000 \
     ./install/install_python_dependencies.sh \
+    ./install/requirements.txt \
     /opt/${ORGANIZATION}/install/
 RUN bash /opt/${ORGANIZATION}/install/install_python_dependencies.sh
+
 COPY --chown=1000:1000 \
     ./install/install_libraries.sh \
     /opt/${ORGANIZATION}/install/
@@ -98,45 +73,45 @@ COPY --chown=1000:1000 \
     ./install/torch-requirements.txt \
     ./install/install_python_torch.sh \
     /opt/${ORGANIZATION}/install/
-RUN cd /opt/${ORGANIZATION}/install && bash ./install_python_torch.sh
+RUN bash /opt/${ORGANIZATION}/install/install_python_torch.sh
 
-# COPY --chown=1000:1000 \
-#     ./install/install_torchscript.sh \
-#     /opt/${ORGANIZATION}/install/
-# RUN bash -x /opt/${ORGANIZATION}/install/install_torchscript.sh
+# ---
+# ROS base workspace
+# ---
+
+ENV PATH=${HOME}/.local/bin${PATH:+:${PATH}}
+
+ENV BASE_ROS_WS_ROOT=${HOME}/base_ws
+
+COPY --chown=1000:1000 \
+    ./install/install_ros.sh \
+    /opt/${ORGANIZATION}/install/
+RUN bash /opt/${ORGANIZATION}/install/install_ros.sh
+
 
 # ---
 # ROS dependency workspace
 # ---
 
-ENV DEP_ROS_WS_ROOT=${HOME}/dep_ws \
-    DEP_ROS_WS_SRC=${HOME}/dep_ws/src
+ENV DEP_ROS_WS_ROOT=${HOME}/dep_ws
 
 COPY --chown=1000:1000 \
-    ./install/rosdep_install.sh \
-    ./install/install_ros_base_packages.sh \
+    ./install/install_dep.sh \
+    ./install/patches/geometry2.patch \
+    ./install/patches/image-pipeline.patch \
     ./install/${PROJECT_NAME}.rosinstall \
     /opt/${ORGANIZATION}/install/
-RUN bash /opt/${ORGANIZATION}/install/install_ros_base_packages.sh /opt/${ORGANIZATION}/install/${PROJECT_NAME}.rosinstall
-
-# ---
-# ROS project dependencies
-# ---
-
-COPY --chown=1000:1000 \
-    ./install/install_ros_project_packages.sh \
-    /opt/${ORGANIZATION}/install/
-RUN bash /opt/${ORGANIZATION}/install/install_ros_project_packages.sh
+RUN bash /opt/${ORGANIZATION}/install/install_dep.sh /opt/${ORGANIZATION}/install/${PROJECT_NAME}.rosinstall
 
 # ---
 # Python extra packages
 # ---
 
 COPY --chown=1000:1000 \
-    ./install/requirements.txt \
+    ./install/extra-requirements.txt \
     ./install/install_python_extras.sh \
     /opt/${ORGANIZATION}/install/
-RUN cd /opt/${ORGANIZATION}/install && bash ./install_python_extras.sh
+RUN bash /opt/${ORGANIZATION}/install/install_python_extras.sh
 
 # ---
 # Environment variables
@@ -151,7 +126,7 @@ ENV DEP_ROS_WS_SRC=${HOME}/dep_ws/src
 ENV ROS_WS_ROOT=${HOME}/ros_ws
 ENV ROS_WS_SRC=${ROS_WS_ROOT}/src
 
-ENV PATH=${HOME}/.local/bin:/opt/${ORGANIZATION}/scripts${PATH:+:${PATH}} \
+ENV PATH=/opt/${ORGANIZATION}/scripts${PATH:+:${PATH}} \
     PYTHONPATH=/opt/${ORGANIZATION}/${PROJECT_NAME}/src/bw_tools${PYTHONPATH:+:${PYTHONPATH}} \
     PYTHONIOENCODING=utf-8
 

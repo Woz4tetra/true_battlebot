@@ -1,0 +1,28 @@
+From 22c168943b2e911b7edfc0cab858934abbc964c9 Mon Sep 17 00:00:00 2001
+From: Woz4tetra <woz4tetra@gmail.com>
+Date: Thu, 8 Dec 2022 03:14:20 -0500
+Subject: [PATCH] change test name
+
+---
+ tf2/CMakeLists.txt | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/tf2/CMakeLists.txt b/tf2/CMakeLists.txt
+index a43e14b..87d1c71 100644
+--- a/tf2/CMakeLists.txt
++++ b/tf2/CMakeLists.txt
+@@ -50,8 +50,8 @@ target_link_libraries(speed_test tf2  ${console_bridge_LIBRARIES})
+ add_dependencies(tests speed_test)
+ add_dependencies(tests ${catkin_EXPORTED_TARGETS})
+ 
+-catkin_add_gtest(test_transform_datatypes test/test_transform_datatypes.cpp)
+-target_link_libraries(test_transform_datatypes tf2  ${console_bridge_LIBRARIES})
+-add_dependencies(test_transform_datatypes ${catkin_EXPORTED_TARGETS})
++catkin_add_gtest(test_transform_datatypes2 test/test_transform_datatypes.cpp)
++target_link_libraries(test_transform_datatypes2 tf2  ${console_bridge_LIBRARIES})
++add_dependencies(test_transform_datatypes2 ${catkin_EXPORTED_TARGETS})
+ 
+ endif()
+-- 
+2.25.1
+

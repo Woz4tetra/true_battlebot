@@ -2,6 +2,8 @@
 
 set -e
 
-sudo -H python -m pip install -r ./requirements.txt
+BASE_DIR=$(realpath "$(dirname "${0}")")
+
+sudo python -m pip install --no-cache-dir -r ${BASE_DIR}/extra-requirements.txt
 
 echo "Installed python extras"

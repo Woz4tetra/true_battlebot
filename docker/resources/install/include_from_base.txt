@@ -1,2 +1,0 @@
-/opt
-/etc/apt

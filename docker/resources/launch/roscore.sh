@@ -1,6 +1,6 @@
 #!/bin/bash
 
 source /opt/"${ORGANIZATION}"/scripts/lib/set_master.sh "${ROS_MASTER_INTERFACE}"
-source /opt/ros/"${ROS_DISTRO}"/setup.bash
+source "${BASE_ROS_WS_ROOT}"/devel/setup.bash
 
 roscore

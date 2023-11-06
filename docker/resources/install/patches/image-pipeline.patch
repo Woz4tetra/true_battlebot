@@ -1,0 +1,40 @@
+From c97cdb390b04af2c93a3071f7907f1ca18b64252 Mon Sep 17 00:00:00 2001
+From: Woz4tetra <woz4tetra@gmail.com>
+Date: Mon, 17 May 2021 19:36:34 -0400
+Subject: [PATCH] import bug fixes
+
+---
+ depth_image_proc/include/depth_image_proc/depth_traits.h | 2 ++
+ image_proc/include/image_proc/processor.h                | 3 +++
+ 2 files changed, 5 insertions(+)
+
+diff --git a/depth_image_proc/include/depth_image_proc/depth_traits.h b/depth_image_proc/include/depth_image_proc/depth_traits.h
+index e365821..488786c 100644
+--- a/depth_image_proc/include/depth_image_proc/depth_traits.h
++++ b/depth_image_proc/include/depth_image_proc/depth_traits.h
+@@ -40,6 +40,8 @@
+ #include <limits>
+ #include <vector>
+ 
++#include <opencv2/calib3d.hpp>
++
+ namespace depth_image_proc {
+ 
+ // Encapsulate differences between processing float and uint16_t depths
+diff --git a/image_proc/include/image_proc/processor.h b/image_proc/include/image_proc/processor.h
+index df2d3e4..2a6c48e 100644
+--- a/image_proc/include/image_proc/processor.h
++++ b/image_proc/include/image_proc/processor.h
+@@ -35,6 +35,9 @@
+ #define IMAGE_PROC_PROCESSOR_H
+ 
+ #include <opencv2/core/core.hpp>
++#include <opencv2/stereo.hpp>
++#include <opencv2/calib3d.hpp>
++
+ #include <image_geometry/pinhole_camera_model.h>
+ #include <sensor_msgs/Image.h>
+ 
+-- 
+2.17.1
+

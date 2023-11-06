@@ -1,5 +1,5 @@
 #!/bin/bash
-source /opt/ros/"${ROS_DISTRO}"/setup.bash
+source "${BASE_ROS_WS_ROOT}"/devel/setup.bash
 source "${DEP_ROS_WS_ROOT}"/devel/setup.bash
 cd ${ROS_WS_ROOT}
 rosdep install --simulate --from-paths src --ignore-src --rosdistro=${ROS_DISTRO}
