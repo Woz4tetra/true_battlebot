@@ -36,11 +36,11 @@
   },
   "editor.rulers": [120],
   "python.autoComplete.extraPaths": [
-    "${HOME}/dep_ws/devel/lib/python3/dist-packages/",
+    "${HOME}/dep_ws/install/lib/python3/dist-packages/",
     "${HOME}/ros_ws/devel/lib/python3/dist-packages/"
   ],
   "python.analysis.extraPaths": [
-    "${HOME}/dep_ws/devel/lib/python3/dist-packages/",
+    "${HOME}/dep_ws/install/lib/python3/dist-packages/",
     "${HOME}/ros_ws/devel/lib/python3/dist-packages/"
   ],
   "files.associations": {
