@@ -22,7 +22,7 @@
             <remap from="joint_states" to="zed_joint_states"/>
         </node>
     </group>
-    <node name="camera_0" pkg="zed_wrapper" type="zed_wrapper_node" output="screen" required="false" respawn="true">
+    <node name="$(arg camera_name)" pkg="zed_wrapper" type="zed_wrapper_node" output="screen" required="false" respawn="true">
         <rosparam file="$(arg config_path)" command="load" />
 
         <param name="general/camera_name"               value="$(arg camera_name)" />

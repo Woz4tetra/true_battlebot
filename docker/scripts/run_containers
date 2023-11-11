@@ -7,5 +7,22 @@ export IMAGE_VERSION=$(${BASE_DIR}/../get_image_tag)
 export ORGANIZATION=$(${BASE_DIR}/../get_organization)
 export ROS_MASTER_INTERFACE=""
 
+
+which nvidia-smi > /dev/null
+if [[ $? -eq 1 ]]; then
+	HAS_GPU="disable"
+else
+	nvidia-smi -L > /dev/null
+	num_gpus=$?
+	if ((num_gpus == 0)); then
+		HAS_GPU="enable"
+	else
+		HAS_GPU="disable"
+	fi
+fi
+
 cd ${BASE_DIR}/../resources
-docker-compose -f docker-compose.roscore.yml -f docker-compose.${PROJECT_NAME}.yml up -d
+
+ln -sf docker-compose.gpu-${HAS_GPU}.yaml docker-compose.gpu.yaml
+
+docker-compose -f docker-compose.roscore.yml -f docker-compose.${PROJECT_NAME}.yml -f docker-compose.gpu.yaml up -d

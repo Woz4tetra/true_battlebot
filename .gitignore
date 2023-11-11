@@ -1,3 +1,4 @@
+docker-compose.gpu.yaml
 *.mp4
 *.pth
 *.pkl
