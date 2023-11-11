@@ -2,6 +2,8 @@
 
 set -e
 
+apt-get update
+apt-get install -y sudo
 echo DEBIAN_FRONTEND=noninteractive >> /etc/environment
 groupadd -g 1000 ${USER}
 useradd -r -u 1000 -m -s /bin/bash -g ${USER} -G dialout,plugdev,video,audio,sudo ${USER}

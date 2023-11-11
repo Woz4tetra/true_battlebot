@@ -35,12 +35,8 @@
     "editor.formatOnSave": true
   },
   "editor.rulers": [120],
-  "python.autoComplete.extraPaths": [
-    "${HOME}/ros_ws/devel/lib/python3/dist-packages/"
-  ],
-  "python.analysis.extraPaths": [
-    "${HOME}/ros_ws/devel/lib/python3/dist-packages/"
-  ],
+  "python.autoComplete.extraPaths": [],
+  "python.analysis.extraPaths": [],
   "files.associations": {
     "iosfwd": "cpp",
     "cctype": "cpp",

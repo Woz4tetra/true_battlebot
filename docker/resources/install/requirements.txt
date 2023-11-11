@@ -9,3 +9,16 @@ opencv-python
 Cython
 llvmlite
 numba
+empy
+nose
+pycryptodome
+defusedxml
+mock
+netifaces
+gnupg
+numpy
+psutil
+twisted
+tornado
+autobahn
+bson

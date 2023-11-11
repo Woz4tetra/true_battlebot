@@ -25,19 +25,6 @@ sudo apt-get install -y \
     python3 \
     python3-pip \
     python3-setuptools \
-    python3-empy \
-    python3-nose \
-    python3-pycryptodome \
-    python3-defusedxml \
-    python3-mock \
-    python3-netifaces \
-    python3-gnupg \
-    python3-numpy \
-    python3-psutil \
-    python3-twisted \
-    python3-tornado \
-    python3-autobahn \
-    python3-bson \
     libbullet-dev \
     libeigen3-dev \
     libyaml-cpp-dev \

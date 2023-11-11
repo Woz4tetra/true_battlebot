@@ -2,7 +2,7 @@
 set -e
 
 source "${BASE_ROS_WS_ROOT}"/install/setup.bash
-source "${DEP_ROS_WS_ROOT}"/install/setup.bash
+source "${DEP_ROS_WS_ROOT}"/devel/setup.bash
 source "${ROS_WS_ROOT}"/devel/setup.bash
 source ${ROS_WS_ROOT}/robot
 

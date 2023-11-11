@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 705507994}
-  m_IndirectSpecularColor: {r: 0.44657898, g: 0.4964133, b: 0.5748178, a: 1}
+  m_IndirectSpecularColor: {r: 0.44657832, g: 0.49641222, b: 0.57481664, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -645,6 +645,10 @@ PrefabInstance:
       propertyPath: m_ParentAnchorPosition.y
       value: 0.059999995
       objectReference: {fileID: 0}
+    - target: {fileID: 1727056428164032857, guid: 2cf32c22490789d48bee636147bdadd8, type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: 4ba43c994d2dcce08ac034320fae2e79, type: 2}
     - target: {fileID: 2085845971517905370, guid: 2cf32c22490789d48bee636147bdadd8, type: 3}
       propertyPath: m_Name
       value: Mini bot
@@ -693,6 +697,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5389180406130617305, guid: 2cf32c22490789d48bee636147bdadd8, type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: da8e70f1dbd69ae1a97413b1d9d147d3, type: 2}
     - target: {fileID: 6598906100471887985, guid: 2cf32c22490789d48bee636147bdadd8, type: 3}
       propertyPath: m_LocalScale.x
       value: 1
@@ -762,6 +770,14 @@ PrefabInstance:
       propertyPath: m_ParentAnchorRotation.z
       value: -0.000000059604645
       objectReference: {fileID: 0}
+    - target: {fileID: 1034887632602684059, guid: 2c8d222d5c56d9cd0ae854a942db0577, type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: c348986fd3fa59fccb1708fb26ea0413, type: 2}
+    - target: {fileID: 1259335063375300615, guid: 2c8d222d5c56d9cd0ae854a942db0577, type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: 4243336c59f9315da9ec905a90fce0dd, type: 2}
     - target: {fileID: 1525717491586967197, guid: 2c8d222d5c56d9cd0ae854a942db0577, type: 3}
       propertyPath: m_ParentAnchorPosition.x
       value: 0.15000004

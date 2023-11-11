@@ -5,11 +5,11 @@ set -e
 touch "${ROS_WS_ROOT}"/robot
 source "${ROS_WS_ROOT}"/robot
 
-if [ -z "${ROBOT}" ]
+if [ -z "${ROBOT}" ] || [ -n "${1}" ]
     then export ROBOT="${1}"
 fi
 
-if [ -z "${MAP_NAME}" ]
+if [ -z "${MAP_NAME}" ] || [ -n "${2}" ]
     then export MAP_NAME="${2}"
 fi
 

@@ -1,12 +1,13 @@
+ARG UBUNTU_VERSION=20.04
+ARG CUDA_VERSION_FULL=11.8.0
+ARG CUDNN_VERSION_MAJOR=8
+
+FROM nvidia/cuda:${CUDA_VERSION_FULL}-cudnn${CUDNN_VERSION_MAJOR}-devel-ubuntu${UBUNTU_VERSION}
+
 ARG ROS_DISTRO
 ARG PROJECT_NAME
 ARG ORGANIZATION
-
-FROM stereolabs/zed:4.0-devel-cuda11.8-ubuntu20.04
-
-ARG ROS_DISTRO
-ARG PROJECT_NAME
-ARG ORGANIZATION
+ARG PYTHON_INSTALL_VERSION=3.9
 
 ENV ROS_DISTRO=${ROS_DISTRO}
 ENV PROJECT_NAME=${PROJECT_NAME}
@@ -30,15 +31,26 @@ WORKDIR /
 ENV USER=${ORGANIZATION}
 ENV HOME=/home/${USER}
 
-RUN sudo mkdir -p /opt/${ORGANIZATION}/install && sudo chown -R 1000:1000 /opt/${ORGANIZATION}/
+RUN mkdir -p /opt/${ORGANIZATION}/install
 COPY --chown=1000:1000 ./install/setup_user.sh /opt/${ORGANIZATION}/install
 RUN bash /opt/${ORGANIZATION}/install/setup_user.sh
 
 COPY --chown=1000:1000 ./install/download /usr/bin
 
-RUN chown -R 1000:1000 /usr/local/zed/
-
 USER ${USER}
+
+RUN sudo chown -R 1000:1000 /opt/${ORGANIZATION}/
+
+# ---
+# ZED SDK
+# ---
+
+ENV TZ=America/New_York
+
+COPY --chown=1000:1000 \
+    ./install/install_zed.sh \
+    /opt/${ORGANIZATION}/install/
+RUN sudo bash /opt/${ORGANIZATION}/install/install_zed.sh
 
 # ---
 # Basic tools
