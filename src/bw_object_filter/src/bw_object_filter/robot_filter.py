@@ -5,7 +5,7 @@ import rospy
 import tf2_ros
 from apriltag_ros.msg import AprilTagDetection, AprilTagDetectionArray
 from bw_interfaces.msg import EstimatedRobot, EstimatedRobotArray
-from bw_tools.configs.robot_config import OUR_TEAM, RobotConfig, RobotFleetConfig
+from bw_tools.configs.robot_config import RobotConfig, RobotFleetConfig, RobotTeam
 from bw_tools.dataclass_deserialize import dataclass_deserialize
 from bw_tools.structs.transform3d import Transform3D
 from bw_tools.transforms import lookup_pose_in_frame
@@ -57,7 +57,7 @@ class RobotFilter:
         for config in self.robots.robots:
             self.robot_names[config.up_id] = config.name
             self.robot_names[config.down_id] = config.name
-        self.robot_teams = {config.name: config.team for config in self.robots.robots}
+        self.robot_configs = {config.name: config for config in self.robots.robots}
         rotate_quat = (0.0, 0.0, -0.707, 0.707)
         self.apriltag_rotate_tf = Transform3D.from_position_and_quaternion(Vector3(), Quaternion(*rotate_quat))
         self.robot_filters = {
@@ -85,7 +85,7 @@ class RobotFilter:
         self.cmd_vel_subs = [
             rospy.Subscriber(f"{robot.name}/cmd_vel", Twist, self.cmd_vel_callback, callback_args=robot)
             for robot in self.robots.robots
-            if robot.team == OUR_TEAM
+            if robot.team == RobotTeam.OUR_TEAM
         ]
 
     def check_unique(self, config: RobotFleetConfig) -> None:
@@ -94,7 +94,7 @@ class RobotFilter:
         """
         ids = []
         for robot in config.robots:
-            if robot.team == OUR_TEAM:
+            if robot.team == RobotTeam.OUR_TEAM:
                 ids.append(robot.up_id)
                 ids.append(robot.down_id)
         if len(ids) != len(set(ids)):
@@ -124,11 +124,12 @@ class RobotFilter:
         assigned = self.measurement_sorter.get_ids(map_measurements)
         for robot_name, measurement_index in assigned.items():
             camera_measurement: EstimatedRobot = msg.robots[measurement_index]  # type: ignore
-            team = self.robot_teams[robot_name]
-            if team == OUR_TEAM:
+            robot_config = self.robot_configs[robot_name]
+            if robot_config.team == RobotTeam.OUR_TEAM:
                 covariance = self.our_robot_heuristics.compute_covariance(camera_measurement)
             else:
                 covariance = self.their_robot_heuristics.compute_covariance(camera_measurement)
+                self.update_cmd_vel(Twist(), robot_config)
             map_pose = map_measurements[measurement_index]
 
             pose = PoseWithCovariance()
@@ -188,7 +189,6 @@ class RobotFilter:
         if not robot_filter.is_right_side_up:
             measurement.twist.linear.x *= -1
             measurement.twist.linear.y *= -1
-            measurement.twist.angular.z *= -1
         robot_filter.update_cmd_vel(measurement)
 
     def transform_to_map(self, header: Header, pose: Pose) -> Optional[Pose]:
@@ -203,7 +203,7 @@ class RobotFilter:
         if rospy.Time.now() - self.prev_cmd_time <= self.command_timeout:
             return
         for config in self.robots.robots:
-            if config.team == OUR_TEAM:
+            if config.team == RobotTeam.OUR_TEAM:
                 self.update_cmd_vel(Twist(), config)
 
     def predict_all_filters(self) -> None:

@@ -39,6 +39,7 @@ class DriveKalmanModel(FilterModel):
         self.cmd_vel_H[0:NUM_STATES_1ST_ORDER, NUM_STATES_1ST_ORDER:NUM_STATES] = np.eye(NUM_MEASUREMENTS)
 
         self.is_right_side_up = True
+        self.is_initialized = False
 
     def predict(self) -> None:
         self.clamp_divergent()
@@ -47,18 +48,24 @@ class DriveKalmanModel(FilterModel):
         )
 
     def update_pose(self, msg: PoseWithCovariance) -> None:
-        measurement, noise = pose_to_measurement(msg)
-        measurement = np.nan_to_num(measurement, copy=False)
-        self.state, self.covariance = jit_update(
-            self.state, self.covariance, self.pose_H, measurement, noise, angle_wrapped=True
-        )
+        if self.is_initialized:
+            measurement, noise = pose_to_measurement(msg)
+            measurement = np.nan_to_num(measurement, copy=False)
+            self.state, self.covariance = jit_update(
+                self.state, self.covariance, self.pose_H, measurement, noise, angle_wrapped=True
+            )
+        else:
+            self.reset(msg)
 
     def update_position(self, msg: PoseWithCovariance) -> None:
-        measurement, noise = pose_to_measurement(msg)
-        measurement = np.nan_to_num(measurement, copy=False)
-        self.state, self.covariance = jit_update(
-            self.state, self.covariance, self.position_H, measurement, noise, angle_wrapped=True
-        )
+        if self.is_initialized:
+            measurement, noise = pose_to_measurement(msg)
+            measurement = np.nan_to_num(measurement, copy=False)
+            self.state, self.covariance = jit_update(
+                self.state, self.covariance, self.position_H, measurement, noise, angle_wrapped=True
+            )
+        else:
+            self.reset(msg)
 
     def update_cmd_vel(self, msg: TwistWithCovariance) -> None:
         measurement, noise = twist_to_measurement(msg)
@@ -83,3 +90,8 @@ class DriveKalmanModel(FilterModel):
         self.state[0:NUM_STATES_1ST_ORDER] = measurement
         self.covariance = np.eye(NUM_STATES)
         self.covariance[0:NUM_STATES_1ST_ORDER, 0:NUM_STATES_1ST_ORDER] = measurement_noise
+        self.is_initialized = True
+
+    def deinitialize(self) -> None:
+        self.is_initialized = True
+        self.is_right_side_up = True

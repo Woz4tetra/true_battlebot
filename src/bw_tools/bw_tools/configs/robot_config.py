@@ -4,12 +4,9 @@ from typing import List
 
 
 class RobotTeam(Enum):
-    RED = auto()  # our team
-    BLUE = auto()  # their team
-
-
-OUR_TEAM = RobotTeam.RED
-THEIR_TEAM = RobotTeam.BLUE
+    OUR_TEAM = auto()  # our team
+    THEIR_TEAM = auto()  # their team
+    REFEREE = auto()
 
 
 @dataclass
@@ -24,7 +21,10 @@ class RobotConfig:
 
     @property
     def team(self) -> RobotTeam:
-        return OUR_TEAM if self.up_id >= 0 or self.down_id >= 0 else THEIR_TEAM
+        if self.name == "referee":
+            return RobotTeam.REFEREE
+        else:
+            return RobotTeam.OUR_TEAM if self.up_id >= 0 or self.down_id >= 0 else RobotTeam.THEIR_TEAM
 
 
 @dataclass
