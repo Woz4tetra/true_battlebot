@@ -3,6 +3,10 @@ docker-compose.gpu.yaml
 *.pth
 *.pkl
 
+# ZED files
+*neural_depth*.model*
+.*timing_cache
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

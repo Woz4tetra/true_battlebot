@@ -166,7 +166,11 @@ COPY --chown=1000:1000 \
     ./launch/roscore.sh \
     ./launch/rosconsole.config \
     /opt/${ORGANIZATION}/
-RUN ln -s /opt/${ORGANIZATION}/${PROJECT_NAME} ${HOME}/${PROJECT_NAME}
+
+COPY --chown=1000:1000 \
+    ./install/make_symlinks.sh \
+    /opt/${ORGANIZATION}/install/
+RUN bash /opt/${ORGANIZATION}/install/make_symlinks.sh
 
 RUN mkdir -p ${HOME}/.ros && \
     chown -R 1000:1000 ${HOME}/.ros
