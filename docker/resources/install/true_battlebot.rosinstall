@@ -179,3 +179,19 @@
     local-name: executive_smach
     uri: https://github.com/ros/executive_smach.git
     version: noetic-devel
+- git:
+    local-name: ros-foxglove-bridge
+    uri: https://github.com/foxglove/ros-foxglove-bridge.git
+    version: 0.7.3
+- git:
+    local-name: resource_retriever
+    uri: https://github.com/ros/resource_retriever.git
+    version: kinetic-devel
+- git:
+    local-name: ros_babel_fish
+    uri: https://github.com/StefanFabian/ros_babel_fish.git
+    version: kinetic
+- git:
+    local-name: ros_tutorials
+    uri: https://github.com/ros/ros_tutorials.git
+    version: noetic-devel

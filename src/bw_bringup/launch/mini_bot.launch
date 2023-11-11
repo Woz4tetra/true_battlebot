@@ -11,4 +11,8 @@
     <include file="$(find bw_navigation)/launch/move_base.launch">
         <arg name="robot_filter_config" default="$(find bw_bringup)/config/$(arg robot)/robot_filter.yaml"/>
     </include>
+        <include file="$(find bw_bringup)/launch/foxglove_bridge.launch">
+        <arg name="port" value="8765" />
+        <arg name="asset_uri_allowlist" value="['package://(.*).(dae|stl|urdf|xacro)']" />
+    </include>
 </launch>

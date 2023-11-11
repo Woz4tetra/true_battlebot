@@ -103,6 +103,14 @@ class RobotFilter:
         if len(names) != len(set(names)):
             raise ValueError("Robot names must be unique")
 
+    def is_id_right_side_up(self, id: int) -> Optional[bool]:
+        for config in self.robots.robots:
+            if id == config.down_id:
+                return False
+            elif id == config.up_id:
+                return True
+        return None
+
     def robot_estimation_callback(self, msg: EstimatedRobotArray) -> None:
         map_measurements: List[Pose] = []
         for measurement in msg.robots:  # type: ignore
@@ -156,6 +164,10 @@ class RobotFilter:
             robot_filter = self.robot_filters[robot_name]
             robot_filter.update_pose(detection.pose.pose)
 
+            is_right_side_up = self.is_id_right_side_up(tag_id)
+            if is_right_side_up is not None:
+                robot_filter.is_right_side_up = is_right_side_up
+
     def rotate_tag_orientation(
         self,
         tag_orientation: Quaternion,
@@ -172,7 +184,12 @@ class RobotFilter:
     def update_cmd_vel(self, msg: Twist, robot_config: RobotConfig):
         measurement = TwistWithCovariance(twist=msg)
         measurement.covariance = self.cmd_vel_heuristics.compute_covariance(measurement)
-        self.robot_filters[robot_config.name].update_cmd_vel(measurement)
+        robot_filter = self.robot_filters[robot_config.name]
+        if not robot_filter.is_right_side_up:
+            measurement.twist.linear.x *= -1
+            measurement.twist.linear.y *= -1
+            measurement.twist.angular.z *= -1
+        robot_filter.update_cmd_vel(measurement)
 
     def transform_to_map(self, header: Header, pose: Pose) -> Optional[Pose]:
         pose_stamped = PoseStamped(header=header, pose=pose)

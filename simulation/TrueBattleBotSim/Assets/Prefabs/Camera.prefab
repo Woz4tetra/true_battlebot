@@ -48,6 +48,8 @@ GameObject:
   - component: {fileID: 6078746319307151026}
   - component: {fileID: 3957978623221294602}
   - component: {fileID: 8809695231059794595}
+  - component: {fileID: 2960329943258412025}
+  - component: {fileID: 4595039344932324030}
   m_Layer: 0
   m_Name: Camera Sensor
   m_TagString: MainCamera
@@ -189,7 +191,7 @@ MonoBehaviour:
   maxDistance: 5
   layerMask:
     serializedVersion: 2
-    m_Bits: 1024
+    m_Bits: 1737
   debugRayCast: 0
   publishRate: 10
   topic: /tag_detections
@@ -200,7 +202,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5601284787570054784}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 97dde157c74a4a6098ad5f0b7dbb81cd, type: 3}
   m_Name: 
@@ -232,3 +234,45 @@ MonoBehaviour:
   publishRate: 0
   plane_request_topic: plane_request
   plane_response_topic: plane_response
+--- !u!54 &2960329943258412025
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5601284787570054784}
+  serializedVersion: 4
+  m_Mass: 1
+  m_Drag: 0
+  m_AngularDrag: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 0
+  m_IsKinematic: 0
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
+--- !u!114 &4595039344932324030
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5601284787570054784}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e8ae63ef031d9f65c9fd441336835965, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  FrameId: imu
+  publishDelay: 0
+  topic: /imu

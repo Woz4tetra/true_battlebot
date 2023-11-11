@@ -4,7 +4,8 @@ using Unity.Robotics.ROSTCPConnector;
 using Unity.VisualScripting;
 using RosMessageTypes.Std;
 
-public abstract class BaseRectangleSensor : MonoBehaviour {
+public abstract class BaseRectangleSensor : MonoBehaviour
+{
     protected TransformFrame frame;
     private Camera cameraView;
     private uint sentMessageCount = 0;
@@ -14,6 +15,7 @@ public abstract class BaseRectangleSensor : MonoBehaviour {
     [SerializeField] private LayerMask layerMask;
     [SerializeField] private bool debugRayCast = false;
     [SerializeField] private float publishRate = 0.0f;
+    [SerializeField] private float viewAngleThreshold = 70.0f;
     private float publishStartDelay = 1.0f;
 
     abstract protected void BaseRectangleSensorStart();
@@ -23,7 +25,8 @@ public abstract class BaseRectangleSensor : MonoBehaviour {
         frame = GetComponent<TransformFrame>();
         cameraView = GetComponent<Camera>();
 
-        if (publishRate > 0) {
+        if (publishRate > 0)
+        {
             InvokeRepeating("PublishTags", publishStartDelay, 1.0f / publishRate);
         }
         BaseRectangleSensorStart();
@@ -31,12 +34,14 @@ public abstract class BaseRectangleSensor : MonoBehaviour {
 
     void Update()
     {
-        if (publishRate <= 0) {
+        if (publishRate <= 0)
+        {
             PublishTags();
         }
     }
 
-    private void PublishTags() {
+    private void PublishTags()
+    {
         RectangleTarget[] tags = FindObjectsOfType<RectangleTarget>();
         VisibleTarget[] targets = ProcessTags(tags);
         TargetsCallback(targets);
@@ -44,7 +49,8 @@ public abstract class BaseRectangleSensor : MonoBehaviour {
 
     abstract protected void TargetsCallback(VisibleTarget[] targets);
 
-    protected uint GetMessageCount() {
+    protected uint GetMessageCount()
+    {
         return sentMessageCount;
     }
 
@@ -59,7 +65,8 @@ public abstract class BaseRectangleSensor : MonoBehaviour {
             }
             VisibleTarget tagMsg = new VisibleTarget
             {
-                header = new HeaderMsg {
+                header = new HeaderMsg
+                {
                     seq = sentMessageCount,
                     stamp = RosUtil.GetTimeMsg(),
                     frame_id = frame.GetFrameId()
@@ -74,7 +81,8 @@ public abstract class BaseRectangleSensor : MonoBehaviour {
         return tagList.ToArray();
     }
 
-    public Matrix4x4 GetTagPose(Transform tagTransform) {
+    public Matrix4x4 GetTagPose(Transform tagTransform)
+    {
         Matrix4x4 tagMatrix = Matrix4x4.TRS(tagTransform.position, tagTransform.rotation, Vector3.one);
         Matrix4x4 thisMatrix = Matrix4x4.TRS(transform.position, transform.rotation, Vector3.one);
         Matrix4x4 cameraRotateMatrix = Matrix4x4.TRS(Vector3.zero, Quaternion.Euler(-90.0f, 0.0f, -90.0f), Vector3.one);
@@ -93,6 +101,12 @@ public abstract class BaseRectangleSensor : MonoBehaviour {
         if (GeometryUtility.TestPlanesAABB(planes, tagRenderer.bounds))
         {
             RaycastHit hit;
+            Vector3 tagNormal = tag.transform.rotation * -Vector3.up;
+            Vector3 cameraNormal = cameraView.transform.rotation * Vector3.forward;
+            float tagAngle = Vector3.Angle(tagNormal, cameraNormal);
+            if (tagAngle > viewAngleThreshold) {
+                return false;
+            }
             Vector3 directionVector = tagRenderer.bounds.center - cameraView.transform.position;
             var measurementStart = rayCastOffset * directionVector + transform.position;
             var measurementRay = new Ray(measurementStart, directionVector.normalized);

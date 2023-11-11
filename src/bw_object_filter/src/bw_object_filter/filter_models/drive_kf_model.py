@@ -8,6 +8,7 @@ from .helpers import (
     NUM_MEASUREMENTS,
     NUM_STATES,
     NUM_STATES_1ST_ORDER,
+    flip_quat_upside_down,
     jit_predict,
     jit_update,
     measurement_to_pose,
@@ -37,6 +38,8 @@ class DriveKalmanModel(FilterModel):
         self.cmd_vel_H = np.zeros((NUM_MEASUREMENTS, NUM_STATES))
         self.cmd_vel_H[0:NUM_STATES_1ST_ORDER, NUM_STATES_1ST_ORDER:NUM_STATES] = np.eye(NUM_MEASUREMENTS)
 
+        self.is_right_side_up = True
+
     def predict(self) -> None:
         self.clamp_divergent()
         self.state, self.covariance = jit_predict(
@@ -62,8 +65,11 @@ class DriveKalmanModel(FilterModel):
         self.state, self.covariance = jit_update(self.state, self.covariance, self.cmd_vel_H, measurement, noise)
 
     def get_state(self) -> Tuple[PoseWithCovariance, TwistWithCovariance]:
+        pose = measurement_to_pose(self.state, self.covariance)
+        if not self.is_right_side_up:
+            pose.pose.orientation = flip_quat_upside_down(pose.pose.orientation)
         return (
-            measurement_to_pose(self.state, self.covariance),
+            pose,
             measurement_to_twist(self.state, self.covariance),
         )
 
