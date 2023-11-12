@@ -45,6 +45,8 @@ class TreesNode:
 
         rospy.on_shutdown(lambda: self.tree.interrupt())
 
+        rospy.loginfo("Behaviors node initialized")
+
     def make_tree(self) -> BehaviourTree:
         return BehaviourTree(make_mode_tree(self.container))
 

@@ -20,6 +20,8 @@ class CornerManager:
         self.field_sub = rospy.Subscriber("filter/field", EstimatedField, self.field_callback, queue_size=1)
         self.corner_side_sub = rospy.Subscriber("cage_corner", RosCageCorner, self.corner_side_callback, queue_size=1)
 
+        rospy.logdebug("Corner manager initialized")
+
     def corner_side_callback(self, corner: RosCageCorner) -> None:
         self.cage_corner = CageCorner.from_msg(corner)
 
@@ -34,8 +36,8 @@ class CornerManager:
             rospy.logwarn("No cage corner received yet")
             return None
 
-        x = self.field.size.x - self.corner_offset
-        y = self.field.size.y - self.corner_offset
+        x = self.field.size.x / 2.0 - self.corner_offset
+        y = self.field.size.y / 2.0 - self.corner_offset
         if self.cage_corner == CageCorner.DOOR_SIDE:
             goal = Pose2D(-x, y, 0.0)
         else:

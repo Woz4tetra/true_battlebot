@@ -5,7 +5,8 @@
         output="screen">
         <remap from="/cmd_vel" to="/mini_bot/cmd_vel" />
         <remap from="/odom" to="/mini_bot/filter_state" />
-        <rosparam file="$(find bw_navigation)/config/move_base_global_params.yaml" command="load" />
+        <rosparam file="$(find bw_navigation)/config/move_base_flex_global_params.yaml"
+            command="load" />
 
         <rosparam file="$(find bw_navigation)/config/dwaplanner_params.yaml" command="load"
             ns="DWAPlannerROS" />

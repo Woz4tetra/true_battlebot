@@ -1,12 +1,12 @@
+from bw_tools.structs.behavior_mode import BehaviorMode
 from py_trees.behaviour import Behaviour
 from py_trees.common import Status
 
 from bw_behaviors.container import Container
-from bw_behaviors.structs.modes import Mode
 
 
 class SetMode(Behaviour):
-    def __init__(self, mode: Mode, container: Container):
+    def __init__(self, mode: BehaviorMode, container: Container):
         super().__init__(self.__class__.__name__)
         self.mode = mode
         self.mode_manager = container.mode_manager

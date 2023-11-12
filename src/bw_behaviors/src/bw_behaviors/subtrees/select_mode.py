@@ -1,10 +1,10 @@
 from typing import Callable, Dict, List
 
+from bw_tools.structs.behavior_mode import BehaviorMode
 from py_trees.behaviour import Behaviour
 from py_trees.composites import Selector, Sequence
 
 from bw_behaviors.container import Container
-from bw_behaviors.structs.modes import Mode
 from bw_behaviors.subtrees.corner_mode import make_stay_in_corner_behavior
 from bw_behaviors.subtrees.fight_mode import make_fight_behavior
 from bw_behaviors.subtrees.idle_mode import make_idle_behavior
@@ -12,10 +12,10 @@ from bw_behaviors.subtrees.is_mode import IsMode
 
 
 def make_mode_tree(container: Container) -> Behaviour:
-    subtrees: Dict[Mode, Callable[[Container], Behaviour]] = {
-        Mode.IDLE: make_idle_behavior,
-        Mode.CORNER: make_stay_in_corner_behavior,
-        Mode.FIGHT: make_fight_behavior,
+    subtrees: Dict[BehaviorMode, Callable[[Container], Behaviour]] = {
+        BehaviorMode.IDLE: make_idle_behavior,
+        BehaviorMode.CORNER: make_stay_in_corner_behavior,
+        BehaviorMode.FIGHT: make_fight_behavior,
     }
 
     sequences: List[Behaviour] = []

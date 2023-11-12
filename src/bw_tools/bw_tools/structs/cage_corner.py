@@ -9,6 +9,9 @@ class CageCorner(IntEnum):
     DOOR_SIDE = 0
     FAR_SIDE = 1
 
+    def to_msg(self) -> RosCageCorner:
+        return RosCageCorner(self.value)
+
     @classmethod
     def from_msg(cls, msg: RosCageCorner) -> CageCorner:
         return cls(msg.type)

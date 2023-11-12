@@ -1,0 +1,3 @@
+<launch>
+    <node pkg="bw_command_center" type="command_ui_node.py" name="command_center" output="screen" />
+</launch>

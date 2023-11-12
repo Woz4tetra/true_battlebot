@@ -41,14 +41,15 @@ class MapConverter:
         self.obstacles = ObstacleArrayMsg()
         self.obstacles.obstacles = [ObstacleMsg() for _ in range(len(self.non_controlled_robots))]
 
-        self.map_pub = rospy.Publisher("map", OccupancyGridMsg, queue_size=1)
+        self.map_pub = rospy.Publisher("map", OccupancyGridMsg, queue_size=1, latch=True)
         self.obstacle_pub = rospy.Publisher("/move_base/TebLocalPlannerROS/obstacles", ObstacleArrayMsg, queue_size=10)
 
         self.map_server = rospy.Service("/static_map", GetMap, self.get_map_service)
 
-        self.field_sub = rospy.Subscriber("estimation/field", EstimatedField, self.field_callback)
+        self.field_sub = rospy.Subscriber("filter/field", EstimatedField, self.field_callback)
 
     def field_callback(self, msg: EstimatedField) -> None:
+        rospy.loginfo("Received field. Publishing map.")
         resolution = self.resolution
         width = msg.size.x
         height = msg.size.y

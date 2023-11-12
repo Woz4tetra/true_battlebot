@@ -5,6 +5,7 @@ using Unity.VisualScripting;
 using RosMessageTypes.Std;
 using RosMessageTypes.ZedInterfaces;
 using UnityEngine;
+using System;
 
 public class ZedPlaneSensor : BaseRectangleSensor {
     [SerializeField] private string plane_request_topic = "plane_request";
@@ -40,6 +41,12 @@ public class ZedPlaneSensor : BaseRectangleSensor {
         {
             PointMsg point = target.cameraRelativePose.GetT().To<FLU>();
             QuaternionMsg orientation = target.cameraRelativePose.GetR().To<FLU>();
+            Vector3Msg size = target.dimensions.To<FLU>();
+            size = new Vector3Msg {
+                x = Math.Abs(size.x),
+                y = Math.Abs(size.y),
+                z = Math.Abs(size.z)
+            };
             PlaneStampedMsg msg = new PlaneStampedMsg {
                 header = header,
                 pose = new TransformMsg {
@@ -51,8 +58,8 @@ public class ZedPlaneSensor : BaseRectangleSensor {
                     rotation = orientation
                 },
                 extents = new float[2] {
-                    target.dimensions.x,
-                    target.dimensions.y,
+                    (float)size.x,
+                    (float)size.y,
                 }
             };
             planes.Add(msg);
