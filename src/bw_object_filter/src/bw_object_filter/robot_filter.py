@@ -4,7 +4,7 @@ from typing import List, Optional, Tuple
 import rospy
 import tf2_ros
 from apriltag_ros.msg import AprilTagDetection, AprilTagDetectionArray
-from bw_interfaces.msg import EstimatedRobot, EstimatedRobotArray
+from bw_interfaces.msg import EstimatedField, EstimatedRobot, EstimatedRobotArray
 from bw_tools.configs.robot_config import RobotConfig, RobotFleetConfig, RobotTeam
 from bw_tools.dataclass_deserialize import dataclass_deserialize
 from bw_tools.structs.header import Header
@@ -94,10 +94,13 @@ class RobotFilter:
             for robot in self.robots.robots
         }
 
-        self.robots_sub = rospy.Subscriber("estimation/robots", EstimatedRobotArray, self.robot_estimation_callback)
-        self.tags_sub = rospy.Subscriber("tag_detections", AprilTagDetectionArray, self.tags_callback)
+        self.robots_sub = rospy.Subscriber(
+            "estimation/robots", EstimatedRobotArray, self.robot_estimation_callback, queue_size=50
+        )
+        self.field_sub = rospy.Subscriber("filter/field", EstimatedField, self.field_callback, queue_size=1)
+        self.tags_sub = rospy.Subscriber("tag_detections", AprilTagDetectionArray, self.tags_callback, queue_size=25)
         self.cmd_vel_subs = [
-            rospy.Subscriber(f"{robot.name}/cmd_vel", Twist, self.cmd_vel_callback, callback_args=robot)
+            rospy.Subscriber(f"{robot.name}/cmd_vel", Twist, self.cmd_vel_callback, callback_args=robot, queue_size=10)
             for robot in self.robots.robots
             if robot.team == RobotTeam.OUR_TEAM
         ]
@@ -228,6 +231,12 @@ class RobotFilter:
             measurement.twist.linear.x *= -1
             measurement.twist.linear.y *= -1
         robot_filter.update_cmd_vel(measurement)
+
+    def field_callback(self, _: EstimatedField) -> None:
+        rospy.loginfo("New field received. Resetting filters.")
+        rospy.sleep(0.5)
+        for robot_filter in self.robot_filters.values():
+            robot_filter.reset()
 
     def transform_to_map(self, header: RosHeader, pose: Pose) -> Optional[Pose]:
         pose_stamped = PoseStamped(header=header, pose=pose)

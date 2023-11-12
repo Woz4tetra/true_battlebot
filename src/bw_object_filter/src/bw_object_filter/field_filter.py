@@ -1,10 +1,13 @@
 #!/usr/bin/env python
 import math
+from typing import Optional
 
 import numpy as np
 import rospy
 import tf2_ros
+from bw_interfaces.msg import CageCorner as RosCageCorner
 from bw_interfaces.msg import EstimatedField
+from bw_tools.structs.cage_corner import CageCorner
 from bw_tools.structs.rpy import RPY
 from bw_tools.structs.transform3d import Transform3D
 from bw_tools.typing import get_param
@@ -24,6 +27,12 @@ class FieldFilter:
         self.prev_imu = Imu()
         self.current_imu.orientation.w = 1.0
         self.prev_imu.orientation.w = 1.0
+        self.cage_corner: Optional[CageCorner] = None
+        self.field_rotations = {
+            CageCorner.DOOR_SIDE: Transform3D.from_position_and_rpy(Vector3(), RPY((0, 0, math.pi / 2))),
+            CageCorner.FAR_SIDE: Transform3D.from_position_and_rpy(Vector3(), RPY((0, 0, -math.pi / 2))),
+        }
+        self.estimated_field = EstimatedField()
 
         self.tf_broadcaster = tf2_ros.TransformBroadcaster()
 
@@ -36,7 +45,11 @@ class FieldFilter:
         )
         self.plane_request_pub = rospy.Publisher("plane_request", PointStamped, queue_size=1)
         self.plane_response_sub = rospy.Subscriber("plane_response", PlaneStamped, self.plane_response_callback)
-        self.estimated_field_pub = rospy.Publisher("filter/field", EstimatedField, queue_size=1)
+        self.estimated_field_pub = rospy.Publisher("filter/field", EstimatedField, queue_size=1, latch=True)
+        self.corner_side_sub = rospy.Subscriber(
+            "set_cage_corner", RosCageCorner, self.corner_side_callback, queue_size=1
+        )
+        self.corner_pub = rospy.Publisher("cage_corner", RosCageCorner, queue_size=1, latch=True)
 
         self.prev_request_time = rospy.Time(0)
 
@@ -45,15 +58,15 @@ class FieldFilter:
             self.publish_plane_request(point)
             self.prev_request_time = rospy.Time.now()
 
-    def manual_request_callback(self, msg: Empty) -> None:
-        rospy.loginfo("Manual plane request received")
+    def manual_request_callback(self, _: Empty) -> None:
         self.has_manual_query = True
 
     def publish_plane_request(self, request_point: PointStamped) -> None:
         self.plane_request_pub.publish(request_point)
 
     def plane_response_callback(self, plane: PlaneStamped) -> None:
-        estimated_field = EstimatedField(
+        self.rotate_to_cage_aligned(plane)
+        self.estimated_field = EstimatedField(
             header=plane.header,
             center=Pose(
                 position=Point(plane.pose.translation.x, plane.pose.translation.y, plane.pose.translation.z),
@@ -61,14 +74,28 @@ class FieldFilter:
             ),
             size=Vector3(x=plane.extents[0], y=plane.extents[1]),
         )
-        self.estimated_field_pub.publish(estimated_field)
-        self.publish_field_tf(estimated_field)
+        self.estimated_field_pub.publish(self.estimated_field)
+
+    def rotate_to_cage_aligned(self, plane: PlaneStamped) -> None:
+        if self.cage_corner is None:
+            rospy.logwarn("No cage corner received. Assuming our team's corner is on the door side.")
+            cage_corner = CageCorner.DOOR_SIDE
+        else:
+            cage_corner = self.cage_corner
+        plane_rotation = Transform3D.from_position_and_quaternion(Vector3(), plane.pose.rotation)
+        plane_rotation = plane_rotation.transform_by(self.field_rotations[cage_corner])
+        plane.pose.rotation = plane_rotation.quaternion
+
+    def corner_side_callback(self, corner: RosCageCorner) -> None:
+        self.cage_corner = CageCorner.from_msg(corner)
+        self.corner_pub.publish(corner)
 
     def imu_callback(self, imu: Imu) -> None:
         self.current_imu = imu
 
     def did_camera_tilt(self) -> bool:
         if self.has_manual_query:
+            rospy.loginfo("Manual plane request received")
             self.has_manual_query = False
             return True
         delta_rpy = self.compute_delta_rpy(self.current_imu.orientation, self.prev_imu.orientation)
@@ -100,7 +127,12 @@ class FieldFilter:
         self.tf_broadcaster.sendTransform(field_tf)
 
     def run(self) -> None:
-        rospy.spin()
+        while not rospy.is_shutdown():
+            rospy.sleep(1.0)
+            if len(self.estimated_field.header.frame_id) == 0:
+                continue
+            self.estimated_field.header.stamp = rospy.Time.now()
+            self.publish_field_tf(self.estimated_field)
 
 
 if __name__ == "__main__":

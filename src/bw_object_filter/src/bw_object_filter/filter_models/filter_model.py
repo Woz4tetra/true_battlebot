@@ -27,5 +27,5 @@ class FilterModel:
         pass
 
     @abstractmethod
-    def reset(self, msg: PoseWithCovarianceStamped) -> None:
+    def teleport(self, msg: PoseWithCovarianceStamped) -> None:
         pass

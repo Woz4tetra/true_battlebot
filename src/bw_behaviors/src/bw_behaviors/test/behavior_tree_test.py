@@ -1,5 +1,5 @@
 import pytest
-from bw_behaviors.modes import Mode
+from bw_behaviors.structs.modes import Mode
 from bw_behaviors.trees_node import TreesNode
 from py_trees.trees import BehaviourTree
 

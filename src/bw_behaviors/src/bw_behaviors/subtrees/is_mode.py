@@ -2,7 +2,7 @@ from py_trees.behaviour import Behaviour
 from py_trees.common import Status
 
 from bw_behaviors.container import Container
-from bw_behaviors.modes import Mode
+from bw_behaviors.structs.modes import Mode
 
 
 class IsMode(Behaviour):

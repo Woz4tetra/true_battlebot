@@ -1,7 +1,7 @@
 import rospy
 from bw_interfaces.msg import BehaviorMode
 
-from bw_behaviors.modes import Mode
+from bw_behaviors.structs.modes import Mode
 
 
 class ModeManager:

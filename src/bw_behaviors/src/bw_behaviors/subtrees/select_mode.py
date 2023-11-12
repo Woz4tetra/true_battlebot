@@ -4,7 +4,7 @@ from py_trees.behaviour import Behaviour
 from py_trees.composites import Selector, Sequence
 
 from bw_behaviors.container import Container
-from bw_behaviors.modes import Mode
+from bw_behaviors.structs.modes import Mode
 from bw_behaviors.subtrees.corner_mode import make_stay_in_corner_behavior
 from bw_behaviors.subtrees.fight_mode import make_fight_behavior
 from bw_behaviors.subtrees.idle_mode import make_idle_behavior

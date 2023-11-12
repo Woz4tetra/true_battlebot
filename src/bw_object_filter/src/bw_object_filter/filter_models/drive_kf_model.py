@@ -22,9 +22,7 @@ class DriveKalmanModel(FilterModel):
     def __init__(self, dt: float, process_noise: float = 0.001, friction_factor: float = 0.2) -> None:
         self.dt = dt
         self.friction_factor = friction_factor
-        self.state = np.zeros(NUM_STATES)
-        self.covariance = np.eye(NUM_STATES)
-        self.process_noise_Q = np.eye(NUM_STATES) * process_noise
+        self.process_noise = process_noise
 
         # measurement function for landmarks. Use only pose.
         self.pose_H = np.zeros((NUM_MEASUREMENTS, NUM_STATES))
@@ -38,8 +36,7 @@ class DriveKalmanModel(FilterModel):
         self.cmd_vel_H = np.zeros((NUM_MEASUREMENTS, NUM_STATES))
         self.cmd_vel_H[0:NUM_STATES_1ST_ORDER, NUM_STATES_1ST_ORDER:NUM_STATES] = np.eye(NUM_MEASUREMENTS)
 
-        self.is_right_side_up = True
-        self.is_initialized = False
+        self.reset()
 
     def predict(self) -> None:
         self.clamp_divergent()
@@ -55,7 +52,7 @@ class DriveKalmanModel(FilterModel):
                 self.state, self.covariance, self.pose_H, measurement, noise, angle_wrapped=True
             )
         else:
-            self.reset(msg)
+            self.teleport(msg)
 
     def update_position(self, msg: PoseWithCovariance) -> None:
         if self.is_initialized:
@@ -65,7 +62,7 @@ class DriveKalmanModel(FilterModel):
                 self.state, self.covariance, self.position_H, measurement, noise, angle_wrapped=True
             )
         else:
-            self.reset(msg)
+            self.teleport(msg)
 
     def update_cmd_vel(self, msg: TwistWithCovariance) -> None:
         measurement, noise = twist_to_measurement(msg)
@@ -84,7 +81,7 @@ class DriveKalmanModel(FilterModel):
         self.state = np.nan_to_num(self.state, copy=False, nan=0.0, posinf=0.0, neginf=0.0)
         self.covariance = np.nan_to_num(self.covariance, copy=False, nan=1e-3, posinf=1e-3, neginf=1e-3)
 
-    def reset(self, msg: PoseWithCovariance) -> None:
+    def teleport(self, msg: PoseWithCovariance) -> None:
         measurement, measurement_noise = pose_to_measurement(msg)
         self.state = np.zeros(NUM_STATES)
         self.state[0:NUM_STATES_1ST_ORDER] = measurement
@@ -92,6 +89,10 @@ class DriveKalmanModel(FilterModel):
         self.covariance[0:NUM_STATES_1ST_ORDER, 0:NUM_STATES_1ST_ORDER] = measurement_noise
         self.is_initialized = True
 
-    def deinitialize(self) -> None:
-        self.is_initialized = True
+    def reset(self) -> None:
+        self.state = np.zeros(NUM_STATES)
+        self.covariance = np.eye(NUM_STATES)
+        self.process_noise_Q = np.eye(NUM_STATES) * self.process_noise
+
+        self.is_initialized = False
         self.is_right_side_up = True

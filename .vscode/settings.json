@@ -113,7 +113,8 @@
   },
   "files.watcherExclude": {
     "**/.git/*/**": true,
-    "**/node_modules/*/**": true
+    "**/node_modules/*/**": true,
+    "**/simulation/*/**": true
   },
   "files.exclude": {
     "**/*.csproj": true
