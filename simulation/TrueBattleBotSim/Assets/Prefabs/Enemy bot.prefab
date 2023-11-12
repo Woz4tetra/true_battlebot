@@ -853,6 +853,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8378618947543745745}
   - component: {fileID: 4474023906343668187}
+  - component: {fileID: 5798114538675570734}
   m_Layer: 7
   m_Name: Enemy bot
   m_TagString: Untagged
@@ -943,6 +944,22 @@ ArticulationBody:
   m_Immovable: 0
   m_UseGravity: 1
   m_CollisionDetectionMode: 1
+--- !u!114 &5798114538675570734
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6493563263996785477}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f9b26e993356c0fa1a59dbfbda2f0b1a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  baseTopic: opponent_1
+  baseWidth: 0.3
+  leftWheel: {fileID: 70166154249081628}
+  rightWheel: {fileID: 9131883554127257807}
 --- !u!1 &6796888364003095253
 GameObject:
   m_ObjectHideFlags: 0

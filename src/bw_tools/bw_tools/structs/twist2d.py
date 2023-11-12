@@ -25,10 +25,10 @@ class Twist2D:
         return np.array(self.to_tuple())
 
     @classmethod
-    def from_ros_msg(cls, msg: RosTwist) -> Twist2D:
+    def from_msg(cls, msg: RosTwist) -> Twist2D:
         return cls(x=msg.linear.x, y=msg.linear.y, theta=msg.angular.z)
 
-    def to_ros_msg(self) -> RosTwist:
+    def to_msg(self) -> RosTwist:
         return RosTwist(
             linear=RosVector3(x=self.x, y=self.y, z=0.0),
             angular=RosVector3(x=0.0, y=0.0, z=self.theta),

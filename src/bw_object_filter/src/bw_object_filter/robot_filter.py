@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 import rospy
 import tf2_ros
@@ -7,7 +7,11 @@ from apriltag_ros.msg import AprilTagDetection, AprilTagDetectionArray
 from bw_interfaces.msg import EstimatedRobot, EstimatedRobotArray
 from bw_tools.configs.robot_config import RobotConfig, RobotFleetConfig, RobotTeam
 from bw_tools.dataclass_deserialize import dataclass_deserialize
+from bw_tools.structs.header import Header
+from bw_tools.structs.pose2d import Pose2D
+from bw_tools.structs.pose2d_stamped import Pose2DStamped
 from bw_tools.structs.transform3d import Transform3D
+from bw_tools.structs.twist2d import Twist2D
 from bw_tools.transforms import lookup_pose_in_frame
 from bw_tools.typing import get_param, seconds_to_duration
 from geometry_msgs.msg import (
@@ -21,7 +25,7 @@ from geometry_msgs.msg import (
     Vector3,
 )
 from nav_msgs.msg import Odometry
-from std_msgs.msg import Header
+from std_msgs.msg import Header as RosHeader
 
 from bw_object_filter.covariances import ApriltagHeuristics, CmdVelHeuristics, RobotHeuristics
 from bw_object_filter.filter_models import DriveKalmanModel
@@ -48,6 +52,7 @@ class RobotFilter:
         self.cmd_vel_base_covariance_scalar = get_param("~cmd_vel_base_covariance_scalar", 0.01)
         self.friction_factor = get_param("~friction_factor", 0.05)
         self.process_noise = get_param("~process_noise", 1e-4)
+        self.motion_speed_threshold = get_param("~motion_speed_threshold", 0.25)
 
         self.robots = dataclass_deserialize(RobotFleetConfig, robot_config)
         self.check_unique(self.robots)
@@ -61,14 +66,23 @@ class RobotFilter:
         rotate_quat = (0.0, 0.0, -0.707, 0.707)
         self.apriltag_rotate_tf = Transform3D.from_position_and_quaternion(Vector3(), Quaternion(*rotate_quat))
         self.robot_filters = {
-            config.name: DriveKalmanModel(self.update_delay, self.process_noise, self.friction_factor)
-            for config in self.robots.robots
+            robot.name: DriveKalmanModel(self.update_delay, self.process_noise, self.friction_factor)
+            for robot in self.robots.robots
+        }
+        self.prev_opponent_pose = {
+            robot.name: Pose2DStamped.empty() for robot in self.robots.robots if robot.team != RobotTeam.OUR_TEAM
+        }
+        self.prev_motion_opponent_pose = {
+            robot.name: Pose2D(0.0, 0.0, 0.0) for robot in self.robots.robots if robot.team != RobotTeam.OUR_TEAM
         }
 
         self.tag_heurstics = ApriltagHeuristics(self.apriltag_base_covariance_scalar)
         self.our_robot_heuristics = RobotHeuristics(self.our_base_covariance)
         self.their_robot_heuristics = RobotHeuristics(self.their_base_covariance)
-        self.cmd_vel_heuristics = CmdVelHeuristics(self.cmd_vel_base_covariance_scalar)
+        self.our_robot_cmd_vel_heuristics = CmdVelHeuristics(self.cmd_vel_base_covariance_scalar)
+        self.their_robot_cmd_vel_heuristics = CmdVelHeuristics(self.cmd_vel_base_covariance_scalar)
+        self.their_robot_cmd_vel_heuristics.base_covariance[5, 5] *= 1e6
+
         self.measurement_sorter = RobotMeasurementSorter(self.robot_filters)
 
         self.tf_buffer = tf2_ros.Buffer()
@@ -125,17 +139,37 @@ class RobotFilter:
         for robot_name, measurement_index in assigned.items():
             camera_measurement: EstimatedRobot = msg.robots[measurement_index]  # type: ignore
             robot_config = self.robot_configs[robot_name]
+            map_pose = map_measurements[measurement_index]
             if robot_config.team == RobotTeam.OUR_TEAM:
                 covariance = self.our_robot_heuristics.compute_covariance(camera_measurement)
             else:
                 covariance = self.their_robot_heuristics.compute_covariance(camera_measurement)
+                # map_pose, velocity = self.get_delta_measurements(
+                #     camera_measurement.header.stamp.to_sec(), robot_name, map_pose
+                # )
+                # self.update_cmd_vel(velocity, robot_config)
                 self.update_cmd_vel(Twist(), robot_config)
-            map_pose = map_measurements[measurement_index]
 
             pose = PoseWithCovariance()
             pose.pose = map_pose
             pose.covariance = covariance
+            # self.robot_filters[robot_name].update_pose(pose)
             self.robot_filters[robot_name].update_position(pose)
+
+    def get_delta_measurements(self, stamp: float, robot_name: str, pose: Pose) -> Tuple[Pose, Twist]:
+        dt = stamp - self.prev_opponent_pose[robot_name].header.stamp
+        current_pose2d = Pose2D.from_msg(pose)
+        prev_pose2d = self.prev_opponent_pose[robot_name]
+        self.prev_opponent_pose[robot_name] = Pose2DStamped(Header.auto(stamp=stamp), current_pose2d)
+
+        delta_pose = current_pose2d.relative_to(prev_pose2d.pose)
+        velocity = Twist2D(delta_pose.x / dt, delta_pose.y / dt, delta_pose.theta / dt)
+        prev_motion_pose2d = self.prev_motion_opponent_pose[robot_name]
+        heading_pose = Pose2D(current_pose2d.x, current_pose2d.y, current_pose2d.heading(prev_motion_pose2d))
+        if velocity.speed() > self.motion_speed_threshold:
+            self.prev_motion_opponent_pose[robot_name] = prev_pose2d.pose
+
+        return heading_pose.to_msg(), velocity.to_msg()
 
     def tags_callback(self, msg: AprilTagDetectionArray) -> None:
         assert msg.detections is not None
@@ -184,14 +218,18 @@ class RobotFilter:
 
     def update_cmd_vel(self, msg: Twist, robot_config: RobotConfig):
         measurement = TwistWithCovariance(twist=msg)
-        measurement.covariance = self.cmd_vel_heuristics.compute_covariance(measurement)
+        if robot_config.team == RobotTeam.OUR_TEAM:
+            measurement.covariance = self.our_robot_cmd_vel_heuristics.compute_covariance(measurement)
+        else:
+            measurement.covariance = self.our_robot_cmd_vel_heuristics.compute_covariance(measurement)
+
         robot_filter = self.robot_filters[robot_config.name]
         if not robot_filter.is_right_side_up:
             measurement.twist.linear.x *= -1
             measurement.twist.linear.y *= -1
         robot_filter.update_cmd_vel(measurement)
 
-    def transform_to_map(self, header: Header, pose: Pose) -> Optional[Pose]:
+    def transform_to_map(self, header: RosHeader, pose: Pose) -> Optional[Pose]:
         pose_stamped = PoseStamped(header=header, pose=pose)
         result = lookup_pose_in_frame(self.tf_buffer, pose_stamped, self.map_frame)
         if result is None:
