@@ -1,0 +1,14 @@
+<launch>
+    <arg name="apriltag_config_path" default="$(find bw_tags)/config/tags.yaml" />
+    <arg name="waypoint_offsets_path" default="$(find bw_tags)/config/waypoint_offsets.yaml" />
+    <group ns="bw">
+        <node name="bw_behaviors" pkg="bw_behaviors" type="trees_node.py" output="screen" required="false">
+            <rosparam ns="offsets" command="load" file="$(arg waypoint_offsets_path)" />
+        </node>
+        <node name="waypoint_teacher" pkg="bw_behaviors" type="waypoint_teacher.py" output="screen" required="false">
+            <param name="apriltag_config_path" value="$(arg apriltag_config_path)" />
+            <rosparam ns="offsets" command="load" file="$(arg waypoint_offsets_path)" />
+        </node>
+    </group>
+    <!-- <include file="$(find bw_navigation)/launch/bw_navigation.launch"/> -->
+</launch>

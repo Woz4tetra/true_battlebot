@@ -3,7 +3,6 @@ import math
 
 import numpy as np
 import rospy
-from std_msgs.msg import Empty
 import tf2_ros
 from bw_interfaces.msg import EstimatedField
 from bw_tools.structs.rpy import RPY
@@ -11,6 +10,7 @@ from bw_tools.structs.transform3d import Transform3D
 from bw_tools.typing import get_param
 from geometry_msgs.msg import Point, PointStamped, Pose, Quaternion, Vector3
 from sensor_msgs.msg import Imu
+from std_msgs.msg import Empty
 from zed_interfaces.msg import PlaneStamped
 
 
@@ -31,7 +31,9 @@ class FieldFilter:
             "estimation/recommended_field_point", PointStamped, self.recommended_point_callback
         )
         self.camera_tilt_sub = rospy.Subscriber("imu", Imu, self.imu_callback, queue_size=1)
-        self.manual_request_sub = rospy.Subscriber("manual_plane_request", Empty, self.manual_request_callback, queue_size=1)
+        self.manual_request_sub = rospy.Subscriber(
+            "manual_plane_request", Empty, self.manual_request_callback, queue_size=1
+        )
         self.plane_request_pub = rospy.Publisher("plane_request", PointStamped, queue_size=1)
         self.plane_response_sub = rospy.Subscriber("plane_response", PlaneStamped, self.plane_response_callback)
         self.estimated_field_pub = rospy.Publisher("filter/field", EstimatedField, queue_size=1)
