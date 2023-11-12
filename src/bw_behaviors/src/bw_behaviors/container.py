@@ -7,7 +7,7 @@ from bw_behaviors.managers.mode_manager import ModeManager
 
 class Container:
     def __init__(self) -> None:
-        self.corner_offset = get_param("~corner_offset", 0.25)
+        self.corner_offset = get_param("~corner_offset", 0.4)
         self.goal_xy_tolerance = get_param("~goal_xy_tolerance", 0.15)
 
         self.mode_manager = ModeManager()

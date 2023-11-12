@@ -59,7 +59,7 @@ class MapConverter:
 
         image = np.full((px_height, px_width), 0, dtype=np.int8)
 
-        image = cv2.rectangle(image, (0, 0), (px_width - 1, px_height - 1), (99,), 1)
+        image = cv2.rectangle(image, (0, 0), (px_width - 1, px_height - 1), (100,), 1)
 
         map = OccupancyGrid.from_image(Header.auto("map"), image, resolution)
         self.map_msg = map.to_msg()
