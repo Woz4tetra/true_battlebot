@@ -19,5 +19,5 @@ class GetPath(Behaviour):
         return self.get_path_manager.get_status()
 
     def terminate(self, new_status: Status) -> None:
-        if new_status == Status.FAILURE:
+        if self.status == Status.RUNNING:
             self.get_path_manager.cancel()

@@ -42,7 +42,7 @@ class MapConverter:
         self.obstacles.obstacles = [ObstacleMsg() for _ in range(len(self.non_controlled_robots))]
 
         self.map_pub = rospy.Publisher("map", OccupancyGridMsg, queue_size=1, latch=True)
-        self.obstacle_pub = rospy.Publisher("/move_base/TebLocalPlannerROS/obstacles", ObstacleArrayMsg, queue_size=10)
+        self.obstacle_pub = rospy.Publisher("obstacles", ObstacleArrayMsg, queue_size=10)
 
         self.map_server = rospy.Service("/static_map", GetMap, self.get_map_service)
 

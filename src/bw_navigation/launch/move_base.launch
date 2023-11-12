@@ -1,30 +1,40 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
-    <arg name="robot_filter_config" default="$(find bw_object_filter)/config/robot_filter.yaml"/>
+    <arg name="robot_filter_config" default="$(find bw_object_filter)/config/robot_filter.yaml" />
     <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
-        <remap from="/cmd_vel" to="/mini_bot/cmd_vel"/>
-        <remap from="/odom" to="/mini_bot/filter_state"/>
-        <rosparam file="$(find bw_navigation)/config/move_base_global_params.yaml" command="load"/>
+        <remap from="/cmd_vel" to="/mini_bot/cmd_vel" />
+        <remap from="/odom" to="/mini_bot/filter_state" />
+        <rosparam file="$(find bw_navigation)/config/move_base_global_params.yaml" command="load" />
 
-        <rosparam file="$(find bw_navigation)/config/dwaplanner_params.yaml" command="load" ns="DWAPlannerROS"/>
-        <rosparam file="$(find bw_navigation)/config/trajectory_planner_params.yaml" command="load" ns="TrajectoryPlannerROS"/>
-        <rosparam file="$(find bw_navigation)/config/teb_planner_params.yaml" command="load" ns="TebLocalPlannerROS"/>
-        <rosparam file="$(find bw_navigation)/config/global_planner_params.yaml" command="load" ns="GlobalPlanner"/>
+        <rosparam file="$(find bw_navigation)/config/dwaplanner_params.yaml" command="load"
+            ns="DWAPlannerROS" />
+        <rosparam file="$(find bw_navigation)/config/trajectory_planner_params.yaml" command="load"
+            ns="TrajectoryPlannerROS" />
+        <rosparam file="$(find bw_navigation)/config/teb_planner_params.yaml" command="load"
+            ns="TebLocalPlannerROS" />
+        <rosparam file="$(find bw_navigation)/config/global_planner_params.yaml" command="load"
+            ns="GlobalPlanner" />
 
-        <rosparam file="$(find bw_navigation)/config/costmap_common_params.yaml" command="load" ns="local_costmap"/>
-        <rosparam file="$(find bw_navigation)/config/costmap_local_params.yaml" command="load" ns="local_costmap"/>
+        <rosparam file="$(find bw_navigation)/config/costmap_common_params.yaml" command="load"
+            ns="local_costmap" />
+        <rosparam file="$(find bw_navigation)/config/costmap_local_params.yaml" command="load"
+            ns="local_costmap" />
 
-        <rosparam file="$(find bw_navigation)/config/costmap_common_params.yaml" command="load" ns="global_costmap"/>
-        <rosparam file="$(find bw_navigation)/config/costmap_global_params.yaml" command="load" ns="global_costmap"/>
+        <rosparam file="$(find bw_navigation)/config/costmap_common_params.yaml" command="load"
+            ns="global_costmap" />
+        <rosparam file="$(find bw_navigation)/config/costmap_global_params.yaml" command="load"
+            ns="global_costmap" />
     </node>
 
-    <!-- <node name="standalone_converter" pkg="costmap_converter" type="standalone_converter" output="screen">
+    <!-- <node name="standalone_converter" pkg="costmap_converter" type="standalone_converter"
+    output="screen">
         <param name="converter_plugin" value="costmap_converter::CostmapToDynamicObstacles" />
         <param name="costmap_topic" value="/move_base/local_costmap/costmap" />
         <param name="odom_topic" value="/mini_bot/filter_state" />
     </node> -->
 
     <node name="field_map_converter" pkg="bw_navigation" type="map_converter.py" output="screen">
-        <rosparam command="load" file="$(arg robot_filter_config)" ns="robots"/>
+        <rosparam command="load" file="$(arg robot_filter_config)" ns="robots" />
+        <remap from="obstacles" to="/move_base/TebLocalPlannerROS/obstacles" />
     </node>
 </launch>

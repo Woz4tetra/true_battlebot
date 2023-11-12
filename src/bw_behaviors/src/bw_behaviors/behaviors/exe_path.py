@@ -37,7 +37,7 @@ class ExePath(Behaviour):
         return self.status
 
     def terminate(self, new_status: Status) -> None:
-        if new_status == Status.FAILURE:
+        if self.status == Status.RUNNING:
             self.cancel()
 
     def action_done(self, goal_status, result: ExePathResult) -> None:
@@ -49,4 +49,5 @@ class ExePath(Behaviour):
         pass
 
     def cancel(self) -> None:
+        rospy.loginfo("Canceling MBF exe path action")
         self.action.cancel_all_goals()

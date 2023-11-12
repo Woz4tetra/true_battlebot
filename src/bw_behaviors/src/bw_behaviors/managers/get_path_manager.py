@@ -58,4 +58,5 @@ class GetPathManager:
         pass
 
     def cancel(self) -> None:
+        rospy.loginfo("Canceling MBF get path action")
         self.action.cancel_all_goals()

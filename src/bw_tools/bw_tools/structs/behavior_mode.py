@@ -9,6 +9,7 @@ class BehaviorMode(IntEnum):
     IDLE = 0
     CORNER = 1
     FIGHT = 2
+    CLICKED_POINT = 3
 
     def to_msg(self) -> RosBehaviorMode:
         return RosBehaviorMode(self.value)

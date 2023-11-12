@@ -4,17 +4,17 @@ from py_trees.composites import Sequence
 
 from bw_behaviors.behaviors.exe_path import ExePath
 from bw_behaviors.behaviors.get_path import GetPath
-from bw_behaviors.behaviors.set_goal_to_corner import SetGoalToCorner
+from bw_behaviors.behaviors.set_goal_to_simple import SetGoalToSimple
 from bw_behaviors.behaviors.set_mode import SetMode
 from bw_behaviors.container import Container
 
 
-def make_stay_in_corner_behavior(container: Container) -> Behaviour:
+def make_clicked_point_behavior(container: Container) -> Behaviour:
     return Sequence(
-        "stay_in_corner_sequence",
+        "clicked_point_sequence",
         memory=True,
         children=[
-            SetGoalToCorner(container),
+            SetGoalToSimple(container),
             GetPath(container),
             ExePath(container),
             SetMode(container, BehaviorMode.IDLE),

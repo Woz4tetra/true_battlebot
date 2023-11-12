@@ -2,9 +2,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from geometry_msgs.msg import PoseStamped as RosPoseStamped
+
 from bw_tools.structs.header import Header
 from bw_tools.structs.pose2d import Pose2D
-from geometry_msgs.msg import PoseStamped as RosPoseStamped
 
 
 @dataclass(eq=True)

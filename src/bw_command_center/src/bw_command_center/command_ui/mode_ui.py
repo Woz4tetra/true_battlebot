@@ -14,6 +14,13 @@ class ModeUI(UiBase):
         self.mode_pub = rospy.Publisher("behavior_mode", RosBehaviorMode, queue_size=1, latch=True)
         self.mode_pub.publish(BehaviorMode.IDLE.to_msg())
 
+        self.mode_messages = {
+            BehaviorMode.IDLE: "Idle",
+            BehaviorMode.CORNER: "Go to corner",
+            BehaviorMode.CLICKED_POINT: "Clicked point",
+            BehaviorMode.FIGHT: "Fight!!!",
+        }
+
     def pack(self) -> None:
         left_frame = tk.Frame(master=self.window)
         left_frame.grid(row=0, column=0, sticky="W", padx=5, pady=5)
@@ -21,30 +28,15 @@ class ModeUI(UiBase):
         right_frame.grid(row=0, column=2, sticky="W", padx=5, pady=5)
 
         tk.Label(master=left_frame, text="Mode:").pack(anchor=tk.W)
-        tk.Radiobutton(
-            master=right_frame,
-            text="Idle",
-            padx=20,
-            variable=self.selected_value,
-            value=BehaviorMode.IDLE.value,
-            command=self.value_selected_callback,
-        ).pack(anchor=tk.W)
-        tk.Radiobutton(
-            master=right_frame,
-            text="Go to corner",
-            padx=20,
-            variable=self.selected_value,
-            value=BehaviorMode.CORNER.value,
-            command=self.value_selected_callback,
-        ).pack(anchor=tk.W)
-        tk.Radiobutton(
-            master=right_frame,
-            text="Fight!!!",
-            padx=20,
-            variable=self.selected_value,
-            value=BehaviorMode.FIGHT.value,
-            command=self.value_selected_callback,
-        ).pack(anchor=tk.W)
+        for mode in BehaviorMode:
+            tk.Radiobutton(
+                master=right_frame,
+                text=self.mode_messages[mode],
+                padx=20,
+                variable=self.selected_value,
+                value=mode.value,
+                command=self.value_selected_callback,
+            ).pack(anchor=tk.W)
 
     def value_selected_callback(self):
         self.mode_pub.publish(BehaviorMode(self.selected_value.get()).to_msg())

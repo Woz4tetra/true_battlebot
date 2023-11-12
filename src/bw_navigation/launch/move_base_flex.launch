@@ -30,5 +30,6 @@
 
     <node name="field_map_converter" pkg="bw_navigation" type="map_converter.py" output="screen">
         <rosparam command="load" file="$(arg robot_filter_config)" ns="robots" />
+        <remap from="obstacles" to="/move_base_flex/TebLocalPlannerROS/obstacles" />
     </node>
 </launch>
