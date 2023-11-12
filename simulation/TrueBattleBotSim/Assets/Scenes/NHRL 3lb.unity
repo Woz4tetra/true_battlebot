@@ -843,12 +843,8 @@ PrefabInstance:
       value: 0.7071069
       objectReference: {fileID: 0}
     - target: {fileID: 6355694855304006745, guid: 2c8d222d5c56d9cd0ae854a942db0577, type: 3}
-      propertyPath: m_ImplicitCom
+      propertyPath: m_Immovable
       value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6355694855304006745, guid: 2c8d222d5c56d9cd0ae854a942db0577, type: 3}
-      propertyPath: m_CenterOfMass.z
-      value: -0.05
       objectReference: {fileID: 0}
     - target: {fileID: 8575747899302142240, guid: 2c8d222d5c56d9cd0ae854a942db0577, type: 3}
       propertyPath: m_RootOrder

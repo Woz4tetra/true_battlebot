@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 import os
 import tkinter as tk
-from threading import Thread
 from typing import List, Type
 
 import rospy

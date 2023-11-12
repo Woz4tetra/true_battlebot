@@ -5,7 +5,8 @@ class Wheel : MonoBehaviour
     [SerializeField] private float maxWheelSpeed = 1.0f;
     [SerializeField] private float wheelRadius = 1.0f;
     private ArticulationBody body;
-    private Vector3 torque = Vector3.zero;
+    private float angularVelocity = 0.0f;
+    // private PID pid = new PID(1.5f, 0.0f, 0.0f);
 
     void Start()
     {
@@ -18,12 +19,13 @@ class Wheel : MonoBehaviour
         {
             groundVelocity = Mathf.Sign(groundVelocity) * maxWheelSpeed;
         }
-        float angularVelocity = groundVelocity / wheelRadius;
-        torque = new Vector3(0.0f, 0.0f, -angularVelocity);
+        angularVelocity = Mathf.Rad2Deg * groundVelocity / wheelRadius;
     }
 
-    void Update()
+    void FixedUpdate()
     {
-        body.AddRelativeTorque(torque, ForceMode.VelocityChange);
+        ArticulationDrive drive = body.xDrive;
+        drive.targetVelocity = angularVelocity;
+        body.xDrive = drive;
     }
 }
