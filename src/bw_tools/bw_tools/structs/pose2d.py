@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 from typing import Optional, Tuple
 
@@ -44,8 +45,14 @@ class Pose2D:
             orientation=RosQuaternion(*quat),
         )
 
-    def magnitude(self) -> float:
-        return float(np.sqrt(self.x**2 + self.y**2))
+    def magnitude(self, other: Optional[Pose2D] = None) -> float:
+        if other is None:
+            x = self.x
+            y = self.y
+        else:
+            x = other.x - self.x
+            y = other.y - self.y
+        return float(math.sqrt(x * x + y * y))
 
     def heading(self, other: Optional[Pose2D] = None) -> float:
         if other is None:

@@ -34,7 +34,9 @@
     </node> -->
 
     <node name="field_map_converter" pkg="bw_navigation" type="map_converter.py" output="screen">
-        <rosparam command="load" file="$(arg robot_filter_config)" ns="robots" />
         <remap from="obstacles" to="/move_base/TebLocalPlannerROS/obstacles" />
+    </node>
+    <node name="target_selector" pkg="bw_navigation" type="target_selector.py" output="screen">
+        <rosparam command="load" file="$(arg robot_filter_config)" ns="robots" />
     </node>
 </launch>
