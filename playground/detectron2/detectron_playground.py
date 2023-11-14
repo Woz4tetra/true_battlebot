@@ -23,11 +23,14 @@ cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.5  # set threshold for this model
 cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url("COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml")
 predictor = DefaultPredictor(cfg)
 metadata = MetadataCatalog.get(cfg.DATASETS.TRAIN[0])
-for _ in range(10):
-    t0 = time.time()
-    outputs = predictor(im)
-    t1 = time.time()
-    print(f"took: {t1 - t0}")
+try:
+    while True:
+        t0 = time.time()
+        outputs = predictor(im)
+        t1 = time.time()
+        print(f"took: {t1 - t0}")
+except KeyboardInterrupt:
+    pass
 
 instances = outputs["instances"].to("cpu")
 
