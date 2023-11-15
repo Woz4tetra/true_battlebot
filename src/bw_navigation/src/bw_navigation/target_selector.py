@@ -2,6 +2,8 @@
 from threading import Lock
 from typing import Optional, Tuple
 
+import numpy as np
+import ros_numpy
 import rospy
 from bw_interfaces.msg import EstimatedObject, EstimatedObjectArray
 from bw_tools.configs.robot_config import RobotFleetConfig, RobotTeam
@@ -9,8 +11,16 @@ from bw_tools.dataclass_deserialize import dataclass_deserialize
 from bw_tools.structs.pose2d import Pose2D
 from bw_tools.typing import get_param
 from costmap_converter.msg import ObstacleArrayMsg, ObstacleMsg
-from geometry_msgs.msg import Polygon, PoseStamped
-from sensor_msgs.msg import PointCloud2
+from geometry_msgs.msg import Point, Polygon, PoseStamped
+from sensor_msgs import point_cloud2
+from sensor_msgs.msg import PointCloud2, PointField
+from std_msgs.msg import Header
+
+CLOUD_FIELDS = [
+    PointField("x", 0, PointField.FLOAT32, 1),
+    PointField("y", 4, PointField.FLOAT32, 1),
+    PointField("z", 8, PointField.FLOAT32, 1),
+]
 
 
 class TargetSelector:
@@ -52,6 +62,7 @@ class TargetSelector:
     def filter_state_callback(self, msg: EstimatedObjectArray) -> None:
         with self.filter_lock:
             self.filter_states = msg
+        cloud_obstacles = np.array([], dtype=np.float32)
         for robot in msg.robots:  # type: ignore
             robot: EstimatedObject
             robot_name = robot.label
@@ -63,16 +74,40 @@ class TargetSelector:
                 object_id = self.non_controlled_robot_names.index(robot_name)
                 position = robot.state.pose.pose.position
                 self.obstacles.header = robot.header
-                radius = max(robot.size.x, robot.size.y, robot.size.z) / 2.0
+                diameter = max(robot.size.x, robot.size.y, robot.size.z)
                 self.obstacles.obstacles[object_id] = ObstacleMsg(  # type: ignore
                     header=robot.header,
                     id=object_id,
-                    radius=radius,
+                    radius=diameter,  # TEB actually uses this as diameter
                     polygon=Polygon(points=[position]),
                     orientation=robot.state.pose.pose.orientation,
                     velocities=robot.state.twist,
                 )
+                object_pose = Pose2D.from_msg(robot.state.pose.pose)
+                single_cloud_obstacle = self.get_obstacle_point(object_pose, diameter / 2, 8)
+                if len(cloud_obstacles) == 0:
+                    cloud_obstacles = single_cloud_obstacle
+                else:
+                    cloud_obstacles = np.append(cloud_obstacles, single_cloud_obstacle, axis=0)
+        cloud_msg = self.get_obstacle_cloud(self.obstacles.header, cloud_obstacles)
+        self.obstacle_cloud_pub.publish(cloud_msg)
         self.obstacle_pub.publish(self.obstacles)
+
+    def get_obstacle_point(self, center: Pose2D, radius: float, num_points: int) -> np.ndarray:
+        angles = np.linspace(0, 2 * np.pi, num_points + 1)[1:]
+        p0 = Pose2D(x=radius, y=0.0, theta=0.0)
+        points = [p0]
+        for angle in angles:
+            offset = p0.transform_by(Pose2D(0.0, 0.0, angle))
+            offset.theta = 0.0
+            points.append(offset)
+        points = [center.transform_by(point) for point in points]
+        point_array = np.array([point.to_array()[0:2] for point in points], dtype=np.float32)
+        return point_array
+
+    def get_obstacle_cloud(self, header: Header, points: np.ndarray) -> PointCloud2:
+        points_3d = np.concatenate((points, np.zeros((points.shape[0], 1))), axis=1)
+        return point_cloud2.create_cloud(header, CLOUD_FIELDS, points_3d.tolist())
 
     def get_robot_state(self, name: str) -> Optional[EstimatedObject]:
         with self.filter_lock:

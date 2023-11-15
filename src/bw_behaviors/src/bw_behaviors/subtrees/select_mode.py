@@ -23,7 +23,7 @@ def make_mode_tree(container: Container) -> Behaviour:
     sequences: List[Behaviour] = []
     for mode, make_fn in subtrees.items():
         sequence = Sequence(
-            f"{mode.value}_sequence",
+            f"{mode.name.lower()}_sequence",
             memory=False,
             children=[IsMode(mode, container), make_fn(container)],
         )
