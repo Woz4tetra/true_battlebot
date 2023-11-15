@@ -10,6 +10,7 @@ from bw_tools.structs.pose2d import Pose2D
 from bw_tools.typing import get_param
 from costmap_converter.msg import ObstacleArrayMsg, ObstacleMsg
 from geometry_msgs.msg import Polygon, PoseStamped
+from sensor_msgs.msg import PointCloud2
 
 
 class TargetSelector:
@@ -34,6 +35,7 @@ class TargetSelector:
         self.field = EstimatedObject()
 
         self.obstacle_pub = rospy.Publisher("obstacles", ObstacleArrayMsg, queue_size=10)
+        self.obstacle_cloud_pub = rospy.Publisher("obstacle_cloud", PointCloud2, queue_size=1)
         self.recommended_goal_pub = rospy.Publisher("recommended_goal", PoseStamped, queue_size=1)
 
         self.field_sub = rospy.Subscriber("filter/field", EstimatedObject, self.field_callback)
@@ -61,10 +63,11 @@ class TargetSelector:
                 object_id = self.non_controlled_robot_names.index(robot_name)
                 position = robot.state.pose.pose.position
                 self.obstacles.header = robot.header
+                radius = max(robot.size.x, robot.size.y, robot.size.z) / 2.0
                 self.obstacles.obstacles[object_id] = ObstacleMsg(  # type: ignore
                     header=robot.header,
                     id=object_id,
-                    radius=max(robot.size.x, robot.size.y, robot.size.z) / 2.0,
+                    radius=radius,
                     polygon=Polygon(points=[position]),
                     orientation=robot.state.pose.pose.orientation,
                     velocities=robot.state.twist,
