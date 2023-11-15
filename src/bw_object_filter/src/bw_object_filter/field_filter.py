@@ -6,7 +6,7 @@ import numpy as np
 import rospy
 import tf2_ros
 from bw_interfaces.msg import CageCorner as RosCageCorner
-from bw_interfaces.msg import EstimatedField
+from bw_interfaces.msg import EstimatedObject
 from bw_tools.structs.cage_corner import CageCorner
 from bw_tools.structs.rpy import RPY
 from bw_tools.structs.transform3d import Transform3D
@@ -32,9 +32,9 @@ class FieldFilter:
             CageCorner.DOOR_SIDE: Transform3D.from_position_and_rpy(Vector3(), RPY((0, 0, math.pi / 2))),
             CageCorner.FAR_SIDE: Transform3D.from_position_and_rpy(Vector3(), RPY((0, 0, -math.pi / 2))),
         }
-        self.estimated_field = EstimatedField()
+        self.estimated_field = EstimatedObject()
 
-        self.tf_broadcaster = tf2_ros.TransformBroadcaster()
+        self.tf_broadcaster = tf2_ros.TransformBroadcaster()  # type: ignore
 
         self.recommended_point_sub = rospy.Subscriber(
             "estimation/recommended_field_point", PointStamped, self.recommended_point_callback
@@ -45,7 +45,7 @@ class FieldFilter:
         )
         self.plane_request_pub = rospy.Publisher("plane_request", PointStamped, queue_size=1)
         self.plane_response_sub = rospy.Subscriber("plane_response", PlaneStamped, self.plane_response_callback)
-        self.estimated_field_pub = rospy.Publisher("filter/field", EstimatedField, queue_size=1, latch=True)
+        self.estimated_field_pub = rospy.Publisher("filter/field", EstimatedObject, queue_size=1, latch=True)
         self.corner_side_sub = rospy.Subscriber(
             "set_cage_corner", RosCageCorner, self.corner_side_callback, queue_size=1
         )
@@ -66,13 +66,13 @@ class FieldFilter:
 
     def plane_response_callback(self, plane: PlaneStamped) -> None:
         self.rotate_to_cage_aligned(plane)
-        self.estimated_field = EstimatedField(
+        self.estimated_field = EstimatedObject(
             header=plane.header,
-            center=Pose(
-                position=Point(plane.pose.translation.x, plane.pose.translation.y, plane.pose.translation.z),
-                orientation=plane.pose.rotation,
-            ),
             size=Vector3(x=plane.extents[0], y=plane.extents[1]),
+        )
+        self.estimated_field.state.pose.pose = Pose(
+            position=Point(plane.pose.translation.x, plane.pose.translation.y, plane.pose.translation.z),
+            orientation=plane.pose.rotation,
         )
         self.estimated_field_pub.publish(self.estimated_field)
 
@@ -108,18 +108,19 @@ class FieldFilter:
         delta_transform = new_transform.transform_by(old_transform.inverse())
         return delta_transform.rpy
 
-    def publish_field_tf(self, estimated_field: EstimatedField) -> None:
+    def publish_field_tf(self, estimated_field: EstimatedObject) -> None:
+        field_pose = estimated_field.state.pose.pose
         transform = Transform3D.from_position_and_quaternion(
             Vector3(
-                x=estimated_field.center.position.x,
-                y=estimated_field.center.position.y,
-                z=estimated_field.center.position.z,
+                x=field_pose.position.x,
+                y=field_pose.position.y,
+                z=field_pose.position.z,
             ),
-            estimated_field.center.orientation,
+            field_pose.orientation,
         )
         transform = transform.inverse()
 
-        field_tf = tf2_ros.TransformStamped()
+        field_tf = tf2_ros.TransformStamped()  # type: ignore
         field_tf.header.stamp = estimated_field.header.stamp
         field_tf.header.frame_id = self.map_frame
         field_tf.child_frame_id = estimated_field.header.frame_id

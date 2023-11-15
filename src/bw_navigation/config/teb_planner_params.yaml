@@ -6,10 +6,10 @@
 ## Robot Configuration Parameters ##
 
 # Maximum translational acceleration of the robot in meters/sec^2
-acc_lim_x: 2.0 # 0.5
+acc_lim_x: 1.0 # 0.5
 
 # Maximum angular acceleration of the robot in radians/sec^2
-acc_lim_theta: 6.0 # 12.0
+acc_lim_theta: 3.0 # 12.0
 
 # Maximum translational velocity of the robot in meters/sec
 max_vel_x: 2.0 # max speed 1.0 m/s
@@ -21,7 +21,7 @@ max_vel_x_backwards: 2.0 # 0.2
 
 # Maximum angular velocity of the robot in radians/secThe following
 # parameters are relevant only for carlike robots:
-max_vel_theta: 6.0 # 5.0
+max_vel_theta: 3.0 # 5.0
 
 ## The following parameters are relevant only for holonomic robots:
 
@@ -99,7 +99,7 @@ footprint_model/rear_radius: 0.2 # 0.2
 # list of polygon vertices (2d coordinates each). The polygon is always
 # closed: do not repeat the first vertex at the end.
 footprint_model/vertices:
-  [[-0.1375, -0.105], [-0.1375, 0.105], [0.1375, 0.105], [0.1375, -0.105]]
+    [[-0.1375, -0.105], [-0.1375, 0.105], [0.1375, 0.105], [0.1375, -0.105]]
 
 # If true, updates the footprint before checking trajectory feasibility
 is_footprint_dynamic: false # false
@@ -404,7 +404,7 @@ switching_blocking_period: 0.0 # 0.0
 
 # Topic name of the odometry message, provided by the robot driver or
 # simulator.
-odom_topic: "/mini_bot/filter_state" # "odom"
+odom_topic: "/mini_bot/odom" # "odom"
 
 # Global planning frame (in case of a static map, this parameter must be
 # usually changed to "/map".
@@ -433,41 +433,41 @@ costmap_converter_rate: 5.0 # 5.0
 
 ## Configure plugins (namespace move_base/CostmapToDynamicObstacles)
 costmap_converter/CostmapToDynamicObstacles:
-  cluster_max_distance: 0.3
-  cluster_min_pts: 8
-  cluster_max_pts: 25
-  convex_hull_min_pt_separation: 0.0
-  static_converter_plugin: "costmap_converter::CostmapToPolygonsDBSConcaveHull"
+    cluster_max_distance: 0.3
+    cluster_min_pts: 8
+    cluster_max_pts: 25
+    convex_hull_min_pt_separation: 0.0
+    static_converter_plugin: "costmap_converter::CostmapToPolygonsDBSConcaveHull"
 
-  # ransac_inlier_distance: 0.05
-  # ransac_min_inliers: 10
-  # ransac_no_iterations: 2000
-  # ransac_remainig_outliers: 3
-  # ransac_convert_outlier_pts: True
-  # ransac_filter_remaining_outlier_pts: False
-  # static_converter_plugin: "costmap_converter::CostmapToLinesDBSRANSAC"
+    # ransac_inlier_distance: 0.05
+    # ransac_min_inliers: 10
+    # ransac_no_iterations: 2000
+    # ransac_remainig_outliers: 3
+    # ransac_convert_outlier_pts: True
+    # ransac_filter_remaining_outlier_pts: False
+    # static_converter_plugin: "costmap_converter::CostmapToLinesDBSRANSAC"
 
-  # alpha_slow: 0.3
-  # alpha_fast: 0.85
-  # beta: 0.85
-  # min_sep_between_slow_and_fast_filter: 80
-  # min_occupancy_probability: 180
-  # max_occupancy_neighbors: 100
-  # morph_size: 1
-  # filter_by_area: True
-  # min_area: 3
-  # max_area: 300
-  # filter_by_circularity: True
-  # min_circularity: 0.2
-  # max_circularity: 1.0
-  # filter_by_inertia: True
-  # min_intertia_ratio: 0.2
-  # max_inertia_ratio: 1.0
-  # filter_by_convexity: False
-  # min_convexity: 0.0
-  # max_convexity: 1.0
-  # dt: 0.2
-  # dist_thresh: 60.0
-  # max_allowed_skipped_frames: 3
-  # max_trace_length: 10
-  # static_converter_plugin: "costmap_converter::CostmapToPolygonsDBSMCCH"
+    # alpha_slow: 0.3
+    # alpha_fast: 0.85
+    # beta: 0.85
+    # min_sep_between_slow_and_fast_filter: 80
+    # min_occupancy_probability: 180
+    # max_occupancy_neighbors: 100
+    # morph_size: 1
+    # filter_by_area: True
+    # min_area: 3
+    # max_area: 300
+    # filter_by_circularity: True
+    # min_circularity: 0.2
+    # max_circularity: 1.0
+    # filter_by_inertia: True
+    # min_intertia_ratio: 0.2
+    # max_inertia_ratio: 1.0
+    # filter_by_convexity: False
+    # min_convexity: 0.0
+    # max_convexity: 1.0
+    # dt: 0.2
+    # dist_thresh: 60.0
+    # max_allowed_skipped_frames: 3
+    # max_trace_length: 10
+    # static_converter_plugin: "costmap_converter::CostmapToPolygonsDBSMCCH"

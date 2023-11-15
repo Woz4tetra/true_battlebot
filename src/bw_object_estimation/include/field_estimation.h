@@ -16,7 +16,7 @@
 #include <bw_interfaces/SegmentationInstanceArray.h>
 #include <bw_interfaces/SegmentationInstance.h>
 #include <bw_interfaces/Contour.h>
-#include <bw_interfaces/EstimatedField.h>
+#include <bw_interfaces/EstimatedObject.h>
 
 #include "GRANSAC/PlaneModel.hpp"
 #include "GRANSAC/GRANSAC.hpp"
@@ -33,9 +33,9 @@ private:
     ros::Publisher _field_pub;
     ros::Publisher _field_pose_pub;
 
-	GRANSAC::RANSAC<PlaneModel, 3>* _estimator;
+    GRANSAC::RANSAC<PlaneModel, 3>* _estimator;
 
-    bw_interfaces::EstimatedField find_plane(cv::Mat depth_image, cv::Mat mask, std::vector<std::vector<cv::Point>> cv_contours);
+    bw_interfaces::EstimatedObject find_plane(cv::Mat depth_image, cv::Mat mask, std::vector<std::vector<cv::Point>> cv_contours);
 
     bool plane_fitting(const std::vector<Vector3VP> &points_input, double* center, double* normal);
 

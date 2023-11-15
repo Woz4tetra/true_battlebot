@@ -111,7 +111,7 @@ Camera:
   m_Depth: 0
   m_CullingMask:
     serializedVersion: 2
-    m_Bits: 767
+    m_Bits: 2815
   m_RenderingPath: -1
   m_TargetTexture: {fileID: 0}
   m_TargetDisplay: 0
@@ -194,6 +194,7 @@ MonoBehaviour:
     m_Bits: 1737
   debugRayCast: 0
   publishRate: 10
+  viewAngleThreshold: 70
   topic: /tag_detections
 --- !u!114 &3957978623221294602
 MonoBehaviour:
@@ -213,6 +214,7 @@ MonoBehaviour:
     m_Bits: 512
   debugRayCast: 0
   publishRate: 1
+  viewAngleThreshold: 70
   topic: /estimation/field
 --- !u!114 &8809695231059794595
 MonoBehaviour:
@@ -232,6 +234,7 @@ MonoBehaviour:
     m_Bits: 512
   debugRayCast: 0
   publishRate: 0
+  viewAngleThreshold: 70
   plane_request_topic: plane_request
   plane_response_topic: plane_response
 --- !u!54 &2960329943258412025

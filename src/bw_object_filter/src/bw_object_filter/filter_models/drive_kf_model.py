@@ -19,10 +19,13 @@ from .helpers import (
 
 
 class DriveKalmanModel(FilterModel):
-    def __init__(self, dt: float, process_noise: float = 0.001, friction_factor: float = 0.2) -> None:
+    def __init__(
+        self, dt: float, process_noise: float = 0.001, friction_factor: float = 0.2, object_radius: float = 0.0
+    ) -> None:
         self.dt = dt
         self.friction_factor = friction_factor
         self.process_noise = process_noise
+        self.object_radius = object_radius
 
         # measurement function for landmarks. Use only pose.
         self.pose_H = np.zeros((NUM_MEASUREMENTS, NUM_STATES))

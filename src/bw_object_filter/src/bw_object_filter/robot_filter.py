@@ -4,10 +4,11 @@ from typing import List, Optional, Tuple
 import rospy
 import tf2_ros
 from apriltag_ros.msg import AprilTagDetection, AprilTagDetectionArray
-from bw_interfaces.msg import EstimatedField, EstimatedRobot, EstimatedRobotArray
+from bw_interfaces.msg import EstimatedObject, EstimatedObjectArray
 from bw_tools.configs.robot_config import RobotConfig, RobotFleetConfig, RobotTeam
 from bw_tools.dataclass_deserialize import dataclass_deserialize
 from bw_tools.structs.header import Header
+from bw_tools.structs.labels import Label
 from bw_tools.structs.pose2d import Pose2D
 from bw_tools.structs.pose2d_stamped import Pose2DStamped
 from bw_tools.structs.transform3d import Transform3D
@@ -53,6 +54,8 @@ class RobotFilter:
         self.friction_factor = get_param("~friction_factor", 0.05)
         self.process_noise = get_param("~process_noise", 1e-4)
         self.motion_speed_threshold = get_param("~motion_speed_threshold", 0.25)
+        self.robot_min_radius = get_param("~robot_min_radius", 0.1)
+        self.robot_max_radius = get_param("~robot_max_radius", 0.4)
 
         self.robots = dataclass_deserialize(RobotFleetConfig, robot_config)
         self.check_unique(self.robots)
@@ -66,7 +69,7 @@ class RobotFilter:
         rotate_quat = (0.0, 0.0, -0.707, 0.707)
         self.apriltag_rotate_tf = Transform3D.from_position_and_quaternion(Vector3(), Quaternion(*rotate_quat))
         self.robot_filters = {
-            robot.name: DriveKalmanModel(self.update_delay, self.process_noise, self.friction_factor)
+            robot.name: DriveKalmanModel(self.update_delay, self.process_noise, self.friction_factor, robot.radius)
             for robot in self.robots.robots
         }
         self.prev_opponent_pose = {
@@ -83,21 +86,36 @@ class RobotFilter:
         self.their_robot_cmd_vel_heuristics = CmdVelHeuristics(self.cmd_vel_base_covariance_scalar)
         self.their_robot_cmd_vel_heuristics.base_covariance[5, 5] *= 1e6
 
-        self.measurement_sorter = RobotMeasurementSorter(self.robot_filters)
-
-        self.tf_buffer = tf2_ros.Buffer()
-        self.tf_listener = tf2_ros.TransformListener(self.tf_buffer)
-        self.tf_broadcaster = tf2_ros.TransformBroadcaster()
-
-        self.filter_state_pubs = {
-            robot.name: rospy.Publisher(f"{robot.name}/filter_state", Odometry, queue_size=10)
-            for robot in self.robots.robots
+        self.measurement_sorters = {
+            Label.ROBOT: RobotMeasurementSorter(
+                {
+                    name: filter
+                    for name, filter in self.robot_filters.items()
+                    if self.robot_configs[name].team != RobotTeam.REFEREE
+                }
+            ),
+            Label.REFEREE: RobotMeasurementSorter(
+                {
+                    name: filter
+                    for name, filter in self.robot_filters.items()
+                    if self.robot_configs[name].team == RobotTeam.REFEREE
+                }
+            ),
         }
 
+        self.tf_buffer = tf2_ros.Buffer()  # type: ignore
+        self.tf_listener = tf2_ros.TransformListener(self.tf_buffer)  # type: ignore
+        self.tf_broadcaster = tf2_ros.TransformBroadcaster()  # type: ignore
+
+        self.filter_state_pubs = {
+            robot.name: rospy.Publisher(f"{robot.name}/odom", Odometry, queue_size=10) for robot in self.robots.robots
+        }
+        self.filter_state_array_pub = rospy.Publisher("filtered_states", EstimatedObjectArray, queue_size=50)
+
         self.robots_sub = rospy.Subscriber(
-            "estimation/robots", EstimatedRobotArray, self.robot_estimation_callback, queue_size=50
+            "estimation/robots", EstimatedObjectArray, self.robot_estimation_callback, queue_size=50
         )
-        self.field_sub = rospy.Subscriber("filter/field", EstimatedField, self.field_callback, queue_size=1)
+        self.field_sub = rospy.Subscriber("filter/field", EstimatedObject, self.field_callback, queue_size=1)
         self.tags_sub = rospy.Subscriber("tag_detections", AprilTagDetectionArray, self.tags_callback, queue_size=25)
         self.cmd_vel_subs = [
             rospy.Subscriber(f"{robot.name}/cmd_vel", Twist, self.cmd_vel_callback, callback_args=robot, queue_size=10)
@@ -128,19 +146,34 @@ class RobotFilter:
                 return True
         return None
 
-    def robot_estimation_callback(self, msg: EstimatedRobotArray) -> None:
+    def robot_estimation_callback(self, msg: EstimatedObjectArray) -> None:
+        measurements = {label: [] for label in self.measurement_sorters.keys()}
+        for robot in msg.robots:  # type: ignore
+            robot: EstimatedObject
+            try:
+                label = Label(robot.label)
+            except ValueError:
+                rospy.logwarn(f"Unknown label {robot.label}")
+                continue
+            measurements[label].append(robot)
+        for label, sorter in self.measurement_sorters.items():
+            self.apply_update_with_sorter(sorter, measurements[label])
+
+    def apply_update_with_sorter(
+        self, measurement_sorter: RobotMeasurementSorter, robots: List[EstimatedObject]
+    ) -> None:
         map_measurements: List[Pose] = []
-        for measurement in msg.robots:  # type: ignore
-            measurement: EstimatedRobot
-            map_pose = self.transform_to_map(measurement.header, measurement.pose)
+        for measurement in robots:
+            map_pose = self.transform_to_map(measurement.header, measurement.state.pose.pose)
             if map_pose is None:
                 rospy.logwarn(f"Could not transform pose for measurement {measurement}")
                 continue
             map_measurements.append(map_pose)
 
-        assigned = self.measurement_sorter.get_ids(map_measurements)
+        assigned = measurement_sorter.get_ids(map_measurements)
         for robot_name, measurement_index in assigned.items():
-            camera_measurement: EstimatedRobot = msg.robots[measurement_index]  # type: ignore
+            robot_filter = self.robot_filters[robot_name]
+            camera_measurement = robots[measurement_index]
             robot_config = self.robot_configs[robot_name]
             map_pose = map_measurements[measurement_index]
             if robot_config.team == RobotTeam.OUR_TEAM:
@@ -152,12 +185,30 @@ class RobotFilter:
                 # )
                 # self.update_cmd_vel(velocity, robot_config)
                 self.update_cmd_vel(Twist(), robot_config)
+                robot_filter.object_radius = self.get_object_radius(camera_measurement)
 
             pose = PoseWithCovariance()
             pose.pose = map_pose
             pose.covariance = covariance
-            # self.robot_filters[robot_name].update_pose(pose)
-            self.robot_filters[robot_name].update_position(pose)
+            # robot_filter.update_pose(pose)
+            robot_filter.update_position(pose)
+
+    def get_object_radius(self, object_estimate: EstimatedObject) -> float:
+        measured_radius = (
+            max(
+                object_estimate.size.x,
+                object_estimate.size.y,
+                object_estimate.size.z,
+            )
+            / 2.0
+        )
+        return min(
+            max(
+                measured_radius,
+                self.robot_min_radius,
+            ),
+            self.robot_max_radius,
+        )
 
     def get_delta_measurements(self, stamp: float, robot_name: str, pose: Pose) -> Tuple[Pose, Twist]:
         dt = stamp - self.prev_opponent_pose[robot_name].header.stamp
@@ -232,7 +283,7 @@ class RobotFilter:
             measurement.twist.linear.y *= -1
         robot_filter.update_cmd_vel(measurement)
 
-    def field_callback(self, _: EstimatedField) -> None:
+    def field_callback(self, _: EstimatedObject) -> None:
         rospy.loginfo("New field received. Resetting filters.")
         rospy.sleep(0.5)
         for robot_filter in self.robot_filters.values():
@@ -272,8 +323,9 @@ class RobotFilter:
 
     def publish_all_filters(self) -> None:
         transforms = []
-        for robot_id, bot_filter in self.robot_filters.items():
-            robot_frame_id = self.get_robot_frame_id(robot_id)
+        filtered_states = EstimatedObjectArray()
+        for robot_name, bot_filter in self.robot_filters.items():
+            robot_frame_id = self.get_robot_frame_id(robot_name)
             pose, twist = bot_filter.get_state()
             state_msg = Odometry()
             state_msg.header.frame_id = self.map_frame
@@ -283,7 +335,18 @@ class RobotFilter:
             state_msg.twist = twist
 
             transforms.append(self.odom_to_transform(state_msg))
-            self.filter_state_pubs[robot_id].publish(state_msg)
+            self.filter_state_pubs[robot_name].publish(state_msg)
+
+            diameter = bot_filter.object_radius * 2
+            filtered_states.robots.append(  # type: ignore
+                EstimatedObject(
+                    header=state_msg.header,
+                    state=state_msg,
+                    size=Vector3(diameter, diameter, diameter),
+                    label=robot_name,
+                )
+            )
+        self.filter_state_array_pub.publish(filtered_states)
 
         self.tf_broadcaster.sendTransform(transforms)
 

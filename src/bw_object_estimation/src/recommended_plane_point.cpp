@@ -31,7 +31,7 @@ void RecommendedPlanePoint::synced_callback(
     for (size_t index = 0; index < segmentation->instances.size(); index++)
     {
         bw_interfaces::SegmentationInstance instance = segmentation->instances[index];
-        if (instance.label.compare(_field_label) == 0) {
+        if (is_label_included(instance.label)) {
             std::vector<std::vector<cv::Point>> cv_contours = get_cv_contours(instance.contours);
             cv::drawContours(field_mask, cv_contours, -1, cv::Scalar(255), cv::FILLED);
             num_contours += cv_contours.size();
@@ -41,7 +41,7 @@ void RecommendedPlanePoint::synced_callback(
     for (size_t index = 0; index < segmentation->instances.size(); index++)
     {
         bw_interfaces::SegmentationInstance instance = segmentation->instances[index];
-        if (instance.label.compare(_field_label) == 0) {
+        if (is_label_included(instance.label)) {
             continue;
         }
 

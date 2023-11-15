@@ -14,7 +14,7 @@ FieldEstimation::FieldEstimation(ros::NodeHandle* nodehandle) :
     _estimator = new GRANSAC::RANSAC<PlaneModel, 3>();
     _estimator->Initialize(ransac_threshold, ransac_max_iterations);
 
-    _field_pub = nh.advertise<bw_interfaces::EstimatedField>("estimation/field", _queue_size);
+    _field_pub = nh.advertise<bw_interfaces::EstimatedObject>("estimation/field", _queue_size);
     _field_pose_pub = nh.advertise<geometry_msgs::PoseStamped>("estimation/field_pose", _queue_size);
 
     ROS_INFO("FieldEstimation node initialized");
@@ -38,13 +38,13 @@ void FieldEstimation::synced_callback(
     for (size_t index = 0; index < segmentation->instances.size(); index++)
     {
         bw_interfaces::SegmentationInstance instance = segmentation->instances[index];
-        if (instance.label.compare(_field_label) == 0) {
+        if (is_label_included(instance.label)) {
             std::vector<std::vector<cv::Point>> cv_contours = get_cv_contours(instance.contours);
             cv::drawContours(field_mask, cv_contours, -1, cv::Scalar(255), cv::FILLED);
             for (size_t contour_index = 0; contour_index < cv_contours.size(); contour_index++)
             {
                 field_contours.push_back(cv_contours[contour_index]);
-            }            
+            }
         }
     }
 
@@ -54,7 +54,7 @@ void FieldEstimation::synced_callback(
     for (size_t index = 0; index < segmentation->instances.size(); index++)
     {
         bw_interfaces::SegmentationInstance instance = segmentation->instances[index];
-        if (instance.label.compare(_field_label) == 0) {
+        if (is_label_included(instance.label)) {
             continue;
         }
 
@@ -63,15 +63,15 @@ void FieldEstimation::synced_callback(
     }
 
     if (field_contours.size() > 0) {
-        bw_interfaces::EstimatedField field_msg = find_plane(depth_cv_image, field_mask, field_contours);
+        bw_interfaces::EstimatedObject field_msg = find_plane(depth_cv_image, field_mask, field_contours);
         field_msg.header = segmentation->header;
         _field_pub.publish(field_msg);
-        field_pose.pose = field_msg.center;
+        field_pose.pose = field_msg.state.pose.pose;
         _field_pose_pub.publish(field_pose);
     }
 }
 
-bw_interfaces::EstimatedField FieldEstimation::find_plane(cv::Mat depth_image, cv::Mat mask, std::vector<std::vector<cv::Point>> cv_contours) 
+bw_interfaces::EstimatedObject FieldEstimation::find_plane(cv::Mat depth_image, cv::Mat mask, std::vector<std::vector<cv::Point>> cv_contours) 
 {
     std::vector<Vector3VP> point_cloud;
 
@@ -101,11 +101,11 @@ bw_interfaces::EstimatedField FieldEstimation::find_plane(cv::Mat depth_image, c
 
     ROS_INFO("coeffs: %f, %f, %f, %f", coefs[0], coefs[1], coefs[2], coefs[3]);
 
-    bw_interfaces::EstimatedField field_msg;
+    bw_interfaces::EstimatedObject field_msg;
 
-    field_msg.center.position.x = center[0];
-    field_msg.center.position.y = center[1];
-    field_msg.center.position.z = center[2];
+    field_msg.state.pose.pose.position.x = center[0];
+    field_msg.state.pose.pose.position.y = center[1];
+    field_msg.state.pose.pose.position.z = center[2];
 
     Eigen::Vector3d normal(coefs[0], coefs[1], coefs[2]);
     Eigen::Vector3d up(0, 1, 0); // define up direction
@@ -116,10 +116,10 @@ bw_interfaces::EstimatedField FieldEstimation::find_plane(cv::Mat depth_image, c
     // Ensure that the quaternion is normalized
     q.normalize();
 
-    field_msg.center.orientation.x = q.x();
-    field_msg.center.orientation.y = q.y();
-    field_msg.center.orientation.z = q.z();
-    field_msg.center.orientation.w = q.w();
+    field_msg.state.pose.pose.orientation.x = q.x();
+    field_msg.state.pose.pose.orientation.y = q.y();
+    field_msg.state.pose.pose.orientation.z = q.z();
+    field_msg.state.pose.pose.orientation.w = q.w();
 
     return field_msg;
 }

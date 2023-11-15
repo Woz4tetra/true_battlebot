@@ -1,3 +1,4 @@
 std_msgs/Header header
-geometry_msgs/Pose center
+nav_msgs/Odometry state
 geometry_msgs/Vector3 size
+string label

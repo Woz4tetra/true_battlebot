@@ -8,50 +8,56 @@ using Unity.Robotics.ROSTCPConnector.MessageGeneration;
 namespace RosMessageTypes.BwInterfaces
 {
     [Serializable]
-    public class EstimatedRobotMsg : Message
+    public class EstimatedObjectMsg : Message
     {
-        public const string k_RosMessageName = "bw_interfaces/EstimatedRobot";
+        public const string k_RosMessageName = "bw_interfaces/EstimatedObject";
         public override string RosMessageName => k_RosMessageName;
 
         public Std.HeaderMsg header;
-        public Geometry.PoseMsg pose;
+        public Nav.OdometryMsg state;
+        public Geometry.Vector3Msg size;
         public string label;
 
-        public EstimatedRobotMsg()
+        public EstimatedObjectMsg()
         {
             this.header = new Std.HeaderMsg();
-            this.pose = new Geometry.PoseMsg();
+            this.state = new Nav.OdometryMsg();
+            this.size = new Geometry.Vector3Msg();
             this.label = "";
         }
 
-        public EstimatedRobotMsg(Std.HeaderMsg header, Geometry.PoseMsg pose, string label)
+        public EstimatedObjectMsg(Std.HeaderMsg header, Nav.OdometryMsg state, Geometry.Vector3Msg size, string label)
         {
             this.header = header;
-            this.pose = pose;
+            this.state = state;
+            this.size = size;
             this.label = label;
         }
 
-        public static EstimatedRobotMsg Deserialize(MessageDeserializer deserializer) => new EstimatedRobotMsg(deserializer);
+        public static EstimatedObjectMsg Deserialize(MessageDeserializer deserializer) => new EstimatedObjectMsg(deserializer);
 
-        private EstimatedRobotMsg(MessageDeserializer deserializer)
+        private EstimatedObjectMsg(MessageDeserializer deserializer)
         {
             this.header = Std.HeaderMsg.Deserialize(deserializer);
-            this.pose = Geometry.PoseMsg.Deserialize(deserializer);
+            this.state = Nav.OdometryMsg.Deserialize(deserializer);
+            this.size = Geometry.Vector3Msg.Deserialize(deserializer);
             deserializer.Read(out this.label);
         }
 
         public override void SerializeTo(MessageSerializer serializer)
         {
             serializer.Write(this.header);
-            serializer.Write(this.pose);
+            serializer.Write(this.state);
+            serializer.Write(this.size);
             serializer.Write(this.label);
         }
 
         public override string ToString()
         {
-            return "EstimatedRobotMsg: " +
+            return "EstimatedObjectMsg: " +
             "\nheader: " + header.ToString() +
-            "\npose: " + pose.ToString() +
+            "\nstate: " + state.ToString() +
+            "\nsize: " + size.ToString() +
             "\nlabel: " + label.ToString();
         }
 

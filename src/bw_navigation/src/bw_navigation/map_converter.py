@@ -2,7 +2,7 @@
 import cv2
 import numpy as np
 import rospy
-from bw_interfaces.msg import EstimatedField
+from bw_interfaces.msg import EstimatedObject
 from bw_tools.structs.header import Header
 from bw_tools.structs.occupancy_grid import OccupancyGrid
 from bw_tools.typing import get_param
@@ -19,9 +19,9 @@ class MapConverter:
         self.map_pub = rospy.Publisher("map", OccupancyGridMsg, queue_size=1, latch=True)
         self.map_server = rospy.Service("/static_map", GetMap, self.get_map_service)
 
-        self.field_sub = rospy.Subscriber("filter/field", EstimatedField, self.field_callback)
+        self.field_sub = rospy.Subscriber("filter/field", EstimatedObject, self.field_callback)
 
-    def field_callback(self, msg: EstimatedField) -> None:
+    def field_callback(self, msg: EstimatedObject) -> None:
         rospy.loginfo("Received field. Publishing map.")
         resolution = self.resolution
         width = msg.size.x

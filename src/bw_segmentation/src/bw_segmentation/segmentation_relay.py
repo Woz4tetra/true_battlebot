@@ -5,6 +5,7 @@ import cv2
 import numpy as np
 import rospy
 from bw_interfaces.msg import Contour, SegmentationInstance, SegmentationInstanceArray, UVKeypoint
+from bw_tools.structs.labels import Label
 from cv_bridge import CvBridge, CvBridgeError
 from sensor_msgs.msg import Image
 
@@ -13,15 +14,16 @@ class SegmentationRelay:
     def __init__(self) -> None:
         rospy.init_node("segmentation_relay")
 
-        self.simulated_to_real_labels: Dict[str, str] = {
-            "Mini bot": "robot",
-            "Main bot": "robot",
-            "Enemy bot": "robot",
-            "Field": "field",
+        self.simulated_to_real_labels: Dict[str, Label] = {
+            "Mini bot": Label.ROBOT,
+            "Main bot": Label.ROBOT,
+            "Enemy bot": Label.ROBOT,
+            "Field": Label.FIELD,
+            "Referee": Label.REFEREE,
         }
-        self.real_model_labels = ("field", "robot")
+        self.real_model_labels = tuple(Label)
 
-        self.simulated_segmentations: Dict[int, str] = {}
+        self.simulated_segmentations: Dict[int, Label] = {}
         self.bridge = CvBridge()
 
         self.image_sub = rospy.Subscriber("image", Image, self.image_callback)
@@ -62,7 +64,7 @@ class SegmentationRelay:
             segmentation = SegmentationInstance(
                 contours=[self.to_contours_msg(contour) for contour in contours],
                 score=1.0,
-                label=label,
+                label=label.value,
                 class_index=self.real_model_labels.index(label),
                 object_index=object_index,
                 has_holes=has_holes,
@@ -100,6 +102,7 @@ class SegmentationRelay:
     def simulated_segmentation_callback(self, msg: SegmentationInstanceArray) -> None:
         rospy.loginfo_once("Received simulated segmentation")
         for instant in msg.instances:  # type: ignore
+            instant: SegmentationInstance
             if instant.label not in self.simulated_to_real_labels:
                 continue
             color = instant.class_index

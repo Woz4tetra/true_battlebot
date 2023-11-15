@@ -3,7 +3,7 @@ from typing import Optional
 
 import rospy
 from bw_interfaces.msg import CageCorner as RosCageCorner
-from bw_interfaces.msg import EstimatedField
+from bw_interfaces.msg import EstimatedObject
 from bw_tools.structs.cage_corner import CageCorner
 from bw_tools.structs.header import Header
 from bw_tools.structs.pose2d import Pose2D
@@ -14,10 +14,10 @@ class CornerManager:
     def __init__(self, corner_offset: float) -> None:
         self.corner_offset = corner_offset
 
-        self.field = EstimatedField()
+        self.field = EstimatedObject()
         self.cage_corner: Optional[CageCorner] = None
 
-        self.field_sub = rospy.Subscriber("filter/field", EstimatedField, self.field_callback, queue_size=1)
+        self.field_sub = rospy.Subscriber("filter/field", EstimatedObject, self.field_callback, queue_size=1)
         self.corner_side_sub = rospy.Subscriber("cage_corner", RosCageCorner, self.corner_side_callback, queue_size=1)
 
         rospy.logdebug("Corner manager initialized")
@@ -25,7 +25,7 @@ class CornerManager:
     def corner_side_callback(self, corner: RosCageCorner) -> None:
         self.cage_corner = CageCorner.from_msg(corner)
 
-    def field_callback(self, field: EstimatedField) -> None:
+    def field_callback(self, field: EstimatedObject) -> None:
         self.field = field
 
     def get_goal(self) -> Optional[Pose2DStamped]:

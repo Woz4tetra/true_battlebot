@@ -19,8 +19,7 @@ protected:
     ros::NodeHandle nh;  // ROS node handle
 
     int _queue_size;
-    std::string _field_label;
-    std::string _robot_label;
+    std::vector<std::string> _include_labels;
 
     typedef message_filters::sync_policies::ExactTime<sensor_msgs::Image, bw_interfaces::SegmentationInstanceArray> ExactSyncPolicy;
     typedef message_filters::Synchronizer<ExactSyncPolicy> Sync;
@@ -34,6 +33,8 @@ protected:
 
     void camera_info_callback(const sensor_msgs::CameraInfoConstPtr& camera_info);
     bool get_depth_image(cv::Mat& depth_image, const sensor_msgs::ImageConstPtr& depth_msg);
+    bool is_label_included(std::string label);
+    cv::Point3d get_ray(cv::Point2d centroid, cv::Mat depth_image);
 public:
     BaseEstimation(ros::NodeHandle* nodehandle);
     ~BaseEstimation();
@@ -52,15 +53,15 @@ double get_depth_conversion(std::string encoding)
   };
 }
 
-cv::Point get_centroid(cv::InputArray points)
+cv::Point2d get_centroid(cv::InputArray points)
 {
     cv::Moments mm = cv::moments(points, false);
     double moment10 = mm.m10;
     double moment01 = mm.m01;
     double moment00 = mm.m00;
-    cv::Point coord;
-    coord.x = (int)(moment10 / moment00);
-    coord.y = (int)(moment01 / moment00);
+    cv::Point2d coord;
+    coord.x = moment10 / moment00;
+    coord.y = moment01 / moment00;
     return coord;
 }
 
