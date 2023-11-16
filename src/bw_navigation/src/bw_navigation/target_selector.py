@@ -3,7 +3,6 @@ from threading import Lock
 from typing import Optional, Tuple
 
 import numpy as np
-import ros_numpy
 import rospy
 from bw_interfaces.msg import EstimatedObject, EstimatedObjectArray
 from bw_tools.configs.robot_config import RobotFleetConfig, RobotTeam
@@ -11,7 +10,7 @@ from bw_tools.dataclass_deserialize import dataclass_deserialize
 from bw_tools.structs.pose2d import Pose2D
 from bw_tools.typing import get_param
 from costmap_converter.msg import ObstacleArrayMsg, ObstacleMsg
-from geometry_msgs.msg import Point, Polygon, PoseStamped
+from geometry_msgs.msg import Polygon, PoseStamped
 from sensor_msgs import point_cloud2
 from sensor_msgs.msg import PointCloud2, PointField
 from std_msgs.msg import Header

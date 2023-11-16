@@ -1,3 +1,4 @@
+import rospy
 from py_trees.behaviour import Behaviour
 from py_trees.common import Status
 
@@ -20,4 +21,5 @@ class GetPath(Behaviour):
 
     def terminate(self, new_status: Status) -> None:
         if self.status == Status.RUNNING:
+            rospy.loginfo("Canceling MBF get path action")
             self.get_path_manager.cancel()

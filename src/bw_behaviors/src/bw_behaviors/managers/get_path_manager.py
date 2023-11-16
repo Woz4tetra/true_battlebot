@@ -2,8 +2,9 @@ from typing import Optional
 
 import actionlib
 import rospy
+from actionlib_msgs.msg import GoalStatus
 from bw_tools.structs.pose2d_stamped import Pose2DStamped
-from mbf_msgs.msg import GetPathAction, GetPathFeedback, GetPathGoal, GetPathResult
+from mbf_msgs.msg import GetPathAction, GetPathGoal, GetPathResult
 from nav_msgs.msg import Path
 from py_trees.common import Status
 
@@ -29,8 +30,9 @@ class GetPathManager:
         self.goal = goal
 
     def get_path(self) -> Optional[Path]:
-        if self.status == Status.SUCCESS:
-            return self.path
+        result: Optional[GetPathResult] = self.action.get_result()
+        if self.get_status() == Status.SUCCESS and result is not None:
+            return result.path
         else:
             return None
 
@@ -38,24 +40,18 @@ class GetPathManager:
         if self.goal is None:
             rospy.logwarn("No goal set")
             return False
-        self.status = Status.RUNNING
-        self.action.send_goal(self.goal, done_cb=self.action_done, feedback_cb=self.feedback_cb)
+        self.action.send_goal(self.goal)
         self.goal = None
-        self.status = Status.RUNNING
         return True
 
     def get_status(self) -> Status:
-        return self.status
-
-    def action_done(self, goal_status, result: GetPathResult) -> None:
-        self.status = Status.SUCCESS if result.outcome == GetPathResult.SUCCESS else Status.FAILURE
-        if self.status == Status.FAILURE:
-            rospy.logerr(f"MBF get path action failed: {result.message}")
+        if self.action.get_result() is None:
+            return Status.RUNNING
+        state = self.action.get_state()
+        if state == GoalStatus.SUCCEEDED:
+            return Status.SUCCESS
         else:
-            self.path = result.path
-
-    def feedback_cb(self, feedback: GetPathFeedback) -> None:
-        pass
+            return Status.FAILURE
 
     def cancel(self) -> None:
         rospy.loginfo("Canceling MBF get path action")

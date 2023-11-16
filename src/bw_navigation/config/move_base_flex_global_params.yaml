@@ -1,10 +1,14 @@
 planners:
-  - name: GlobalPlanner
-    type: global_planner/GlobalPlanner
+    - name: GlobalPlanner
+      type: global_planner/GlobalPlanner
 
 controllers:
-  - name: TebLocalPlannerROS
-    type: teb_local_planner/TebLocalPlannerROS
+    - name: TebLocalPlannerROS
+      type: teb_local_planner/TebLocalPlannerROS
+
+recovery_behaviors:
+    - name: "flail_recovery"
+      type: "bw_recovery/FlailRecoveryBehavior"
 
 map_frame: map
 robot_frame: base_link_mini_bot
@@ -13,7 +17,7 @@ robot_frame: base_link_mini_bot
 planner_frequency: 2.0 # 0.0
 
 # How long the planner will wait in seconds in an attempt to find a valid plan before giving up
-planner_patience: 5.0
+planner_patience: 1.0
 
 # How many times we will recall the planner in an attempt to find a valid plan before giving up
 planner_max_retries: -1
@@ -22,13 +26,13 @@ planner_max_retries: -1
 controller_frequency: 20.0
 
 # How long the controller will wait in seconds without receiving a valid control before giving up
-controller_patience: 5.0
+controller_patience: 1.0
 
 # How many times we will recall the controller in an attempt to find a valid command before giving up
 controller_max_retries: -1
 
 # Whether or not to enable the move_base_flex recovery behaviors to attempt to clear out space
-recovery_enabled: false
+recovery_enabled: true
 
 # How much time we allow recovery behaviors to complete before canceling (or stopping if cancel fails) them
 recovery_patience: 15.0

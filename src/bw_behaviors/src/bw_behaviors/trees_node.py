@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import py_trees
 import rospy
+from bw_tools.typing import get_param
 from py_trees import display
 from py_trees.trees import BehaviourTree
 from py_trees.visitors import DisplaySnapshotVisitor
@@ -37,6 +38,7 @@ class TreesNode:
     def __init__(self) -> None:
         self.container = Container()
         self.tree = self.make_tree()
+        self.tick_rate = get_param("~tick_rate", 10.0)
 
         py_trees.logging.level = py_trees.logging.Level.INFO
         snapshot_visitor = SparseDisplaySnapshotVisitor()
@@ -52,8 +54,10 @@ class TreesNode:
 
     def run(self):
         self.tree.setup(timeout=15)
+        rate = rospy.Rate(self.tick_rate)
         while not rospy.is_shutdown():
             self.tree.tick()
+            rate.sleep()
         self.tree.shutdown()
 
 

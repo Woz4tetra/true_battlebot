@@ -4,6 +4,7 @@ from bw_behaviors.managers.corner_manager import CornerManager
 from bw_behaviors.managers.get_path_manager import GetPathManager
 from bw_behaviors.managers.mode_manager import ModeManager
 from bw_behaviors.managers.recommended_goal_manager import RecommendedGoalManager
+from bw_behaviors.managers.recovery_manager import RecoveryManager
 
 
 class Container:
@@ -15,3 +16,4 @@ class Container:
         self.corner_manager = CornerManager(self.corner_offset)
         self.get_path_manager = GetPathManager(self.goal_xy_tolerance)
         self.recommended_goal_manager = RecommendedGoalManager()
+        self.recovery_manager = RecoveryManager()

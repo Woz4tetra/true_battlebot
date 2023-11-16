@@ -1,0 +1,9 @@
+<library path="lib/libbw_recovery">
+    <class name="bw_recovery/FlailRecoveryBehavior"
+        type="bw_recovery::FlailRecoveryBehavior"
+        base_class_type="nav_core::RecoveryBehavior">
+        <description>
+            A recovery behavior plugin that moves the robot away from the nearest obstacle.
+        </description>
+    </class>
+</library>
