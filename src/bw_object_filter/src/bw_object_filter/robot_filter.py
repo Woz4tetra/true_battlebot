@@ -280,9 +280,9 @@ class RobotFilter:
             measurement.covariance = self.our_robot_cmd_vel_heuristics.compute_covariance(measurement)
 
         robot_filter = self.robot_filters[robot_config.name]
-        if not robot_filter.is_right_side_up:
-            measurement.twist.linear.x *= -1
-            measurement.twist.linear.y *= -1
+        # if not robot_filter.is_right_side_up:
+        #     measurement.twist.linear.x *= -1
+        #     measurement.twist.linear.y *= -1
         robot_filter.update_cmd_vel(measurement)
 
     def field_callback(self, _: EstimatedObject) -> None:

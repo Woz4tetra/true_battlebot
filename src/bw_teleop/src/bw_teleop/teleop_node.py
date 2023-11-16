@@ -25,11 +25,15 @@ class TeleopNode:
             )
             for robot in self.robots.robots
             if robot.team == RobotTeam.OUR_TEAM
+            # velocity commands in the map oriented frame (not flipped).
+            # comes from navigation and joysticks
         ]
         self.cmd_vel_pubs = {
             robot.name: rospy.Publisher(f"{robot.name}/cmd_vel/relative", Twist, queue_size=10)
             for robot in self.robots.robots
             if robot.team == RobotTeam.OUR_TEAM
+            # velocity commands in the robot frame (flipped or not flipped).
+            # consumed by hardware
         }
 
     def cmd_vel_callback(self, msg: Twist, robot: RobotConfig) -> None:
