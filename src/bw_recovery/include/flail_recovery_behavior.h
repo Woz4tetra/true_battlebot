@@ -52,6 +52,7 @@ namespace bw_recovery
         double timeout_;                    // Maximum duration for the recovery behavior to run (seconds)
         double flail_speed_;                // Speed at which the robot moves back and forth (m/s)
         double flail_direction_interval_;   // Interval at which the robot changes direction (seconds)
+        double min_recovery_time_;          // Minimum duration for the recovery behavior to run (seconds)
         bool check_global_costmap_;         // Flag to check the global costmap for obstacles
         bool check_local_costmap_;          // Flag to check the local costmap for obstacles
 

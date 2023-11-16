@@ -1,30 +1,19 @@
 from bw_tools.structs.behavior_mode import BehaviorMode
 from py_trees.behaviour import Behaviour
-from py_trees.composites import Selector, Sequence
+from py_trees.composites import Sequence
 
-from bw_behaviors.behaviors.exe_path import ExePath
-from bw_behaviors.behaviors.get_path import GetPath
-from bw_behaviors.behaviors.recovery_behavior import RecoveryBehavior
 from bw_behaviors.behaviors.set_goal_to_simple import SetGoalToSimple
 from bw_behaviors.behaviors.set_mode import SetMode
+from bw_behaviors.behaviors.supplied_goal_behavior import make_supplied_goal_behavior
 from bw_behaviors.container import Container
 
 
 def make_clicked_point_behavior(container: Container) -> Behaviour:
     return Sequence(
-        "clicked_point_sequence",
+        "clicked_point_main_sequence",
         memory=True,
         children=[
-            SetGoalToSimple(container),
-            GetPath(container),
-            Selector(
-                "clicked_point_exe_selector",
-                memory=True,
-                children=[
-                    ExePath(container),
-                    RecoveryBehavior(container),
-                ],
-            ),
+            make_supplied_goal_behavior("clicked_point", SetGoalToSimple(container), container),
             SetMode(container, BehaviorMode.IDLE),
         ],
     )

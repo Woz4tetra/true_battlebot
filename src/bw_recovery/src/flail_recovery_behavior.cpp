@@ -31,6 +31,7 @@ void FlailRecoveryBehavior::initialize(std::string name, tf2_ros::Buffer* tf, co
     // Load parameters from the parameter server
     private_nh.param("flail_speed", flail_speed_, 1.0);
     private_nh.param("flail_direction_interval", flail_direction_interval_, 1.0);
+    private_nh.param("min_recovery_time", min_recovery_time_, 2.0);
     private_nh.param("timeout", timeout_, 10.0);
     private_nh.param("frequency", frequency_, 10.0);
     private_nh.param("check_global_costmap", check_global_costmap_, true);
@@ -56,11 +57,12 @@ void FlailRecoveryBehavior::runBehavior()
 
     while (ros::ok() && now - start_time < ros::Duration(timeout_))
     {
-        if (isRobotFree()) {
+        now = ros::Time::now();
+        if (now - start_time > ros::Duration(min_recovery_time_) && isRobotFree()) {
             ROS_INFO("Robot is free, stopping flail recovery behavior");
             break;
         }
-        now = ros::Time::now();
+
         if (now - direction_change_time > ros::Duration(flail_direction_interval_))
         {
             x_velocity = -x_velocity;
@@ -106,15 +108,14 @@ bool FlailRecoveryBehavior::isRobotFree()
 
 bool FlailRecoveryBehavior::isRobotFreeInCostmap(costmap_2d::Costmap2DROS *costmap_ros)
 {
-    geometry_msgs::Polygon temp_footprint = costmap_ros->getRobotFootprintPolygon();
-    geometry_msgs::Polygon* robot_footprint = &temp_footprint;
-    geometry_msgs::Polygon* global_footprint;
-    if (!transformPolygonToGlobal(robot_footprint, global_footprint, costmap_ros)) {
+    geometry_msgs::Polygon robot_footprint = costmap_ros->getRobotFootprintPolygon();
+    geometry_msgs::Polygon global_footprint;
+    if (!transformPolygonToGlobal(&robot_footprint, &global_footprint, costmap_ros)) {
         return false;
     }
 
     costmap_2d::Costmap2D *costmap = costmap_ros->getCostmap();
-    std::vector<costmap_2d::MapLocation> footprintMapLocations = convertPolygonToMapLocations(global_footprint, costmap);
+    std::vector<costmap_2d::MapLocation> footprintMapLocations = convertPolygonToMapLocations(&global_footprint, costmap);
     std::vector<costmap_2d::MapLocation> cells;
     costmap->polygonOutlineCells(footprintMapLocations, cells);
 

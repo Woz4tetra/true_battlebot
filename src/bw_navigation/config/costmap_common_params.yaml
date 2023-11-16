@@ -7,12 +7,12 @@ update_frequency: 3.0
 publish_frequency: 1.0
 footprint_padding: 0.0
 
-robot_radius: 0.15
+robot_radius: 0.1
 
 transform_tolerance: 0.25 # 0.2
 
 inflation:
-    enabled: true
+    enabled: false
     cost_scaling_factor: 3.0
     inflation_radius: 1.5
 
@@ -35,7 +35,7 @@ obstacle_layer:
         raytrace_range: 3.0
         max_obstacle_height: 3.0
         min_obstacle_height: -3.0
-        inflation_radius: 0.01
+        inflation_radius: 0.0
         track_unknown_space: true
         combination_method: 1
 

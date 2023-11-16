@@ -36,12 +36,14 @@ class GetPathManager:
         else:
             return None
 
-    def send_goal(self) -> bool:
+    def send_goal(self, clear_goal_after_send: bool = True) -> bool:
         if self.goal is None:
             rospy.logwarn("No goal set")
             return False
+        rospy.loginfo(f"Setting MBF get path goal to {self.goal.target_pose}")
         self.action.send_goal(self.goal)
-        self.goal = None
+        if clear_goal_after_send:
+            self.goal = None
         return True
 
     def get_status(self) -> Status:

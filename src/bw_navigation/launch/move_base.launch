@@ -2,7 +2,7 @@
 <launch>
 	<arg name="robot_filter_config" default="$(find bw_object_filter)/config/robot_filter.yaml" />
 	<node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
-		<remap from="/cmd_vel" to="/mini_bot/cmd_vel" />
+		<remap from="/cmd_vel" to="/mini_bot/cmd_vel/absolute" />
 		<remap from="/odom" to="/mini_bot/odom" />
 		<rosparam file="$(find bw_navigation)/config/move_base_global_params.yaml" command="load" />
 

@@ -3,11 +3,12 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 import numpy as np
-from bw_tools.structs.pose2d import Pose2D
-from bw_tools.structs.rpy import RPY
 from geometry_msgs.msg import Quaternion, Vector3
 from geometry_msgs.msg import Transform as RosTransform
 from tf_conversions import transformations
+
+from bw_tools.structs.pose2d import Pose2D
+from bw_tools.structs.rpy import RPY
 
 
 @dataclass

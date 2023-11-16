@@ -20,7 +20,7 @@ class TankController : MonoBehaviour
     {
         body = GetComponent<ArticulationBody>();
         ros = ROSConnection.GetOrCreateInstance();
-        ros.Subscribe<TwistMsg>(baseTopic + "/cmd_vel", cmdVelCallback);
+        ros.Subscribe<TwistMsg>(baseTopic + "/cmd_vel/relative", cmdVelCallback);
         ros.RegisterPublisher<OdometryMsg>(baseTopic + "/ground_truth");
     }
 

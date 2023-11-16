@@ -1,0 +1,6 @@
+<launch>
+    <arg name="robot_filter_config" default="$(find bw_object_filter)/config/robot_filter.yaml" />
+    <node name="bw_teleop" pkg="bw_teleop" type="teleop_node.py" output="screen" required="false">
+        <rosparam command="load" file="$(arg robot_filter_config)" ns="robots" />
+    </node>
+</launch>

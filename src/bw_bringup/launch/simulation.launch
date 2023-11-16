@@ -22,4 +22,8 @@
     </include>
     <include file="$(find bw_command_center)/launch/command_center.launch" />
     <include file="$(find bw_behaviors)/launch/bw_behaviors.launch" />
+    <include file="$(find bw_teleop)/launch/bw_teleop.launch">
+        <arg name="robot_filter_config"
+            default="$(find bw_bringup)/config/$(arg robot)/robot_filter.yaml" />
+    </include>
 </launch>
