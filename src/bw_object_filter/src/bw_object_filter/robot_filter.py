@@ -6,7 +6,7 @@ import tf2_ros
 from apriltag_ros.msg import AprilTagDetection, AprilTagDetectionArray
 from bw_interfaces.msg import EstimatedObject, EstimatedObjectArray
 from bw_tools.configs.robot_config import RobotConfig, RobotFleetConfig, RobotTeam
-from bw_tools.dataclass_deserialize import dataclass_deserialize
+from bw_tools.dataclass_serialization import dataclass_deserialize
 from bw_tools.structs.header import Header
 from bw_tools.structs.labels import Label
 from bw_tools.structs.pose2d import Pose2D

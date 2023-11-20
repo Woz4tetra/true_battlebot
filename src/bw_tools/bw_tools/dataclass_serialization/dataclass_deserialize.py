@@ -31,13 +31,16 @@ OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 """
 
 from dataclasses import dataclass, fields, is_dataclass
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Type, TypeVar, Union
 from unittest import TestCase
 from unittest import main as run_tests
 
 
 class NotSet:
     pass
+
+
+DataclassType = TypeVar("DataclassType")
 
 
 def origin_type(field_type):
@@ -56,12 +59,22 @@ def unpack_optional(field_type):
     return type_args(field_type)[0]
 
 
-def dataclass_deserialize(cls, data):
+def dataclass_deserialize(cls: Type[DataclassType], data: Dict) -> DataclassType:
     """
     :param cls: A class, subtype of type dataclass
     :param data: dict with data to apply to the class when instantiated
     :return:
     """
+
+    if not is_dataclass(cls):
+        raise TypeError(f"cls must be a dataclass, got {str(cls)[0:100]}")
+    if not isinstance(data, dict):
+        raise TypeError(f"data must be a dict, got {str(data)[0:100]}")
+
+    return _dataclass_deserialize_recurse(cls, data)
+
+
+def _dataclass_deserialize_recurse(cls, data):
     if is_dataclass(data) or not is_dataclass(cls):
         return data
 
@@ -80,17 +93,17 @@ def dataclass_deserialize(cls, data):
             continue  # for loop
 
         if is_dataclass(field_type):
-            tx_data[name] = dataclass_deserialize(field_type, value)
+            tx_data[name] = _dataclass_deserialize_recurse(field_type, value)
             continue  # for loop
 
         if origin_type(field_type) is list:
             field_type = type_args(field_type)[0]
-            tx_data[name] = [dataclass_deserialize(field_type, e) for e in value]
+            tx_data[name] = [_dataclass_deserialize_recurse(field_type, e) for e in value]
             continue  # for loop
 
         if origin_type(field_type) is dict:
             _, field_type = type_args(field_type)
-            tx_data[name] = {k: dataclass_deserialize(field_type, e) for k, e in value.items()}
+            tx_data[name] = {k: _dataclass_deserialize_recurse(field_type, e) for k, e in value.items()}
             continue  # for loop
 
         # it's not a dataclass or a simple struct of them.
@@ -155,7 +168,7 @@ class DataclassRecursiveTests(TestCase):
             vd={"ZXCV": 12},
         )
 
-        it_is = dataclass_deserialize(B, data)
+        it_is = _dataclass_deserialize_recurse(B, data)
         assert it_is == should_be
 
     def test_key_error(self):
@@ -175,7 +188,7 @@ class DataclassRecursiveTests(TestCase):
         )
 
         with self.assertRaises(KeyError) as expecting:
-            dataclass_deserialize(B, data)
+            _dataclass_deserialize_recurse(B, data)
         error_message = str(expecting.exception)
         assert error_message == "'a'"
 

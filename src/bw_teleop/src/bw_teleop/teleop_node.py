@@ -2,7 +2,7 @@
 import rospy
 from bw_interfaces.msg import EstimatedObject, EstimatedObjectArray
 from bw_tools.configs.robot_config import RobotConfig, RobotFleetConfig, RobotTeam
-from bw_tools.dataclass_deserialize import dataclass_deserialize
+from bw_tools.dataclass_serialization import dataclass_deserialize
 from bw_tools.typing import get_param
 from geometry_msgs.msg import Quaternion, Twist
 from tf_conversions import transformations
