@@ -2,3 +2,4 @@ mypy
 types-requests
 py_trees==2.2.3
 pytest
+dacite

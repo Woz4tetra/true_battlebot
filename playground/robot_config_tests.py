@@ -1,5 +1,4 @@
-from bw_tools.configs.robot_config import RobotConfig, RobotFleetConfig
-from bw_tools.dataclass_serialization import dataclass_deserialize
+from bw_tools.configs.robot_config import RobotFleetConfig
 
 config = {
     "robots": [
@@ -9,5 +8,5 @@ config = {
     ]
 }
 
-robots = dataclass_deserialize(RobotFleetConfig, config)
+robots = RobotFleetConfig.from_dict(config)
 print(robots)

@@ -2,7 +2,6 @@
 import rospy
 from bw_interfaces.msg import EstimatedObject, EstimatedObjectArray
 from bw_tools.configs.robot_config import RobotConfig, RobotFleetConfig, RobotTeam
-from bw_tools.dataclass_serialization import dataclass_deserialize
 from bw_tools.typing import get_param
 from geometry_msgs.msg import Quaternion, Twist
 from tf_conversions import transformations
@@ -13,7 +12,7 @@ class TeleopNode:
         robot_config = get_param("~robots", None)
         if robot_config is None:
             raise ValueError("Must specify robot_config in the parameter server")
-        self.robots = dataclass_deserialize(RobotFleetConfig, robot_config)
+        self.robots = RobotFleetConfig.from_dict(robot_config)
 
         self.filter_state_array_sub = rospy.Subscriber(
             "filtered_states", EstimatedObjectArray, self.filtered_states_callback, queue_size=50

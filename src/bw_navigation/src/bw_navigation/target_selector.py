@@ -6,7 +6,6 @@ import numpy as np
 import rospy
 from bw_interfaces.msg import EstimatedObject, EstimatedObjectArray
 from bw_tools.configs.robot_config import RobotFleetConfig, RobotTeam
-from bw_tools.dataclass_serialization import dataclass_deserialize
 from bw_tools.structs.pose2d import Pose2D
 from bw_tools.typing import get_param
 from costmap_converter.msg import ObstacleArrayMsg, ObstacleMsg
@@ -31,7 +30,7 @@ class TargetSelector:
         self.guidance_bot_name = get_param("~guidance_bot_name", "main_bot")
         self.controlled_bot_name = get_param("~controlled_bot_name", "mini_bot")
 
-        all_robots = dataclass_deserialize(RobotFleetConfig, robot_config)
+        all_robots = RobotFleetConfig.from_dict(robot_config)
         self.non_controlled_robots = [robot for robot in all_robots.robots if robot.name != self.controlled_bot_name]
         self.non_controlled_robot_names = [robot.name for robot in self.non_controlled_robots]
         self.their_robot_names = [robot.name for robot in all_robots.robots if robot.team == RobotTeam.THEIR_TEAM]

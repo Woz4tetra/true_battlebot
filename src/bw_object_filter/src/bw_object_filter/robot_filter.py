@@ -6,7 +6,6 @@ import tf2_ros
 from apriltag_ros.msg import AprilTagDetection, AprilTagDetectionArray
 from bw_interfaces.msg import EstimatedObject, EstimatedObjectArray
 from bw_tools.configs.robot_config import RobotConfig, RobotFleetConfig, RobotTeam
-from bw_tools.dataclass_serialization import dataclass_deserialize
 from bw_tools.structs.header import Header
 from bw_tools.structs.labels import Label
 from bw_tools.structs.pose2d import Pose2D
@@ -57,7 +56,7 @@ class RobotFilter:
         self.robot_min_radius = get_param("~robot_min_radius", 0.1)
         self.robot_max_radius = get_param("~robot_max_radius", 0.4)
 
-        self.robots = dataclass_deserialize(RobotFleetConfig, robot_config)
+        self.robots = RobotFleetConfig.from_dict(robot_config)
         self.check_unique(self.robots)
 
         self.prev_cmd_time = rospy.Time.now()

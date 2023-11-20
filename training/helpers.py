@@ -6,16 +6,15 @@ from typing import List, Tuple
 import cv2
 import detectron2.data.datasets
 import numpy as np
-from bw_tools.dataclass_serialization import dataclass_deserialize, dataclass_serialize
-from coco_dataset import CocoDataset, DatasetAnnotation, DatasetImage
+from coco_dataset import CocoDataset, CocoMetaDataset, DatasetAnnotation, DatasetImage
 from detectron2.data import DatasetCatalog, transforms
 from matplotlib import pyplot as plt
 
 
-def load_dataset(dataset_path: str) -> CocoDataset:
+def load_dataset(dataset_path: str) -> CocoMetaDataset:
     with open(dataset_path, "r") as f:
         dataset = json.load(f)
-    return dataclass_deserialize(CocoDataset, dataset)
+    return CocoMetaDataset.from_json(dataset)
 
 
 def load_coco(dataset_name: str, annotation_path: str, image_dir: str):
@@ -61,14 +60,13 @@ def write_augmented_image(
     return new_image_filename
 
 
-def write_augmented_dataset(dataset: CocoDataset, path: str) -> None:
-    contents = dataclass_serialize(dataset)
+def write_dataset(dataset: CocoMetaDataset, path: str) -> None:
     with open(path, "w") as f:
-        json.dump(contents, f)
+        json.dump(dataset.to_json(), f)
 
 
 def augment_dataset_image(
-    image_path: str, dataset: CocoDataset, dataset_image: DatasetImage, augmentations: transforms.AugmentationList
+    image_path: str, dataset: CocoMetaDataset, dataset_image: DatasetImage, augmentations: transforms.AugmentationList
 ) -> Tuple[np.ndarray, List[DatasetAnnotation]]:
     annotations = dataset.get_annotations(dataset_image.id)
 
