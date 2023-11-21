@@ -1,22 +1,33 @@
 #!/usr/bin/env python
 import math
+import pickle
 from typing import Optional
 
 import numpy as np
 import rospy
 import tf2_ros
 from bw_interfaces.msg import CageCorner as RosCageCorner
-from bw_interfaces.msg import EstimatedObject
+from bw_interfaces.msg import EstimatedObject, SegmentationInstanceArray
 from bw_tools.structs.cage_corner import CageCorner
 from bw_tools.structs.rpy import RPY
 from bw_tools.structs.transform3d import Transform3D
-from bw_tools.transforms import lookup_pose_in_frame
+from bw_tools.transforms import lookup_pose_in_frame, lookup_transform
 from bw_tools.typing import get_param
 from geometry_msgs.msg import Point, PointStamped, Pose, PoseStamped, Quaternion, Vector3
-from sensor_msgs.msg import Imu
+from image_geometry import PinholeCameraModel
+from sensor_msgs.msg import CameraInfo, Imu
 from std_msgs.msg import ColorRGBA, Empty
 from visualization_msgs.msg import Marker, MarkerArray
 from zed_interfaces.msg import PlaneStamped
+
+from bw_object_filter.field_math.find_minimum_rectangle import (
+    find_minimum_rectangle,
+    get_rectangle_angle,
+    get_rectangle_extents,
+)
+from bw_object_filter.field_math.get_field_segmentation import get_field_segmentation
+from bw_object_filter.field_math.points_transform import points_transform
+from bw_object_filter.field_math.project_segmentation import project_segmentation
 
 
 class FieldFilter:
@@ -41,11 +52,17 @@ class FieldFilter:
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer)  # type: ignore
         self.tf_broadcaster = tf2_ros.TransformBroadcaster()  # type: ignore
 
-        rotate_quat = (0.707, 0.0, 0.0, 0.707)
-        self.field_rotate_tf = Transform3D.from_position_and_quaternion(Vector3(), Quaternion(*rotate_quat))
+        self.field_rotate_tf = Transform3D.from_position_and_rpy(Vector3(), RPY((0, np.pi / 2, 0)))
         self.marker_color = ColorRGBA(0, 1, 0.5, 0.75)
-
         self.prev_request_time = rospy.Time(0)
+        self.segmentation = SegmentationInstanceArray()
+        self.camera_model = PinholeCameraModel()
+
+        self.plane_request_pub = rospy.Publisher("plane_request", PointStamped, queue_size=1)
+        self.plane_response_sub = rospy.Subscriber("plane_response", PlaneStamped, self.plane_response_callback)
+        self.estimated_field_pub = rospy.Publisher("filter/field", EstimatedObject, queue_size=1, latch=True)
+        self.estimated_field_marker_pub = rospy.Publisher("filter/field/marker", MarkerArray, queue_size=1, latch=True)
+        self.corner_pub = rospy.Publisher("cage_corner", RosCageCorner, queue_size=1, latch=True)
 
         self.recommended_point_sub = rospy.Subscriber(
             "estimation/recommended_field_point", PointStamped, self.recommended_point_callback
@@ -54,14 +71,23 @@ class FieldFilter:
         self.manual_request_sub = rospy.Subscriber(
             "manual_plane_request", Empty, self.manual_request_callback, queue_size=1
         )
-        self.plane_request_pub = rospy.Publisher("plane_request", PointStamped, queue_size=1)
-        self.plane_response_sub = rospy.Subscriber("plane_response", PlaneStamped, self.plane_response_callback)
-        self.estimated_field_pub = rospy.Publisher("filter/field", EstimatedObject, queue_size=1, latch=True)
-        self.estimated_field_marker_pub = rospy.Publisher("filter/field/marker", MarkerArray, queue_size=1, latch=True)
         self.corner_side_sub = rospy.Subscriber(
             "set_cage_corner", RosCageCorner, self.corner_side_callback, queue_size=1
         )
-        self.corner_pub = rospy.Publisher("cage_corner", RosCageCorner, queue_size=1, latch=True)
+        self.segmentation_sub = rospy.Subscriber(
+            "segmentation", SegmentationInstanceArray, self.segmentation_callback, queue_size=1
+        )
+        self.camera_info_sub = rospy.Subscriber("camera_info", CameraInfo, self.camera_info_callback, queue_size=1)
+
+    def segmentation_callback(self, segmentation: SegmentationInstanceArray) -> None:
+        self.segmentation = segmentation
+
+    def camera_info_callback(self, camera_info: CameraInfo) -> None:
+        rospy.loginfo("Received camera info")
+        # with open("/media/storage/camera_info.pkl", "wb") as f:
+        #     pickle.dump(camera_info, f)
+        self.camera_model.fromCameraInfo(camera_info)
+        self.camera_info_sub.unregister()
 
     def recommended_point_callback(self, point: PointStamped) -> None:
         if self.did_camera_tilt():
@@ -75,7 +101,41 @@ class FieldFilter:
         self.plane_request_pub.publish(request_point)
 
     def plane_response_callback(self, plane: PlaneStamped) -> None:
-        self.rotate_to_cage_aligned(plane)
+        # with open("/media/storage/plane.pkl", "wb") as f:
+        #     pickle.dump(plane, f)
+        # with open("/media/storage/transform.pkl", "wb") as f:
+        #     transform = lookup_transform(self.tf_buffer, self.base_frame, plane.header.frame_id)
+        #     pickle.dump(transform, f)
+        plane_pose = self.get_plane_pose_in_camera_root(plane)
+        if plane_pose is None:
+            return
+        # with open("/media/storage/plane_pose.pkl", "wb") as f:
+        #     pickle.dump(plane_pose, f)
+        field_segmentation = get_field_segmentation(self.segmentation)
+
+        # with open("/media/storage/field_segmentation.pkl", "wb") as f:
+        #     pickle.dump(field_segmentation, f)
+        plane_transform = Transform3D.from_position_and_quaternion(
+            plane_pose.pose.position, plane_pose.pose.orientation
+        )
+        projected_points = project_segmentation(self.camera_model, plane_transform, field_segmentation)
+        flattened_points = points_transform(projected_points, plane_transform.inverse().tfmat)
+        flattened_points2d = flattened_points[:, :2]
+        min_rect = find_minimum_rectangle(flattened_points2d)
+        angle = get_rectangle_angle(min_rect)
+        extents = get_rectangle_extents(min_rect)
+        yawed_plane = Transform3D.from_position_and_rpy(Vector3(), RPY((0, 0, angle))).transform_by(plane_transform)
+
+        self.estimated_field = EstimatedObject(
+            header=plane_pose.header,
+            size=Vector3(x=extents[0], y=extents[1]),
+        )
+        self.estimated_field.state.pose.pose = yawed_plane.to_pose_msg()
+        self.estimated_field_pub.publish(self.estimated_field)
+        self.publish_field_markers(self.estimated_field)
+
+    def get_plane_pose_in_camera_root(self, plane: PlaneStamped) -> Optional[PoseStamped]:
+        plane.pose.rotation = self.rotate_field_orientation(plane.pose.rotation, self.field_rotate_tf)
         camera_lens_pose = PoseStamped(
             header=plane.header,
             pose=Pose(
@@ -85,16 +145,12 @@ class FieldFilter:
         )
         camera_base_pose = None
         while camera_base_pose is None:
+            if rospy.is_shutdown():
+                return None
             camera_base_pose = lookup_pose_in_frame(self.tf_buffer, camera_lens_pose, self.base_frame)
             if camera_base_pose is None:
                 rospy.sleep(0.1)
-        self.estimated_field = EstimatedObject(
-            header=camera_base_pose.header,
-            size=Vector3(x=plane.extents[0], y=plane.extents[1]),
-        )
-        self.estimated_field.state.pose.pose = camera_base_pose.pose
-        self.estimated_field_pub.publish(self.estimated_field)
-        self.publish_field_markers(self.estimated_field)
+        return camera_lens_pose
 
     def rotate_field_orientation(
         self,

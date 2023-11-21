@@ -115,6 +115,10 @@ class DetectronNode:
             for mask, bbox_tensor, class_idx, score_tensor in zip(
                 masks, output["pred_boxes"], class_indices, output["scores"]
             ):
+                contours = []
+                for segment in mask.polygons:
+                    contour = np.array(segment.reshape(-1, 2), dtype=np.int32)
+                    contours.append(contour)
                 score = float(score_tensor)
                 if score < self.threshold:
                     continue
@@ -126,7 +130,7 @@ class DetectronNode:
                 label = self.metadata.labels[class_idx]
 
                 segmentation_instance = SegmentationInstance(
-                    contours=self.mask_to_msg(mask),
+                    contours=self.mask_to_msg(contours),
                     score=score,
                     label=label,
                     class_index=class_idx,
@@ -136,13 +140,13 @@ class DetectronNode:
                 msg.instances.append(segmentation_instance)  # type: ignore
                 if debug_image is not None:
                     bbox: BoundingBox = tuple(map(int, bbox_tensor))  # type: ignore
-                    self.draw_segmentation(debug_image, bbox, class_idx, mask, score)
+                    self.draw_segmentation(debug_image, bbox, class_idx, contours, score)
                     debug_images.append(debug_image)
             segmentations.append(msg)
         return segmentations, debug_images
 
     def draw_segmentation(
-        self, image: np.ndarray, bbox: BoundingBox, class_idx: int, mask: GenericMask, score: float
+        self, image: np.ndarray, bbox: BoundingBox, class_idx: int, contours: List[np.ndarray], score: float
     ) -> None:
         x1, y1, x2, y2 = bbox
         class_name = self.metadata.labels[class_idx]
@@ -160,20 +164,17 @@ class DetectronNode:
 
         class_color = self.metadata.colors[class_idx]
         cv_color = class_color.to_cv_color()
-        for segment in mask.polygons:
-            contour = np.array(segment.reshape(-1, 2), dtype=np.int32)
+        for contour in contours:
             cv2.drawContours(image, [contour], -1, cv_color, 1)
 
-    def mask_to_msg(self, mask: GenericMask) -> List[Contour]:
-        contours = []
-        for segment in mask.polygons:
-            points = []
-            for x, y in segment.reshape(-1, 2).astype(np.int32):
-                keypoint = UVKeypoint(x, y)
-                points.append(keypoint)
-            contour = Contour(points=points)
-            contours.append(contour)
-        return contours
+    def mask_to_msg(self, contours: List[np.ndarray]) -> List[Contour]:
+        contour_msgs = []
+        for contour in contours:
+            points = [UVKeypoint(x, y) for x, y in contour]
+            area = cv2.contourArea(contour)
+            contour_msg = Contour(points=points, area=area)
+            contour_msgs.append(contour_msg)
+        return contour_msgs
 
     def image_callback(self, msg: Image) -> None:
         try:

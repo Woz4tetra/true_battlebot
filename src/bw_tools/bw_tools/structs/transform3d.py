@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from typing import Union
 
 import numpy as np
-from geometry_msgs.msg import Quaternion, Vector3
+from geometry_msgs.msg import Point, Pose, Quaternion, Vector3
 from geometry_msgs.msg import Transform as RosTransform
 from tf_conversions import transformations
 
@@ -97,7 +98,7 @@ class Transform3D:
         return Transform3D(inv_tfmat)  # type: ignore
 
     @classmethod
-    def from_position_and_quaternion(cls, position: Vector3, orientation: Quaternion) -> Transform3D:
+    def from_position_and_quaternion(cls, position: Union[Vector3, Point], orientation: Quaternion) -> Transform3D:
         """
         Combine orientation matrix and position vector into Transform
 
@@ -122,10 +123,10 @@ class Transform3D:
         return Transform3D(tfmat)
 
     def to_msg(self) -> RosTransform:
-        return RosTransform(
-            translation=self.position,
-            rotation=self.quaternion,
-        )
+        return RosTransform(translation=self.position, rotation=self.quaternion)
+
+    def to_pose_msg(self) -> Pose:
+        return Pose(position=self.position, orientation=self.quaternion)
 
     @classmethod
     def from_msg(cls, msg: RosTransform) -> Transform3D:

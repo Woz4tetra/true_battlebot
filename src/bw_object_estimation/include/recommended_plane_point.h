@@ -7,6 +7,9 @@
 #include <opencv2/ximgproc.hpp>
 #include <opencv2/highgui.hpp>
 
+#include <std_msgs/Header.h>
+#include <std_msgs/ColorRGBA.h>
+
 #include <sensor_msgs/Image.h>
 
 #include <geometry_msgs/PointStamped.h>
@@ -31,6 +34,8 @@ class RecommendedPlanePoint : BaseEstimation
 private:
     ros::Publisher _recommended_point_pub;
     ros::Publisher _recommended_marker_pub;
+    ros::Publisher _field_marker_pub;
+    std_msgs::ColorRGBA _field_color;
 
     bool find_recommended_point(geometry_msgs::PointStamped& point_msg, cv::Mat depth_image, cv::Mat mask);
 
@@ -38,12 +43,28 @@ private:
         const sensor_msgs::ImageConstPtr& depth_image,
         const bw_interfaces::SegmentationInstanceArrayConstPtr& segmentation);
     geometry_msgs::Point convertPointToMsg(const cv::Point2i point, float depth);
+    std::vector<std::vector<geometry_msgs::Point>> projectContourTo3D(cv::Mat depth_image, const bw_interfaces::SegmentationInstanceArrayConstPtr& segmentation);
 public:
     RecommendedPlanePoint(ros::NodeHandle* nodehandle);
     ~RecommendedPlanePoint();
     int run();
 };
 
+
+visualization_msgs::Marker contour_to_marker(std_msgs::Header header, std::vector<geometry_msgs::Point> points_msg, std_msgs::ColorRGBA color, int marker_id = 0, double line_width = 0.01)
+{
+    visualization_msgs::Marker marker;
+    marker.header = header;
+    marker.ns = "points";
+    marker.id = marker_id;
+    marker.type = visualization_msgs::Marker::LINE_STRIP;
+    marker.action = visualization_msgs::Marker::ADD;
+    marker.color = color;
+    marker.points = points_msg;
+    marker.frame_locked = false;
+    marker.scale.x = 0.01;
+    return marker;
+}
 
 visualization_msgs::Marker point_to_marker(geometry_msgs::PointStamped point_msg)
 {

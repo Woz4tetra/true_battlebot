@@ -6,10 +6,13 @@ RecommendedPlanePoint::RecommendedPlanePoint(ros::NodeHandle* nodehandle) :
 {
     _sync->registerCallback(boost::bind(&RecommendedPlanePoint::synced_callback, this, _1, _2));
 
-    _recommended_point_pub = nh.advertise<geometry_msgs::PointStamped>("estimation/recommended_field_point", _queue_size);
-    _recommended_marker_pub = nh.advertise<visualization_msgs::MarkerArray>("estimation/recommended_point_marker", _queue_size);
+    _recommended_point_pub = nh.advertise<geometry_msgs::PointStamped>("estimation/recommended_field_point", 1);
+    _recommended_marker_pub = nh.advertise<visualization_msgs::MarkerArray>("estimation/recommended_point_marker", 1);
+    _field_marker_pub = nh.advertise<visualization_msgs::MarkerArray>("estimation/field_marker", 1);
 
-    cv::namedWindow("field_mask");
+    _field_color.g = 1.0;
+    _field_color.a = 1.0;
+
     ROS_INFO("RecommendedPlanePoint node initialized");
 }
 
@@ -59,7 +62,44 @@ void RecommendedPlanePoint::synced_callback(
             marker_array.markers.push_back(point_to_marker(point_msg));
             _recommended_marker_pub.publish(marker_array);
         }
+
+        if (_field_marker_pub.getNumSubscribers() > 0) {
+            std::vector<std::vector<geometry_msgs::Point>> points = projectContourTo3D(depth_cv_image, segmentation);
+            visualization_msgs::MarkerArray marker_array;
+            for (size_t index = 0; index < points.size(); index++) {
+                marker_array.markers.push_back(contour_to_marker(segmentation->header, points[index], _field_color, index));
+            }
+            _field_marker_pub.publish(marker_array);
+        }
     }
+}
+
+std::vector<std::vector<geometry_msgs::Point>> RecommendedPlanePoint::projectContourTo3D(cv::Mat depth_image, const bw_interfaces::SegmentationInstanceArrayConstPtr& segmentation)
+{
+    std::vector<std::vector<geometry_msgs::Point>> all_points;
+    for (size_t index = 0; index < segmentation->instances.size(); index++)
+    {
+        std::vector<geometry_msgs::Point> points;
+        bw_interfaces::SegmentationInstance instance = segmentation->instances[index];
+        if (!is_label_included(instance.label)) {
+            continue;
+        }
+
+        std::vector<std::vector<cv::Point>> cv_contours = get_cv_contours(instance.contours);
+        for (size_t contour_index = 0; contour_index < cv_contours.size(); contour_index++)
+        {
+            std::vector<cv::Point> cv_contour = cv_contours[contour_index];
+            for (size_t point_index = 0; point_index < cv_contour.size(); point_index++)
+            {
+                cv::Point2i point = cv_contour[point_index];
+                geometry_msgs::Point point_msg = convertPointToMsg(point, depth_image.at<float>(point.y, point.x));
+                points.push_back(point_msg);
+            }
+        }
+        all_points.push_back(points);
+    }
+
+    return all_points;
 }
 
 bool RecommendedPlanePoint::find_recommended_point(geometry_msgs::PointStamped& point_msg, cv::Mat depth_image, cv::Mat mask) {

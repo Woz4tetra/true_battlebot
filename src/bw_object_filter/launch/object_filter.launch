@@ -9,6 +9,8 @@
         <remap from="imu" to="$(arg camera_name)/imu" />
         <remap from="plane_request" to="$(arg camera_name)/plane_request" />
         <remap from="plane_response" to="$(arg camera_name)/plane_response" />
+        <remap from="segmentation" to="$(arg camera_name)/segmentation" />
+        <remap from="camera_info" to="$(arg camera_name)/rgb/camera_info" />
     </node>
     <node pkg="bw_object_filter" type="robot_filter.py" name="robot_filter" output="screen">
         <rosparam command="load" file="$(arg robot_filter_config)" ns="robots" />
