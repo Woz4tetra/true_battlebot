@@ -5,6 +5,7 @@ from typing import List, Optional, Tuple
 import numpy as np
 import rospy
 from bw_interfaces.msg import Contour, SegmentationInstance, SegmentationInstanceArray, UVKeypoint
+from bw_tools.typing import get_param
 from cv_bridge import CvBridge, CvBridgeError
 from detectron2 import model_zoo
 from detectron2.config import get_cfg
@@ -18,18 +19,19 @@ from std_msgs.msg import Header
 
 class DetectronNode:
     def __init__(self) -> None:
-        rospy.init_node("detectron_node")
         setup_logger()
 
+        self.model_path = get_param("~model", "model.pth")
+        self.threshold = get_param("~threshold", 0.8)
+
         self.cfg = get_cfg()
-        # add project-specific config (e.g., TensorMask) here if you're not running a model in detectron2's core library
         self.cfg.merge_from_file(model_zoo.get_config_file("COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml"))
-        self.cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.5  # set threshold for this model
-        # Find a model from detectron2's model zoo. You can use the https://dl.fbaipublicfiles... url as well
-        self.cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url("COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml")
+        self.cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = self.threshold  # set threshold for this model
+        self.cfg.MODEL.WEIGHTS = self.model_path
         self.predictor = DefaultPredictor(self.cfg)
         self.metadata = MetadataCatalog.get(self.cfg.DATASETS.TRAIN[0])
         self.labels = self.metadata.get("thing_classes", [])
+        assert len(self.labels) > 0
 
         self.bridge = CvBridge()
         self.image_sub = rospy.Subscriber("image", Image, self.image_callback, queue_size=1)
@@ -117,5 +119,6 @@ class DetectronNode:
 
 
 if __name__ == "__main__":
+    rospy.init_node("detectron_node")
     node = DetectronNode()
     node.run()
