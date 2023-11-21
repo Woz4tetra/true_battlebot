@@ -5,10 +5,13 @@ from typing import List
 
 from dacite import from_dict
 
+from bw_tools.structs.color import Color
+
 
 @dataclass
 class ModelMetadata:
     labels: List[str]
+    colors: List[Color]
 
     @classmethod
     def from_dict(cls, data: dict) -> ModelMetadata:

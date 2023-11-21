@@ -9,5 +9,5 @@ train_output = manager.get_training_dir("2023-11-20-13-20-28")
 
 model_path = os.path.join(train_output, "model.torchscript")
 model_metadata_path = os.path.join(train_output, "model_metadata.json")
-# manager.export(model_path)
+manager.export(model_path)
 manager.test_export(model_path, model_metadata_path)

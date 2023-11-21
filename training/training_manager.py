@@ -1,6 +1,7 @@
 import datetime
 import json
 import os
+import time
 from threading import Thread
 from typing import Dict, List
 
@@ -9,6 +10,7 @@ import numpy as np
 import torch.jit
 import torchvision
 from bw_tools.configs.model_metadata import ModelMetadata
+from bw_tools.structs.color import Color
 from detectron2 import model_zoo
 from detectron2.checkpoint import DetectionCheckpointer
 from detectron2.config import CfgNode, get_cfg
@@ -16,10 +18,11 @@ from detectron2.data import DatasetCatalog, MetadataCatalog
 from detectron2.data.datasets import register_coco_instances
 from detectron2.engine import DefaultPredictor
 from detectron2.export import dump_torchscript_IR, scripting_with_instances
+from detectron2.layers import paste_masks_in_image
 from detectron2.modeling import GeneralizedRCNN, build_model
 from detectron2.structures import Boxes
 from detectron2.utils.env import TORCH_VERSION
-from detectron2.utils.visualizer import ColorMode, Visualizer
+from detectron2.utils.visualizer import ColorMode, GenericMask, Visualizer
 from helpers import load_dataset
 from nhrl_trainer import NhrlTrainer
 from tensorboard import program
@@ -31,9 +34,16 @@ class TrainingManager:
     def __init__(self) -> None:
         self.dataset_name = "nhrl_dataset"
         self.dataset_dir = "/media/storage/training/labeled/nhrl_dataset"
-        self.output_dir = "/media/storage/training/models/nhrl"
+        self.output_dir = "/media/storage/training/models"
         self.annotations_file_name = "_annotations.coco.json"
         self.expected_number_of_categories = 3
+
+        self.color_mapping = {
+            "robot": Color(r=1.0, g=0.0, b=0.0, a=0.5),
+            "referee": Color(r=0.0, g=1.0, b=0.0, a=0.5),
+            "field": Color(r=0.0, g=0.0, b=1.0, a=0.5),
+        }
+        self.default_color = Color(r=0.0, g=0.0, b=0.0, a=0.0)
 
         self.architecture = "mask_rcnn_R_50_FPN_3x"
         self.config_file_path = f"COCO-InstanceSegmentation/{self.architecture}.yaml"
@@ -125,10 +135,13 @@ class TrainingManager:
         labels = [""] * labels_length
         for info in self.train_dataset.dataset.categories:
             labels[info.id] = info.name
+        colors = [self.color_mapping.get(label, self.default_color) for label in labels]
 
-        metadata = ModelMetadata(labels=labels)
+        metadata = ModelMetadata(labels=labels, colors=colors)
         with open(model_metadata_path, "w") as f:
             json.dump(metadata.to_dict(), f)
+        print("Exported model to", model_path)
+        print("Exported metadata to", model_metadata_path)
 
     def test_export(self, model_path: str, metadata_path: str, threshold: float = 0.8) -> None:
         with open(metadata_path, "r") as f:
@@ -137,45 +150,82 @@ class TrainingManager:
         device = torch.device("cuda")
         model = torch.jit.load(model_path).to(device)
 
+        model_dir = os.path.dirname(model_path)
+        export_dir = os.path.join(model_dir, "test_export")
+        os.makedirs(export_dir, exist_ok=True)
+
         for annotation in dataset_test:
-            image = cv2.imread(annotation["file_name"])
+            in_image_path = annotation["file_name"]
+            print("Loading", in_image_path)
+            image = cv2.imread(in_image_path)
             drawn_image = self.script_inference(model, metadata, image, device, threshold)
-            out_image_path = os.path.join(self.output_dir, "test_inference", os.path.basename(annotation["file_name"]))
+            out_image_path = os.path.join(export_dir, os.path.basename(in_image_path))
             cv2.imwrite(out_image_path, drawn_image)
             print("Wrote", out_image_path)
 
     def script_inference(
-        self, model: ScriptModule, metadata: ModelMetadata, image: np.ndarray, device, threshold: float
+        self,
+        model: ScriptModule,
+        metadata: ModelMetadata,
+        image: np.ndarray,
+        device,
+        threshold: float,
+        nms_threshold: float = 0.8,
+        mask_conversion_threshold: float = 0.5,
     ) -> np.ndarray:
         h, w = image.shape[:2]
         debug_image = np.copy(image)
-        with torch.no_grad():
-            # Convert to channels first, convert to float datatype
-            image_tensor = torch.from_numpy(image).to(device).permute(2, 0, 1).float()
-            outputs = model([{"image": image_tensor}])
-            for output in outputs:
-                # Some optional postprocessing, you can change the xx iou
-                # overlap as needed
-                to_keep = torchvision.ops.nms(output["pred_boxes"], output["scores"], threshold)
+        with torch.jit.optimized_execution(True):
+            with torch.no_grad():
+                # Convert to channels first, convert to float datatype. Convert (H, W, C) to (C, H, W)
+                image_tensor = torch.from_numpy(image).to(device).permute(2, 0, 1).float()
+                # outputs = model([{"image": image_tensor}, {"image": other}])  # batch images here if necessary
+                print("Running model...")
+                t0 = time.perf_counter()
+                outputs = model([{"image": image_tensor}])
+                t1 = time.perf_counter()
+                print(f"Got {len(outputs)} outputs. Took {t1 - t0:0.2f}s")
+                output = outputs[0]
+                # Some optional postprocessing, you can change the threshold iou overlap as needed
+                to_keep = torchvision.ops.nms(output["pred_boxes"], output["scores"], nms_threshold)
                 output["pred_boxes"] = output["pred_boxes"][to_keep].cpu()
                 output["pred_classes"] = output["pred_classes"][to_keep].cpu()
                 output["pred_masks"] = output["pred_masks"][to_keep].cpu()
 
+                stretched_masks = paste_masks_in_image(
+                    output["pred_masks"][:, 0, :, :],
+                    output["pred_boxes"],
+                    (h, w),
+                    threshold=mask_conversion_threshold,
+                )
+                masks = [GenericMask(x, h, w) for x in np.asarray(stretched_masks)]
+                class_indices = [label.item() for label in output["pred_classes"]]
+
                 # Draw you box predictions:
-                all_masks = np.zeros((h, w), dtype=np.int8)
-                instance_idx = 1
-                for mask, bbox, label in zip(
-                    reversed(output["pred_masks"]), output["pred_boxes"], output["pred_classes"]
-                ):
+                for mask, bbox, class_idx, score in zip(masks, output["pred_boxes"], class_indices, output["scores"]):
+                    if score < threshold:
+                        continue
                     bbox = list(map(int, bbox))
                     x1, y1, x2, y2 = bbox
-                    class_idx = label.item()
                     class_name = metadata.labels[class_idx]
-                    cv2.rectangle(debug_image, (x1, y1), (x2, y2), (255, 0, 0), 4)
-                    cv2.putText(debug_image, class_name, (x1, y1), cv2.FONT_HERSHEY_SIMPLEX, 4, (255, 0, 0))
-                    all_masks[mask == 1] = instance_idx
-                    instance_idx += 1
-        debug_image = cv2.addWeighted(all_masks, 0.5, debug_image, 0.5, 0)
+                    class_color = metadata.colors[class_idx]
+                    cv_color = class_color.to_cv_color()
+                    cv2.rectangle(debug_image, (x1, y1), (x2, y2), cv_color, 1)
+                    cv2.putText(
+                        debug_image,
+                        f"{class_name} {score * 100:0.1f}",
+                        (x1, y1),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        1,
+                        cv_color,
+                    )
+
+                    class_color = metadata.colors[class_idx]
+                    cv_color = class_color.to_cv_color()
+                    for segment in mask.polygons:
+                        contour = np.array(segment.reshape(-1, 2), dtype=np.int32)
+                        cv2.drawContours(debug_image, [contour], -1, cv_color, 1)
+        # debug_image = cv2.addWeighted(all_masks, 0.5, debug_image, 0.5, 0)
         return debug_image
 
     def inference(self, training_dir: str) -> None:
