@@ -1,8 +1,9 @@
 <launch>
-    <group ns="camera">
-        <node pkg="bw_segmentation" type="segmentation_relay.py" name="segmentation_relay" output="screen">
-            <remap from="image" to="layer/image_raw"/>
-            <remap from="camera_info" to="layer/camera_info"/>
+    <group ns="camera_0">
+        <node pkg="bw_segmentation" type="segmentation_relay.py" name="segmentation_relay"
+            output="screen">
+            <remap from="image" to="layer/image_raw" />
+            <remap from="camera_info" to="layer/camera_info" />
         </node>
     </group>
 </launch>

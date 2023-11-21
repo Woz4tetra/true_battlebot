@@ -1,14 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
-    <arg name="camera_name"           default="camera_0" />
-    <arg name="config_path"           default="$(find bw_bringup)/config/zed2i.yaml" />
+    <arg name="camera_name" default="camera_0" />
+    <arg name="config_path" default="$(find bw_bringup)/config/zed2i.yaml" />
+    <arg name="svo_file" default="" />
     <!-- ROS URDF description of the ZED -->
     <group>
         <param name="$(arg camera_name)_description"
-               command="$(find xacro)/xacro '$(find zed_wrapper)/urdf/zed_descr.urdf.xacro'
+            command="$(find xacro)/xacro '$(find zed_wrapper)/urdf/zed_descr.urdf.xacro'
                         camera_name:=$(arg camera_name)
                         camera_model:=zed2i
-                        base_frame:=camera_link
+                        base_frame:=$(arg camera_name)
                         cam_pos_x:=0
                         cam_pos_y:=0
                         cam_pos_z:=0
@@ -17,15 +18,20 @@
                         cam_yaw:=0"
         />
 
-        <node name="$(arg camera_name)_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" output="screen" required="false">
+        <node name="$(arg camera_name)_state_publisher" pkg="robot_state_publisher"
+            type="robot_state_publisher" output="screen" required="false">
             <remap from="robot_description" to="$(arg camera_name)_description" />
-            <remap from="joint_states" to="zed_joint_states"/>
+            <remap from="joint_states" to="zed_joint_states" />
         </node>
     </group>
-    <node name="$(arg camera_name)" pkg="zed_wrapper" type="zed_wrapper_node" output="screen" required="false" respawn="true">
+    <node name="$(arg camera_name)" pkg="zed_wrapper" type="zed_wrapper_node" output="screen"
+        required="false" respawn="true">
         <rosparam file="$(arg config_path)" command="load" />
 
-        <param name="general/camera_name"               value="$(arg camera_name)" />
-        <param name="general/base_frame"                value="camera_link" />
+        <param name="general/camera_name" value="$(arg camera_name)" />
+        <param name="general/base_frame" value="$(arg camera_name)" />
+        <param name="svo_file" value="$(arg svo_file)" />
+        <param name="mapping/clicked_point_topic" value="plane_request" />
+        <remap from="$(arg camera_name)/plane" to="$(arg camera_name)/plane_response" />
     </node>
 </launch>

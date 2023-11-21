@@ -1,0 +1,24 @@
+<launch>
+    <arg name="map" default="$(env MAP_NAME)" />
+    <arg name="robot" default="$(env ROBOT)" />
+    <arg name="model"
+        default="$(find bw_data)/data/models/nhrl_dataset_mask_rcnn_R_50_FPN_3x_2023-11-20" />
+
+    <include file="$(find bw_object_estimation)/launch/object_estimation.launch" />
+    <include file="$(find bw_segmentation)/launch/segmentation.launch">
+        <arg name="model" value="$(arg model).torchscript" />
+        <arg name="metadata" value="$(arg model)_metadata.json" />
+    </include>
+    <include file="$(find bw_tags)/launch/tag_visualization.launch" />
+    <include file="$(find bw_object_filter)/launch/object_filter.launch">
+        <arg name="robot_filter_config"
+            value="$(find bw_bringup)/config/mini_bot/robot_filter.yaml" />
+    </include>
+    <include file="$(find bw_bringup)/launch/subsystems/foxglove_bridge.launch">
+        <arg name="port" value="8765" />
+        <arg name="asset_uri_allowlist" value="['package://(.*).(dae|stl|urdf|xacro)']" />
+    </include>
+    <include file="$(find bw_bringup)/launch/subsystems/zed.launch">
+        <arg name="svo_file" value="/media/storage/svo/$(arg map)" />
+    </include>
+</launch>

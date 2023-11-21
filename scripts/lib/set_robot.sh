@@ -40,10 +40,10 @@ if [ -z "${MATCH_FOUND}" ]; then
     exit 1
 fi
 
-echo "Robot name: ${ROBOT}"
-echo "Map name: ${MAP_NAME}"
-
 cat <<EOT > "${ROS_WS_ROOT}"/robot
 export ROBOT=${ROBOT}
 export MAP_NAME=${MAP_NAME}
+
+echo "Robot name: ${ROBOT}"
+echo "Map name: ${MAP_NAME}"
 EOT

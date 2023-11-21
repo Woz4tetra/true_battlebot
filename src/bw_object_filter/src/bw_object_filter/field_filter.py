@@ -10,17 +10,20 @@ from bw_interfaces.msg import EstimatedObject
 from bw_tools.structs.cage_corner import CageCorner
 from bw_tools.structs.rpy import RPY
 from bw_tools.structs.transform3d import Transform3D
+from bw_tools.transforms import lookup_pose_in_frame
 from bw_tools.typing import get_param
-from geometry_msgs.msg import Point, PointStamped, Pose, Quaternion, Vector3
+from geometry_msgs.msg import Point, PointStamped, Pose, PoseStamped, Quaternion, Vector3
 from sensor_msgs.msg import Imu
-from std_msgs.msg import Empty
+from std_msgs.msg import ColorRGBA, Empty
+from visualization_msgs.msg import Marker, MarkerArray
 from zed_interfaces.msg import PlaneStamped
 
 
 class FieldFilter:
     def __init__(self) -> None:
         self.angle_delta_threshold = math.radians(get_param("angle_delta_threshold_degrees", 3.0))
-        self.map_frame = get_param("map_frame", "map")
+        self.base_frame = get_param("~base_frame", "camera")
+        self.map_frame = get_param("~map_frame", "map")
 
         self.has_manual_query = True
         self.current_imu = Imu()
@@ -34,7 +37,15 @@ class FieldFilter:
         }
         self.estimated_field = EstimatedObject()
 
+        self.tf_buffer = tf2_ros.Buffer()  # type: ignore
+        self.tf_listener = tf2_ros.TransformListener(self.tf_buffer)  # type: ignore
         self.tf_broadcaster = tf2_ros.TransformBroadcaster()  # type: ignore
+
+        rotate_quat = (0.707, 0.0, 0.0, 0.707)
+        self.field_rotate_tf = Transform3D.from_position_and_quaternion(Vector3(), Quaternion(*rotate_quat))
+        self.marker_color = ColorRGBA(0, 1, 0.5, 0.75)
+
+        self.prev_request_time = rospy.Time(0)
 
         self.recommended_point_sub = rospy.Subscriber(
             "estimation/recommended_field_point", PointStamped, self.recommended_point_callback
@@ -46,12 +57,11 @@ class FieldFilter:
         self.plane_request_pub = rospy.Publisher("plane_request", PointStamped, queue_size=1)
         self.plane_response_sub = rospy.Subscriber("plane_response", PlaneStamped, self.plane_response_callback)
         self.estimated_field_pub = rospy.Publisher("filter/field", EstimatedObject, queue_size=1, latch=True)
+        self.estimated_field_marker_pub = rospy.Publisher("filter/field/marker", MarkerArray, queue_size=1, latch=True)
         self.corner_side_sub = rospy.Subscriber(
             "set_cage_corner", RosCageCorner, self.corner_side_callback, queue_size=1
         )
         self.corner_pub = rospy.Publisher("cage_corner", RosCageCorner, queue_size=1, latch=True)
-
-        self.prev_request_time = rospy.Time(0)
 
     def recommended_point_callback(self, point: PointStamped) -> None:
         if self.did_camera_tilt():
@@ -66,15 +76,34 @@ class FieldFilter:
 
     def plane_response_callback(self, plane: PlaneStamped) -> None:
         self.rotate_to_cage_aligned(plane)
-        self.estimated_field = EstimatedObject(
+        camera_lens_pose = PoseStamped(
             header=plane.header,
+            pose=Pose(
+                position=Point(plane.pose.translation.x, plane.pose.translation.y, plane.pose.translation.z),
+                orientation=plane.pose.rotation,
+            ),
+        )
+        camera_base_pose = None
+        while camera_base_pose is None:
+            camera_base_pose = lookup_pose_in_frame(self.tf_buffer, camera_lens_pose, self.base_frame)
+            if camera_base_pose is None:
+                rospy.sleep(0.1)
+        self.estimated_field = EstimatedObject(
+            header=camera_base_pose.header,
             size=Vector3(x=plane.extents[0], y=plane.extents[1]),
         )
-        self.estimated_field.state.pose.pose = Pose(
-            position=Point(plane.pose.translation.x, plane.pose.translation.y, plane.pose.translation.z),
-            orientation=plane.pose.rotation,
-        )
+        self.estimated_field.state.pose.pose = camera_base_pose.pose
         self.estimated_field_pub.publish(self.estimated_field)
+        self.publish_field_markers(self.estimated_field)
+
+    def rotate_field_orientation(
+        self,
+        field_orientation: Quaternion,
+        rotate_tf: Transform3D,
+    ) -> Quaternion:
+        field_tf = Transform3D.from_position_and_quaternion(Vector3(), field_orientation)
+        rotated_field = field_tf.transform_by(rotate_tf)
+        return rotated_field.quaternion
 
     def rotate_to_cage_aligned(self, plane: PlaneStamped) -> None:
         if self.cage_corner is None:
@@ -82,9 +111,11 @@ class FieldFilter:
             cage_corner = CageCorner.DOOR_SIDE
         else:
             cage_corner = self.cage_corner
-        plane_rotation = Transform3D.from_position_and_quaternion(Vector3(), plane.pose.rotation)
+        rotated_plane = plane.pose.rotation
+        plane_rotation = Transform3D.from_position_and_quaternion(Vector3(), rotated_plane)
         plane_rotation = plane_rotation.transform_by(self.field_rotations[cage_corner])
         plane.pose.rotation = plane_rotation.quaternion
+        plane.pose.rotation = self.rotate_field_orientation(plane.pose.rotation, self.field_rotate_tf)
 
     def corner_side_callback(self, corner: RosCageCorner) -> None:
         self.cage_corner = CageCorner.from_msg(corner)
@@ -126,6 +157,27 @@ class FieldFilter:
         field_tf.child_frame_id = estimated_field.header.frame_id
         field_tf.transform = transform.to_msg()
         self.tf_broadcaster.sendTransform(field_tf)
+
+    def publish_field_markers(self, estimated_field: EstimatedObject) -> None:
+        self.estimated_field_marker_pub.publish(
+            MarkerArray(markers=[self.estimated_object_to_marker(estimated_field, self.marker_color, 0, Marker.CUBE)])
+        )
+
+    def estimated_object_to_marker(
+        self, estimated_object: EstimatedObject, color: ColorRGBA, id: int = 0, type: int = Marker.ARROW
+    ) -> Marker:
+        marker = Marker()
+        marker.header = estimated_object.header
+        marker.type = type
+        marker.ns = estimated_object.label
+        marker.id = id
+        marker.action = Marker.ADD
+        marker.pose = estimated_object.state.pose.pose
+        marker.scale.x = estimated_object.size.x if estimated_object.size.x > 0 else 0.01
+        marker.scale.y = estimated_object.size.y if estimated_object.size.y > 0 else 0.01
+        marker.scale.z = estimated_object.size.z if estimated_object.size.z > 0 else 0.01
+        marker.color = color
+        return marker
 
     def run(self) -> None:
         while not rospy.is_shutdown():

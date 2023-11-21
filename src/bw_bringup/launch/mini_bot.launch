@@ -7,11 +7,11 @@
     <include file="$(find bw_tags)/launch/tag_visualization.launch" />
     <include file="$(find bw_object_filter)/launch/object_filter.launch">
         <arg name="robot_filter_config"
-            default="$(find bw_bringup)/config/$(arg robot)/robot_filter.yaml" />
+            value="$(find bw_bringup)/config/$(arg robot)/robot_filter.yaml" />
     </include>
     <include file="$(find bw_navigation)/launch/move_base_flex.launch">
         <arg name="robot_filter_config"
-            default="$(find bw_bringup)/config/$(arg robot)/robot_filter.yaml" />
+            value="$(find bw_bringup)/config/$(arg robot)/robot_filter.yaml" />
     </include>
     <include file="$(find bw_bringup)/launch/subsystems/foxglove_bridge.launch">
         <arg name="port" value="8765" />
@@ -21,6 +21,6 @@
     <include file="$(find bw_behaviors)/launch/bw_behaviors.launch" />
     <include file="$(find bw_teleop)/launch/bw_teleop.launch">
         <arg name="robot_filter_config"
-            default="$(find bw_bringup)/config/$(arg robot)/robot_filter.yaml" />
+            value="$(find bw_bringup)/config/$(arg robot)/robot_filter.yaml" />
     </include>
 </launch>

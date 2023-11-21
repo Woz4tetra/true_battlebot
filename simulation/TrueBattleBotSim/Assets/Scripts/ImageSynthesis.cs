@@ -25,12 +25,12 @@ public class ImageSynthesis : MonoBehaviour
 
     // pass configurations
     private CapturePass[] capturePasses = new CapturePass[] {
-        new CapturePass() { name = "image", publish = true  },
-        // new CapturePass() { name = "id", supportsAntialiasing = false, mode = ReplacelementModes.ObjectId, publish = true },
-        new CapturePass() { name = "layer", supportsAntialiasing = false, mode = ReplacelementModes.CatergoryId, publish = true },
-        new CapturePass() { name = "depth", mode = ReplacelementModes.DepthMultichannel, publish = true, encoding = Encodings.MONO16 },
-        // new CapturePass() { name = "normals", mode = ReplacelementModes.Normals, publish = true },
-        // new CapturePass() { name = "flow", supportsAntialiasing = false, needsRescale = true, publish = true, mode = ReplacelementModes.Flow }, // (see issue with Motion Vectors in @KNOWN ISSUES)
+        new CapturePass() { name = "image", image_topic = "rgb/image_rect_color", info_topic = "rgb/camera_info", publish = true  },
+        // new CapturePass() { name = "id", publish = true, supportsAntialiasing = false, mode = ReplacelementModes.ObjectId },
+        new CapturePass() { name = "layer", image_topic = "layer/image_raw", info_topic = "layer/camera_info", publish = true, supportsAntialiasing = false, mode = ReplacelementModes.CatergoryId },
+        new CapturePass() { name = "depth", image_topic = "depth/depth_registered", info_topic = "depth/camera_info", publish = true, mode = ReplacelementModes.DepthMultichannel, encoding = Encodings.MONO16 },
+        // new CapturePass() { name = "normals", publish = true, mode = ReplacelementModes.Normals },
+        // new CapturePass() { name = "flow", publish = true, supportsAntialiasing = false, needsRescale = true, mode = ReplacelementModes.Flow }, // (see issue with Motion Vectors in @KNOWN ISSUES)
     };
 
     enum ReplacelementModes
@@ -53,6 +53,8 @@ public class ImageSynthesis : MonoBehaviour
     {
         // configuration
         public string name;
+        public string image_topic;
+        public string info_topic;
         public bool supportsAntialiasing;
         public bool needsRescale;
         public ReplacelementModes mode;
@@ -67,6 +69,8 @@ public class ImageSynthesis : MonoBehaviour
             mode = ReplacelementModes.None;
             publish = false;
             encoding = Encodings.RGB8;
+            image_topic = "camera/" + name + "/image_raw";
+            info_topic = "camera/" + name + "/camera_info";
         }
 
         // impl
@@ -105,8 +109,8 @@ public class ImageSynthesis : MonoBehaviour
         {
             if (pass.publish)
             {
-                ros.RegisterPublisher<ImageMsg>(GetImageTopic(pass.name));
-                ros.RegisterPublisher<CameraInfoMsg>(GetInfoTopic(pass.name));
+                ros.RegisterPublisher<ImageMsg>(GetImageTopic(pass.image_topic));
+                ros.RegisterPublisher<CameraInfoMsg>(GetInfoTopic(pass.info_topic));
             }
         }
         ros.RegisterPublisher<SegmentationInstanceArrayMsg>(baseTopic + "/" + segmentationTopic);

@@ -25,7 +25,7 @@ class TagMarkerPublisher:
         # rospy.on_shutdown(self.shutdown_hook)
         self.marker_publish_rate = get_param("~marker_publish_rate", 0.0)
         self.debug = get_param("~debug", False)
-        self.base_frame = get_param("~base_frame", "camera")
+        self.base_frame = get_param("~base_frame", "")
         self.stale_detection_seconds = seconds_to_duration(get_param("~stale_detection_seconds", 1.0))
 
         self.tag_msg = AprilTagDetectionArray()
@@ -78,7 +78,7 @@ class TagMarkerPublisher:
 
     def transform_tag_to_base(self, detection: AprilTagDetection) -> Optional[AprilTagDetection]:
         source_frame = detection.pose.header.frame_id
-        if self.base_frame == source_frame:
+        if len(self.base_frame) == 0 or self.base_frame == source_frame:
             return detection
         try:
             transform = self.tf_buffer.lookup_transform(

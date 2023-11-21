@@ -1,97 +1,174 @@
 #!/usr/bin/env python
+import json
 import time
-from typing import List, Optional, Tuple
+from typing import Callable, Dict, List, Tuple
 
+import cv2
 import numpy as np
 import rospy
+import torch
+import torchvision
 from bw_interfaces.msg import Contour, SegmentationInstance, SegmentationInstanceArray, UVKeypoint
+from bw_tools.configs.model_metadata import ModelMetadata
 from bw_tools.typing import get_param
 from cv_bridge import CvBridge, CvBridgeError
-from detectron2 import model_zoo
-from detectron2.config import get_cfg
-from detectron2.data import MetadataCatalog
-from detectron2.engine import DefaultPredictor
-from detectron2.utils.logger import setup_logger
-from detectron2.utils.visualizer import GenericMask, Visualizer
+from detectron2.layers import paste_masks_in_image
+from detectron2.utils.visualizer import GenericMask
 from sensor_msgs.msg import Image
 from std_msgs.msg import Header
+from torch import Tensor
+
+BoundingBox = Tuple[int, int, int, int]
 
 
 class DetectronNode:
     def __init__(self) -> None:
-        setup_logger()
-
-        self.model_path = get_param("~model", "model.pth")
+        self.model_path = get_param("~model", "model.torchscript")
+        self.metadata_path = get_param("~metadata", "model_metadata.json")
         self.threshold = get_param("~threshold", 0.8)
+        self.nms_threshold = get_param("~nms_threshold", 0.4)
+        self.mask_conversion_threshold = get_param("~mask_conversion_threshold", 0.5)
 
-        self.cfg = get_cfg()
-        self.cfg.merge_from_file(model_zoo.get_config_file("COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml"))
-        self.cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = self.threshold  # set threshold for this model
-        self.cfg.MODEL.WEIGHTS = self.model_path
-        self.predictor = DefaultPredictor(self.cfg)
-        self.metadata = MetadataCatalog.get(self.cfg.DATASETS.TRAIN[0])
-        self.labels = self.metadata.get("thing_classes", [])
-        assert len(self.labels) > 0
+        with open(self.metadata_path, "r") as file:
+            self.metadata = ModelMetadata.from_dict(json.load(file))
+        assert len(self.metadata.labels) > 0
+
+        self.device = torch.device("cuda")
+        self.model = self.load_model(self.model_path)
+        self.warmup()
 
         self.bridge = CvBridge()
         self.image_sub = rospy.Subscriber("image", Image, self.image_callback, queue_size=1)
         self.segmentation_pub = rospy.Publisher("segmentation", SegmentationInstanceArray, queue_size=10)
         self.debug_image_pub = rospy.Publisher("debug_image", Image, queue_size=1)
 
+    def load_model(self, model_path: str) -> Callable:
+        rospy.loginfo(f"Loading model from {model_path}")
+        t0 = time.perf_counter()
+        model = torch.jit.load(model_path).to(self.device)  # type: ignore
+        t1 = time.perf_counter()
+        rospy.loginfo(f"Loaded model in {t1 - t0} seconds")
+        return model
+
+    def warmup(self) -> None:
+        rospy.loginfo("Warming up model")
+        image = np.zeros((1920, 1080, 3), dtype=np.uint8)
+        t0 = time.perf_counter()
+        for _ in range(2):
+            self.predict(Header(), image, False)
+        t1 = time.perf_counter()
+        rospy.loginfo(f"Model warmed up in {t1 - t0} seconds")
+
+    def preprocess(self, images: List[np.ndarray], device: torch.device) -> List[Dict[str, Tensor]]:
+        inputs = []
+        for image in images:
+            image_tensor = torch.from_numpy(image).to(device).permute(2, 0, 1).float()
+            inputs.append({"image": image_tensor})
+        return inputs
+
     def predict(
         self, header: Header, image: np.ndarray, debug: bool
-    ) -> Tuple[SegmentationInstanceArray, Optional[np.ndarray]]:
-        t0 = time.time()
-        outputs = self.predictor(image)
-        t1 = time.time()
-        rospy.logdebug(f"took: {t1 - t0}")
+    ) -> Tuple[List[SegmentationInstanceArray], List[np.ndarray]]:
+        t0 = time.perf_counter()
+        images = [image]
+        inputs = self.preprocess(images, self.device)
+        t1 = time.perf_counter()
+        outputs = self.model(inputs)
+        t2 = time.perf_counter()
+        results = self.postprocess(outputs, images, header, debug)
+        t3 = time.perf_counter()
+        rospy.logdebug(f"Pre-process took: {t1 - t0}")
+        rospy.logdebug(f"Inference took: {t2 - t1}")
+        rospy.logdebug(f"Post-process took: {t3 - t2}")
+        return results
 
-        instances = outputs["instances"].to("cpu")
-        height, width = instances.image_size
+    def postprocess(
+        self, outputs: List[Dict[str, Tensor]], images: List[np.ndarray], header: Header, debug: bool
+    ) -> Tuple[List[SegmentationInstanceArray], List[np.ndarray]]:
+        segmentations = []
+        debug_images = []
+        for output, image in zip(outputs, images):
+            height, width = image.shape[:2]
 
-        masks = np.asarray(instances.pred_masks)
-        masks = [GenericMask(x, height, width) for x in masks]
+            msg = SegmentationInstanceArray()
+            msg.header = header
+            msg.height = height
+            msg.width = width
 
-        object_indices = {}
+            to_keep = torchvision.ops.nms(output["pred_boxes"], output["scores"], self.nms_threshold)
+            output["pred_boxes"] = output["pred_boxes"][to_keep].cpu()
+            output["pred_classes"] = output["pred_classes"][to_keep].cpu()
+            output["pred_masks"] = output["pred_masks"][to_keep].cpu()
 
-        msg = SegmentationInstanceArray()
-        for index in range(len(masks)):
-            mask = masks[index]
-            score = instances.scores[index]
-            class_idx = instances.pred_classes[index]
-            label = self.labels[class_idx]
-            if class_idx not in object_indices:
-                object_indices[class_idx] = 0
-            object_idx = object_indices[class_idx]
-            object_indices[class_idx] += 1
-
-            segmentation_instance = SegmentationInstance(
-                points=self.mask_to_msg(mask),
-                score=score,
-                label=label,
-                class_index=class_idx,
-                object_index=object_idx,
-                has_holes=mask.has_holes,
+            stretched_masks = paste_masks_in_image(
+                output["pred_masks"][:, 0, :, :],
+                output["pred_boxes"],
+                (height, width),
+                threshold=self.mask_conversion_threshold,
             )
-            msg.instances.append(segmentation_instance)  # type: ignore
-        msg.header = header
-        msg.height = height
-        msg.width = width
+            masks = [GenericMask(m, height, width) for m in np.asarray(stretched_masks)]
+            class_indices = [int(label.item()) for label in output["pred_classes"]]
+            object_indices = {}
 
-        if debug:
-            viz = Visualizer(image[:, :, ::-1], self.metadata, scale=1.2)
-            out = viz.draw_instance_predictions(instances)
-            viz_image = out.get_image()[:, :, ::-1]
-        else:
-            viz_image = None
+            debug_image = np.copy(image) if debug else None
 
-        return msg, viz_image
+            for mask, bbox_tensor, class_idx, score_tensor in zip(
+                masks, output["pred_boxes"], class_indices, output["scores"]
+            ):
+                score = float(score_tensor)
+                if score < self.threshold:
+                    continue
+                if class_idx not in object_indices:
+                    object_indices[class_idx] = 0
+                object_idx = object_indices[class_idx]
+                object_indices[class_idx] += 1
+
+                label = self.metadata.labels[class_idx]
+
+                segmentation_instance = SegmentationInstance(
+                    contours=self.mask_to_msg(mask),
+                    score=score,
+                    label=label,
+                    class_index=class_idx,
+                    object_index=object_idx,
+                    has_holes=mask.has_holes,
+                )
+                msg.instances.append(segmentation_instance)  # type: ignore
+                if debug_image is not None:
+                    bbox: BoundingBox = tuple(map(int, bbox_tensor))  # type: ignore
+                    self.draw_segmentation(debug_image, bbox, class_idx, mask, score)
+                    debug_images.append(debug_image)
+            segmentations.append(msg)
+        return segmentations, debug_images
+
+    def draw_segmentation(
+        self, image: np.ndarray, bbox: BoundingBox, class_idx: int, mask: GenericMask, score: float
+    ) -> None:
+        x1, y1, x2, y2 = bbox
+        class_name = self.metadata.labels[class_idx]
+        class_color = self.metadata.colors[class_idx]
+        cv_color = class_color.to_cv_color()
+        cv2.rectangle(image, (x1, y1), (x2, y2), cv_color, 1)
+        cv2.putText(
+            image,
+            f"{class_name} {score * 100:0.1f}",
+            (x1, y1),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            1,
+            cv_color,
+        )
+
+        class_color = self.metadata.colors[class_idx]
+        cv_color = class_color.to_cv_color()
+        for segment in mask.polygons:
+            contour = np.array(segment.reshape(-1, 2), dtype=np.int32)
+            cv2.drawContours(image, [contour], -1, cv_color, 1)
 
     def mask_to_msg(self, mask: GenericMask) -> List[Contour]:
         contours = []
         for segment in mask.polygons:
             points = []
-            for x, y in segment.reshape(-1, 2):
+            for x, y in segment.reshape(-1, 2).astype(np.int32):
                 keypoint = UVKeypoint(x, y)
                 points.append(keypoint)
             contour = Contour(points=points)
@@ -105,11 +182,13 @@ class DetectronNode:
             rospy.logerr(e)
             return None
         debug = self.debug_image_pub.get_num_connections() > 0
-        segmentation, debug_image = self.predict(msg.header, image, debug)
-        self.segmentation_pub.publish(segmentation)
-        if debug_image is not None:
+        segmentations, debug_images = self.predict(msg.header, image, debug)
+        for segmentation in segmentations:
+            self.segmentation_pub.publish(segmentation)
+        for debug_image in debug_images:
             try:
                 debug_msg = self.bridge.cv2_to_imgmsg(debug_image, "bgr8")
+                debug_msg.header = msg.header
                 self.debug_image_pub.publish(debug_msg)
             except CvBridgeError as e:
                 rospy.logerr(e)

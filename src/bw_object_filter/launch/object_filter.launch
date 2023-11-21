@@ -1,7 +1,16 @@
 <launch>
-    <arg name="robot_filter_config" default="$(find bw_object_filter)/config/robot_filter.yaml"/>
-    <node pkg="bw_object_filter" type="field_filter.py" name="field_filter" output="screen"/>
+    <arg name="robot_filter_config" default="$(find bw_object_filter)/config/robot_filter.yaml" />
+    <arg name="camera_name" default="camera_0" />
+
+    <node pkg="bw_object_filter" type="field_filter.py" name="field_filter" output="screen">
+        <param name="base_frame" value="$(arg camera_name)" />
+        <remap from="estimation/recommended_field_point"
+            to="$(arg camera_name)/estimation/recommended_field_point" />
+        <remap from="imu" to="$(arg camera_name)/imu" />
+        <remap from="plane_request" to="$(arg camera_name)/plane_request" />
+        <remap from="plane_response" to="$(arg camera_name)/plane_response" />
+    </node>
     <node pkg="bw_object_filter" type="robot_filter.py" name="robot_filter" output="screen">
-        <rosparam command="load" file="$(arg robot_filter_config)" ns="robots"/>
+        <rosparam command="load" file="$(arg robot_filter_config)" ns="robots" />
     </node>
 </launch>

@@ -1,6 +1,7 @@
 import datetime
 import json
 import os
+import shutil
 import time
 from threading import Thread
 from typing import Dict, List
@@ -265,6 +266,20 @@ class TrainingManager:
 
         output_path = os.path.join(self.output_dir, self.dataset_name, self.architecture, training_session_name)
         return output_path
+
+    def copy_to_data(self, model_path: str, model_metadata_path: str) -> None:
+        organization = os.environ["ORGANIZATION"]
+        project_name = os.environ["PROJECT_NAME"]
+        data_dir = f"/opt/{organization}/{project_name}/src/bw_data/data"
+        destination_dir = os.path.join(data_dir, "models")
+        date_str = datetime.datetime.now().strftime("%Y-%m-%d")
+        model_base_name = f"{self.dataset_name}_{self.architecture}_{date_str}"
+        dest_model_path = os.path.join(destination_dir, model_base_name + ".torchscript")
+        dest_model_metadata_path = os.path.join(destination_dir, model_base_name + "_metadata.json")
+
+        os.makedirs(destination_dir, exist_ok=True)
+        shutil.copy(model_path, dest_model_path)
+        shutil.copy(model_metadata_path, dest_model_metadata_path)
 
 
 def export_scripting(model_path: str, torch_model: GeneralizedRCNN, cfg: CfgNode, ir_dump: bool = False) -> None:

@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
-    <include if="$(eval env('ROBOT') == 'simulation')" file="$(find bw_bringup)/launch/simulation.launch"/>
-    <include if="$(eval env('ROBOT') == 'mini_bot')" file="$(find bw_bringup)/launch/mini_bot.launch"/>
+    <include file="$(find bw_bringup)/launch/$(optenv ROBOT).launch" />
 </launch>

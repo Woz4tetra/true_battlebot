@@ -1,29 +1,27 @@
 <launch>
-	<node pkg="bw_object_estimation" type="object_estimation" name="object_estimation"
-		output="screen" respawn="true">
-		<rosparam param="include_labels">[robot, referee]</rosparam>
-		<remap from="depth/camera_info" to="/camera/image/camera_info" />
-		<remap from="depth/image_raw" to="/camera/depth/image_raw" />
-		<remap from="segmentation" to="/camera/segmentation" />
-		<param name="queue_size" value="1" />
-	</node>
+	<group ns="camera_0">
+		<node pkg="bw_object_estimation" type="object_estimation" name="object_estimation"
+			output="screen" respawn="true">
+			<rosparam param="include_labels">[robot, referee]</rosparam>
+			<param name="queue_size" value="30" />
+			<remap from="depth/camera_info" to="rgb/camera_info" />
+			<remap from="depth/image_raw" to="depth/depth_registered" />
+		</node>
 
-	<node pkg="bw_object_estimation" type="recommended_plane_point" name="recommended_plane_point"
-		output="screen" respawn="true">
-		<rosparam param="include_labels">[field]</rosparam>
-		<remap from="depth/camera_info" to="/camera/image/camera_info" />
-		<remap from="depth/image_raw" to="/camera/depth/image_raw" />
-		<remap from="segmentation" to="/camera/segmentation" />
-		<param name="queue_size" value="1" />
-	</node>
+		<node pkg="bw_object_estimation" type="recommended_plane_point"
+			name="recommended_plane_point"
+			output="screen" respawn="true">
+			<rosparam param="include_labels">[field]</rosparam>
+			<param name="queue_size" value="30" />
+			<remap from="depth/camera_info" to="rgb/camera_info" />
+			<remap from="depth/image_raw" to="depth/depth_registered" />
+		</node>
 
-	<!-- <node pkg="bw_object_estimation" type="field_estimation" name="field_estimation"
-    output="screen">
-        <remap from="depth/camera_info" to="/camera/image/camera_info"/>
-        <remap from="depth/image_raw" to="/camera/depth/image_raw"/>
-        <remap from="segmentation" to="/camera/segmentation"/>
-        <param name="ransac_threshold" value="0.01"/>
-        <param name="ransac_max_iterations" value="100"/>
-        <param name="queue_size" value="1"/>
-    </node> -->
+		<!-- <node pkg="bw_object_estimation" type="field_estimation" name="field_estimation"
+			output="screen">
+			<param name="ransac_threshold" value="0.01" />
+			<param name="ransac_max_iterations" value="100" />
+			<param name="queue_size" value="1" />
+		</node> -->
+	</group>
 </launch>
