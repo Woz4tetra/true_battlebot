@@ -27,7 +27,7 @@ from bw_object_filter.field_math.find_minimum_rectangle import (
 )
 from bw_object_filter.field_math.get_field_segmentation import get_field_segmentation
 from bw_object_filter.field_math.points_transform import points_transform
-from bw_object_filter.field_math.project_segmentation import project_segmentation
+from bw_object_filter.field_math.project_segmentation import project_segmentation, raycast_segmentation
 
 
 class FieldFilter:
@@ -53,6 +53,8 @@ class FieldFilter:
         self.tf_broadcaster = tf2_ros.TransformBroadcaster()  # type: ignore
 
         self.field_rotate_tf = Transform3D.from_position_and_rpy(Vector3(), RPY((0, np.pi / 2, 0)))
+        self.ray_projection_transform = Transform3D.from_position_and_rpy(rpy=RPY((np.pi / 2, -np.pi, np.pi / 2)))
+
         self.marker_color = ColorRGBA(0, 1, 0.5, 0.75)
         self.prev_request_time = rospy.Time(0)
         self.segmentation = SegmentationInstanceArray()
@@ -84,8 +86,8 @@ class FieldFilter:
 
     def camera_info_callback(self, camera_info: CameraInfo) -> None:
         rospy.loginfo("Received camera info")
-        # with open("/media/storage/camera_info.pkl", "wb") as f:
-        #     pickle.dump(camera_info, f)
+        with open("/media/storage/camera_info.pkl", "wb") as f:
+            pickle.dump(camera_info, f)
         self.camera_model.fromCameraInfo(camera_info)
         self.camera_info_sub.unregister()
 
@@ -101,48 +103,50 @@ class FieldFilter:
         self.plane_request_pub.publish(request_point)
 
     def plane_response_callback(self, plane: PlaneStamped) -> None:
-        # with open("/media/storage/plane.pkl", "wb") as f:
-        #     pickle.dump(plane, f)
-        # with open("/media/storage/transform.pkl", "wb") as f:
-        #     transform = lookup_transform(self.tf_buffer, self.base_frame, plane.header.frame_id)
-        #     pickle.dump(transform, f)
-        plane_pose = self.get_plane_pose_in_camera_root(plane)
-        if plane_pose is None:
-            return
-        # with open("/media/storage/plane_pose.pkl", "wb") as f:
-        #     pickle.dump(plane_pose, f)
+        with open("/media/storage/plane.pkl", "wb") as f:
+            pickle.dump(plane, f)
+        with open("/media/storage/transform.pkl", "wb") as f:
+            pickle.dump(lookup_transform(self.tf_buffer, self.base_frame, plane.header.frame_id), f)
         field_segmentation = get_field_segmentation(self.segmentation)
 
-        # with open("/media/storage/field_segmentation.pkl", "wb") as f:
-        #     pickle.dump(field_segmentation, f)
-        plane_transform = Transform3D.from_position_and_quaternion(
-            plane_pose.pose.position, plane_pose.pose.orientation
-        )
-        projected_points = project_segmentation(self.camera_model, plane_transform, field_segmentation)
+        with open("/media/storage/field_segmentation.pkl", "wb") as f:
+            pickle.dump(field_segmentation, f)
+        plane.pose.rotation = self.rotate_field_orientation(plane.pose.rotation, self.field_rotate_tf)
+        plane_transform = Transform3D.from_position_and_quaternion(plane.pose.translation, plane.pose.rotation)
+
+        plane_center = plane_transform.position_array
+        plane_normal = plane_transform.rotation_matrix @ np.array((0, 0, 1))
+
+        rays = raycast_segmentation(self.camera_model, field_segmentation)
+        rays = points_transform(rays, self.ray_projection_transform.tfmat)
+        projected_points = project_segmentation(rays, plane_center, plane_normal)
+
         flattened_points = points_transform(projected_points, plane_transform.inverse().tfmat)
         flattened_points2d = flattened_points[:, :2]
         min_rect = find_minimum_rectangle(flattened_points2d)
         angle = get_rectangle_angle(min_rect)
         extents = get_rectangle_extents(min_rect)
-        yawed_plane = Transform3D.from_position_and_rpy(Vector3(), RPY((0, 0, angle))).transform_by(plane_transform)
+        centroid = np.mean(flattened_points, axis=0)
+        yawed_plane = Transform3D.from_position_and_rpy(
+            Vector3(centroid[0], centroid[1], 0), RPY((0, 0, 0))
+        ).transform_by(plane_transform)
+
+        lens_plane_pose = PoseStamped(header=plane.header, pose=yawed_plane.to_pose_msg())
+        base_plane_pose = self.get_plane_pose_in_camera_root(lens_plane_pose)
+        if base_plane_pose is None:
+            return
+        with open("/media/storage/plane_pose.pkl", "wb") as f:
+            pickle.dump(base_plane_pose, f)
 
         self.estimated_field = EstimatedObject(
-            header=plane_pose.header,
+            header=base_plane_pose.header,
             size=Vector3(x=extents[0], y=extents[1]),
         )
-        self.estimated_field.state.pose.pose = yawed_plane.to_pose_msg()
+        self.estimated_field.state.pose.pose = base_plane_pose.pose
         self.estimated_field_pub.publish(self.estimated_field)
         self.publish_field_markers(self.estimated_field)
 
-    def get_plane_pose_in_camera_root(self, plane: PlaneStamped) -> Optional[PoseStamped]:
-        plane.pose.rotation = self.rotate_field_orientation(plane.pose.rotation, self.field_rotate_tf)
-        camera_lens_pose = PoseStamped(
-            header=plane.header,
-            pose=Pose(
-                position=Point(plane.pose.translation.x, plane.pose.translation.y, plane.pose.translation.z),
-                orientation=plane.pose.rotation,
-            ),
-        )
+    def get_plane_pose_in_camera_root(self, camera_lens_pose: PoseStamped) -> Optional[PoseStamped]:
         camera_base_pose = None
         while camera_base_pose is None:
             if rospy.is_shutdown():

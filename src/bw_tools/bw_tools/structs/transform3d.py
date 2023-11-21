@@ -98,7 +98,11 @@ class Transform3D:
         return Transform3D(inv_tfmat)  # type: ignore
 
     @classmethod
-    def from_position_and_quaternion(cls, position: Union[Vector3, Point], orientation: Quaternion) -> Transform3D:
+    def from_position_and_quaternion(
+        cls,
+        position: Union[Vector3, Point] = Vector3(),
+        orientation: Quaternion = Quaternion(w=1.0, x=0.0, y=0.0, z=0.0),
+    ) -> Transform3D:
         """
         Combine orientation matrix and position vector into Transform
 
@@ -111,7 +115,9 @@ class Transform3D:
         return cls(tfmat)
 
     @classmethod
-    def from_position_and_rpy(cls, position: Vector3, rpy: RPY) -> Transform3D:
+    def from_position_and_rpy(
+        cls, position: Union[Vector3, Point] = Vector3(), rpy: RPY = RPY((0.0, 0.0, 0.0))
+    ) -> Transform3D:
         """
         Combine rpy and position vector into Transform
         args:

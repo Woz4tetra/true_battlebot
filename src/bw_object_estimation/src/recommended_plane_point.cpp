@@ -64,7 +64,7 @@ void RecommendedPlanePoint::synced_callback(
         }
 
         if (_field_marker_pub.getNumSubscribers() > 0) {
-            std::vector<std::vector<geometry_msgs::Point>> points = projectContourTo3D(depth_cv_image, segmentation);
+            std::vector<std::vector<geometry_msgs::Point>> points = project_contour_to_3d(depth_cv_image, segmentation);
             visualization_msgs::MarkerArray marker_array;
             for (size_t index = 0; index < points.size(); index++) {
                 marker_array.markers.push_back(contour_to_marker(segmentation->header, points[index], _field_color, index));
@@ -74,7 +74,7 @@ void RecommendedPlanePoint::synced_callback(
     }
 }
 
-std::vector<std::vector<geometry_msgs::Point>> RecommendedPlanePoint::projectContourTo3D(cv::Mat depth_image, const bw_interfaces::SegmentationInstanceArrayConstPtr& segmentation)
+std::vector<std::vector<geometry_msgs::Point>> RecommendedPlanePoint::project_contour_to_3d(cv::Mat depth_image, const bw_interfaces::SegmentationInstanceArrayConstPtr& segmentation)
 {
     std::vector<std::vector<geometry_msgs::Point>> all_points;
     for (size_t index = 0; index < segmentation->instances.size(); index++)
@@ -92,7 +92,7 @@ std::vector<std::vector<geometry_msgs::Point>> RecommendedPlanePoint::projectCon
             for (size_t point_index = 0; point_index < cv_contour.size(); point_index++)
             {
                 cv::Point2i point = cv_contour[point_index];
-                geometry_msgs::Point point_msg = convertPointToMsg(point, depth_image.at<float>(point.y, point.x));
+                geometry_msgs::Point point_msg = convert_point_to_msg(point, depth_image.at<float>(point.y, point.x));
                 points.push_back(point_msg);
             }
         }
@@ -111,7 +111,7 @@ bool RecommendedPlanePoint::find_recommended_point(geometry_msgs::PointStamped& 
     // If center is white, return the center point
     cv::Point2i center(depth_image.cols / 2, depth_image.rows / 2);
     if (mask.at<uchar>(center.y, center.x) != 0) {
-        point_msg.point = convertPointToMsg(center, depth_image.at<float>(center.y, center.x));
+        point_msg.point = convert_point_to_msg(center, depth_image.at<float>(center.y, center.x));
         return true;
     }
 
@@ -126,10 +126,10 @@ bool RecommendedPlanePoint::find_recommended_point(geometry_msgs::PointStamped& 
     cv::minMaxLoc(distance_mask, NULL, NULL, NULL, &center);
 
     // Convert the center point to a message and return it
-    point_msg.point = convertPointToMsg(center, depth_image.at<float>((int)center.y, (int)center.x));
+    point_msg.point = convert_point_to_msg(center, depth_image.at<float>((int)center.y, (int)center.x));
     return true;
 }
-geometry_msgs::Point RecommendedPlanePoint::convertPointToMsg(const cv::Point2i point, float depth)
+geometry_msgs::Point RecommendedPlanePoint::convert_point_to_msg(const cv::Point2i point, float depth)
 {
     // Convert the pixel coordinates to meters
     cv::Point3d ray = _camera_model.projectPixelTo3dRay(cv::Point2d(point.x, point.y));

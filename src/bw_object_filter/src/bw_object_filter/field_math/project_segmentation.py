@@ -2,7 +2,9 @@ from typing import Optional
 
 import numpy as np
 from bw_interfaces.msg import Contour, SegmentationInstance, UVKeypoint
+from bw_tools.structs.rpy import RPY
 from bw_tools.structs.transform3d import Transform3D
+from geometry_msgs.msg import Vector3
 from image_geometry import PinholeCameraModel
 
 
@@ -36,20 +38,27 @@ def line_plane_intersection(
     return None
 
 
-def project_segmentation(
-    camera_model: PinholeCameraModel, plane_transform: Transform3D, segmentation: SegmentationInstance
-) -> np.ndarray:
-    plane_normal = plane_transform.rotation_matrix @ np.array([0, 0, 1])
-    plane_center = plane_transform.position_array
-    line_point0 = np.array([0, 0, 0])
-    points = []
+def raycast_segmentation(camera_model: PinholeCameraModel, segmentation: SegmentationInstance) -> np.ndarray:
+    rays = []
     for contour in segmentation.contours:  # type: ignore
         contour: Contour
         for point in contour.points:  # type: ignore
             point: UVKeypoint
-            ray = camera_model.projectPixelTo3dRay((point.x, point.y))
-            intersection = line_plane_intersection(line_point0, ray, plane_center, plane_normal)
-            if intersection is None:
-                continue
-            points.append(intersection)
+            ray = np.array(camera_model.projectPixelTo3dRay((point.x, point.y)))
+            rays.append(ray)
+    return np.array(rays)
+
+
+def project_segmentation(
+    rays: np.ndarray,
+    plane_center: np.ndarray,
+    plane_normal: np.ndarray,
+) -> np.ndarray:
+    line_point0 = np.array([0, 0, 0])
+    points = []
+    for ray in rays:
+        intersection = line_plane_intersection(line_point0, ray, plane_center, plane_normal)
+        if intersection is None:
+            continue
+        points.append(intersection)
     return np.array(points)
