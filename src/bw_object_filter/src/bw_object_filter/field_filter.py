@@ -52,7 +52,7 @@ class FieldFilter:
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer)  # type: ignore
         self.tf_broadcaster = tf2_ros.TransformBroadcaster()  # type: ignore
 
-        self.field_rotate_tf = Transform3D.from_position_and_rpy(Vector3(), RPY((0, np.pi / 2, 0)))
+        self.field_rotate_tf = Transform3D.from_position_and_rpy(Vector3(), RPY((0, -np.pi / 2, 0)))
         self.ray_projection_transform = Transform3D.from_position_and_rpy(rpy=RPY((np.pi / 2, -np.pi, np.pi / 2)))
 
         self.marker_color = ColorRGBA(0, 1, 0.5, 0.75)
@@ -126,13 +126,13 @@ class FieldFilter:
         min_rect = find_minimum_rectangle(flattened_points2d)
         angle = get_rectangle_angle(min_rect)
         extents = get_rectangle_extents(min_rect)
-        centroid = np.mean(flattened_points, axis=0)
-        yawed_plane = Transform3D.from_position_and_rpy(
-            Vector3(centroid[0], centroid[1], 0), RPY((0, 0, 0))
-        ).transform_by(plane_transform)
+        centroid = np.mean(min_rect, axis=0)
+        field_centered_plane = Transform3D.from_position_and_rpy(
+            Vector3(centroid[0], centroid[1], 0), RPY((0, 0, angle))
+        ).forward_by(plane_transform)
 
-        lens_plane_pose = PoseStamped(header=plane.header, pose=yawed_plane.to_pose_msg())
-        base_plane_pose = self.get_plane_pose_in_camera_root(lens_plane_pose)
+        lens_plane_pose = PoseStamped(header=plane.header, pose=field_centered_plane.to_pose_msg())
+        base_plane_pose = self.get_pose_in_camera_root(lens_plane_pose)
         if base_plane_pose is None:
             return
         with open("/media/storage/plane_pose.pkl", "wb") as f:
@@ -146,15 +146,15 @@ class FieldFilter:
         self.estimated_field_pub.publish(self.estimated_field)
         self.publish_field_markers(self.estimated_field)
 
-    def get_plane_pose_in_camera_root(self, camera_lens_pose: PoseStamped) -> Optional[PoseStamped]:
+    def get_pose_in_camera_root(self, child_pose: PoseStamped) -> Optional[PoseStamped]:
         camera_base_pose = None
         while camera_base_pose is None:
             if rospy.is_shutdown():
                 return None
-            camera_base_pose = lookup_pose_in_frame(self.tf_buffer, camera_lens_pose, self.base_frame)
+            camera_base_pose = lookup_pose_in_frame(self.tf_buffer, child_pose, self.base_frame)
             if camera_base_pose is None:
                 rospy.sleep(0.1)
-        return camera_lens_pose
+        return camera_base_pose
 
     def rotate_field_orientation(
         self,

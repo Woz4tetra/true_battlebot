@@ -151,15 +151,17 @@ def main():
     camera_model = PinholeCameraModel()
     camera_model.fromCameraInfo(camera_info)
 
+    field_rotate_tf = Transform3D.from_position_and_rpy(rpy=RPY((0, -np.pi / 2, 0)))
+
     plane_transform = Transform3D.from_position_and_quaternion(plane.pose.translation, plane.pose.rotation)
-    plane_transform = plane_transform.transform_by(Transform3D.from_position_and_rpy(rpy=RPY((0, np.pi / 2, 0))))
+    plane_transform = plane_transform.transform_by(field_rotate_tf)
 
     plane_center = plane_transform.position_array
     plane_normal = plane_transform.rotation_matrix @ np.array((0, 0, 1))
     # plane_center = np.array((plane.center.x, plane.center.y, plane.center.z))
     # plane_normal = np.array((plane.normal.x, plane.normal.y, plane.normal.z))
 
-    rotation_transform = Transform3D.from_position_and_rpy(rpy=RPY((np.pi / 2, -np.pi, np.pi / 2)))
+    ray_projection_transform = Transform3D.from_position_and_rpy(rpy=RPY((np.pi / 2, -np.pi, np.pi / 2)))
     # rotation_transform = Transform3D.from_position_and_rpy(rpy=RPY((-np.pi, np.pi, np.pi / 2)))
     # plane_center = rotation_transform.rotation_matrix @ plane_center
     # plane_normal = rotation_transform.rotation_matrix @ plane_normal
@@ -169,7 +171,7 @@ def main():
     plot_plane(axes[2], plane_center, plane_normal)
 
     rays = raycast_segmentation(camera_model, field_segmentation)
-    rays = points_transform(rays, rotation_transform.tfmat)
+    rays = points_transform(rays, ray_projection_transform.tfmat)
     # rays = np.array([[1.0, 0.0, 0.0]])
     projected_points = project_segmentation(rays, plane_center, plane_normal)
 
@@ -177,11 +179,11 @@ def main():
     axes[2].scatter3D(projected_points[:, 0], projected_points[:, 1], projected_points[:, 2])
 
     flattened_points = points_transform(projected_points, plane_transform.inverse().tfmat)
-    axes[2].scatter3D(flattened_points[:, 0], flattened_points[:, 1], flattened_points[:, 2])
+    # axes[2].scatter3D(flattened_points[:, 0], flattened_points[:, 1], flattened_points[:, 2])
 
     flattened_points2d = flattened_points[:, :2]
     min_rect = find_minimum_rectangle(flattened_points2d)
-    angle = get_rectangle_angle(min_rect) % np.pi
+    angle = get_rectangle_angle(min_rect)
     extents = get_rectangle_extents(min_rect)
 
     centroid = np.mean(min_rect, axis=0)
@@ -191,21 +193,17 @@ def main():
     axes[1].plot(min_rect[:, 0], min_rect[:, 1], "r")
     axes[1].plot(centroid[0], centroid[1], "x")
 
-    axes[2].plot(flattened_points2d[:, 0], flattened_points2d[:, 1], ".")
-    axes[2].plot(min_rect[:, 0], min_rect[:, 1], "r")
+    min_rect = np.hstack((min_rect, np.zeros((min_rect.shape[0], 1))))
+    min_rect_reprojected = points_transform(min_rect, plane_transform.tfmat)
+    axes[2].plot(min_rect_reprojected[:, 0], min_rect_reprojected[:, 1], min_rect_reprojected[:, 2], "r")
 
     print("angle:", angle)
     print("extents:", extents)
 
-    field_center_projected = Transform3D.from_position_and_rpy(
-        Vector3(centroid[0], centroid[1], 0.0), RPY((0, 0, -angle))
-    )
+    field_center_projected = Transform3D.from_position_and_rpy(Vector3(centroid[0], centroid[1], 0.0), RPY((0, 0, 0)))
+    field_centered_plane = field_center_projected.transform_by(plane_transform)
 
-    yawed_plane = plane_transform
-
-    plot_plane(
-        axes[2], yawed_plane.position_array, yawed_plane.rotation_matrix @ np.array((0, 0, 1)), extents[0], extents[1]
-    )
+    plot_plane(axes[2], field_centered_plane.position_array, field_centered_plane.rotation_matrix @ np.array((0, 0, 1)))
 
     set_axes_equal(axes[2])
 

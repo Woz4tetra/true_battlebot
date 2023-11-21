@@ -84,6 +84,12 @@ class Transform3D:
         """
         return Transform3D(np.dot(self.tfmat, transform.tfmat))
 
+    def forward_by(self, transform: Transform3D) -> Transform3D:
+        """
+        Forward this transform by the other transform in series
+        """
+        return Transform3D(np.dot(transform.tfmat, self.tfmat))
+
     def relative_to(self, other: Transform3D) -> Transform3D:
         return Transform3D(np.dot(other.inverse().tfmat, self.tfmat))
 
