@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import math
-import pickle
 from typing import Optional
 
 import numpy as np
@@ -11,9 +10,9 @@ from bw_interfaces.msg import EstimatedObject, SegmentationInstanceArray
 from bw_tools.structs.cage_corner import CageCorner
 from bw_tools.structs.rpy import RPY
 from bw_tools.structs.transform3d import Transform3D
-from bw_tools.transforms import lookup_pose_in_frame, lookup_transform
+from bw_tools.transforms import lookup_pose_in_frame
 from bw_tools.typing import get_param
-from geometry_msgs.msg import Point, PointStamped, Pose, PoseStamped, Quaternion, Vector3
+from geometry_msgs.msg import PointStamped, PoseStamped, Quaternion, Vector3
 from image_geometry import PinholeCameraModel
 from sensor_msgs.msg import CameraInfo, Imu
 from std_msgs.msg import ColorRGBA, Empty
@@ -35,8 +34,10 @@ class FieldFilter:
         self.angle_delta_threshold = math.radians(get_param("angle_delta_threshold_degrees", 3.0))
         self.base_frame = get_param("~base_frame", "camera")
         self.map_frame = get_param("~map_frame", "map")
+        camera_is_situated_on_start = get_param("~camera_is_situated_on_start", False)
 
-        self.has_manual_query = True
+        self.has_manual_query_been_received = camera_is_situated_on_start
+        self.has_manual_query = camera_is_situated_on_start
         self.current_imu = Imu()
         self.prev_imu = Imu()
         self.current_imu.orientation.w = 1.0
@@ -86,31 +87,32 @@ class FieldFilter:
 
     def camera_info_callback(self, camera_info: CameraInfo) -> None:
         rospy.loginfo("Received camera info")
-        with open("/media/storage/camera_info.pkl", "wb") as f:
-            pickle.dump(camera_info, f)
         self.camera_model.fromCameraInfo(camera_info)
         self.camera_info_sub.unregister()
 
     def recommended_point_callback(self, point: PointStamped) -> None:
-        if self.did_camera_tilt():
+        if not self.has_manual_query_been_received:
+            return
+        if self.has_manual_query:
+            rospy.loginfo("Manual plane request received")
+            self.has_manual_query = False
+            should_request = True
+        else:
+            should_request = self.did_camera_tilt()
+        if should_request:
             self.publish_plane_request(point)
             self.prev_request_time = rospy.Time.now()
 
     def manual_request_callback(self, _: Empty) -> None:
         self.has_manual_query = True
+        self.has_manual_query_been_received = True
 
     def publish_plane_request(self, request_point: PointStamped) -> None:
         self.plane_request_pub.publish(request_point)
 
     def plane_response_callback(self, plane: PlaneStamped) -> None:
-        with open("/media/storage/plane.pkl", "wb") as f:
-            pickle.dump(plane, f)
-        with open("/media/storage/transform.pkl", "wb") as f:
-            pickle.dump(lookup_transform(self.tf_buffer, self.base_frame, plane.header.frame_id), f)
         field_segmentation = get_field_segmentation(self.segmentation)
 
-        with open("/media/storage/field_segmentation.pkl", "wb") as f:
-            pickle.dump(field_segmentation, f)
         plane.pose.rotation = self.rotate_field_orientation(plane.pose.rotation, self.field_rotate_tf)
         unrotated_plane_transform = Transform3D.from_position_and_quaternion(
             plane.pose.translation, plane.pose.rotation
@@ -126,7 +128,7 @@ class FieldFilter:
         flattened_points = points_transform(projected_points, plane_transform.inverse().tfmat)
         flattened_points2d = flattened_points[:, :2]
         min_rect = find_minimum_rectangle(flattened_points2d)
-        angle = get_rectangle_angle(min_rect)
+        angle = get_rectangle_angle(min_rect) % np.pi
         extents = get_rectangle_extents(min_rect)
         centroid = np.mean(min_rect, axis=0)
         field_centered_plane = Transform3D.from_position_and_rpy(
@@ -137,8 +139,6 @@ class FieldFilter:
         base_plane_pose = self.get_pose_in_camera_root(lens_plane_pose)
         if base_plane_pose is None:
             return
-        with open("/media/storage/plane_pose.pkl", "wb") as f:
-            pickle.dump(base_plane_pose, f)
 
         self.estimated_field = EstimatedObject(
             header=base_plane_pose.header,
@@ -187,13 +187,12 @@ class FieldFilter:
         self.current_imu = imu
 
     def did_camera_tilt(self) -> bool:
-        if self.has_manual_query:
-            rospy.loginfo("Manual plane request received")
-            self.has_manual_query = False
-            return True
         delta_rpy = self.compute_delta_rpy(self.current_imu.orientation, self.prev_imu.orientation)
-        self.prev_imu = self.current_imu
-        return np.any(np.abs(delta_rpy.to_array()) > self.angle_delta_threshold)
+        did_tilt = bool(np.any(np.abs(delta_rpy.to_array()) > self.angle_delta_threshold))
+        if did_tilt:
+            rospy.loginfo("Camera tilted")
+            self.prev_imu = self.current_imu
+        return did_tilt
 
     def compute_delta_rpy(self, new_quat: Quaternion, old_quat: Quaternion) -> RPY:
         new_transform = Transform3D.from_position_and_quaternion(Vector3(0, 0, 0), new_quat)
@@ -234,6 +233,7 @@ class FieldFilter:
         marker.ns = estimated_object.label
         marker.id = id
         marker.action = Marker.ADD
+        marker.frame_locked = True
         marker.pose = estimated_object.state.pose.pose
         marker.scale.x = estimated_object.size.x if estimated_object.size.x > 0 else 0.01
         marker.scale.y = estimated_object.size.y if estimated_object.size.y > 0 else 0.01

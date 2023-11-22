@@ -6,7 +6,7 @@
         <param name="base_frame" value="$(arg camera_name)" />
         <remap from="estimation/recommended_field_point"
             to="$(arg camera_name)/estimation/recommended_field_point" />
-        <remap from="imu" to="$(arg camera_name)/imu" />
+        <remap from="imu" to="$(arg camera_name)/imu/data" />
         <remap from="plane_request" to="$(arg camera_name)/plane_request" />
         <remap from="plane_response" to="$(arg camera_name)/plane_response" />
         <remap from="segmentation" to="$(arg camera_name)/segmentation" />
@@ -14,5 +14,6 @@
     </node>
     <node pkg="bw_object_filter" type="robot_filter.py" name="robot_filter" output="screen">
         <rosparam command="load" file="$(arg robot_filter_config)" ns="robots" />
+        <remap from="estimation/robots" to="$(arg camera_name)/estimation/robots" />
     </node>
 </launch>

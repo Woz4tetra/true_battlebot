@@ -2,9 +2,8 @@
     <arg name="map" default="$(env MAP_NAME)" />
     <arg name="robot" default="$(env ROBOT)" />
 
+    <include file="$(find bw_bringup)/launch/common.launch" />
     <include file="$(find bw_bringup)/launch/subsystems/zed.launch" />
-    <include file="$(find bw_object_estimation)/launch/object_estimation.launch" />
-    <include file="$(find bw_tags)/launch/tag_visualization.launch" />
     <include file="$(find bw_object_filter)/launch/object_filter.launch">
         <arg name="robot_filter_config"
             value="$(find bw_bringup)/config/$(arg robot)/robot_filter.yaml" />
@@ -13,12 +12,6 @@
         <arg name="robot_filter_config"
             value="$(find bw_bringup)/config/$(arg robot)/robot_filter.yaml" />
     </include>
-    <include file="$(find bw_bringup)/launch/subsystems/foxglove_bridge.launch">
-        <arg name="port" value="8765" />
-        <arg name="asset_uri_allowlist" value="['package://(.*).(dae|stl|urdf|xacro)']" />
-    </include>
-    <include file="$(find bw_command_center)/launch/command_center.launch" />
-    <include file="$(find bw_behaviors)/launch/bw_behaviors.launch" />
     <include file="$(find bw_teleop)/launch/bw_teleop.launch">
         <arg name="robot_filter_config"
             value="$(find bw_bringup)/config/$(arg robot)/robot_filter.yaml" />

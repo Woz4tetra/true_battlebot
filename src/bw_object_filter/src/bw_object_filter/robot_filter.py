@@ -47,8 +47,8 @@ class RobotFilter:
         self.command_timeout = seconds_to_duration(get_param("~command_timeout", 0.5))
 
         self.apriltag_base_covariance_scalar = get_param("~apriltag_base_covariance_scalar", 0.001)
-        self.our_base_covariance = get_param("~our_robot_estimate_base_covariance_scalar", 0.1)
-        self.their_base_covariance = get_param("~their_robot_estimate_base_covariance_scalar", 0.01)
+        self.our_base_covariance = get_param("~our_robot_estimate_base_covariance_scalar", 0.001)
+        self.their_base_covariance = get_param("~their_robot_estimate_base_covariance_scalar", 0.001)
         self.cmd_vel_base_covariance_scalar = get_param("~cmd_vel_base_covariance_scalar", 0.01)
         self.friction_factor = get_param("~friction_factor", 0.05)
         self.process_noise = get_param("~process_noise", 1e-4)
@@ -77,6 +77,7 @@ class RobotFilter:
         self.prev_motion_opponent_pose = {
             robot.name: Pose2D(0.0, 0.0, 0.0) for robot in self.robots.robots if robot.team != RobotTeam.OUR_TEAM
         }
+        self.field_received = False
 
         self.tag_heurstics = ApriltagHeuristics(self.apriltag_base_covariance_scalar)
         self.our_robot_heuristics = RobotHeuristics(self.our_base_covariance)
@@ -148,6 +149,9 @@ class RobotFilter:
         return None
 
     def robot_estimation_callback(self, msg: EstimatedObjectArray) -> None:
+        if not self.field_received:
+            rospy.logdebug("Field not received. Skipping robot estimation callback.")
+            return
         measurements = {label: [] for label in self.measurement_sorters.keys()}
         for robot in msg.robots:  # type: ignore
             robot: EstimatedObject
@@ -227,6 +231,9 @@ class RobotFilter:
         return heading_pose.to_msg(), velocity.to_msg()
 
     def tags_callback(self, msg: AprilTagDetectionArray) -> None:
+        if not self.field_received:
+            rospy.logdebug("Field not received. Skipping robot estimation callback.")
+            return
         assert msg.detections is not None
 
         for detection in msg.detections:
@@ -285,6 +292,7 @@ class RobotFilter:
         robot_filter.update_cmd_vel(measurement)
 
     def field_callback(self, _: EstimatedObject) -> None:
+        self.field_received = True
         rospy.loginfo("New field received. Resetting filters.")
         rospy.sleep(0.5)
         for robot_filter in self.robot_filters.values():
