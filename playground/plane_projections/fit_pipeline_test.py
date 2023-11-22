@@ -155,23 +155,24 @@ def main():
 
     plane_transform = Transform3D.from_position_and_quaternion(plane.pose.translation, plane.pose.rotation)
     plane_transform = plane_transform.transform_by(field_rotate_tf)
+    ray_projection_transform = Transform3D.from_position_and_rpy(rpy=RPY((0, -np.pi / 2, np.pi / 2)))
+    plane_transform = plane_transform.forward_by(ray_projection_transform)
 
     plane_center = plane_transform.position_array
     plane_normal = plane_transform.rotation_matrix @ np.array((0, 0, 1))
     # plane_center = np.array((plane.center.x, plane.center.y, plane.center.z))
     # plane_normal = np.array((plane.normal.x, plane.normal.y, plane.normal.z))
 
-    ray_projection_transform = Transform3D.from_position_and_rpy(rpy=RPY((np.pi / 2, -np.pi, np.pi / 2)))
-    # rotation_transform = Transform3D.from_position_and_rpy(rpy=RPY((-np.pi, np.pi, np.pi / 2)))
-    # plane_center = rotation_transform.rotation_matrix @ plane_center
-    # plane_normal = rotation_transform.rotation_matrix @ plane_normal
+    # ray_projection_transform = Transform3D.from_position_and_rpy(rpy=RPY((np.pi / 2, -np.pi, np.pi / 2)))
+    # plane_center = ray_projection_transform.rotation_matrix @ plane_center
+    # plane_normal = ray_projection_transform.rotation_matrix @ plane_normal
 
     plot_segmentation(axes[0], segmentation=field_segmentation)
-    plot_plane_mesh(axes[2], plane)
+    plot_plane_mesh(axes[2], plane, ray_projection_transform)
     plot_plane(axes[2], plane_center, plane_normal)
 
     rays = raycast_segmentation(camera_model, field_segmentation)
-    rays = points_transform(rays, ray_projection_transform.tfmat)
+    # rays = points_transform(rays, ray_projection_transform.tfmat)
     # rays = np.array([[1.0, 0.0, 0.0]])
     projected_points = project_segmentation(rays, plane_center, plane_normal)
 
@@ -179,7 +180,6 @@ def main():
     axes[2].scatter3D(projected_points[:, 0], projected_points[:, 1], projected_points[:, 2])
 
     flattened_points = points_transform(projected_points, plane_transform.inverse().tfmat)
-    # axes[2].scatter3D(flattened_points[:, 0], flattened_points[:, 1], flattened_points[:, 2])
 
     flattened_points2d = flattened_points[:, :2]
     min_rect = find_minimum_rectangle(flattened_points2d)

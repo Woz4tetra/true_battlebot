@@ -53,7 +53,7 @@ class FieldFilter:
         self.tf_broadcaster = tf2_ros.TransformBroadcaster()  # type: ignore
 
         self.field_rotate_tf = Transform3D.from_position_and_rpy(Vector3(), RPY((0, -np.pi / 2, 0)))
-        self.ray_projection_transform = Transform3D.from_position_and_rpy(rpy=RPY((np.pi / 2, -np.pi, np.pi / 2)))
+        self.ray_projection_transform = Transform3D.from_position_and_rpy(rpy=RPY((0, -np.pi / 2, np.pi / 2)))
 
         self.marker_color = ColorRGBA(0, 1, 0.5, 0.75)
         self.prev_request_time = rospy.Time(0)
@@ -112,13 +112,15 @@ class FieldFilter:
         with open("/media/storage/field_segmentation.pkl", "wb") as f:
             pickle.dump(field_segmentation, f)
         plane.pose.rotation = self.rotate_field_orientation(plane.pose.rotation, self.field_rotate_tf)
-        plane_transform = Transform3D.from_position_and_quaternion(plane.pose.translation, plane.pose.rotation)
+        unrotated_plane_transform = Transform3D.from_position_and_quaternion(
+            plane.pose.translation, plane.pose.rotation
+        )
+        plane_transform = unrotated_plane_transform.forward_by(self.ray_projection_transform)
 
         plane_center = plane_transform.position_array
         plane_normal = plane_transform.rotation_matrix @ np.array((0, 0, 1))
 
         rays = raycast_segmentation(self.camera_model, field_segmentation)
-        rays = points_transform(rays, self.ray_projection_transform.tfmat)
         projected_points = project_segmentation(rays, plane_center, plane_normal)
 
         flattened_points = points_transform(projected_points, plane_transform.inverse().tfmat)
@@ -129,7 +131,7 @@ class FieldFilter:
         centroid = np.mean(min_rect, axis=0)
         field_centered_plane = Transform3D.from_position_and_rpy(
             Vector3(centroid[0], centroid[1], 0), RPY((0, 0, angle))
-        ).forward_by(plane_transform)
+        ).forward_by(unrotated_plane_transform)
 
         lens_plane_pose = PoseStamped(header=plane.header, pose=field_centered_plane.to_pose_msg())
         base_plane_pose = self.get_pose_in_camera_root(lens_plane_pose)
