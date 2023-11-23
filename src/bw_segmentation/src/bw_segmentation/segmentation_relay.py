@@ -90,6 +90,7 @@ class SegmentationRelay:
         contour_msg = Contour()
         for x, y in contours[:, 0]:
             contour_msg.points.append(UVKeypoint(x, y))  # type: ignore
+        contour_msg.area = cv2.contourArea(contours)
         return contour_msg
 
     def bridge_gaps(self, image: np.ndarray, distance: int) -> np.ndarray:
