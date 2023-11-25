@@ -112,6 +112,9 @@ class FieldFilter:
 
     def plane_response_callback(self, plane: PlaneStamped) -> None:
         field_segmentation = get_field_segmentation(self.segmentation)
+        if field_segmentation is None:
+            rospy.logwarn("No field segmentation received. Cannot estimate field.")
+            return
 
         plane.pose.rotation = self.rotate_field_orientation(plane.pose.rotation, self.field_rotate_tf)
         unrotated_plane_transform = Transform3D.from_position_and_quaternion(

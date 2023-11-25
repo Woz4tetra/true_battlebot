@@ -110,7 +110,7 @@ public class ImageSynthesis : MonoBehaviour
             if (pass.publish)
             {
                 ros.RegisterPublisher<ImageMsg>(GetImageTopic(pass.image_topic));
-                ros.RegisterPublisher<CameraInfoMsg>(GetInfoTopic(pass.info_topic));
+                ros.RegisterPublisher<CameraInfoMsg>(GetImageTopic(pass.info_topic));
             }
         }
         ros.RegisterPublisher<SegmentationInstanceArrayMsg>(baseTopic + "/" + segmentationTopic);
@@ -177,12 +177,7 @@ public class ImageSynthesis : MonoBehaviour
 
     private string GetImageTopic(string name)
     {
-        return baseTopic + "/" + name + "/image_raw";
-    }
-
-    private string GetInfoTopic(string name)
-    {
-        return baseTopic + "/" + name + "/camera_info";
+        return baseTopic + "/" + name;
     }
 
     void LateUpdate()
@@ -356,9 +351,9 @@ public class ImageSynthesis : MonoBehaviour
         {
             if (pass.publish)
             {
-                PublishImage(pass, header, GetImageTopic(pass.name), (int)resizeWidth, (int)resizeHeight);
+                PublishImage(pass, header, GetImageTopic(pass.image_topic), (int)resizeWidth, (int)resizeHeight);
                 cameraInfoMsg.header = header;
-                ros.Publish(GetInfoTopic(pass.name), cameraInfoMsg);
+                ros.Publish(GetImageTopic(pass.info_topic), cameraInfoMsg);
             }
         }
     }

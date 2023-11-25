@@ -14,15 +14,18 @@ namespace RosMessageTypes.BwInterfaces
         public override string RosMessageName => k_RosMessageName;
 
         public UVKeypointMsg[] points;
+        public double area;
 
         public ContourMsg()
         {
             this.points = new UVKeypointMsg[0];
+            this.area = 0.0;
         }
 
-        public ContourMsg(UVKeypointMsg[] points)
+        public ContourMsg(UVKeypointMsg[] points, double area)
         {
             this.points = points;
+            this.area = area;
         }
 
         public static ContourMsg Deserialize(MessageDeserializer deserializer) => new ContourMsg(deserializer);
@@ -30,18 +33,21 @@ namespace RosMessageTypes.BwInterfaces
         private ContourMsg(MessageDeserializer deserializer)
         {
             deserializer.Read(out this.points, UVKeypointMsg.Deserialize, deserializer.ReadLength());
+            deserializer.Read(out this.area);
         }
 
         public override void SerializeTo(MessageSerializer serializer)
         {
             serializer.WriteLength(this.points);
             serializer.Write(this.points);
+            serializer.Write(this.area);
         }
 
         public override string ToString()
         {
             return "ContourMsg: " +
-            "\npoints: " + System.String.Join(", ", points.ToList());
+            "\npoints: " + System.String.Join(", ", points.ToList()) +
+            "\narea: " + area.ToString();
         }
 
 #if UNITY_EDITOR
