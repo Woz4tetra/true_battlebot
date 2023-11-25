@@ -6,6 +6,9 @@ source "${DEP_ROS_WS_ROOT}"/devel/setup.bash
 source "${ROS_WS_ROOT}"/devel/setup.bash
 source ${ROS_WS_ROOT}/robot
 
+echo "Robot name: ${ROBOT}"
+echo "Map name: ${MAP_NAME}"
+
 # https://stackoverflow.com/questions/58150251/numpy-matrix-inverse-appears-to-use-multiple-threads
 export OPENBLAS_NUM_THREADS=1
 export ROSCONSOLE_FORMAT='[${node}] [${severity}] [${time}]: ${message}'
