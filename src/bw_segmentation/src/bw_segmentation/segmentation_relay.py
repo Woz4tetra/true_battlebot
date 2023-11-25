@@ -25,15 +25,17 @@ class SegmentationRelay:
 
         self.simulated_segmentations: Dict[int, Label] = {}
         self.bridge = CvBridge()
+        self.rgb_image = None
 
-        self.image_sub = rospy.Subscriber("image", Image, self.image_callback)
+        self.segmentation_image_sub = rospy.Subscriber("segmentation_image", Image, self.segmentation_image_callback)
+        self.rgb_image_sub = rospy.Subscriber("rgb_image", Image, self.rgb_image_callback)
         self.segmentation_pub = rospy.Publisher("segmentation", SegmentationInstanceArray, queue_size=10)
         self.debug_image_pub = rospy.Publisher("segmentation_relay_debug", Image, queue_size=1)
         self.simulated_segmentation_sub = rospy.Subscriber(
             "simulated_segmentation", SegmentationInstanceArray, self.simulated_segmentation_callback, queue_size=10
         )
 
-    def image_callback(self, msg: Image) -> None:
+    def segmentation_image_callback(self, msg: Image) -> None:
         if len(self.simulated_segmentations) == 0:
             rospy.logwarn("No simulated segmentation received yet")
             return
@@ -48,7 +50,10 @@ class SegmentationRelay:
         segmentation_array = SegmentationInstanceArray()
 
         if debug_image_enabled:
-            debug_image = np.zeros_like(image)
+            if self.rgb_image is not None:
+                debug_image = self.rgb_image.copy()
+            else:
+                debug_image = np.zeros_like(image)
         else:
             debug_image = None
         object_counts = {label: 0 for label in self.real_model_labels}
@@ -82,6 +87,13 @@ class SegmentationRelay:
         segmentation_array.width = msg.width
 
         self.segmentation_pub.publish(segmentation_array)
+
+    def rgb_image_callback(self, msg: Image) -> None:
+        try:
+            self.rgb_image = self.bridge.imgmsg_to_cv2(msg, "bgr8")
+        except CvBridgeError as e:
+            rospy.logerr(e)
+            return
 
     def color_i32_to_rgb(self, color: int) -> Tuple[int, int, int]:
         return color & 0xFF, (color >> 8) & 0xFF, (color >> 16) & 0xFF

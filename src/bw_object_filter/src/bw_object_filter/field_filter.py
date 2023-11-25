@@ -34,6 +34,7 @@ class FieldFilter:
         self.angle_delta_threshold = math.radians(get_param("angle_delta_threshold_degrees", 3.0))
         self.base_frame = get_param("~base_frame", "camera")
         self.map_frame = get_param("~map_frame", "map")
+        self.relative_map_frame = get_param("~relative_map_frame", "map_relative")
         camera_is_situated_on_start = get_param("~camera_is_situated_on_start", False)
 
         self.has_manual_query_been_received = camera_is_situated_on_start
@@ -66,6 +67,7 @@ class FieldFilter:
         self.estimated_field_pub = rospy.Publisher("filter/field", EstimatedObject, queue_size=1, latch=True)
         self.estimated_field_marker_pub = rospy.Publisher("filter/field/marker", MarkerArray, queue_size=1, latch=True)
         self.corner_pub = rospy.Publisher("cage_corner", RosCageCorner, queue_size=1, latch=True)
+        self.reset_filters_pub = rospy.Publisher("reset_filters", Empty, queue_size=1)
 
         self.recommended_point_sub = rospy.Subscriber(
             "estimation/recommended_field_point", PointStamped, self.recommended_point_callback
@@ -99,7 +101,10 @@ class FieldFilter:
             should_request = True
         else:
             should_request = self.did_camera_tilt()
+            if should_request:
+                rospy.loginfo("Camera tilt detected.")
         if should_request:
+            self.reset_camera_tilt_detection()
             self.publish_plane_request(point)
             self.prev_request_time = rospy.Time.now()
 
@@ -108,6 +113,7 @@ class FieldFilter:
         self.has_manual_query_been_received = True
 
     def publish_plane_request(self, request_point: PointStamped) -> None:
+        rospy.loginfo("Requesting plane")
         self.plane_request_pub.publish(request_point)
 
     def plane_response_callback(self, plane: PlaneStamped) -> None:
@@ -131,11 +137,11 @@ class FieldFilter:
         flattened_points = points_transform(projected_points, plane_transform.inverse().tfmat)
         flattened_points2d = flattened_points[:, :2]
         min_rect = find_minimum_rectangle(flattened_points2d)
-        angle = get_rectangle_angle(min_rect) % np.pi
         extents = get_rectangle_extents(min_rect)
+        # angle = get_rectangle_angle(min_rect) % np.pi
         centroid = np.mean(min_rect, axis=0)
         field_centered_plane = Transform3D.from_position_and_rpy(
-            Vector3(centroid[0], centroid[1], 0), RPY((0, 0, angle))
+            Vector3(centroid[0], centroid[1], 0), RPY((0, 0, 0))
         ).forward_by(unrotated_plane_transform)
 
         lens_plane_pose = PoseStamped(header=plane.header, pose=field_centered_plane.to_pose_msg())
@@ -150,6 +156,10 @@ class FieldFilter:
         self.estimated_field.state.pose.pose = base_plane_pose.pose
         self.estimated_field_pub.publish(self.estimated_field)
         self.publish_field_markers(self.estimated_field)
+        self.reset_filters()
+
+    def reset_filters(self) -> None:
+        self.reset_filters_pub.publish(Empty())
 
     def get_pose_in_camera_root(self, child_pose: PoseStamped) -> Optional[PoseStamped]:
         camera_base_pose = None
@@ -170,19 +180,17 @@ class FieldFilter:
         rotated_field = field_tf.transform_by(rotate_tf)
         return rotated_field.quaternion
 
-    def rotate_to_cage_aligned(self, plane: PlaneStamped) -> None:
+    def get_cage_aligned_transform(self) -> Transform3D:
         if self.cage_corner is None:
             rospy.logwarn("No cage corner received. Assuming our team's corner is on the door side.")
             cage_corner = CageCorner.DOOR_SIDE
         else:
             cage_corner = self.cage_corner
-        rotated_plane = plane.pose.rotation
-        plane_rotation = Transform3D.from_position_and_quaternion(Vector3(), rotated_plane)
-        plane_rotation = plane_rotation.transform_by(self.field_rotations[cage_corner])
-        plane.pose.rotation = plane_rotation.quaternion
-        plane.pose.rotation = self.rotate_field_orientation(plane.pose.rotation, self.field_rotate_tf)
+        return self.field_rotations[cage_corner]
 
     def corner_side_callback(self, corner: RosCageCorner) -> None:
+        rospy.loginfo("Cage corner set. Resetting filters.")
+        self.reset_filters()
         self.cage_corner = CageCorner.from_msg(corner)
         self.corner_pub.publish(corner)
 
@@ -191,11 +199,10 @@ class FieldFilter:
 
     def did_camera_tilt(self) -> bool:
         delta_rpy = self.compute_delta_rpy(self.current_imu.orientation, self.prev_imu.orientation)
-        did_tilt = bool(np.any(np.abs(delta_rpy.to_array()) > self.angle_delta_threshold))
-        if did_tilt:
-            rospy.loginfo("Camera tilted")
-            self.prev_imu = self.current_imu
-        return did_tilt
+        return bool(np.any(np.abs(delta_rpy.to_array()) > self.angle_delta_threshold))
+
+    def reset_camera_tilt_detection(self) -> None:
+        self.prev_imu = self.current_imu
 
     def compute_delta_rpy(self, new_quat: Quaternion, old_quat: Quaternion) -> RPY:
         new_transform = Transform3D.from_position_and_quaternion(Vector3(0, 0, 0), new_quat)
@@ -203,7 +210,7 @@ class FieldFilter:
         delta_transform = new_transform.transform_by(old_transform.inverse())
         return delta_transform.rpy
 
-    def publish_field_tf(self, estimated_field: EstimatedObject) -> None:
+    def publish_field_tf(self, estimated_field: EstimatedObject) -> tf2_ros.TransformStamped:
         field_pose = estimated_field.state.pose.pose
         transform = Transform3D.from_position_and_quaternion(
             Vector3(
@@ -217,10 +224,24 @@ class FieldFilter:
 
         field_tf = tf2_ros.TransformStamped()  # type: ignore
         field_tf.header.stamp = estimated_field.header.stamp
-        field_tf.header.frame_id = self.map_frame
+        field_tf.header.frame_id = self.relative_map_frame
         field_tf.child_frame_id = estimated_field.header.frame_id
         field_tf.transform = transform.to_msg()
-        self.tf_broadcaster.sendTransform(field_tf)
+        return field_tf
+
+    def publish_aligned_tf(self) -> tf2_ros.TransformStamped:
+        transform = self.get_cage_aligned_transform()
+        aligned_tf = tf2_ros.TransformStamped()  # type: ignore
+        aligned_tf.header.stamp = rospy.Time.now()
+        aligned_tf.header.frame_id = self.map_frame
+        aligned_tf.child_frame_id = self.relative_map_frame
+        aligned_tf.transform = transform.to_msg()
+        return aligned_tf
+
+    def publish_transforms(self) -> None:
+        field_tf = self.publish_field_tf(self.estimated_field)
+        aligned_tf = self.publish_aligned_tf()
+        self.tf_broadcaster.sendTransform([field_tf, aligned_tf])
 
     def publish_field_markers(self, estimated_field: EstimatedObject) -> None:
         self.estimated_field_marker_pub.publish(
@@ -246,11 +267,11 @@ class FieldFilter:
 
     def run(self) -> None:
         while not rospy.is_shutdown():
-            rospy.sleep(1.0)
+            rospy.sleep(0.5)
             if len(self.estimated_field.header.frame_id) == 0:
                 continue
             self.estimated_field.header.stamp = rospy.Time.now()
-            self.publish_field_tf(self.estimated_field)
+            self.publish_transforms()
 
 
 if __name__ == "__main__":

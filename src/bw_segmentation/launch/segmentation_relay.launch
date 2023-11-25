@@ -4,8 +4,10 @@
     <group ns="$(arg camera_name)">
         <node pkg="bw_segmentation" type="segmentation_relay.py" name="segmentation_relay"
             output="screen">
-            <remap from="image" to="layer/image_raw" />
+            <remap from="segmentation_image" to="layer/image_raw" />
+            <remap from="rgb_image" to="rgb/image_rect_color" />
             <remap from="camera_info" to="layer/camera_info" />
+            <remap from="segmentation_relay_debug" to="debug_image" />
         </node>
     </group>
 

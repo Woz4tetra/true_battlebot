@@ -25,6 +25,7 @@ from geometry_msgs.msg import (
     Vector3,
 )
 from nav_msgs.msg import Odometry
+from std_msgs.msg import Empty
 from std_msgs.msg import Header as RosHeader
 
 from bw_object_filter.covariances import ApriltagHeuristics, CmdVelHeuristics, RobotHeuristics
@@ -55,6 +56,7 @@ class RobotFilter:
         self.motion_speed_threshold = get_param("~motion_speed_threshold", 0.25)
         self.robot_min_radius = get_param("~robot_min_radius", 0.1)
         self.robot_max_radius = get_param("~robot_max_radius", 0.4)
+        self.field_received = not get_param("~activate_on_reset", True)
 
         self.robots = RobotFleetConfig.from_dict(robot_config)
         self.check_unique(self.robots)
@@ -77,7 +79,6 @@ class RobotFilter:
         self.prev_motion_opponent_pose = {
             robot.name: Pose2D(0.0, 0.0, 0.0) for robot in self.robots.robots if robot.team != RobotTeam.OUR_TEAM
         }
-        self.field_received = False
 
         self.tag_heurstics = ApriltagHeuristics(self.apriltag_base_covariance_scalar)
         self.our_robot_heuristics = RobotHeuristics(self.our_base_covariance)
@@ -115,7 +116,7 @@ class RobotFilter:
         self.robots_sub = rospy.Subscriber(
             "estimation/robots", EstimatedObjectArray, self.robot_estimation_callback, queue_size=50
         )
-        self.field_sub = rospy.Subscriber("filter/field", EstimatedObject, self.field_callback, queue_size=1)
+        self.reset_sub = rospy.Subscriber("reset_filters", Empty, self.reset_callback, queue_size=1)
         self.tags_sub = rospy.Subscriber("tag_detections", AprilTagDetectionArray, self.tags_callback, queue_size=25)
         self.cmd_vel_subs = [
             rospy.Subscriber(
@@ -286,15 +287,12 @@ class RobotFilter:
             measurement.covariance = self.our_robot_cmd_vel_heuristics.compute_covariance(measurement)
 
         robot_filter = self.robot_filters[robot_config.name]
-        # if not robot_filter.is_right_side_up:
-        #     measurement.twist.linear.x *= -1
-        #     measurement.twist.linear.y *= -1
         robot_filter.update_cmd_vel(measurement)
 
-    def field_callback(self, _: EstimatedObject) -> None:
+    def reset_callback(self, _: Empty) -> None:
         self.field_received = True
-        rospy.loginfo("New field received. Resetting filters.")
-        rospy.sleep(0.5)
+        rospy.loginfo("Resetting filters.")
+        rospy.sleep(0.25)
         for robot_filter in self.robot_filters.values():
             robot_filter.reset()
 

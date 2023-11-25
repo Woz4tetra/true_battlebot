@@ -142,18 +142,21 @@ class Transform3D:
 
     @classmethod
     def from_msg(cls, msg: RosTransform) -> Transform3D:
-        orientation_mat = transformations.quaternion_matrix(
-            (msg.rotation.x, msg.rotation.y, msg.rotation.z, msg.rotation.w)
-        )
-        tfmat = np.eye(4)
-        tfmat[0:3, 0:3] = orientation_mat
+        tfmat = transformations.quaternion_matrix((msg.rotation.x, msg.rotation.y, msg.rotation.z, msg.rotation.w))
         tfmat[0:3, 3] = np.array([msg.translation.x, msg.translation.y, msg.translation.z])
         return cls(tfmat)
 
     @classmethod
+    def from_pose_msg(cls, msg: Pose) -> Transform3D:
+        tfmat = transformations.quaternion_matrix(
+            (msg.orientation.x, msg.orientation.y, msg.orientation.z, msg.orientation.w)
+        )
+        tfmat[0:3, 3] = np.array([msg.position.x, msg.position.y, msg.position.z])
+        return cls(tfmat)
+
+    @classmethod
     def from_pose2d(cls, pose2d: Pose2D) -> Transform3D:
-        tfmat = np.eye(4)
-        tfmat[0:3, 0:3] = transformations.euler_matrix(0.0, 0.0, pose2d.theta)
+        tfmat = transformations.euler_matrix(0.0, 0.0, pose2d.theta)
         tfmat[0, 0] = pose2d.x
         tfmat[0, 1] = pose2d.y
         return Transform3D(tfmat)
