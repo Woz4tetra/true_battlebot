@@ -43,7 +43,7 @@ fi
 cat <<EOT > "${ROS_WS_ROOT}"/robot
 export ROBOT=${ROBOT}
 export MAP_NAME=${MAP_NAME}
+EOT
 
 echo "Robot name: ${ROBOT}"
 echo "Map name: ${MAP_NAME}"
-EOT
