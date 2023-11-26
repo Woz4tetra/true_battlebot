@@ -182,8 +182,17 @@ def process_line(data: bytes, args: ParserInput, tracker: IncompleteLineTracker)
 DEFAULT_DIR = "/media/storage/logs"
 
 
+def get_log_paths(search_dir: str) -> list[str]:
+    return glob.glob(os.path.join(search_dir, "*.log"))
+
+
 def find_latest_log_file(search_dir: str) -> str:
-    list_of_files = glob.glob(os.path.join(search_dir, "*.log"))
+    list_of_files = get_log_paths(search_dir)
+    if len(list_of_files) == 0:
+        sys.stdout.write(COLORS.YELLOW + f"Waiting for log files to appear in {search_dir}\n")
+        while len(list_of_files) == 0:
+            list_of_files = get_log_paths(search_dir)
+            time.sleep(1.0)
     latest_file = max(list_of_files, key=os.path.getctime)
     return os.path.join(search_dir, latest_file)
 

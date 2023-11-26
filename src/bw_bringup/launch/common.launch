@@ -10,4 +10,12 @@
     </include>
     <include file="$(find bw_command_center)/launch/command_center.launch" />
     <include file="$(find bw_behaviors)/launch/bw_behaviors.launch" />
+    <include file="$(find bw_navigation)/launch/move_base_flex.launch">
+        <arg name="robot_filter_config"
+            value="$(find bw_bringup)/config/robot_filter.yaml" />
+    </include>
+    <include file="$(find bw_object_filter)/launch/object_filter.launch">
+        <arg name="robot_filter_config"
+            value="$(find bw_bringup)/config/robot_filter.yaml" />
+    </include>
 </launch>

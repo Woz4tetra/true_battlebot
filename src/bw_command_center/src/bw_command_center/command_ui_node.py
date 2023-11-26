@@ -8,6 +8,7 @@ import rospy
 from bw_command_center.command_ui.cage_corner_ui import CageCornerUI
 from bw_command_center.command_ui.mode_ui import ModeUI
 from bw_command_center.command_ui.request_field_ui import RequestFieldUI
+from bw_command_center.command_ui.summary_ui import SummaryUI
 from bw_command_center.command_ui.ui_base import UiBase
 
 
@@ -17,7 +18,7 @@ class App:
         self.window.tk.call("tk", "scaling", 2.0)
         self.window.wm_title("BWBots Command Center")
 
-        self.panels: List[Type[UiBase]] = [CageCornerUI, ModeUI, RequestFieldUI]
+        self.panels: List[Type[UiBase]] = [SummaryUI, CageCornerUI, ModeUI, RequestFieldUI]
 
     def run(self) -> None:
         for panel in self.panels:

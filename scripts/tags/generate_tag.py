@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import argparse
 import io
 import os
@@ -34,7 +35,12 @@ class Tag:
 def download_image(tag: Tag):
     url = f"https://github.com/AprilRobotics/apriltag-imgs/raw/master/{tag.family}/{tag.filename}"
     print(f"Downloading from {url}")
-    img_data = requests.get(url).content
+    response = requests.get(url)
+    if response.status_code != 200:
+        raise Exception(
+            f"Failed to download image from {url}. Status code: {response.status_code}. Reason: {response.reason}"
+        )
+    img_data = response.content
     return open_image(io.BytesIO(img_data))
 
 

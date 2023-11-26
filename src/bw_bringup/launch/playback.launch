@@ -9,10 +9,6 @@
         <arg name="model" value="$(arg model).torchscript" />
         <arg name="metadata" value="$(arg model)_metadata.json" />
     </include>
-    <include file="$(find bw_object_filter)/launch/object_filter.launch">
-        <arg name="robot_filter_config"
-            value="$(find bw_bringup)/config/mini_bot/robot_filter.yaml" />
-    </include>
     <include file="$(find bw_bringup)/launch/subsystems/zed.launch">
         <arg name="svo_file" value="/media/storage/svo/$(arg map)" />
     </include>
