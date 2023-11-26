@@ -11,6 +11,7 @@ public class ZedPlaneSensor : BaseRectangleSensor {
     [SerializeField] private string plane_request_topic = "plane_request";
     [SerializeField] private string plane_response_topic = "plane_response";
     private VisibleTarget[] prevTargets;
+    Matrix4x4 fieldRotateMatrix = Matrix4x4.TRS(Vector3.zero, Quaternion.Euler(90.0f, 0.0f, 0.0f), Vector3.one);
 
     override protected void BaseRectangleSensorStart()
     {
@@ -39,8 +40,9 @@ public class ZedPlaneSensor : BaseRectangleSensor {
         List<PlaneStampedMsg> planes = new List<PlaneStampedMsg>();
         foreach (VisibleTarget target in targets)
         {
-            PointMsg point = target.cameraRelativePose.GetT().To<FLU>();
-            QuaternionMsg orientation = target.cameraRelativePose.GetR().To<FLU>();
+            Matrix4x4 targetPose = target.cameraRelativePose * fieldRotateMatrix;
+            PointMsg point = targetPose.GetT().To<FLU>();
+            QuaternionMsg orientation = targetPose.GetR().To<FLU>();
             Vector3Msg size = target.dimensions.To<FLU>();
             size = new Vector3Msg {
                 x = Math.Abs(size.x),

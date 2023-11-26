@@ -11,7 +11,6 @@ using RosMessageTypes.Nav;
 public class FieldSensor : BaseRectangleSensor
 {
     [SerializeField] private string topic = "detections";
-    Matrix4x4 fieldRotateMatrix = Matrix4x4.TRS(Vector3.zero, Quaternion.Euler(0.0f, 0.0f, 180.0f), Vector3.one);
 
     override protected void BaseRectangleSensorStart()
     {
@@ -38,7 +37,7 @@ public class FieldSensor : BaseRectangleSensor
         List<EstimatedObjectMsg> fields = new List<EstimatedObjectMsg>();
         foreach (VisibleTarget target in targets)
         {
-            Matrix4x4 targetPose = target.cameraRelativePose * fieldRotateMatrix;
+            Matrix4x4 targetPose = target.cameraRelativePose;
             Vector3Msg size = target.dimensions.To<FLU>();
             size = new Vector3Msg
             {

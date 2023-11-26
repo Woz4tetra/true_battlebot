@@ -55,7 +55,6 @@ class FieldFilter:
         self.tf_broadcaster = tf2_ros.TransformBroadcaster()  # type: ignore
 
         self.field_rotate_tf = Transform3D.from_position_and_rpy(Vector3(), RPY((0, -np.pi / 2, 0)))
-        self.ray_projection_transform = Transform3D.from_position_and_rpy(rpy=RPY((0, -np.pi / 2, np.pi / 2)))
 
         self.marker_color = ColorRGBA(0, 1, 0.5, 0.75)
         self.prev_request_time = rospy.Time(0)
@@ -122,11 +121,20 @@ class FieldFilter:
             rospy.logwarn("No field segmentation received. Cannot estimate field.")
             return
 
-        plane.pose.rotation = self.rotate_field_orientation(plane.pose.rotation, self.field_rotate_tf)
-        unrotated_plane_transform = Transform3D.from_position_and_quaternion(
-            plane.pose.translation, plane.pose.rotation
+        plane_pose = PoseStamped(header=plane.header)
+        plane_pose.pose.position = plane.pose.translation
+        plane_pose.pose.orientation = plane.pose.rotation
+        lens_plane_pose = lookup_pose_in_frame(
+            self.tf_buffer, plane_pose, self.segmentation.header.frame_id, timeout=rospy.Duration(30.0)
         )
-        plane_transform = unrotated_plane_transform.forward_by(self.ray_projection_transform)
+        if lens_plane_pose is None:
+            return
+        lens_plane_pose.pose.orientation = self.rotate_field_orientation(
+            lens_plane_pose.pose.orientation, self.field_rotate_tf
+        )
+        plane_transform = Transform3D.from_position_and_quaternion(
+            lens_plane_pose.pose.position, lens_plane_pose.pose.orientation
+        )
 
         plane_center = plane_transform.position_array
         plane_normal = plane_transform.rotation_matrix @ np.array((0, 0, 1))
@@ -142,34 +150,26 @@ class FieldFilter:
         centroid = np.mean(min_rect, axis=0)
         field_centered_plane = Transform3D.from_position_and_rpy(
             Vector3(centroid[0], centroid[1], 0), RPY((0, 0, 0))
-        ).forward_by(unrotated_plane_transform)
+        ).forward_by(plane_transform)
 
-        lens_plane_pose = PoseStamped(header=plane.header, pose=field_centered_plane.to_pose_msg())
-        base_plane_pose = self.get_pose_in_camera_root(lens_plane_pose)
-        if base_plane_pose is None:
+        lens_field_pose = PoseStamped(header=self.segmentation.header, pose=field_centered_plane.to_pose_msg())
+        base_field_pose = lookup_pose_in_frame(
+            self.tf_buffer, lens_field_pose, self.base_frame, timeout=rospy.Duration(30.0)
+        )
+        if base_field_pose is None:
             return
 
         self.estimated_field = EstimatedObject(
-            header=base_plane_pose.header,
+            header=base_field_pose.header,
             size=Vector3(x=extents[0], y=extents[1]),
         )
-        self.estimated_field.state.pose.pose = base_plane_pose.pose
+        self.estimated_field.state.pose.pose = base_field_pose.pose
         self.estimated_field_pub.publish(self.estimated_field)
         self.publish_field_markers(self.estimated_field)
         self.reset_filters()
 
     def reset_filters(self) -> None:
         self.reset_filters_pub.publish(Empty())
-
-    def get_pose_in_camera_root(self, child_pose: PoseStamped) -> Optional[PoseStamped]:
-        camera_base_pose = None
-        while camera_base_pose is None:
-            if rospy.is_shutdown():
-                return None
-            camera_base_pose = lookup_pose_in_frame(self.tf_buffer, child_pose, self.base_frame)
-            if camera_base_pose is None:
-                rospy.sleep(0.1)
-        return camera_base_pose
 
     def rotate_field_orientation(
         self,
