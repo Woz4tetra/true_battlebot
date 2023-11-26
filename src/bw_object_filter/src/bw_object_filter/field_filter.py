@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import math
-from typing import Optional
+from typing import Optional, Tuple
 
 import numpy as np
 import rospy
@@ -12,10 +12,10 @@ from bw_tools.structs.rpy import RPY
 from bw_tools.structs.transform3d import Transform3D
 from bw_tools.transforms import lookup_pose_in_frame
 from bw_tools.typing import get_param
-from geometry_msgs.msg import PointStamped, PoseStamped, Quaternion, Vector3
+from geometry_msgs.msg import Point, PointStamped, PoseStamped, Quaternion, Vector3
 from image_geometry import PinholeCameraModel
 from sensor_msgs.msg import CameraInfo, Imu
-from std_msgs.msg import ColorRGBA, Empty
+from std_msgs.msg import ColorRGBA, Empty, Header
 from visualization_msgs.msg import Marker, MarkerArray
 from zed_interfaces.msg import PlaneStamped
 
@@ -56,7 +56,6 @@ class FieldFilter:
 
         self.field_rotate_tf = Transform3D.from_position_and_rpy(Vector3(), RPY((0, -np.pi / 2, 0)))
 
-        self.marker_color = ColorRGBA(0, 1, 0.5, 0.75)
         self.prev_request_time = rospy.Time(0)
         self.segmentation = SegmentationInstanceArray()
         self.camera_model = PinholeCameraModel()
@@ -65,6 +64,7 @@ class FieldFilter:
         self.plane_response_sub = rospy.Subscriber("plane_response", PlaneStamped, self.plane_response_callback)
         self.estimated_field_pub = rospy.Publisher("filter/field", EstimatedObject, queue_size=1, latch=True)
         self.estimated_field_marker_pub = rospy.Publisher("filter/field/marker", MarkerArray, queue_size=1, latch=True)
+        self.debug_marker_pub = rospy.Publisher("filter/field/debug", MarkerArray, queue_size=1, latch=True)
         self.corner_pub = rospy.Publisher("cage_corner", RosCageCorner, queue_size=1, latch=True)
         self.reset_filters_pub = rospy.Publisher("reset_filters", Empty, queue_size=1)
 
@@ -146,10 +146,10 @@ class FieldFilter:
         flattened_points2d = flattened_points[:, :2]
         min_rect = find_minimum_rectangle(flattened_points2d)
         extents = get_rectangle_extents(min_rect)
-        # angle = get_rectangle_angle(min_rect) % np.pi
+        angle = get_rectangle_angle(min_rect) % np.pi
         centroid = np.mean(min_rect, axis=0)
         field_centered_plane = Transform3D.from_position_and_rpy(
-            Vector3(centroid[0], centroid[1], 0), RPY((0, 0, 0))
+            Vector3(centroid[0], centroid[1], 0), RPY((0, 0, angle))
         ).forward_by(plane_transform)
 
         lens_field_pose = PoseStamped(header=self.segmentation.header, pose=field_centered_plane.to_pose_msg())
@@ -166,6 +166,7 @@ class FieldFilter:
         self.estimated_field.state.pose.pose = base_field_pose.pose
         self.estimated_field_pub.publish(self.estimated_field)
         self.publish_field_markers(self.estimated_field)
+        self.publish_debug_markers(flattened_points, min_rect, centroid)
         self.reset_filters()
 
     def reset_filters(self) -> None:
@@ -245,8 +246,70 @@ class FieldFilter:
 
     def publish_field_markers(self, estimated_field: EstimatedObject) -> None:
         self.estimated_field_marker_pub.publish(
-            MarkerArray(markers=[self.estimated_object_to_marker(estimated_field, self.marker_color, 0, Marker.CUBE)])
+            MarkerArray(
+                markers=[self.estimated_object_to_marker(estimated_field, ColorRGBA(0, 1, 0.5, 0.25), 0, Marker.CUBE)]
+            )
         )
+
+    def publish_debug_markers(self, flattened_points: np.ndarray, min_rect: np.ndarray, centroid: np.ndarray) -> None:
+        header = Header(frame_id=self.relative_map_frame, stamp=rospy.Time.now())
+        self.debug_marker_pub.publish(
+            MarkerArray(
+                markers=[
+                    self.polygon_to_marker(header, flattened_points, ColorRGBA(0, 0.5, 1, 1), 1),
+                    self.polygon_to_marker(header, min_rect, ColorRGBA(1, 0, 0, 1), 2),
+                    self.point_to_marker(header, (centroid[0], centroid[1], 0.0), ColorRGBA(1, 0, 0, 1), 3, 0.1),
+                ]
+            )
+        )
+
+    def polygon_to_marker(
+        self,
+        header: Header,
+        points: np.ndarray,
+        color: ColorRGBA,
+        id: int = 0,
+        line_width: float = 0.05,
+        closed: bool = True,
+    ) -> Marker:
+        marker = Marker()
+        marker.header = header
+        marker.type = Marker.LINE_STRIP
+        marker.ns = "polygon"
+        marker.id = id
+        marker.action = Marker.ADD
+        marker.frame_locked = False
+        marker.scale.x = line_width
+        marker.color = color
+        if points.shape[1] == 3:
+            marker.points = [Point(x=x, y=y, z=z) for x, y, z in points]
+        else:
+            marker.points = [Point(x=x, y=y, z=0) for x, y in points]
+        if closed:
+            marker.points.append(marker.points[0])
+        return marker
+
+    def point_to_marker(
+        self,
+        header: Header,
+        point: Tuple[float, float, float],
+        color: ColorRGBA,
+        id: int = 0,
+        size: float = 1.0,
+        type: int = Marker.SPHERE,
+    ) -> Marker:
+        marker = Marker()
+        marker.header = header
+        marker.type = type
+        marker.ns = "polygon"
+        marker.id = id
+        marker.action = Marker.ADD
+        marker.pose.position = Point(x=point[0], y=point[1], z=point[2])
+        marker.pose.orientation.w = 1.0
+        marker.frame_locked = False
+        marker.scale = Vector3(x=size, y=size, z=size)
+        marker.color = color
+        return marker
 
     def estimated_object_to_marker(
         self, estimated_object: EstimatedObject, color: ColorRGBA, id: int = 0, type: int = Marker.ARROW
@@ -257,7 +320,7 @@ class FieldFilter:
         marker.ns = estimated_object.label
         marker.id = id
         marker.action = Marker.ADD
-        marker.frame_locked = True
+        marker.frame_locked = False
         marker.pose = estimated_object.state.pose.pose
         marker.scale.x = estimated_object.size.x if estimated_object.size.x > 0 else 0.01
         marker.scale.y = estimated_object.size.y if estimated_object.size.y > 0 else 0.01

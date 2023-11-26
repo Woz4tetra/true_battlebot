@@ -69,7 +69,19 @@ def get_rectangle_extents(rectangle: np.ndarray) -> Tuple[float, float]:
 
 
 def get_rectangle_angle(rectangle: np.ndarray) -> float:
-    """rectangle is a 4x2 matrix of points"""
-    delta = rectangle[1] - rectangle[0]
-    angle = float(np.arctan2(delta[1], delta[0]))
+    """
+    Finds the angle of the rectangle with respect to the x-axis
+    rectangle is a 4x2 matrix of points
+    """
+    root_vertex = np.argmin(rectangle[:, 0])
+    next_vertex = (root_vertex + 1) % len(rectangle)
+    prev_vertex = (root_vertex - 1) % len(rectangle)
+    # distance is distance to the x axis
+    next_distance = rectangle[next_vertex, 0]
+    prev_distance = rectangle[prev_vertex, 0]
+    if next_distance < prev_distance:
+        delta = rectangle[next_vertex] - rectangle[root_vertex]
+    else:
+        delta = rectangle[root_vertex] - rectangle[prev_vertex]
+    angle = np.arctan2(delta[1], delta[0])
     return angle
