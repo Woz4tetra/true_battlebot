@@ -14,6 +14,10 @@ from sensor_msgs import point_cloud2
 from sensor_msgs.msg import PointCloud2, PointField
 from std_msgs.msg import Header
 
+from bw_navigation.selector_algorithms import PushFromBehindSelector, SacrificialSelector
+from bw_navigation.selector_algorithms.base_selector import BaseSelector
+from bw_navigation.selector_algorithms.match_state import MatchState
+
 CLOUD_FIELDS = [
     PointField("x", 0, PointField.FLOAT32, 1),
     PointField("y", 4, PointField.FLOAT32, 1),
@@ -29,6 +33,12 @@ class TargetSelector:
         self.robot_radius = get_param("~robot_radius", 0.2)
         self.guidance_bot_name = get_param("~guidance_bot_name", "main_bot")
         self.controlled_bot_name = get_param("~controlled_bot_name", "mini_bot")
+        self.algorithm_name = get_param("~algorithm", "sacrificial_selector")
+
+        self.selection_algorithm: BaseSelector = {
+            "sacrificial_selector": SacrificialSelector,
+            "push_from_behind_selector": PushFromBehindSelector,
+        }[self.algorithm_name]()
 
         all_robots = RobotFleetConfig.from_dict(robot_config)
         self.non_controlled_robots = [robot for robot in all_robots.robots if robot.name != self.controlled_bot_name]
@@ -134,13 +144,9 @@ class TargetSelector:
     def compute_goal(
         self, controlled: EstimatedObject, guidance: EstimatedObject, opponent: EstimatedObject, field: EstimatedObject
     ) -> Tuple[PoseStamped, bool]:
-        """
-        If the controlled robot is not in line with the guidance bot and opponent, select goal that's behind the
-        opponent pointing towards the guidance bot.
-        Otherwise, if the controlled bot is in position, select goal that's just in front the guidance bot
-        (push the opponent to the guidance bot).
-        """
-        return PoseStamped(), False
+        state = MatchState(controlled, guidance, opponent, field)
+        result = self.selection_algorithm.get_target(state)
+        return result.goal, result.ignore_opponent_obstacles
 
     def goal_update(self) -> None:
         with self.obstacle_lock:

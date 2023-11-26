@@ -21,6 +21,14 @@ class Pose2D:
     def zeros(cls) -> Pose2D:
         return cls(0.0, 0.0, 0.0)
 
+    @classmethod
+    def from_mat(cls, mat: np.ndarray) -> Pose2D:
+        return cls(
+            x=mat[0, 2],
+            y=mat[1, 2],
+            theta=np.arctan2(mat[1, 0], mat[0, 0]),
+        )
+
     def to_tuple(self) -> Tuple[float, float, float]:
         return (self.x, self.y, self.theta)
 
@@ -79,6 +87,15 @@ class Pose2D:
         theta = float(np.arctan2(matrix[1, 0], matrix[0, 0]))
         return cls(x=x, y=y, theta=theta)
 
+    def _invert_matrix(self, tfmat: np.ndarray) -> np.ndarray:
+        inv_tfmat = np.eye(3)
+        inv_tfmat[0:2, 0:2] = tfmat[0:2, 0:2].T
+        inv_tfmat[0:2, 2] = -inv_tfmat[0:2, 0:2] @ tfmat[0:2, 2]
+        return inv_tfmat
+
+    def inverse(self) -> Pose2D:
+        return Pose2D.from_mat(self._invert_matrix(self.to_matrix()))
+
     def transform_by(self, other: Pose2D) -> Pose2D:
         """
         Transform this pose by another pose
@@ -90,5 +107,5 @@ class Pose2D:
         """
         Get the pose that transforms from other to self
         """
-        tfmat = np.dot(np.linalg.inv(other.to_matrix()), self.to_matrix())
+        tfmat = np.dot(self._invert_matrix(other.to_matrix()), self.to_matrix())
         return Pose2D.from_matrix(tfmat)
