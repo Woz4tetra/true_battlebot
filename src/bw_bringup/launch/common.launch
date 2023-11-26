@@ -1,6 +1,7 @@
 <launch>
     <arg name="map" default="$(env MAP_NAME)" />
     <arg name="robot" default="$(env ROBOT)" />
+    <arg name="auto_initialize" default="false" />
 
     <include file="$(find bw_object_estimation)/launch/object_estimation.launch" />
     <include file="$(find bw_tags)/launch/tag_visualization.launch" />
@@ -15,6 +16,7 @@
             value="$(find bw_bringup)/config/robot_filter.yaml" />
     </include>
     <include file="$(find bw_object_filter)/launch/object_filter.launch">
+        <arg name="auto_initialize" value="$(arg auto_initialize)" />
         <arg name="robot_filter_config"
             value="$(find bw_bringup)/config/robot_filter.yaml" />
     </include>

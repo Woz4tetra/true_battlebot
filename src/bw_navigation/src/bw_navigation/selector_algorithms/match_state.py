@@ -6,6 +6,7 @@ from geometry_msgs.msg import PoseStamped
 
 @dataclass
 class MatchState:
+    frame_id: str
     controlled_bot: EstimatedObject
     guidance_bot: EstimatedObject
     opponent_bot: EstimatedObject

@@ -15,7 +15,7 @@ class SacrificialSelector(BaseSelector):
         pass
 
     def get_target(self, match_state: MatchState) -> SelectionResult:
-        control_pose = Pose2D.from_msg(match_state.controlled_bot.state.pose.pose)
+        control_pose = Pose2D.from_msg(match_state.guidance_bot.state.pose.pose)
         opponent_pose = Pose2D.from_msg(match_state.opponent_bot.state.pose.pose)
 
         mid_pose = Pose2D(
@@ -25,7 +25,7 @@ class SacrificialSelector(BaseSelector):
         )
 
         midpoint = PoseStamped()
-        midpoint.header = match_state.controlled_bot.header
+        midpoint.header.frame_id = match_state.frame_id
         midpoint.pose = mid_pose.to_msg()
 
         return SelectionResult(

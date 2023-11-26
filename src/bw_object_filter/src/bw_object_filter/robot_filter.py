@@ -47,7 +47,7 @@ class RobotFilter:
 
         self.command_timeout = seconds_to_duration(get_param("~command_timeout", 0.5))
 
-        self.apriltag_base_covariance_scalar = get_param("~apriltag_base_covariance_scalar", 0.001)
+        self.apriltag_base_covariance_scalar = get_param("~apriltag_base_covariance_scalar", 0.00001)
         self.our_base_covariance = get_param("~our_robot_estimate_base_covariance_scalar", 0.001)
         self.their_base_covariance = get_param("~their_robot_estimate_base_covariance_scalar", 0.001)
         self.cmd_vel_base_covariance_scalar = get_param("~cmd_vel_base_covariance_scalar", 0.01)
@@ -56,12 +56,12 @@ class RobotFilter:
         self.motion_speed_threshold = get_param("~motion_speed_threshold", 0.25)
         self.robot_min_radius = get_param("~robot_min_radius", 0.1)
         self.robot_max_radius = get_param("~robot_max_radius", 0.4)
-        self.field_received = not get_param("~activate_on_reset", True)
 
         self.robots = RobotFleetConfig.from_dict(robot_config)
         self.check_unique(self.robots)
 
         self.prev_cmd_time = rospy.Time.now()
+        self.field_received = False
         self.robot_names = {}
         for config in self.robots.robots:
             self.robot_names[config.up_id] = config.name

@@ -144,7 +144,7 @@ class TargetSelector:
     def compute_goal(
         self, controlled: EstimatedObject, guidance: EstimatedObject, opponent: EstimatedObject, field: EstimatedObject
     ) -> Tuple[PoseStamped, bool]:
-        state = MatchState(controlled, guidance, opponent, field)
+        state = MatchState(controlled.header.frame_id, controlled, guidance, opponent, field)
         result = self.selection_algorithm.get_target(state)
         return result.goal, result.ignore_opponent_obstacles
 

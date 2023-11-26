@@ -35,10 +35,10 @@ class FieldFilter:
         self.base_frame = get_param("~base_frame", "camera")
         self.map_frame = get_param("~map_frame", "map")
         self.relative_map_frame = get_param("~relative_map_frame", "map_relative")
-        camera_is_situated_on_start = get_param("~camera_is_situated_on_start", False)
+        auto_initialize = get_param("~auto_initialize", False)
 
-        self.has_manual_query_been_received = camera_is_situated_on_start
-        self.has_manual_query = camera_is_situated_on_start
+        self.has_manual_query_been_received = auto_initialize
+        self.has_manual_query = auto_initialize
         self.current_imu = Imu()
         self.prev_imu = Imu()
         self.current_imu.orientation.w = 1.0
