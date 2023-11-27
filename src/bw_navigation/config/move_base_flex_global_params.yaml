@@ -7,8 +7,14 @@ controllers:
       type: teb_local_planner/TebLocalPlannerROS
 
 recovery_behaviors:
+    - name: "reset_costmap"
+      type: "clear_costmap_recovery/ClearCostmapRecovery"
     - name: "flail_recovery"
       type: "bw_recovery/FlailRecoveryBehavior"
+
+reset_costmap:
+    reset_distance: 5.0
+    layer_names: ["obstacle_layer"]
 
 map_frame: map
 robot_frame: base_link_mini_bot

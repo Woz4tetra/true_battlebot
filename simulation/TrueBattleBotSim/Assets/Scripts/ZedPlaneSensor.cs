@@ -11,7 +11,7 @@ public class ZedPlaneSensor : BaseRectangleSensor {
     [SerializeField] private string plane_request_topic = "plane_request";
     [SerializeField] private string plane_response_topic = "plane_response";
     private VisibleTarget[] prevTargets;
-    Matrix4x4 fieldRotateMatrix = Matrix4x4.TRS(Vector3.zero, Quaternion.Euler(90.0f, 0.0f, 0.0f), Vector3.one);
+    Matrix4x4 fieldRotateMatrix = Matrix4x4.TRS(Vector3.zero, Quaternion.Euler(90.0f, -90.0f, 0.0f), Vector3.one);
 
     override protected void BaseRectangleSensorStart()
     {

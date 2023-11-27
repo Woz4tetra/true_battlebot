@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import copy
 import math
 from typing import Optional, Tuple
 
@@ -45,8 +46,8 @@ class FieldFilter:
         self.prev_imu.orientation.w = 1.0
         self.cage_corner: Optional[CageCorner] = None
         self.field_rotations = {
-            CageCorner.DOOR_SIDE: Transform3D.from_position_and_rpy(Vector3(), RPY((0, 0, math.pi / 2))),
-            CageCorner.FAR_SIDE: Transform3D.from_position_and_rpy(Vector3(), RPY((0, 0, -math.pi / 2))),
+            CageCorner.DOOR_SIDE: Transform3D.from_position_and_rpy(Vector3(), RPY((0, 0, -math.pi / 2))),
+            CageCorner.FAR_SIDE: Transform3D.from_position_and_rpy(Vector3(), RPY((0, 0, math.pi / 2))),
         }
         self.estimated_field = EstimatedObject()
 
@@ -147,6 +148,7 @@ class FieldFilter:
         min_rect = find_minimum_rectangle(flattened_points2d)
         extents = get_rectangle_extents(min_rect)
         angle = get_rectangle_angle(min_rect) % np.pi
+        rospy.loginfo(f"Field angle: {angle}. Extents: {extents}")
         centroid = np.mean(min_rect, axis=0)
         field_centered_plane = Transform3D.from_position_and_rpy(
             Vector3(centroid[0], centroid[1], 0), RPY((0, 0, angle))
@@ -213,15 +215,7 @@ class FieldFilter:
 
     def publish_field_tf(self, estimated_field: EstimatedObject) -> tf2_ros.TransformStamped:
         field_pose = estimated_field.state.pose.pose
-        transform = Transform3D.from_position_and_quaternion(
-            Vector3(
-                x=field_pose.position.x,
-                y=field_pose.position.y,
-                z=field_pose.position.z,
-            ),
-            field_pose.orientation,
-        )
-        transform = transform.inverse()
+        transform = Transform3D.from_pose_msg(field_pose).inverse()
 
         field_tf = tf2_ros.TransformStamped()  # type: ignore
         field_tf.header.stamp = estimated_field.header.stamp
@@ -245,11 +239,12 @@ class FieldFilter:
         self.tf_broadcaster.sendTransform([field_tf, aligned_tf])
 
     def publish_field_markers(self, estimated_field: EstimatedObject) -> None:
-        self.estimated_field_marker_pub.publish(
-            MarkerArray(
-                markers=[self.estimated_object_to_marker(estimated_field, ColorRGBA(0, 1, 0.5, 0.25), 0, Marker.CUBE)]
-            )
-        )
+        markers = [
+            self.estimated_object_to_plane_marker(estimated_field, ColorRGBA(0, 1, 0.5, 0.25), 0),
+            self.estimated_object_to_text_marker(estimated_field, "door side", ColorRGBA(1, 1, 1, 1), 1, (0, 1)),
+            self.estimated_object_to_text_marker(estimated_field, "far side", ColorRGBA(1, 1, 1, 1), 2, (0, -1)),
+        ]
+        self.estimated_field_marker_pub.publish(MarkerArray(markers=markers))
 
     def publish_debug_markers(self, flattened_points: np.ndarray, min_rect: np.ndarray, centroid: np.ndarray) -> None:
         header = Header(frame_id=self.relative_map_frame, stamp=rospy.Time.now())
@@ -311,12 +306,12 @@ class FieldFilter:
         marker.color = color
         return marker
 
-    def estimated_object_to_marker(
-        self, estimated_object: EstimatedObject, color: ColorRGBA, id: int = 0, type: int = Marker.ARROW
+    def estimated_object_to_plane_marker(
+        self, estimated_object: EstimatedObject, color: ColorRGBA, id: int = 0
     ) -> Marker:
         marker = Marker()
         marker.header = estimated_object.header
-        marker.type = type
+        marker.type = Marker.CUBE
         marker.ns = estimated_object.label
         marker.id = id
         marker.action = Marker.ADD
@@ -325,6 +320,29 @@ class FieldFilter:
         marker.scale.x = estimated_object.size.x if estimated_object.size.x > 0 else 0.01
         marker.scale.y = estimated_object.size.y if estimated_object.size.y > 0 else 0.01
         marker.scale.z = estimated_object.size.z if estimated_object.size.z > 0 else 0.01
+        marker.color = color
+        return marker
+
+    def estimated_object_to_text_marker(
+        self,
+        estimated_object: EstimatedObject,
+        text: str,
+        color: ColorRGBA,
+        id: int = 0,
+        relative: Tuple[float, float] = (1.0, 0.0),
+        text_size: float = 0.1,
+    ) -> Marker:
+        marker = Marker()
+        marker.header = Header(frame_id=self.map_frame, stamp=rospy.Time.now())
+        marker.type = Marker.TEXT_VIEW_FACING
+        marker.text = text
+        marker.ns = estimated_object.label
+        marker.id = id
+        marker.action = Marker.ADD
+        marker.frame_locked = False
+        marker.pose.position.x = relative[0] * estimated_object.size.x * 0.5
+        marker.pose.position.y = relative[1] * estimated_object.size.y * 0.5
+        marker.scale.z = text_size
         marker.color = color
         return marker
 

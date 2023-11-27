@@ -1,5 +1,6 @@
 from bw_tools.typing import get_param
 
+from bw_behaviors.managers.cmd_vel_manager import CmdVelManager
 from bw_behaviors.managers.corner_manager import CornerManager
 from bw_behaviors.managers.get_path_manager import GetPathManager
 from bw_behaviors.managers.mode_manager import ModeManager
@@ -17,3 +18,4 @@ class Container:
         self.get_path_manager = GetPathManager(self.goal_xy_tolerance)
         self.recommended_goal_manager = RecommendedGoalManager()
         self.recovery_manager = RecoveryManager()
+        self.cmd_vel_manager = CmdVelManager()

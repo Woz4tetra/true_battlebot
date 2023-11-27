@@ -24,15 +24,18 @@ class RecoveryManager:
     def _get_next_behavior(self) -> str:
         return self.available_behaviors.pop(0)
 
-    def send_recovery(self) -> None:
+    def send_recovery(self, recovery_key: str = "") -> None:
         goal = RecoveryGoal()
-        try:
-            goal.behavior = self._get_next_behavior()
-        except IndexError:
-            self._reset_behaviors()
-            rospy.loginfo("No more recovery behaviors available")
-            self.recovery_sent = False
-            return
+        if len(recovery_key) == 0:
+            try:
+                goal.behavior = self._get_next_behavior()
+            except IndexError:
+                self._reset_behaviors()
+                rospy.loginfo("No more recovery behaviors available")
+                self.recovery_sent = False
+                return
+        else:
+            goal.behavior = recovery_key
         rospy.loginfo(f"Sending {goal.behavior} MBF recovery action")
         self.action.send_goal(goal)
         self.recovery_sent = True

@@ -4,7 +4,7 @@ import numpy as np
 from scipy.spatial import ConvexHull
 
 
-def find_minimum_rectangle(points: np.ndarray):
+def find_minimum_rectangle(points: np.ndarray) -> np.ndarray:
     """
     Find the smallest bounding rectangle for a set of points.
     Returns a set of points representing the corners of the bounding box.
@@ -73,12 +73,12 @@ def get_rectangle_angle(rectangle: np.ndarray) -> float:
     Finds the angle of the rectangle with respect to the x-axis
     rectangle is a 4x2 matrix of points
     """
-    root_vertex = np.argmin(rectangle[:, 0])
+    root_vertex = np.argmin(rectangle[:, 1])
     next_vertex = (root_vertex + 1) % len(rectangle)
     prev_vertex = (root_vertex - 1) % len(rectangle)
     # distance is distance to the x axis
-    next_distance = rectangle[next_vertex, 0]
-    prev_distance = rectangle[prev_vertex, 0]
+    next_distance = rectangle[next_vertex, 1]
+    prev_distance = rectangle[prev_vertex, 1]
     if next_distance < prev_distance:
         delta = rectangle[next_vertex] - rectangle[root_vertex]
     else:

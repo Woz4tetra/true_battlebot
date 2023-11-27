@@ -20,6 +20,7 @@ def make_supplied_goal_behavior(name_prefix: str, select_goal_behavior: Behaviou
                     f"{name_prefix}_exe_sequence",
                     memory=True,
                     children=[
+                        RecoveryBehavior(container, "reset_costmap"),
                         GetPath(container, clear_goal_after_send=False),
                         Selector(
                             f"{name_prefix}_exe_selector",
