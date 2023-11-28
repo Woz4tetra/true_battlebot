@@ -1,0 +1,77 @@
+# AprilTag 3 code parameters
+# Find descriptions in apriltag/include/apriltag.h:struct apriltag_detector
+#                      apriltag/include/apriltag.h:struct apriltag_family
+tag_family:        'tag36h11'  # options: tagStandard52h13, tagStandard41h12, tag36h11, tag25h9, tag16h5, tagCustom48h12, tagCircle21h7, tagCircle49h12
+tag_threads:       4          # default: 2
+tag_decimate:      1.0        # default: 1.0
+tag_blur:          2.0        # default: 0.0. Gaussian blur kernel = (int)(4 * tag_blur), round up to nearest odd number
+tag_refine_edges:  1          # default: 1 (all values greater than 0 have the same effect)
+tag_debug:         0          # default: 0 (doesn't work as expected? use publish_tag_detections_image)
+max_hamming_dist:  2          # default: 2 (Tunable parameter with 2 being a good choice - values >=3 consume large amounts of memory. Choose the largest value possible.)
+remove_duplicates: true
+# Other parameters
+publish_tf:        false      # default: false
+transport_hint:    "raw"      # default: raw, see http://wiki.ros.org/image_transport#Known_Transport_Packages for options
+publish_tag_detections_image: true
+
+
+# # Definitions of tags to detect
+#
+# ## General remarks
+#
+# - All length in meters
+# - Ellipsis (...) signifies that the previous element can be repeated multiple times.
+#
+# ## Standalone tag definitions
+# ### Remarks
+#
+# - name is optional
+#
+# ### Syntax
+#
+# standalone_tags:
+#   [
+#     {id: ID, size: SIZE, name: NAME},
+#     ...
+#   ]
+standalone_tags:
+  [
+      {id: 41, size: 0.08, name: mini_bot_up},
+      {id: 76, size: 0.08, name: mini_bot_down},
+      {id: 42, size: 0.08, name: main_bot_up},
+      {id: 99, size: 0.08, name: main_bot_down},
+  ]
+# ## Tag bundle definitions
+# ### Remarks
+#
+# - name is optional
+# - x, y, z have default values of 0 thus they are optional
+# - qw has default value of 1 and qx, qy, qz have default values of 0 thus they are optional
+#
+# ### Syntax
+#
+# tag_bundles:
+#   [
+#     {
+#       name: 'CUSTOM_BUNDLE_NAME',
+#       layout:
+#         [
+#           {id: ID, size: SIZE, x: X_POS, y: Y_POS, z: Z_POS, qw: QUAT_W_VAL, qx: QUAT_X_VAL, qy: QUAT_Y_VAL, qz: QUAT_Z_VAL},
+#           ...
+#         ]
+#     },
+#     ...
+#   ]
+tag_bundles:
+  [
+#     {
+#       name: 'target',
+#       layout:
+#         [
+#           {id: 242, size: 0.04, x: -0.0275, y:  0.02875, z: 0.0, qw: 1.0, qx: 0.0, qy: 0.0, qz: 0.0},
+#           {id: 113, size: 0.04, x:  0.0275, y:  0.02875, z: 0.0, qw: 1.0, qx: 0.0, qy: 0.0, qz: 0.0},
+#           {id: 137, size: 0.04, x: -0.0275, y: -0.02875, z: 0.0, qw: 1.0, qx: 0.0, qy: 0.0, qz: 0.0},
+#           {id: 440, size: 0.04, x:  0.0275, y: -0.02875, z: 0.0, qw: 1.0, qx: 0.0, qy: 0.0, qz: 0.0},
+#         ]
+#     }
+  ]

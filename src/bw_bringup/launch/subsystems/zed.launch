@@ -2,6 +2,7 @@
 <launch>
     <arg name="camera_name" default="camera_0" />
     <arg name="config_path" default="$(find bw_bringup)/config/zed2i.yaml" />
+    <arg name="tag_config_path" default="$(find bw_bringup)/config/tags.yaml" />
     <arg name="svo_file" default="" />
     <!-- ROS URDF description of the ZED -->
     <group>
@@ -33,5 +34,13 @@
         <param name="svo_file" value="$(arg svo_file)" />
         <param name="mapping/clicked_point_topic" value="plane_request" />
         <remap from="$(arg camera_name)/plane" to="$(arg camera_name)/plane_response" />
+    </node>
+
+    <node pkg="apriltag_ros" type="apriltag_ros_continuous_node" name="$(arg camera_name)_apriltag"
+        required="false" output="screen">
+        <rosparam command="load" file="$(arg tag_config_path)" ns="" />
+
+        <remap from="camera_info" to="$(arg camera_name)/rgb/camera_info" />
+        <remap from="image_rect" to="$(arg camera_name)/rgb/image_rect_color" />
     </node>
 </launch>

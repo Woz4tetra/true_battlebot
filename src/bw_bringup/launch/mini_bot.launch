@@ -1,8 +1,14 @@
 <launch>
     <arg name="map" default="$(env MAP_NAME)" />
     <arg name="robot" default="$(env ROBOT)" />
+    <arg name="model"
+        default="$(find bw_data)/data/models/nhrl_dataset_mask_rcnn_R_50_FPN_3x_2023-11-20" />
 
     <include file="$(find bw_bringup)/launch/common.launch" />
+    <include file="$(find bw_segmentation)/launch/segmentation.launch">
+        <arg name="model" value="$(arg model).torchscript" />
+        <arg name="metadata" value="$(arg model)_metadata.json" />
+    </include>
     <include file="$(find bw_bringup)/launch/subsystems/zed.launch" />
     <include file="$(find bw_teleop)/launch/bw_teleop.launch">
         <arg name="robot_filter_config"

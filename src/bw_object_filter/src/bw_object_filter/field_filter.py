@@ -147,7 +147,7 @@ class FieldFilter:
         flattened_points2d = flattened_points[:, :2]
         min_rect = find_minimum_rectangle(flattened_points2d)
         extents = get_rectangle_extents(min_rect)
-        angle = get_rectangle_angle(min_rect) % np.pi
+        angle = get_rectangle_angle(min_rect)
         rospy.loginfo(f"Field angle: {angle}. Extents: {extents}")
         centroid = np.mean(min_rect, axis=0)
         field_centered_plane = Transform3D.from_position_and_rpy(
