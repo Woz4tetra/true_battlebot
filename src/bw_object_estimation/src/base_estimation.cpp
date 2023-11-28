@@ -9,13 +9,12 @@ BaseEstimation::BaseEstimation(ros::NodeHandle* nodehandle) :
     if (_include_labels.size() == 0) {
         ROS_INFO("No labels specified, including all labels");
     }
+    _depth_msg = sensor_msgs::ImagePtr(new sensor_msgs::Image());
 
     _depth_info_sub = nh.subscribe<sensor_msgs::CameraInfo>("depth/camera_info", 1, &BaseEstimation::camera_info_callback, this);
 
-    _depth_sub.subscribe(nh, "depth/image_raw", _queue_size);
-    _segmentation_sub.subscribe(nh, "segmentation", _queue_size);
-
-    _sync.reset(new Sync(ExactSyncPolicy(_queue_size), _depth_sub, _segmentation_sub));
+    _depth_sub = nh.subscribe<sensor_msgs::Image>("depth/image_raw", 1, &BaseEstimation::depth_callback, this);
+    _segmentation_sub = nh.subscribe<bw_interfaces::SegmentationInstanceArray>("segmentation", 1, &BaseEstimation::segmentation_callback, this);
 }
 
 BaseEstimation::~BaseEstimation()
@@ -27,6 +26,18 @@ void BaseEstimation::camera_info_callback(const sensor_msgs::CameraInfoConstPtr&
     _camera_model.fromCameraInfo(camera_info);
     _depth_info_sub.shutdown();
     ROS_INFO("Camera model loaded");
+}
+
+void BaseEstimation::depth_callback(const sensor_msgs::ImageConstPtr& depth_image)
+{
+    *_depth_msg = *depth_image;
+}
+
+void BaseEstimation::segmentation_callback(const bw_interfaces::SegmentationInstanceArrayConstPtr& segmentation)
+{
+    if (_depth_msg->header.frame_id.length() != 0) {
+        synced_callback(_depth_msg, segmentation);
+    }
 }
 
 bool BaseEstimation::get_depth_image(cv::Mat& depth_image, const sensor_msgs::ImageConstPtr& depth_msg)

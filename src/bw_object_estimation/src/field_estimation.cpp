@@ -9,8 +9,6 @@ FieldEstimation::FieldEstimation(ros::NodeHandle* nodehandle) :
     int ransac_max_iterations;
     ros::param::param<int>("~ransac_max_iterations", ransac_max_iterations, 100);
 
-    _sync->registerCallback(boost::bind(&FieldEstimation::synced_callback, this, _1, _2));
-
     _estimator = new GRANSAC::RANSAC<PlaneModel, 3>();
     _estimator->Initialize(ransac_threshold, ransac_max_iterations);
 

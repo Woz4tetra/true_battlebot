@@ -12,7 +12,7 @@ from bw_tools.structs.cage_corner import CageCorner
 from bw_tools.structs.rpy import RPY
 from bw_tools.structs.transform3d import Transform3D
 from bw_tools.transforms import lookup_pose_in_frame
-from bw_tools.typing import get_param
+from bw_tools.typing import get_param, seconds_to_duration
 from geometry_msgs.msg import Point, PointStamped, PoseStamped, Quaternion, Vector3
 from image_geometry import PinholeCameraModel
 from sensor_msgs.msg import CameraInfo, Imu
@@ -123,10 +123,10 @@ class FieldFilter:
             return
 
         plane_pose = PoseStamped(header=plane.header)
-        plane_pose.pose.position = plane.pose.translation
+        plane_pose.pose.position = Point(plane.pose.translation.x, plane.pose.translation.y, plane.pose.translation.z)
         plane_pose.pose.orientation = plane.pose.rotation
         lens_plane_pose = lookup_pose_in_frame(
-            self.tf_buffer, plane_pose, self.segmentation.header.frame_id, timeout=rospy.Duration(30.0)
+            self.tf_buffer, plane_pose, self.segmentation.header.frame_id, timeout=seconds_to_duration(30.0)
         )
         if lens_plane_pose is None:
             return
@@ -156,7 +156,7 @@ class FieldFilter:
 
         lens_field_pose = PoseStamped(header=self.segmentation.header, pose=field_centered_plane.to_pose_msg())
         base_field_pose = lookup_pose_in_frame(
-            self.tf_buffer, lens_field_pose, self.base_frame, timeout=rospy.Duration(30.0)
+            self.tf_buffer, lens_field_pose, self.base_frame, timeout=seconds_to_duration(30.0)
         )
         if base_field_pose is None:
             return

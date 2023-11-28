@@ -4,9 +4,6 @@
 
 #include <opencv2/core.hpp>
 
-#include <message_filters/subscriber.h>
-#include <message_filters/time_synchronizer.h>
-
 #include <image_geometry/pinhole_camera_model.h>
 
 #include <cv_bridge/cv_bridge.h>
@@ -21,20 +18,26 @@ protected:
     int _queue_size;
     std::vector<std::string> _include_labels;
 
-    typedef message_filters::sync_policies::ExactTime<sensor_msgs::Image, bw_interfaces::SegmentationInstanceArray> ExactSyncPolicy;
-    typedef message_filters::Synchronizer<ExactSyncPolicy> Sync;
-    boost::shared_ptr<Sync> _sync;
-
     ros::Subscriber _depth_info_sub;
-    message_filters::Subscriber<sensor_msgs::Image> _depth_sub;
-    message_filters::Subscriber<bw_interfaces::SegmentationInstanceArray> _segmentation_sub;
+    ros::Subscriber _depth_sub;
+    ros::Subscriber _segmentation_sub;
 
     image_geometry::PinholeCameraModel _camera_model;
+    sensor_msgs::CameraInfoPtr _info_msg;
+    sensor_msgs::ImagePtr _depth_msg;
 
     void camera_info_callback(const sensor_msgs::CameraInfoConstPtr& camera_info);
+    void depth_callback(const sensor_msgs::ImageConstPtr& depth_image);
+    void segmentation_callback(const bw_interfaces::SegmentationInstanceArrayConstPtr& segmentation);
     bool get_depth_image(cv::Mat& depth_image, const sensor_msgs::ImageConstPtr& depth_msg);
     bool is_label_included(std::string label);
     cv::Point3d get_ray(cv::Point2d centroid, cv::Mat depth_image);
+
+protected:
+    virtual void synced_callback(
+        const sensor_msgs::ImageConstPtr& depth_image,
+        const bw_interfaces::SegmentationInstanceArrayConstPtr& segmentation) {  }
+
 public:
     BaseEstimation(ros::NodeHandle* nodehandle);
     ~BaseEstimation();

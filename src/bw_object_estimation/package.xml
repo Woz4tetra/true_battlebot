@@ -52,7 +52,6 @@
   <depend>cv_bridge</depend>
   <depend>image_geometry</depend>
   <depend>image_transport</depend>
-  <depend>message_filters</depend>
   <depend>roscpp</depend>
   <depend>sensor_msgs</depend>
   <depend>std_msgs</depend>

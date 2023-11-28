@@ -4,8 +4,6 @@
 RecommendedPlanePoint::RecommendedPlanePoint(ros::NodeHandle* nodehandle) :
     BaseEstimation(nodehandle)
 {
-    _sync->registerCallback(boost::bind(&RecommendedPlanePoint::synced_callback, this, _1, _2));
-
     _recommended_point_pub = nh.advertise<geometry_msgs::PointStamped>("estimation/recommended_field_point", 1);
     _recommended_marker_pub = nh.advertise<visualization_msgs::MarkerArray>("estimation/recommended_point_marker", 1);
     _field_marker_pub = nh.advertise<visualization_msgs::MarkerArray>("estimation/field_marker", 1);

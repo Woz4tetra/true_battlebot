@@ -38,12 +38,14 @@ private:
     std_msgs::ColorRGBA _field_color;
 
     bool find_recommended_point(geometry_msgs::PointStamped& point_msg, cv::Mat depth_image, cv::Mat mask);
+    geometry_msgs::Point convert_point_to_msg(const cv::Point2i point, float depth);
+    std::vector<std::vector<geometry_msgs::Point>> project_contour_to_3d(cv::Mat depth_image, const bw_interfaces::SegmentationInstanceArrayConstPtr& segmentation);
 
+protected:
     void synced_callback(
         const sensor_msgs::ImageConstPtr& depth_image,
         const bw_interfaces::SegmentationInstanceArrayConstPtr& segmentation);
-    geometry_msgs::Point convert_point_to_msg(const cv::Point2i point, float depth);
-    std::vector<std::vector<geometry_msgs::Point>> project_contour_to_3d(cv::Mat depth_image, const bw_interfaces::SegmentationInstanceArrayConstPtr& segmentation);
+
 public:
     RecommendedPlanePoint(ros::NodeHandle* nodehandle);
     ~RecommendedPlanePoint();

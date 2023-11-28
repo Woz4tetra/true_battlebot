@@ -11,7 +11,6 @@ find_package(catkin REQUIRED COMPONENTS
   cv_bridge
   image_geometry
   image_transport
-  message_filters
   roscpp
   sensor_msgs
   std_msgs
@@ -129,7 +128,6 @@ catkin_package(
   cv_bridge
   image_geometry
   image_transport
-  message_filters
   roscpp
   sensor_msgs
   std_msgs

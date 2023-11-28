@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import json
 import time
-from typing import Callable, Dict, List, Tuple
+from typing import Callable, Dict, List, Optional, Tuple
 
 import cv2
 import numpy as np
@@ -28,10 +28,14 @@ class DetectronNode:
         self.threshold = get_param("~threshold", 0.8)
         self.nms_threshold = get_param("~nms_threshold", 0.4)
         self.mask_conversion_threshold = get_param("~mask_conversion_threshold", 0.5)
+        self.decimate = get_param("~decimate", 1.0)
 
         with open(self.metadata_path, "r") as file:
             self.metadata = ModelMetadata.from_dict(json.load(file))
         assert len(self.metadata.labels) > 0
+
+        self.original_dims: Optional[Tuple[int, int]] = None
+        self.resize_dims: Optional[Tuple[int, int]] = None
 
         self.device = torch.device("cuda")
         self.model = self.load_model(self.model_path)
@@ -52,16 +56,24 @@ class DetectronNode:
 
     def warmup(self) -> None:
         rospy.loginfo("Warming up model")
-        image = np.zeros((1920, 1080, 3), dtype=np.uint8)
+        image = np.random.random_integers(0, 255, size=(1920, 1080, 3)).astype(np.uint8)
         t0 = time.perf_counter()
-        for _ in range(2):
+        for _ in range(3):
             self.predict(Header(), image, False)
         t1 = time.perf_counter()
         rospy.loginfo(f"Model warmed up in {t1 - t0} seconds")
 
+    def update_resize(self, shape: Tuple[int, ...]) -> None:
+        if self.resize_dims is None:
+            self.resize_dims = (int(shape[1] // self.decimate), int(shape[0] // self.decimate))
+        if self.original_dims is None:
+            self.original_dims = (shape[1], shape[0])
+
     def preprocess(self, images: List[np.ndarray], device: torch.device) -> List[Dict[str, Tensor]]:
         inputs = []
         for image in images:
+            if self.resize_dims is not None:
+                image = cv2.resize(image, self.resize_dims, interpolation=cv2.INTER_NEAREST)
             image_tensor = torch.from_numpy(image).to(device).permute(2, 0, 1).float()
             inputs.append({"image": image_tensor})
         return inputs
@@ -79,7 +91,7 @@ class DetectronNode:
         t3 = time.perf_counter()
         rospy.logdebug(f"Pre-process took: {t1 - t0}")
         rospy.logdebug(f"Inference took: {t2 - t1}")
-        rospy.logdebug(f"Post-process took: {t3 - t2}")
+        rospy.logdebug(f"Post-process took: {t3 - t2}. Debug enabled: {debug}")
         return results
 
     def postprocess(
@@ -89,6 +101,8 @@ class DetectronNode:
         debug_images = []
         for output, image in zip(outputs, images):
             height, width = image.shape[:2]
+            if self.original_dims is not None:
+                image = cv2.resize(image, self.original_dims, interpolation=cv2.INTER_NEAREST)
 
             msg = SegmentationInstanceArray()
             msg.header = header
@@ -117,6 +131,8 @@ class DetectronNode:
             ):
                 contours = []
                 for segment in mask.polygons:
+                    if self.decimate != 1.0:
+                        segment *= self.decimate
                     contour = np.array(segment.reshape(-1, 2), dtype=np.int32)
                     contours.append(contour)
                 score = float(score_tensor)
@@ -139,7 +155,8 @@ class DetectronNode:
                 )
                 msg.instances.append(segmentation_instance)  # type: ignore
                 if debug_image is not None:
-                    bbox: BoundingBox = tuple(map(int, bbox_tensor))  # type: ignore
+                    bbox_array = bbox_tensor * self.decimate if self.decimate != 1.0 else bbox_tensor
+                    bbox: BoundingBox = tuple(map(int, bbox_array))  # type: ignore
                     self.draw_segmentation(debug_image, bbox, class_idx, contours, score)
                     debug_images.append(debug_image)
             segmentations.append(msg)
@@ -183,6 +200,7 @@ class DetectronNode:
             rospy.logerr(e)
             return None
         debug = self.debug_image_pub.get_num_connections() > 0
+        self.update_resize(image.shape)
         segmentations, debug_images = self.predict(msg.header, image, debug)
         for segmentation in segmentations:
             self.segmentation_pub.publish(segmentation)
@@ -199,6 +217,6 @@ class DetectronNode:
 
 
 if __name__ == "__main__":
-    rospy.init_node("detectron_node")
+    rospy.init_node("detectron_node", log_level=rospy.DEBUG)
     node = DetectronNode()
     node.run()

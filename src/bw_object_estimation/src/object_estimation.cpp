@@ -2,8 +2,6 @@
 
 ObjectEstimation::ObjectEstimation(ros::NodeHandle* nodehandle) : BaseEstimation(nodehandle)
 {
-    _sync->registerCallback(boost::bind(&ObjectEstimation::synced_callback, this, _1, _2));
-
     _robot_pub = nh.advertise<bw_interfaces::EstimatedObjectArray>("estimation/robots", _queue_size);
     _robot_pose_pub = nh.advertise<geometry_msgs::PoseArray>("estimation/robot_poses", _queue_size);
 
@@ -14,8 +12,9 @@ ObjectEstimation::~ObjectEstimation()
 {
 }
 
-void ObjectEstimation::synced_callback(const sensor_msgs::ImageConstPtr& depth_image,
-                                       const bw_interfaces::SegmentationInstanceArrayConstPtr& segmentation)
+void ObjectEstimation::synced_callback(
+    const sensor_msgs::ImageConstPtr& depth_image,
+    const bw_interfaces::SegmentationInstanceArrayConstPtr& segmentation)
 {
     cv::Mat depth_cv_image;
     if (!get_depth_image(depth_cv_image, depth_image))

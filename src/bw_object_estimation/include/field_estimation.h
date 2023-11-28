@@ -39,6 +39,7 @@ private:
 
     bool plane_fitting(const std::vector<Vector3VP> &points_input, double* center, double* normal);
 
+protected:
     void synced_callback(
         const sensor_msgs::ImageConstPtr& depth_image,
         const bw_interfaces::SegmentationInstanceArrayConstPtr& segmentation);
