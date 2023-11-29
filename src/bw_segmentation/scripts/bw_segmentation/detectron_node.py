@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import json
 import time
+from queue import Queue
 from typing import Callable, Dict, List, Optional, Tuple
 
 import cv2
@@ -41,8 +42,10 @@ class DetectronNode:
         self.model = self.load_model(self.model_path)
         self.warmup()
 
+        self.process_queue = Queue(maxsize=1)
+
         self.bridge = CvBridge()
-        self.image_sub = rospy.Subscriber("image", Image, self.image_callback, queue_size=1)
+        self.image_sub = rospy.Subscriber("image", Image, self.image_callback, queue_size=1, buff_size=2 << 31)
         self.segmentation_pub = rospy.Publisher("segmentation", SegmentationInstanceArray, queue_size=10)
         self.debug_image_pub = rospy.Publisher("debug_image", Image, queue_size=1)
 
@@ -194,6 +197,12 @@ class DetectronNode:
         return contour_msgs
 
     def image_callback(self, msg: Image) -> None:
+        if self.process_queue.full():
+            return
+        self.process_queue.put(msg)
+
+    def process_image(self, msg: Image) -> None:
+        rospy.logdebug(f"Image delay is: {(rospy.Time.now() - msg.header.stamp).to_sec()}")
         try:
             image = self.bridge.imgmsg_to_cv2(msg, "bgr8")
         except CvBridgeError as e:
@@ -211,9 +220,14 @@ class DetectronNode:
                 self.debug_image_pub.publish(debug_msg)
             except CvBridgeError as e:
                 rospy.logerr(e)
+        rospy.logdebug(f"Callback delay is: {(rospy.Time.now() - msg.header.stamp).to_sec()}")
 
     def run(self) -> None:
-        rospy.spin()
+        while not rospy.is_shutdown():
+            if self.process_queue.empty():
+                rospy.sleep(0.01)
+                continue
+            self.process_image(self.process_queue.get())
 
 
 if __name__ == "__main__":
