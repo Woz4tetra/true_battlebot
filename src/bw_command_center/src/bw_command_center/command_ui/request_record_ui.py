@@ -36,12 +36,15 @@ class RequestRecordUI(UiBase):
     def __init__(self, window) -> None:
         self.window = window
 
-        cameras = get_param("cameras", ["camera_0"])
+        cameras = get_param("~cameras", ["camera_0"])
+        exclude_regex = get_param("~exclude_regex", "")
 
         self.button_text = tk.StringVar()
         self.button_state = RecordButtonState()
         self.svo_service_managers = [SvoServiceManager(camera, "/media/storage/svo") for camera in cameras]
-        self.bag_manager = RecordBagManager("/media/storage/bags", self.start_callback, self.stop_callback)
+        self.bag_manager = RecordBagManager(
+            "/media/storage/bags", self.start_callback, self.stop_callback, exclude_regex=exclude_regex
+        )
 
     def pack(self) -> None:
         left_frame = tk.Frame(master=self.window)

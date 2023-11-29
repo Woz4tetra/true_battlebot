@@ -1,3 +1,8 @@
 <launch>
-    <node pkg="bw_command_center" type="command_ui_node.py" name="command_center" output="screen" />
+    <node pkg="bw_command_center" type="command_ui_node.py" name="command_center" output="screen">
+        <rosparam param="cameras" subst_value="True">[camera_0]</rosparam>
+        <param name="exclude_regex"
+            value="\/camera_.*\/.*.*image.*|\/camera_.*\/point_cloud.*|\/camera_.*\/depth.*|\/tag_detections_image.*|\/rosout.*" />
+        <param name="icon_path" value="$(find bw_command_center)/src/images/bwbots.png" />
+    </node>
 </launch>

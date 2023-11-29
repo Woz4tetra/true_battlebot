@@ -15,6 +15,7 @@ class RecordBagManager:
         start_callback: Callable[[str], None],
         stop_callback: Callable[[str], None],
         timeout: float = 15.0,
+        exclude_regex: str = "",
     ) -> None:
         self.start_callback = start_callback
         self.stop_callback = stop_callback
@@ -23,13 +24,7 @@ class RecordBagManager:
         self.base_record_node_name = "record_bag"
         self.record_node_name = ""
         self.recording_instance = 0
-        self.exclude_regex = (
-            r"\/camera_.*\/.*.*image.*|"
-            r"\/camera_.*\/point_cloud.*|"
-            r"\/camera_.*\/depth.*|"
-            r"\/tag_detections_image.*|"
-            r"\/rosout.*"
-        )
+        self.exclude_regex = exclude_regex
         self.process = None
         self.path = ""
         self.bag_started_sub = rospy.Subscriber(
