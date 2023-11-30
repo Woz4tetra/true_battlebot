@@ -268,12 +268,12 @@ class FieldFilter:
         closed: bool = True,
     ) -> Marker:
         marker = Marker()
-        marker.header = header
+        marker.header = Header(frame_id=header.frame_id, stamp=rospy.Time.now())
         marker.type = Marker.LINE_STRIP
         marker.ns = "polygon"
         marker.id = id
         marker.action = Marker.ADD
-        marker.frame_locked = False
+        marker.frame_locked = True
         marker.scale.x = line_width
         marker.color = color
         if points.shape[1] == 3:
@@ -294,7 +294,7 @@ class FieldFilter:
         type: int = Marker.SPHERE,
     ) -> Marker:
         marker = Marker()
-        marker.header = header
+        marker.header = Header(frame_id=header.frame_id, stamp=rospy.Time.now())
         marker.type = type
         marker.ns = "polygon"
         marker.id = id
@@ -310,7 +310,7 @@ class FieldFilter:
         self, estimated_object: EstimatedObject, color: ColorRGBA, id: int = 0
     ) -> Marker:
         marker = Marker()
-        marker.header = estimated_object.header
+        marker.header = Header(frame_id=estimated_object.header.frame_id, stamp=rospy.Time.now())
         marker.type = Marker.CUBE
         marker.ns = estimated_object.label
         marker.id = id

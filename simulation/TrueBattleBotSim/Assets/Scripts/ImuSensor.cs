@@ -15,7 +15,7 @@ class ImuSensor : MonoBehaviour
     private double _prevPublishTime;
     private uint messageCount;
 
-    private ROSConnection _ros;
+    private ROSConnection ros;
     private Quaternion startOrientation;
     private Rigidbody sensorBody;
 
@@ -24,8 +24,8 @@ class ImuSensor : MonoBehaviour
         sensorBody = GetComponent<Rigidbody>();
         imuMsg = new ImuMsg();
 
-        _ros = ROSConnection.GetOrCreateInstance();
-        _ros.RegisterPublisher<ImuMsg>(topic);
+        ros = ROSConnection.GetOrCreateInstance();
+        ros.RegisterPublisher<ImuMsg>(topic);
         _prevPublishTime = Time.realtimeSinceStartup;
 
         imuMsg.header.frame_id = FrameId;
@@ -54,7 +54,7 @@ class ImuSensor : MonoBehaviour
         double now = Time.realtimeSinceStartup;
         if (now - _prevPublishTime > publishDelay)
         {
-            _ros.Publish(topic, imuMsg);
+            ros.Publish(topic, imuMsg);
             _prevPublishTime = now;
         }
 

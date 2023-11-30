@@ -5,9 +5,9 @@
         <node pkg="nodelet" type="nodelet" name="synthetic_cloudify" output="screen"
             args="load depth_image_proc/point_cloud_xyzrgb synthetic_relay_manager --no-bond">
             <remap from="depth_registered/image_rect" to="depth/depth_registered" />
-            <remap from="rgb/image_rect_color" to="image/image_raw" />
-            <remap from="rgb/camera_info" to="image/camera_info" />
-            <remap from="depth_registered/points" to="points" />
+            <remap from="rgb/image_rect_color" to="rgb/image_rect_color" />
+            <remap from="rgb/camera_info" to="rgb/camera_info" />
+            <remap from="depth_registered/points" to="point_cloud/cloud_registered" />
         </node>
     </group>
 </launch>

@@ -112,8 +112,6 @@ bool ObjectEstimation::find_object(bw_interfaces::EstimatedObject& robot_msg, cv
     robot_msg.size.y = abs(2 * (edge.y - center.y));
     robot_msg.size.z = abs(2 * (edge.z - center.z));
 
-    robot_msg.state.pose.pose.position.z += robot_msg.size.z;
-
     return true;
 }
 
