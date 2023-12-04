@@ -92,17 +92,25 @@ def measurement_to_twist(state: np.ndarray, covariance: np.ndarray) -> TwistWith
     twist.covariance = ros_covariance
     return twist
 
+@njit
+def input_modulus(value, min_value, max_value):
+    modulus = max_value - min_value
+
+    # Wrap input if it's above the maximum input
+    num_max = int((value - min_value) / modulus)
+    value -= num_max * modulus
+
+    # Wrap input if it's below the minimum input
+    num_min = int((value - max_value) / modulus)
+    value -= num_min * modulus
+
+    return value
+
 
 @njit
 def normalize_theta(theta):
     # normalize theta to -pi..pi
-    theta = theta % (2 * math.pi)
-    if abs(theta) > math.pi:
-        if theta > 0:
-            return theta - 2 * math.pi
-        else:
-            return theta + 2 * math.pi
-    return theta
+    return input_modulus(theta, -math.pi, math.pi)
 
 
 @njit
@@ -129,20 +137,6 @@ def state_transition_fn(state, dt, friction_factor):
     return next_state
 
 
-@njit
-def input_modulus(value, min_value, max_value):
-    modulus = max_value - min_value
-
-    # Wrap input if it's above the maximum input
-    num_max = int((value - min_value) / modulus)
-    value -= num_max * modulus
-
-    # Wrap input if it's below the minimum input
-    num_min = int((value - max_value) / modulus)
-    value -= num_min * modulus
-
-    return value
-
 
 @njit
 # flake8: noqa: N803 N806
@@ -150,7 +144,7 @@ def jit_update(x, P, H, z, R, angle_wrapped=False):
     y = z - H @ x  # error (residual)
     if angle_wrapped:
         angle_error = y[STATE_t]
-        angle_error = input_modulus(angle_error, -math.pi, math.pi)
+        angle_error = normalize_theta(angle_error)
         y[STATE_t] = angle_error
     PHT = P @ H.T
     S = H @ PHT + R  # project system uncertainty into measurement space
