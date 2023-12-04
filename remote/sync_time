@@ -1,0 +1,21 @@
+#!/bin/bash
+set -e
+BASE_DIR=$(realpath "$(dirname $0)")
+DEVICE=$1
+DESTINATION_NAME=$(${BASE_DIR}/lib/get-ip.sh ${DEVICE})
+REMOTE_KEY=$(${BASE_DIR}/lib/get-key.sh ${DEVICE})
+REMOTE_USER_NAME=$(${BASE_DIR}/lib/get-username.sh ${DEVICE})
+
+if [ -z ${DESTINATION_NAME} ]; then
+    echo "Please set a destination IP or hostname"
+    exit
+fi
+
+if [ -z ${REMOTE_KEY} ]; then
+    echo "Please set an SSH key file"
+    exit
+fi
+
+SSH_COMMAND="ssh -i ${REMOTE_KEY} ${REMOTE_USER_NAME}@${DESTINATION_NAME}"
+
+${SSH_COMMAND} -t "sudo timedatectl set-time \"$(date '+%Y-%m-%d %H:%M:%S')\""

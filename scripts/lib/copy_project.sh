@@ -2,6 +2,7 @@
 
 set -e
 
+echo "Copying project to ${ROS_WS_SRC}/${PROJECT_NAME} from /opt/${ORGANIZATION}/${PROJECT_NAME}"
 sudo chown 1000:1000 "${ROS_WS_ROOT}"
 mkdir -p "${ROS_WS_SRC}"
 rsync -av --delete --exclude-from=/opt/"${ORGANIZATION}"/"${PROJECT_NAME}"/src/copy_exclude.txt /opt/"${ORGANIZATION}"/"${PROJECT_NAME}"/src/ "${ROS_WS_SRC}"/"${PROJECT_NAME}"

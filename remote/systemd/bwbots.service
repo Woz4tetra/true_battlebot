@@ -1,0 +1,14 @@
+[Unit]
+After=basic.target
+Description=bwbots
+
+[Service]
+Type=oneshot
+User=bwbots
+Group=bwbots
+RemainAfterExit=yes
+ExecStart=/home/bwbots/true_battlebot/docker/scripts/run_containers
+ExecStop=/home/bwbots/true_battlebot/docker/scripts/stop_container
+
+[Install]
+WantedBy=multi-user.target

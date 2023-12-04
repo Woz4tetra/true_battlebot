@@ -9,13 +9,13 @@ IMAGE_VERSION=$(${BASE_DIR}/../get_image_tag)
 ORGANIZATION=$(${BASE_DIR}/../get_organization)
 PROJECT_NAME=$(${BASE_DIR}/../get_project_name)
 
-VALUE=`docker volume ls -f name=${PROJECT_NAME}_build`
+VALUE=$(docker volume ls -f name=${PROJECT_NAME}_build)
 if ! echo ${VALUE} | grep -q "${PROJECT_NAME}_build"; then
     echo "Creating volume"
     docker volume create ${PROJECT_NAME}_build
 fi
 
-docker run -it \
+docker run \
     --user ${ORGANIZATION} \
     --name build_${PROJECT_NAME} \
     --restart="no" \
