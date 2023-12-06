@@ -9,7 +9,8 @@
         <arg name="port" value="8765" />
         <arg name="asset_uri_allowlist" value="['package://(.*).(dae|stl|urdf|xacro)']" />
     </include>
-    <include file="$(find bw_command_center)/launch/command_center.launch" />
+    <include file="$(find bw_bringup)/launch/subsystems/rosbridge.launch" />
+    <include file="$(find bw_command_center)/launch/webapp_relay.launch" />
     <include file="$(find bw_behaviors)/launch/bw_behaviors.launch" />
     <include file="$(find bw_navigation)/launch/move_base_flex.launch">
         <arg name="robot_filter_config"

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>BWBots Command Center</title>
+    </head>
+
+    <body>
+        <script src="scripts/roslib.min.js"></script>
+        <script src="scripts/eventemitter2.min.js"></script>
+        <script src="scripts/keyboardteleop.min.js"></script>
+        <script src="scripts/webui.js"></script>
+
+        <div class="container">
+            <h1>BWBots Command Center</h1>
+            <p>Push some robots around!</p>
+        </div>
+
+        <!-- SPEED -->
+        <div class="row">
+            <div class="col-md-4"></div>
+            <div class="col-md-4">
+                <label for="robot-speed">
+                    <strong>Robot speed</strong>
+                </label>
+                <input
+                    type="range"
+                    min="15"
+                    max="80"
+                    class="custom-range"
+                    id="robot-speed"
+                />
+            </div>
+            <div class="col-md-4"></div>
+        </div>
+
+        <!-- INFO -->
+        <div class="row my-4">
+            <div class="col-md-2"></div>
+            <div class="col-md-8">
+                <div class="alert alert-success">
+                    <h4 class="alert-heading">
+                        ROS + Bootstrap interface demo
+                    </h4>
+                    <ul>
+                        <li>set speed using a slider</li>
+                        <li>use joystick or WASD keys on keyboard to move</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-md-2"></div>
+        </div>
+    </body>
+</html>
