@@ -16,8 +16,9 @@ git clone https://github.com/facebookresearch/detectron2.git
 cd detectron2
 git checkout 5de5319a49e7ea819586d3d6a817632392dfdeb2
 cd ..
-python -m pip install -e detectron2
-rm -rf /tmp/detectron2
+sudo -H python -m pip install -e detectron2
+sudo rm -rf /tmp/detectron2
 cd /
 
+python -c "import detectron2; print(detectron2.__version__)"
 echo "Installed python torch"
