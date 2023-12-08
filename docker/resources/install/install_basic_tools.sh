@@ -44,4 +44,5 @@ sudo apt-get install -y \
     libturbojpeg-dev \
     libv4l-dev \
     libgeos-dev \
-    ffmpeg
+    ffmpeg \
+    libbluetooth-dev
