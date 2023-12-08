@@ -16,6 +16,7 @@ class SvoServiceManager:
         if self.is_recording:
             rospy.logwarn(f"{self.service_prefix} SVO recording already started")
             return
+        os.makedirs(self.base_record_dir, exist_ok=True)
         path = os.path.join(self.base_record_dir, f"{filename}.svo")
         self.is_recording = True
         try:
