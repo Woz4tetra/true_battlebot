@@ -7,7 +7,7 @@ DESTINATION_NAME=$(${BASE_DIR}/lib/get-ip.sh ${DEVICE})
 REMOTE_KEY=$(${BASE_DIR}/lib/get-key.sh ${DEVICE})
 REMOTE_USER_NAME=$(${BASE_DIR}/lib/get-username.sh ${DEVICE})
 ROBOT_NAME=$(${BASE_DIR}/lib/get-robot-name.sh ${DEVICE})
-RESTART_SERVICE=${2:-y}
+RESTART_SERVICE=${2:-n}
 MAP_NAME=$3
 
 LOCAL_PATH=${PARENT_DIR}
