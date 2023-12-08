@@ -2,52 +2,137 @@
 <html>
     <head>
         <title>BWBots Command Center</title>
+        <style>
+            :root {
+            --font: normal 20px Verdana, Arial, sans-serif;
+            }
+
+            body {
+                font: var(--font);
+            }
+
+            .grid-container {
+                margin-top: 10px;
+                width: 40%;
+                display: grid;
+                grid-template-columns: auto auto auto;
+                padding: 10px;
+                border: 1px solid #ccc;
+            }
+            .grid-item {
+                padding: 10px;
+                font-size: 20px;
+                text-align: left;
+            }
+
+            .button {
+                padding: 10px;
+                font-size: 20px;
+                text-align: center;
+                font: var(--font);
+            }
+
+            input[type=radio] {
+                border: 0px;
+                width: 15%;
+                height: 2.2em;
+            }
+        </style>
     </head>
 
     <body>
-        <script src="scripts/roslib.min.js"></script>
-        <script src="scripts/eventemitter2.min.js"></script>
-        <script src="scripts/keyboardteleop.min.js"></script>
-        <script src="scripts/webui.js"></script>
+        <script src="scripts/lib/roslib.min.js"></script>
+        <script src="scripts/lib/eventemitter2.min.js"></script>
+        <script src="scripts/lib/keyboardteleop.min.js"></script>
+        <script src="scripts/app.js"></script>
 
         <div class="container">
             <h1>BWBots Command Center</h1>
             <p>Push some robots around!</p>
         </div>
 
-        <!-- SPEED -->
-        <div class="row">
-            <div class="col-md-4"></div>
-            <div class="col-md-4">
-                <label for="robot-speed">
-                    <strong>Robot speed</strong>
-                </label>
-                <input
-                    type="range"
-                    min="15"
-                    max="80"
-                    class="custom-range"
-                    id="robot-speed"
-                />
+        <!-- Summary -->
+        <div class="grid-container">
+            <div class="grid-item">
+                <div>Summary</div>
             </div>
-            <div class="col-md-4"></div>
+
+            <div class="grid-item">
+                <div>Robot</div>
+            </div>
+            <div class="grid-item">
+                <div><span id="summary-robot"></span></div>
+            </div>
+
+            <div class="grid-item"></div>
+            <div class="grid-item">
+                <div>Map</span></div>
+            </div>
+            <div class="grid-item">
+                <div><span id="summary-map"></span></div>
+            </div>
+
+            <div class="grid-item"></div>
+            <div class="grid-item">
+                <div>Version</span></div>
+            </div>
+            <div class="grid-item">
+                <div><span id="summary-version"></span></div>
+            </div>
         </div>
 
-        <!-- INFO -->
-        <div class="row my-4">
-            <div class="col-md-2"></div>
-            <div class="col-md-8">
-                <div class="alert alert-success">
-                    <h4 class="alert-heading">
-                        ROS + Bootstrap interface demo
-                    </h4>
-                    <ul>
-                        <li>set speed using a slider</li>
-                        <li>use joystick or WASD keys on keyboard to move</li>
-                    </ul>
-                </div>
+        <!-- Cage corner -->
+        <div class="grid-container">
+            <div class="grid-item">
+                <div>Cage corner</div>
             </div>
-            <div class="col-md-2"></div>
+
+            <div class="grid-item" id="radio-group">
+                <input type="radio" id="door-side" name="cage-corner" onclick="publishCageCorner(0)">
+                <label for="door-side">Door side</label><br>
+                <input type="radio" id="far-side" name="cage-corner" onclick="publishCageCorner(1)">
+                <label for="far-side">Far side</label><br>
+            </div>
+        </div>
+
+        <!-- Mode -->
+        <div class="grid-container">
+            <div class="grid-item">
+                <div>Mode</div>
+            </div>
+
+            <div class="grid-item" id="radio-group">
+                <input type="radio" class="mode-idle" name="robot-mode" onclick="publishRobotMode(0)">
+                <label for="mode-idle">Idle</label><br>
+                <input type="radio" class="mode-corner" name="robot-mode" onclick="publishRobotMode(1)">
+                <label for="mode-corner">Corner</label><br>
+                <input type="radio" class="mode-clicked" name="robot-mode" onclick="publishRobotMode(3)">
+                <label for="mode-clicked">Clicked point</label><br>
+                <input type="radio" class="mode-fight" name="robot-mode" onclick="publishRobotMode(2)">
+                <label for="mode-fight">Fight!!!</label><br>
+            </div>
+        </div>
+
+        <!-- Request field -->
+        <div class="grid-container">
+            <div class="grid-item">
+                <div>Request field</div>
+            </div>
+
+            <button class="button" onclick="publishRequestField()">
+                <div>Request</div>
+            </div>
+        </div>
+
+        <!-- Record bag -->
+        <div class="grid-container">
+            <div class="grid-item">
+                <div>Recording</div>
+            </div>
+
+            <button class="button" onclick="setRecordState(this, !recordState)">
+                <div>Start Recording</div>
+            </div>
         </div>
     </body>
 </html>

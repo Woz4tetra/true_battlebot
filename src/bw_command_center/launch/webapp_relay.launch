@@ -1,2 +1,4 @@
 <launch>
+    <node pkg="bw_command_center" type="webapp_relay_node.py" name="webapp_relay_node"
+        output="screen" />
 </launch>
