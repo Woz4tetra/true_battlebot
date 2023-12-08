@@ -1,66 +1,9 @@
-var twist;
-var cmdVel;
-var teleop;
-
 var ros;
 var cageCornerPub;
+var robotModePub;
 var requestFieldPub;
 var recordService;
 var recordState = false;
-
-function moveAction(linear, angular) {
-    if (linear !== undefined && angular !== undefined) {
-        twist.linear.x = linear;
-        twist.angular.z = angular;
-    } else {
-        twist.linear.x = 0;
-        twist.angular.z = 0;
-    }
-    cmdVel.publish(twist);
-}
-
-function initVelocityPublisher() {
-    // Init message with zero values.
-    twist = new ROSLIB.Message({
-        linear: {
-            x: 0,
-            y: 0,
-            z: 0,
-        },
-        angular: {
-            x: 0,
-            y: 0,
-            z: 0,
-        },
-    });
-    // Init topic object
-    cmdVel = new ROSLIB.Topic({
-        ros: ros,
-        name: "/cmd_vel",
-        messageType: "geometry_msgs/Twist",
-    });
-    // Register publisher within ROS system
-    cmdVel.advertise();
-}
-
-function initTeleopKeyboard() {
-    // Use w, s, a, d keys to drive your robot
-
-    // Check if keyboard controller was aready created
-    if (teleop == null) {
-        // Initialize the teleop.
-        teleop = new KEYBOARDTELEOP.Teleop({
-            ros: ros,
-            topic: "/cmd_vel",
-        });
-    }
-
-    // Add event listener for slider moves
-    robotSpeedRange = document.getElementById("robot-speed");
-    robotSpeedRange.oninput = function () {
-        teleop.scale = robotSpeedRange.value / 100;
-    };
-}
 
 function initSummarySubscriber() {
     var listener = new ROSLIB.Topic({
@@ -77,6 +20,7 @@ function initSummarySubscriber() {
 }
 
 function publishCageCorner(type) {
+    console.log(`Publishing corner ${type}`);
     cageCornerPub.publish({ type: type });
 }
 
@@ -89,6 +33,20 @@ function initCageCornerPublisher() {
     cageCornerPub.advertise();
 }
 
+function publishRobotMode(mode) {
+    console.log(`Publishing robot mode ${mode}`);
+    robotModePub.publish({ mode: mode });
+}
+
+function initRobotModePublisher() {
+    robotModePub = new ROSLIB.Topic({
+        ros: ros,
+        name: "/behavior_mode",
+        messageType: "bw_interfaces/BehaviorMode",
+    });
+    robotModePub.advertise();
+}
+
 function initRequestFieldPublisher() {
     requestFieldPub = new ROSLIB.Topic({
         ros: ros,
@@ -99,6 +57,7 @@ function initRequestFieldPublisher() {
 }
 
 function publishRequestField() {
+    console.log("Publishing request field");
     requestFieldPub.publish({});
 }
 
@@ -135,13 +94,13 @@ function setRecordState(button, state) {
 window.onload = function () {
     var robot_ip = location.hostname;
 
-    // // Init handle for rosbridge_websocket
     ros = new ROSLIB.Ros({
         url: "ws://" + robot_ip + ":9090",
     });
 
     initSummarySubscriber();
     initCageCornerPublisher();
+    initRobotModePublisher();
     initRequestFieldPublisher();
     initRecordService();
 };
