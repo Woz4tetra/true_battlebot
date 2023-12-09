@@ -1,5 +1,5 @@
 [Unit]
-After=basic.target
+After=default.target
 Description=bwbots
 
 [Service]
