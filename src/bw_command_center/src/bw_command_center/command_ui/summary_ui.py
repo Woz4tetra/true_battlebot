@@ -1,6 +1,6 @@
 import tkinter as tk
 
-from bw_tools.environment import get_image_version, get_map, get_robot
+from bw_tools.environment import get_system_info
 
 from bw_command_center.command_ui.ui_base import UiBase
 
@@ -15,7 +15,8 @@ class SummaryUI(UiBase):
         right_frame = tk.Frame(master=self.window)
         right_frame.grid(row=0, column=2, sticky="W", padx=5, pady=5)
 
+        info = get_system_info()
         tk.Label(master=left_frame, text="Summary").pack(anchor=tk.W)
-        tk.Label(master=right_frame, text=f"Robot: {get_robot()}").pack(anchor=tk.W)
-        tk.Label(master=right_frame, text=f"Map: {get_map()}").pack(anchor=tk.W)
-        tk.Label(master=right_frame, text=f"Version: {get_image_version()}").pack(anchor=tk.W)
+        tk.Label(master=right_frame, text=f"Robot: {info.robot}").pack(anchor=tk.W)
+        tk.Label(master=right_frame, text=f"Map: {info.map}").pack(anchor=tk.W)
+        tk.Label(master=right_frame, text=f"Version: {info.version}").pack(anchor=tk.W)

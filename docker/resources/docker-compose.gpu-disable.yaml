@@ -1,5 +1,5 @@
 version: "3"
 services:
-  true_battlebot:
-    environment:
-      - HAS_GPU=disable
+    true_battlebot:
+        environment:
+            - HAS_GPU=disable

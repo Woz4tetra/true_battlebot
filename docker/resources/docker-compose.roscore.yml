@@ -1,15 +1,15 @@
 version: "3"
 
 services:
-  roscore:
-    image: ${IMAGE_VERSION}
-    container_name: roscore
-    restart: "no"
-    network_mode: "host"
-    environment:
-      - ROS_MASTER_INTERFACE=${ROS_MASTER_INTERFACE}
-    volumes:
-      - ${PROJECT_DIR}/scripts:/opt/${ORGANIZATION}/scripts:rw
-    privileged: true
-    entrypoint: ["/opt/${ORGANIZATION}/roscore.sh"]
-    stop_signal: SIGTERM
+    roscore:
+        image: ${IMAGE_VERSION}
+        container_name: roscore
+        restart: "no"
+        network_mode: "host"
+        environment:
+            - ROS_MASTER_INTERFACE=${ROS_MASTER_INTERFACE}
+        volumes:
+            - ${PROJECT_DIR}/scripts:/opt/${ORGANIZATION}/scripts:rw
+        privileged: true
+        entrypoint: ["/opt/${ORGANIZATION}/roscore.sh"]
+        stop_signal: SIGTERM

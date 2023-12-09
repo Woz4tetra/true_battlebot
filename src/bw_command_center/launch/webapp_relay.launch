@@ -1,0 +1,8 @@
+<launch>
+    <node pkg="bw_command_center" type="webapp_relay_node.py" name="webapp_relay_node"
+        output="screen">
+        <rosparam param="cameras" subst_value="True">[camera_0]</rosparam>
+        <param name="exclude_regex"
+            value="\/camera_.*\/.*.*image.*|\/camera_.*\/point_cloud.*|\/camera_.*\/depth.*|\/tag_detections_image.*|\/rosout.*" />
+    </node>
+</launch>
