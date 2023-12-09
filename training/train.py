@@ -1,9 +1,13 @@
+import datetime
 import os
 
 from training_manager import TrainingManager
 
+training_dir = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+# training_dir = "2023-11-20-13-20-28"
+
 manager = TrainingManager()
-train_output = manager.get_training_dir("2023-11-20-13-20-28")
+train_output = manager.get_training_dir(training_dir)
 manager.train(train_output)
 manager.inference(train_output)
 
