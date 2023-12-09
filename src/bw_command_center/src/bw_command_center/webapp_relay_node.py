@@ -10,8 +10,8 @@ from bw_tools.structs.cage_corner import CageCorner
 from bw_tools.typing import get_param
 from std_srvs.srv import SetBool, SetBoolRequest, SetBoolResponse
 
-from bw_command_center.command_ui.managers.record_bag_manager import RecordBagManager
-from bw_command_center.command_ui.managers.svo_service_manager import SvoServiceManager
+from bw_command_center.managers.record_bag_manager import RecordBagManager
+from bw_command_center.managers.svo_service_manager import SvoServiceManager
 
 
 class WebappRelay:

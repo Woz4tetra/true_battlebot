@@ -6,9 +6,9 @@ import rospy
 from bw_tools.environment import get_robot
 from bw_tools.typing import get_param
 
-from bw_command_center.command_ui.managers.record_bag_manager import RecordBagManager
-from bw_command_center.command_ui.managers.svo_service_manager import SvoServiceManager
 from bw_command_center.command_ui.ui_base import UiBase
+from bw_command_center.managers.record_bag_manager import RecordBagManager
+from bw_command_center.managers.svo_service_manager import SvoServiceManager
 
 
 class RecordButtonState:
