@@ -11,14 +11,7 @@ sudo -H python -m pip install -r ${BASE_DIR}/torch-requirements.txt
 sudo -H python -m pip uninstall -y kiwisolver
 sudo -H python -m pip install kiwisolver
 
-cd /tmp
-git clone https://github.com/facebookresearch/detectron2.git
-cd detectron2
-git checkout 5de5319a49e7ea819586d3d6a817632392dfdeb2
-cd ..
-sudo -H python -m pip install -e detectron2
-sudo rm -rf /tmp/detectron2
-cd /
+sudo -H python -m pip install 'git+https://github.com/facebookresearch/detectron2.git'
 
 python -c "import detectron2; print(detectron2.__version__)"
 echo "Installed python torch"
