@@ -3,7 +3,7 @@
     <arg name="metadata" default="model_metadata.json" />
     <group ns="camera_0">
         <node pkg="bw_segmentation" type="detectron_node.py" name="detectron"
-            output="screen">
+            output="screen" respawn="true">
             <remap from="image" to="rgb/image_rect_color" />
             <param name="model" value="$(arg model)" />
             <param name="metadata" value="$(arg metadata)" />

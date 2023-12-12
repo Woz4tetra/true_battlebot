@@ -17,6 +17,7 @@ services:
         environment:
             - DISPLAY=${DISPLAY}
             - XAUTHORITY=${XAUTHORITY}
+            - ROS_MASTER_INTERFACE=${ROS_MASTER_INTERFACE}
         # Share IPC with the host: enables us to request X to draw things, see
         # https://askubuntu.com/questions/1237400/how-to-fix-x-error-badaccess-baddrawable-badshmseg-while-running-graphical-ap
         ipc: host

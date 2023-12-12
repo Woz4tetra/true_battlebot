@@ -1,11 +1,12 @@
 #!/bin/bash
 BASE_DIR=$(realpath "$(dirname $0)")
+HOST_INTERFACE=$1
 
 export PROJECT_DIR=$(realpath "${BASE_DIR}/../../")
 export PROJECT_NAME=$(${BASE_DIR}/../get_project_name)
 export IMAGE_VERSION=$(${BASE_DIR}/../get_image_tag)
 export ORGANIZATION=$(${BASE_DIR}/../get_organization)
-export ROS_MASTER_INTERFACE=""
+export ROS_MASTER_INTERFACE=${HOST_INTERFACE}
 
 
 which nvidia-smi > /dev/null
