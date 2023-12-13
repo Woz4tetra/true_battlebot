@@ -1,4 +1,3 @@
-#include <Arduino.h>
 #include <Adafruit_NeoPixel.h>
 
 const int NUM_PIXELS = 1;
