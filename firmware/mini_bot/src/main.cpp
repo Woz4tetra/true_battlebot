@@ -2,8 +2,8 @@
 #include <Adafruit_NeoPixel.h>
 
 const int NUM_PIXELS = 1;
-const int SHOW_DELAY = 10;
-Adafruit_NeoPixel pixels(NUM_PIXELS, PIN_NEOPIXEL, NEO_GRB + NEO_KHZ800);
+const int SHOW_DELAY = 1;
+Adafruit_NeoPixel pixels(NUM_PIXELS, 5, NEO_GRB + NEO_KHZ800);
 
 void setup()
 {
@@ -35,7 +35,7 @@ void setup()
 
 void loop()
 {
-    for (int hue = 0; hue < 0x10000; hue++)
+    for (int hue = 0; hue < 0x10000; hue += 30)
     {
         pixels.fill(pixels.gamma32(pixels.ColorHSV((uint16_t)hue)));
         pixels.show();
