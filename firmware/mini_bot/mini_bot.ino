@@ -2,7 +2,7 @@
 
 const int NUM_PIXELS = 1;
 const int SHOW_DELAY = 1;
-Adafruit_NeoPixel pixels(NUM_PIXELS, 5, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel pixels(NUM_PIXELS, PIN_NEOPIXEL, NEO_GRB + NEO_KHZ800);
 
 void setup()
 {
