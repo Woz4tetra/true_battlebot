@@ -22,7 +22,6 @@ class MiniBotBridge:
         self.packet = b""
 
         self.socket = socket.socket(type=socket.SOCK_DGRAM)
-        self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
         self.socket.bind(("0.0.0.0", self.port))
 
         self.twist_sub = rospy.Subscriber("cmd_vel", Twist, self.twist_callback, queue_size=1)
