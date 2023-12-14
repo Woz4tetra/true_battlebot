@@ -8,7 +8,6 @@
 #define DEVICE_ID 1
 
 const int NUM_PIXELS = 1;
-const int SHOW_DELAY = 1;
 Adafruit_NeoPixel pixels(NUM_PIXELS, PIN_NEOPIXEL, NEO_GRB + NEO_KHZ800);
 
 WiFiUDP UDP;
@@ -80,6 +79,7 @@ void setup()
         blink(i % 2);
         delay(100);
     }
+    blink(true);
 
     WiFi.begin(WIFI_SSID, WIFI_PASS);
     int blink_count = 0;
@@ -154,7 +154,7 @@ bool process_packet()
             return false;
         }
 
-        uint8_t max_speed = 0;
+        int max_speed = 0;
         for (int channel = 0; channel < motor_desc->num_channels; channel++)
         {
             uint8_t speed = motor_desc->commands[channel].speed;
@@ -165,7 +165,7 @@ bool process_packet()
                 max_speed = speed;
             }
         }
-        pixels.setBrightness(max_speed / 2 + 20);
+        pixels.setBrightness(min(255, max(20, max_speed)));
     }
 
     return true;
