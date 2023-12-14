@@ -10,8 +10,9 @@
         <arg name="metadata" value="$(arg model)_metadata.json" />
     </include>
     <include file="$(find bw_bringup)/launch/subsystems/zed.launch" />
-    <include file="$(find bw_teleop)/launch/bw_teleop.launch">
-        <arg name="robot_filter_config"
-            value="$(find bw_bringup)/config/robot_filter.yaml" />
-    </include>
+    <include file="$(find bw_teleop)/launch/mini_bot_bridge.launch" />
+    <group ns="mini_bot">
+        <include file="$(find bw_teleop)/launch/simple_teleop.launch" />
+        <include file="$(find bw_bringup)/launch/subsystems/twist_mux.launch" />
+    </group>
 </launch>

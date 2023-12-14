@@ -21,4 +21,8 @@
         <arg name="robot_filter_config"
             value="$(find bw_bringup)/config/robot_filter.yaml" />
     </include>
+    <include file="$(find bw_teleop)/launch/bw_teleop.launch">
+        <arg name="robot_filter_config"
+            value="$(find bw_bringup)/config/robot_filter.yaml" />
+    </include>
 </launch>
