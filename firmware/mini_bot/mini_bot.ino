@@ -17,6 +17,11 @@ char packet[PACKET_MAX_LENGTH];
 
 const int NUM_MOTORS = 2;
 
+int active_mode_hue = 0;
+int idle_mode_color = 0;
+uint32_t prev_packet_time = 0;
+const uint32_t PACKET_TIMEOUT = 500;
+
 typedef struct header
 {
     uint16_t size;
@@ -100,12 +105,12 @@ void setup()
 
 void set_motor(uint8_t channel, uint8_t speed, uint8_t direction)
 {
-    Serial.print("Setting motor ");
-    Serial.print(channel);
-    Serial.print(" to speed ");
-    Serial.print(speed);
-    Serial.print(" and direction ");
-    Serial.println(direction);
+    // Serial.print("Setting motor ");
+    // Serial.print(channel);
+    // Serial.print(" to speed ");
+    // Serial.print(speed);
+    // Serial.print(" and direction ");
+    // Serial.println(direction);
 }
 
 bool process_packet()
@@ -143,7 +148,7 @@ bool process_packet()
             return false;
         }
 
-        if (motor_desc->num_channels >= NUM_MOTORS)
+        if (motor_desc->num_channels > NUM_MOTORS)
         {
             Serial.println("Too many motor channels");
             return false;
@@ -160,10 +165,6 @@ bool process_packet()
     return true;
 }
 
-int active_mode_hue = 0;
-int idle_mode_color = 0;
-uint32_t prev_packet_time = 0;
-uint32_t packet_timeout = 100;
 void loop()
 {
     uint32_t now = millis();
@@ -171,7 +172,7 @@ void loop()
     {
         prev_packet_time = now;
     }
-    if (now - prev_packet_time > packet_timeout)
+    if (now - prev_packet_time > PACKET_TIMEOUT)
     {
         // No packets received in a while, turn off motors
         for (int channel = 0; channel < NUM_MOTORS; channel++)
