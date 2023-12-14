@@ -2,7 +2,7 @@
 import socket
 
 import rospy
-from bw_tools.typing import get_param
+from bw_tools.typing import get_param, seconds_to_duration
 from geometry_msgs.msg import Twist
 
 from bw_teleop.structs import MotorCommand, MotorDescription
@@ -15,11 +15,14 @@ class MiniBotBridge:
         self.device_id = get_param("~device_id", 1)
         self.destination = get_param("~destination", "192.168.8.187")
         self.base_width = get_param("~base_width", 0.1315)
-        self.speed_to_command = get_param("~speed_to_command", 255 / 0.5)
+        self.max_ground_speed = get_param("~max_ground_speed", 0.5)
+        self.speed_to_command = 255 / self.max_ground_speed
         self.max_speed = get_param("~max_speed", 1.0)
         self.deadzone = get_param("~deadzone", 0.05)
+        self.command_timeout = seconds_to_duration(get_param("~command_timeout", 0.5))
 
         self.packet = b""
+        self.last_command_time = rospy.Time.now()
 
         self.socket = socket.socket(type=socket.SOCK_DGRAM)
         self.socket.bind(("0.0.0.0", self.port))
@@ -37,18 +40,24 @@ class MiniBotBridge:
         return MotorCommand(direction, speed)
 
     def twist_callback(self, msg: Twist) -> None:
+        self.last_command_time = rospy.Time.now()
         left_velocity = msg.linear.x - msg.angular.z * self.base_width / 2
         right_velocity = msg.linear.x + msg.angular.z * self.base_width / 2
         max_speed = max(abs(left_velocity), abs(right_velocity))
         if max_speed > self.max_speed:
             left_velocity *= self.max_speed / max_speed
             right_velocity *= self.max_speed / max_speed
+        self.set_velocities(left_velocity, right_velocity)
+
+    def set_velocities(self, left_velocity: float, right_velocity: float) -> None:
         commands = [self.velocity_to_command(left_velocity), self.velocity_to_command(right_velocity)]
         self.packet = MotorDescription(self.device_id, commands).as_bytes()
 
     def run(self) -> None:
         rate = rospy.Rate(self.rate)
         while not rospy.is_shutdown():
+            if rospy.Time.now() - self.last_command_time > self.command_timeout:
+                self.set_velocities(0, 0)
             if len(self.packet) > 0:
                 self.send_packet(self.packet)
             rate.sleep()

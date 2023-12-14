@@ -23,7 +23,7 @@ class MotorCommand:
     speed: int
 
     def as_bytes(self) -> bytes:
-        return struct.pack("<BB", self.direction, self.speed)
+        return struct.pack("<bB", self.direction, self.speed)
 
 
 @dataclass

@@ -154,12 +154,18 @@ bool process_packet()
             return false;
         }
 
+        uint8_t max_speed = 0;
         for (int channel = 0; channel < motor_desc->num_channels; channel++)
         {
             uint8_t speed = motor_desc->commands[channel].speed;
             uint8_t direction = motor_desc->commands[channel].direction;
             set_motor(channel, speed, direction);
+            if (speed > max_speed)
+            {
+                max_speed = speed;
+            }
         }
+        pixels.setBrightness(max_speed / 2 + 20);
     }
 
     return true;
@@ -179,6 +185,7 @@ void loop()
         {
             set_motor(channel, 0, 0);
         }
+        pixels.setBrightness(20);
         pixels.fill(pixels.Color(idle_mode_color, 0, 0));
         idle_mode_color = (idle_mode_color + 1) % 255;
     }
