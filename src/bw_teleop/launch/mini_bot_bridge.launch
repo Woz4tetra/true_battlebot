@@ -1,6 +1,6 @@
 <launch>
     <node name="mini_bot_bridge" pkg="bw_teleop" type="mini_bot_bridge.py" output="screen"
         required="false">
-        <remap from="cmd_vel" to="/mini_bot/cmd_vel/relative" />
+        <remap from="cmd_vel" to="cmd_vel/relative" />
     </node>
 </launch>

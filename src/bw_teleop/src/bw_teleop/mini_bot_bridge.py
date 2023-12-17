@@ -1,11 +1,15 @@
 #!/usr/bin/env python
 import socket
+import time
 
 import rospy
 from bw_tools.typing import get_param, seconds_to_duration
 from geometry_msgs.msg import Twist
+from std_msgs.msg import Float64
 
-from bw_teleop.structs import MotorCommand, MotorDescription
+from bw_teleop.structs import Header, HeaderType, MotorCommand, MotorDescription, PingInfo
+
+BUFFER_SIZE = 255
 
 
 class MiniBotBridge:
@@ -27,7 +31,12 @@ class MiniBotBridge:
         self.socket = socket.socket(type=socket.SOCK_DGRAM)
         self.socket.bind(("0.0.0.0", self.port))
 
+        self.start_time = time.perf_counter()
+
+        self.ping_pub = rospy.Publisher("ping", Float64, queue_size=1)
         self.twist_sub = rospy.Subscriber("cmd_vel", Twist, self.twist_callback, queue_size=1)
+        self.ping_timer = rospy.Timer(seconds_to_duration(0.25), self.ping_timer_callback)
+        self.send_timer = rospy.Timer(seconds_to_duration(1.0 / self.rate), self.send_timer_callback)
 
     def send_packet(self, packet: bytes) -> None:
         self.socket.sendto(packet, (self.destination, self.port))
@@ -53,13 +62,54 @@ class MiniBotBridge:
         commands = [self.velocity_to_command(left_velocity), self.velocity_to_command(right_velocity)]
         self.packet = MotorDescription(self.device_id, commands).as_bytes()
 
+    def send_timer_callback(self, event) -> None:
+        if rospy.Time.now() - self.last_command_time > self.command_timeout:
+            self.set_velocities(0, 0)
+        if len(self.packet) > 0:
+            self.send_packet(self.packet)
+
+    def get_ping_time(self) -> float:
+        return time.perf_counter() - self.start_time
+
+    def ping_timer_callback(self, event) -> None:
+        timestamp = self.get_ping_time()
+        microseconds = int(timestamp * 1e6) & ((2 << 31) - 1)
+        self.send_packet(PingInfo(self.device_id, microseconds).as_bytes())
+
+    def ping_callback(self, ping_info: PingInfo) -> None:
+        timestamp = self.get_ping_time()
+        latency = timestamp - ping_info.timestamp * 1e-6
+        self.ping_pub.publish(latency)
+
+    def receive(self) -> None:
+        (packet, (address, port)) = self.socket.recvfrom(BUFFER_SIZE)
+        if address != self.destination or port != self.port:
+            rospy.logwarn(f"Received packet from an unknown address: {address}:{port}")
+            return
+        read_size = len(packet)
+        if read_size == 0:
+            return
+        if read_size < Header.length:
+            rospy.logwarn("Received packet is too small to be valid")
+            return
+        header = Header.from_bytes(packet)
+        if header.device_id != self.device_id:
+            rospy.logwarn("Received packet for a different device")
+            return
+        if header.size != read_size:
+            rospy.logwarn("Received packet size does not match header")
+            return
+        try:
+            if header.type == HeaderType.PING:
+                ping_info = PingInfo.from_bytes(header, packet)
+                self.ping_callback(ping_info)
+        except ValueError as e:
+            rospy.logwarn("Failed to parse packet. %s: %s" % (packet, e))
+
     def run(self) -> None:
-        rate = rospy.Rate(self.rate)
+        rate = rospy.Rate(1000)
         while not rospy.is_shutdown():
-            if rospy.Time.now() - self.last_command_time > self.command_timeout:
-                self.set_velocities(0, 0)
-            if len(self.packet) > 0:
-                self.send_packet(self.packet)
+            self.receive()
             rate.sleep()
 
 

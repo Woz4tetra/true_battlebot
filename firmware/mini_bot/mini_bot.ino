@@ -12,7 +12,7 @@ Adafruit_NeoPixel pixels(NUM_PIXELS, PIN_NEOPIXEL, NEO_GRB + NEO_KHZ800);
 
 WiFiUDP UDP;
 #define PACKET_MAX_LENGTH 255
-char packet[PACKET_MAX_LENGTH];
+char read_buffer[PACKET_MAX_LENGTH];
 
 const int NUM_MOTORS = 2;
 
@@ -31,6 +31,7 @@ typedef struct header
 enum HeaderType
 {
     MOTOR = 0x01,
+    PING = 0x02
     // Put more commands here if needed
 };
 
@@ -45,6 +46,17 @@ typedef struct motor_description : header
     uint8_t num_channels;
     motor_command_t commands[1];
 } motor_description_t, *motor_description_p;
+
+typedef struct ping_info : header
+{
+    uint32_t time;
+} ping_info_t, *ping_info_p;
+
+typedef union ping_packet
+{
+    ping_info_t data;
+    uint8_t bytes[sizeof(ping_info_t)];
+} ping_packet_t, *ping_packet_p;
 
 void blink(bool state)
 {
@@ -113,6 +125,53 @@ void set_motor(uint8_t channel, uint8_t speed, uint8_t direction)
     // Serial.println(direction);
 }
 
+void process_motor_packet(char *packet, int packet_size)
+{
+    motor_description_p motor_desc = (motor_description_p)packet;
+    if (packet_size < sizeof(motor_description_t))
+    {
+        Serial.println("Motor packet too small");
+        return;
+    }
+
+    if (motor_desc->num_channels > NUM_MOTORS)
+    {
+        Serial.println("Too many motor channels");
+        return;
+    }
+
+    int max_speed = 0;
+    for (int channel = 0; channel < motor_desc->num_channels; channel++)
+    {
+        uint8_t speed = motor_desc->commands[channel].speed;
+        uint8_t direction = motor_desc->commands[channel].direction;
+        set_motor(channel, speed, direction);
+        if (speed > max_speed)
+        {
+            max_speed = speed;
+        }
+    }
+    pixels.setBrightness(min(255, max(20, max_speed)));
+}
+
+void process_ping_packet(char *packet, int packet_size)
+{
+    ping_info_p ping_info = (ping_info_p)packet;
+    if (packet_size < sizeof(ping_info_t))
+    {
+        Serial.println("Ping packet too small");
+        return;
+    }
+    ping_packet_t ping_packet;
+    ping_packet.data.size = sizeof(ping_info_t);
+    ping_packet.data.type = PING;
+    ping_packet.data.device_id = DEVICE_ID;
+    ping_packet.data.time = ping_info->time;
+    UDP.beginPacket(UDP.remoteIP(), UDP.remotePort());
+    UDP.write(ping_packet.bytes, ping_packet.data.size);
+    UDP.endPacket();
+}
+
 bool process_packet()
 {
     int packet_size = UDP.parsePacket();
@@ -121,13 +180,13 @@ bool process_packet()
         return false;
     }
 
-    int read_size = UDP.read(packet, PACKET_MAX_LENGTH);
+    int read_size = UDP.read(read_buffer, PACKET_MAX_LENGTH);
     if (read_size < sizeof(header_t))
     {
         Serial.println("Packet header too small");
         return false;
     }
-    header_p header = (header_p)packet;
+    header_p header = (header_p)read_buffer;
     if (read_size < header->size)
     {
         Serial.println("Packet length doesn't match header");
@@ -139,33 +198,16 @@ bool process_packet()
         return false;
     }
 
-    if (header->type == MOTOR)
+    switch (header->type)
     {
-        motor_description_p motor_desc = (motor_description_p)packet;
-        if (read_size < sizeof(motor_description_t))
-        {
-            Serial.println("Motor packet too small");
-            return false;
-        }
-
-        if (motor_desc->num_channels > NUM_MOTORS)
-        {
-            Serial.println("Too many motor channels");
-            return false;
-        }
-
-        int max_speed = 0;
-        for (int channel = 0; channel < motor_desc->num_channels; channel++)
-        {
-            uint8_t speed = motor_desc->commands[channel].speed;
-            uint8_t direction = motor_desc->commands[channel].direction;
-            set_motor(channel, speed, direction);
-            if (speed > max_speed)
-            {
-                max_speed = speed;
-            }
-        }
-        pixels.setBrightness(min(255, max(20, max_speed)));
+    case MOTOR:
+        process_motor_packet(read_buffer, read_size);
+        break;
+    case PING:
+        process_ping_packet(read_buffer, read_size);
+        break;
+    default:
+        break;
     }
 
     return true;
