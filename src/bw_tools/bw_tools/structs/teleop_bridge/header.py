@@ -22,4 +22,4 @@ class Header:
     @classmethod
     def from_bytes(cls, packet: bytes) -> Header:
         size, type, device_id = struct.unpack(cls.byte_code, packet[: cls.length])
-        return cls(device_id, HeaderType(type), size)
+        return cls(device_id, HeaderType(type), size - cls.length)

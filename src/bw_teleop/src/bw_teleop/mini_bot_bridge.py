@@ -100,7 +100,7 @@ class MiniBotBridge:
             rospy.logwarn("Received packet for a different device")
             return
         if header.size != read_size:
-            rospy.logwarn("Received packet size does not match header")
+            rospy.logwarn(f"Received packet size does not match header. Expected: {header.size}. Read: {read_size}")
             return
         try:
             if header.type == HeaderType.PING:
