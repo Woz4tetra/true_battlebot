@@ -76,6 +76,7 @@ class MiniBotBridge:
 
     def ping_timer_callback(self, event) -> None:
         timestamp = self.get_ping_time()
+        # Timer will loop at ~2.38 hours
         microseconds = int(timestamp * 1e6) & ((2 << 31) - 1)
         self.send_packet(PingInfo(self.device_id, microseconds).as_bytes())
 

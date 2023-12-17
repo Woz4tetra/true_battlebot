@@ -29,10 +29,10 @@ class Config:
         return asdict(self)
 
     def as_bytes(self) -> bytes:
-        ssid = fill_string(self.ssid, 33)
-        password = fill_string(self.password, 64)
+        ssid = fill_string(self.ssid, 33)  # max length of ssid is 32 + null terminator
+        password = fill_string(self.password, 64)  # max length of password is 63 + null terminator
         port = struct.pack("<H", self.port)
-        data = port + ssid + password + b"\0"
+        data = port + ssid + password + b"\0"  # packet lengths don't match up if this isn't added
         header = Header(self.device_id, HeaderType.CONFIG, len(data))
         return header.as_bytes() + data
 
