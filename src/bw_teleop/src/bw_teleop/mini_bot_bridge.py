@@ -3,11 +3,14 @@ import socket
 import time
 
 import rospy
+from bw_tools.structs.teleop_bridge.header import Header
+from bw_tools.structs.teleop_bridge.header_type import HeaderType
+from bw_tools.structs.teleop_bridge.motor_command import MotorCommand
+from bw_tools.structs.teleop_bridge.motor_description import MotorDescription
+from bw_tools.structs.teleop_bridge.ping_info import PingInfo
 from bw_tools.typing import get_param, seconds_to_duration
 from geometry_msgs.msg import Twist
 from std_msgs.msg import Float64
-
-from bw_teleop.structs import Header, HeaderType, MotorCommand, MotorDescription, PingInfo
 
 BUFFER_SIZE = 255
 
