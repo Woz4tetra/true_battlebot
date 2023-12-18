@@ -26,3 +26,17 @@ docker build \
     --build-arg CUDNN_VERSION_MAJOR=${CUDNN_VERSION_MAJOR} \
     --build-arg IMAGE_VERSION=${IMAGE_VERSION} \
     -t ${IMAGE_VERSION} .
+
+CONTAINERS=$(docker ps -a --format "{{.Names}}" | grep -e "${PROJECT_NAME}")
+if [[ ! -z ${CONTAINERS} ]]; then
+    docker stop ${CONTAINERS} &> /dev/null
+    docker rm ${CONTAINERS} &> /dev/null
+    echo -e '\033[1mRemoved Containers:\033[0m'
+    echo "${CONTAINERS}"
+fi
+
+IMAGES=$(docker image list --format "{{.Repository}}" | grep -E "vsc-dill|devcontainer|dev_container")
+# don't use "" around IMAGES var to take advantage of globbing
+docker rmi ${IMAGES} &> /dev/null
+echo -e '\033[1mRemoved Images:\033[0m'
+echo "${IMAGES}"

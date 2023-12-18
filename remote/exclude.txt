@@ -1,7 +1,6 @@
 .git
 .pio/
 .vscode/
-.devcontainer/
 .mypy_cache/
 __pycache__/
 simulation/

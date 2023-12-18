@@ -3,7 +3,7 @@
 	<arg name="robot_filter_config" default="$(find bw_object_filter)/config/robot_filter.yaml" />
 	<node pkg="mbf_costmap_nav" type="mbf_costmap_nav" respawn="false" name="move_base_flex"
 		output="screen">
-		<remap from="/cmd_vel" to="/mini_bot/cmd_vel/absolute" />
+		<remap from="/cmd_vel" to="/mini_bot/cmd_vel/navigation" />
 		<remap from="/odom" to="/mini_bot/odom" />
 		<rosparam file="$(find bw_navigation)/config/move_base_flex_global_params.yaml"
 			command="load" />

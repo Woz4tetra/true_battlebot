@@ -3,7 +3,7 @@ DEVICE=$1
 case $DEVICE in
 
   dadbot)
-    echo -n "192.168.0.85"
+    echo -n "192.168.8.249"
     ;;
 
   *)
