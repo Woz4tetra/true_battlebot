@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from typing import Dict, Optional
 
 import requests
+import svgwrite
 from PIL.Image import Image, Resampling
 from PIL.Image import open as open_image
 
@@ -74,15 +75,11 @@ def load_tag_image(tag: Tag) -> Image:
     return image
 
 
-def generate_tag(
-    tag_family: str,
-    code: int,
-    px_per_mm: float,
-    length_mm: float,
-    extension: str = "pdf",
-) -> None:
-    tag = Tag(tag_family, code)
-    image = load_tag_image(tag)
+RASTER_FORMATS = ("png", "jpg", "pdf")
+VECTOR_FORMATS = ("svg",)
+
+
+def generate_raster_tag(tag: Tag, image: Image, length_mm: float, px_per_mm: float, extension: str):
     assert image.size[0] == image.size[1]
     image_size_px = image.size[0]
     tag_size_px = image_size_px - 2
@@ -95,9 +92,44 @@ def generate_tag(
     image = image.convert("RGB")
     image = image.resize((new_image_size, new_image_size), Resampling.NEAREST)
     dpi = px_per_mm * 25.4
-    pdf_path = os.path.splitext(tag.filename)[0] + "." + extension
-    image.save(pdf_path, resolution=dpi)
-    print(f"PDF path is {pdf_path}")
+    out_path = os.path.splitext(tag.filename)[0] + "." + extension
+    image.save(out_path, resolution=dpi)
+    print(f"Path is {out_path}")
+
+
+def iter_image(image: Image):
+    for y in range(image.size[1]):
+        for x in range(image.size[0]):
+            yield x, y, image.getpixel((x, y))
+
+
+def generate_svg_tag(tag: Tag, image: Image, length_mm: float, px_per_mm: float, extension: str):
+    out_path = os.path.splitext(tag.filename)[0] + "." + extension
+    dwg = svgwrite.Drawing(out_path, profile="tiny")
+    width, height = image.size
+    assert width == height
+    square_size = length_mm / width
+    for x, y, pixel in iter_image(image):
+        dwg.add(dwg.rect((x, y), (1, 1), fill=f"rgb{pixel}"))
+    dwg.rect()
+    dwg.add(dwg.line((0, 0), (10, 0), stroke=svgwrite.rgb(10, 10, 16, "%")))
+    dwg.save()
+
+
+def generate_tag(
+    tag_family: str,
+    code: int,
+    px_per_mm: float,
+    length_mm: float,
+    extension: str = "pdf",
+) -> None:
+    tag = Tag(tag_family, code)
+    image = load_tag_image(tag)
+    generators = {}
+    for format in RASTER_FORMATS:
+        generators[format] = generate_raster_tag
+    generators["svg"] = generate_svg_tag
+    generators[extension](tag, image, length_mm, px_per_mm, extension)
 
 
 def main() -> None:
