@@ -10,6 +10,8 @@ from geometry_msgs.msg import Point as RosPoint
 from geometry_msgs.msg import Pose as RosPose
 from geometry_msgs.msg import Quaternion as RosQuaternion
 
+from bw_tools.structs.xy import XY
+
 
 @dataclass(eq=True)
 class Pose2D:
@@ -37,7 +39,7 @@ class Pose2D:
 
     @classmethod
     def from_msg(cls, msg: RosPose) -> Pose2D:
-        angles = tf_conversions.transformations.euler_from_quaternion(
+        angles = tf_conversions.transformations.euler_from_quaternion(  # type: ignore
             (msg.orientation.x, msg.orientation.y, msg.orientation.z, msg.orientation.w)
         )
         return cls(
@@ -47,7 +49,7 @@ class Pose2D:
         )
 
     def to_msg(self) -> RosPose:
-        quat = tf_conversions.transformations.quaternion_from_euler(0.0, 0.0, self.theta)
+        quat = tf_conversions.transformations.quaternion_from_euler(0.0, 0.0, self.theta)  # type: ignore
         return RosPose(
             position=RosPoint(x=self.x, y=self.y, z=0.0),
             orientation=RosQuaternion(*quat),
@@ -109,3 +111,6 @@ class Pose2D:
         """
         tfmat = np.dot(self._invert_matrix(other.to_matrix()), self.to_matrix())
         return Pose2D.from_matrix(tfmat)
+
+    def to_point(self) -> XY:
+        return XY(self.x, self.y)
