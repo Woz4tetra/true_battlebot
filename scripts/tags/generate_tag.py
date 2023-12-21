@@ -4,7 +4,7 @@ import io
 import os
 import pickle
 from dataclasses import dataclass
-from typing import Dict, Optional
+from typing import Dict, Generator, Optional, Tuple
 
 import requests
 import svgwrite
@@ -97,7 +97,7 @@ def generate_raster_tag(tag: Tag, image: Image, length_mm: float, px_per_mm: flo
     print(f"Path is {out_path}")
 
 
-def iter_image(image: Image):
+def iter_image(image: Image) -> Generator[Tuple[int, int, Tuple[int, int, int]], None, None]:
     for y in range(image.size[1]):
         for x in range(image.size[0]):
             yield x, y, image.getpixel((x, y))
@@ -109,10 +109,12 @@ def generate_svg_tag(tag: Tag, image: Image, length_mm: float, px_per_mm: float,
     width, height = image.size
     assert width == height
     square_size = length_mm / width
+    white = svgwrite.rgb(255, 255, 255)
+    black = svgwrite.rgb(0, 0, 0)
+    dwg.add(dwg.rect((0, 0), (length_mm, length_mm), fill=white))
     for x, y, pixel in iter_image(image):
-        dwg.add(dwg.rect((x, y), (1, 1), fill=f"rgb{pixel}"))
-    dwg.rect()
-    dwg.add(dwg.line((0, 0), (10, 0), stroke=svgwrite.rgb(10, 10, 16, "%")))
+        if pixel[0:3] == (0, 0, 0):
+            dwg.add(dwg.rect((x * square_size, y * square_size), (square_size, square_size), fill=black))
     dwg.save()
 
 
@@ -148,9 +150,9 @@ def main() -> None:
     parser.add_argument(
         "-t",
         "--type",
-        type=str,
+        type=lambda s: s.lower(),
         default="pdf",
-        choices=["pdf", "png", "jpg"],
+        choices=RASTER_FORMATS + VECTOR_FORMATS,
         help="export file type",
     )
 
