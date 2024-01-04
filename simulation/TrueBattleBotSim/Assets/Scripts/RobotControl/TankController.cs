@@ -5,11 +5,10 @@ using RosMessageTypes.Nav;
 using RosMessageTypes.Std;
 using Unity.Robotics.ROSTCPConnector.ROSGeometry;
 
-class TankController : MonoBehaviour
+class TankController : MonoBehaviour, ControllerInterface
 {
-    [SerializeField] private string baseTopic = "";
+    [SerializeField] private string parentFrame = "map";
     [SerializeField] private float baseWidth = 1.0f;
-    private ROSConnection ros;
 
     [SerializeField] private Wheel leftWheel;
     [SerializeField] private Wheel rightWheel;
@@ -19,19 +18,17 @@ class TankController : MonoBehaviour
 
     private ArticulationBody body;
     private TwistMsg setpoint;
+    private TransformFrame frame;
 
     public void Start()
     {
         body = GetComponent<ArticulationBody>();
-        ros = ROSConnection.GetOrCreateInstance();
-        ros.Subscribe<TwistMsg>(baseTopic + "/cmd_vel/relative", cmdVelCallback);
-        ros.RegisterPublisher<OdometryMsg>(baseTopic + "/ground_truth");
+        frame = GetComponent<TransformFrame>();
     }
 
     public void Update()
     {
         updateCommand();
-        updateOdometry();
     }
 
     private void updateCommand()
@@ -45,17 +42,17 @@ class TankController : MonoBehaviour
         rightWheel.setVelocity(rightWheelSpeed);
     }
 
-    private void updateOdometry()
+    public OdometryMsg getGroundTruth()
     {
-        OdometryMsg msg = new OdometryMsg
+        return new OdometryMsg
         {
             header = new HeaderMsg
             {
                 seq = 0,
                 stamp = RosUtil.GetTimeMsg(),
-                frame_id = "map"
+                frame_id = parentFrame
             },
-            child_frame_id = baseTopic + "_base_link",
+            child_frame_id = frame.GetFrameId(),
             pose = new PoseWithCovarianceMsg
             {
                 pose = new PoseMsg
@@ -69,7 +66,6 @@ class TankController : MonoBehaviour
                 twist = GetGroundTruthVelocity()
             }
         };
-        ros.Publish(baseTopic + "/ground_truth", msg);
     }
 
     private Vector3 GetRelativeVelocity()
@@ -110,7 +106,7 @@ class TankController : MonoBehaviour
         };
     }
 
-    private void cmdVelCallback(TwistMsg twist)
+    public void setCommand(TwistMsg twist)
     {
         setpoint = twist;
     }

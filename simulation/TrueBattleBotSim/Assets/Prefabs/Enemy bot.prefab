@@ -932,10 +932,28 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f9b26e993356c0fa1a59dbfbda2f0b1a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  baseTopic: opponent_1
+  parentFrame: map
   baseWidth: 0.3
   leftWheel: {fileID: 70166154249081628}
   rightWheel: {fileID: 9131883554127257807}
+  linearPid:
+    kp: 0.01
+    ki: 0
+    kd: 0
+    kf: 1
+    i_zone: 0
+    i_max: 0
+    epsilon: 0.000000001
+    tolerance: 0
+  angularPid:
+    kp: 1
+    ki: 0
+    kd: 0
+    kf: 1
+    i_zone: 0
+    i_max: 0
+    epsilon: 0.000000001
+    tolerance: 0
 --- !u!1 &6796888364003095253
 GameObject:
   m_ObjectHideFlags: 0

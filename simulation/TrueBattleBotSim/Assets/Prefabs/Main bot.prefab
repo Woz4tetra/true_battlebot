@@ -462,6 +462,8 @@ GameObject:
   - component: {fileID: 8575747899302142240}
   - component: {fileID: 6355694855304006745}
   - component: {fileID: 7016529410798994689}
+  - component: {fileID: 7476005470379129722}
+  - component: {fileID: 4331783685755869673}
   m_Layer: 6
   m_Name: Main bot
   m_TagString: Untagged
@@ -566,7 +568,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f9b26e993356c0fa1a59dbfbda2f0b1a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  baseTopic: main_bot
+  parentFrame: map
   baseWidth: 0.3
   leftWheel: {fileID: 234145475386730121}
   rightWheel: {fileID: 8633397056333115285}
@@ -588,6 +590,32 @@ MonoBehaviour:
     i_max: 0
     epsilon: 0.000000001
     tolerance: 0
+--- !u!114 &7476005470379129722
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3943261646546904708}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ec44692c016b38f2fa5a1ac478811855, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  baseTopic: main_bot
+--- !u!114 &4331783685755869673
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3943261646546904708}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cdcdcfb4a221bb3b68e7574f1643d4ad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  frameId: ma
 --- !u!1 &4211652632592029307
 GameObject:
   m_ObjectHideFlags: 0
