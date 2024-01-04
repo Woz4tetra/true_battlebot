@@ -887,14 +887,6 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: -364.231
       objectReference: {fileID: 0}
-    - target: {fileID: 3729077049147826558, guid: 2cf32c22490789d48bee636147bdadd8, type: 3}
-      propertyPath: angularPid.kd
-      value: 0.001
-      objectReference: {fileID: 0}
-    - target: {fileID: 3729077049147826558, guid: 2cf32c22490789d48bee636147bdadd8, type: 3}
-      propertyPath: angularPid.kp
-      value: 1.5
-      objectReference: {fileID: 0}
     - target: {fileID: 5389180406130617305, guid: 2cf32c22490789d48bee636147bdadd8, type: 3}
       propertyPath: m_Materials.Array.data[0]
       value: 
