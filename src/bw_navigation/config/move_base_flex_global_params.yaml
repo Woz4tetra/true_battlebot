@@ -44,7 +44,7 @@ recovery_enabled: true
 recovery_patience: 15.0
 
 # How long in seconds to allow for oscillation before executing recovery behaviors
-oscillation_timeout: 0.0
+oscillation_timeout: 1.5
 
 # How far in meters the robot must move to be considered not to be oscillating
-oscillation_distance: 0.5
+oscillation_distance: 0.025

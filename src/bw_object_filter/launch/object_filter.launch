@@ -1,5 +1,6 @@
 <launch>
-    <arg name="robot_filter_config" default="$(find bw_object_filter)/config/robot_filter.yaml" />
+    <arg name="robots_config" default="$(find bw_bringup)/config/robots.yaml" />
+    <arg name="filter_config" default="$(find bw_bringup)/config/robot_filter.yaml" />
     <arg name="camera_name" default="camera_0" />
     <arg name="auto_initialize" default="false" />
 
@@ -15,7 +16,8 @@
         <remap from="camera_info" to="$(arg camera_name)/rgb/camera_info" />
     </node>
     <node pkg="bw_object_filter" type="robot_filter.py" name="robot_filter" output="screen">
-        <rosparam command="load" file="$(arg robot_filter_config)" ns="robots" />
+        <rosparam command="load" file="$(arg robots_config)" ns="robots" />
+        <rosparam command="load" file="$(arg filter_config)" ns="" />
         <remap from="estimation/robots" to="$(arg camera_name)/estimation/robots" />
     </node>
 </launch>

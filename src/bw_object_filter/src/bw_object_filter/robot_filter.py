@@ -38,6 +38,7 @@ class RobotFilter:
         robot_config = get_param("~robots", None)
         if robot_config is None:
             raise ValueError("Must specify robot_config in the parameter server")
+        rospy.logdebug(f"Robot config: {robot_config}")
 
         self.update_rate = get_param("~update_rate", 50.0)
         self.update_delay = 1.0 / self.update_rate
@@ -367,6 +368,6 @@ class RobotFilter:
 
 
 if __name__ == "__main__":
-    rospy.init_node("robot_filter")
+    rospy.init_node("robot_filter", log_level=rospy.DEBUG)
     robot_filter = RobotFilter()
     robot_filter.run()
