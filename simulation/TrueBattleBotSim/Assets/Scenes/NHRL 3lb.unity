@@ -528,6 +528,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Referee
       objectReference: {fileID: 0}
+    - target: {fileID: 3916948366294734706, guid: aaef7004aff59bade88f48fff48ef36a, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 4634612887268747568, guid: aaef7004aff59bade88f48fff48ef36a, type: 3}
       propertyPath: m_RootOrder
       value: 8
@@ -697,8 +701,14 @@ PrefabInstance:
       propertyPath: m_ParentAnchorPosition.x
       value: -0.14999998
       objectReference: {fileID: 0}
+    - target: {fileID: 8872792567192406061, guid: 8700ae8b4b96668d3a48178470441f85, type: 3}
+      propertyPath: m_Enabled
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
-    m_RemovedGameObjects: []
+    m_RemovedGameObjects:
+    - {fileID: 156769379731410652, guid: 8700ae8b4b96668d3a48178470441f85, type: 3}
+    - {fileID: 1419186387157885288, guid: 8700ae8b4b96668d3a48178470441f85, type: 3}
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 8700ae8b4b96668d3a48178470441f85, type: 3}

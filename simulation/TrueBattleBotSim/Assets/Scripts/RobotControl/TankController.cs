@@ -1,5 +1,4 @@
 using UnityEngine;
-using Unity.Robotics.ROSTCPConnector;
 using RosMessageTypes.Geometry;
 using RosMessageTypes.Nav;
 using RosMessageTypes.Std;
@@ -17,7 +16,7 @@ class TankController : MonoBehaviour, ControllerInterface
     [SerializeField] private PID angularPid;
 
     private ArticulationBody body;
-    private TwistMsg setpoint;
+    private TwistMsg setpoint = new TwistMsg();
     private TransformFrame frame;
 
     public void Start()
