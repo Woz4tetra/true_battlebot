@@ -1,5 +1,5 @@
 obstacle_layer:
-    enabled: false
+    enabled: true
     origin_z: 0.0
     z_resolution: 0.1
     z_voxels: 10

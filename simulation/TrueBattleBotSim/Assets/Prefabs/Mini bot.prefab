@@ -507,6 +507,24 @@ MonoBehaviour:
   baseWidth: 0.2
   leftWheel: {fileID: 5162377283688023246}
   rightWheel: {fileID: 8736597938258222992}
+  linearPid:
+    kp: 0.01
+    ki: 0
+    kd: 0
+    kf: 1
+    i_zone: 0
+    i_max: 0
+    epsilon: 0.000000001
+    tolerance: 0
+  angularPid:
+    kp: 1.5
+    ki: 0
+    kd: 0.001
+    kf: 1
+    i_zone: 0
+    i_max: 0
+    epsilon: 0.000000001
+    tolerance: 0
 --- !u!1 &3676179290044921461
 GameObject:
   m_ObjectHideFlags: 0
