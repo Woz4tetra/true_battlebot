@@ -5,3 +5,4 @@ pytest
 dacite
 pymongo
 ansi2html
+svgwrite
