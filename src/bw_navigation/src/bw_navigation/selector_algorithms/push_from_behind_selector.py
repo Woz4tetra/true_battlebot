@@ -88,7 +88,7 @@ class PushFromBehindSelector(BaseSelector):
             guidance_pose.x, guidance_pose.y, match_state.guidance_to_opponent_heading
         )
         guidance_to_opponent = opponent_pose.relative_to(guidance_pointed_to_opponent)
-        guidance_to_controlled = controlled_pose.relative_to(guidance_pose)
+        guidance_to_controlled = controlled_pose.relative_to(guidance_pointed_to_opponent)
         return (
             abs(guidance_to_opponent.y) < self.on_target_lateral_threshold
             and abs(guidance_to_controlled.y) < self.on_target_lateral_threshold
@@ -143,7 +143,9 @@ class PushFromBehindSelector(BaseSelector):
         return pose_near_opponent
 
     def is_point_in_bounds(self, point: XY, field: EstimatedObject) -> bool:
-        return 0 <= point.x <= field.size.x and 0 <= point.y <= field.size.y
+        half_x = field.size.x / 2
+        half_y = field.size.y / 2
+        return -half_x <= point.x <= half_x and -half_y <= point.y <= half_y
 
     def interpolate(self, obj1: XY, obj2: XY, t: float) -> XY:
         """
