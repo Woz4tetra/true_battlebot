@@ -80,19 +80,19 @@ class TargetSelector:
                 object_id = self.non_controlled_robot_names.index(robot_name)
                 position = robot.state.pose.pose.position
                 obstacles.header = robot.header
-                radius = max(robot.size.x, robot.size.y, robot.size.z) / 2
+                diameter = max(robot.size.x, robot.size.y, robot.size.z)
                 obstacles.obstacles.append(  # type: ignore
                     ObstacleMsg(
                         header=robot.header,
                         id=object_id,
-                        radius=radius / 2,  # TEB draws this wrong in viz marker
+                        radius=diameter,  # TEB actually uses this as diameter
                         polygon=Polygon(points=[position]),
                         orientation=robot.state.pose.pose.orientation,
                         velocities=robot.state.twist,
                     )
                 )
                 object_pose = Pose2D.from_msg(robot.state.pose.pose)
-                single_cloud_obstacle = self.get_obstacle_point(object_pose, radius, 8)
+                single_cloud_obstacle = self.get_obstacle_point(object_pose, diameter / 2, 8)
                 if len(cloud_obstacles) == 0:
                     cloud_obstacles = single_cloud_obstacle
                 else:

@@ -188,7 +188,7 @@ exact_arc_length: true # false
 shrink_horizon_min_duration: 10.0 # 10.0
 
 # Minimum desired separation from obstacles in meters
-min_obstacle_dist: 0.05 # 0.5
+min_obstacle_dist: 0.015 # 0.5
 
 # Specify if obstacles of the local costmap should be taken into
 # account. Each cell that is marked as obstacle is considered as a
@@ -213,7 +213,7 @@ obstacle_poses_affected: 30 # 30
 # Buffer zone around obstacles with non-zero penalty costs (should be
 # larger than min_obstacle_dist in order to take effect). Also refer to
 # the weight weight_inflation.
-inflation_dist: 0.3 # 0.6
+inflation_dist: 0.03 # 0.6
 
 # If this parameter is set to true, the motion of obstacles with non-
 # zero velocity (provided via user-supplied obstacles on topic
@@ -311,10 +311,10 @@ weight_kinematics_turning_radius: 1.0 # 1.0
 weight_optimaltime: 1.0 # 1.0
 
 # Optimization weight for keeping a minimum distance from obstacles
-weight_obstacle: 50.0 # 50.0
+weight_obstacle: 25.0 # 50.0
 
 # Optimization weight for keeping a minimum distance from dynamic obstacles
-weight_dynamic_obstacle: 50.0 # 50.0
+weight_dynamic_obstacle: 25.0 # 50.0
 
 # Optimization weight for minimizing the distance to via-points (resp.
 # reference path). New in version 0.4
