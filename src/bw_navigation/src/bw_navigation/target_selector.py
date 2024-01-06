@@ -14,7 +14,7 @@ from sensor_msgs import point_cloud2
 from sensor_msgs.msg import PointCloud2, PointField
 from std_msgs.msg import Header
 
-from bw_navigation.selector_algorithms import PushFromBehindSelector, SacrificialSelector
+from bw_navigation.selector_algorithms import CrashSelector, PushFromBehindSelector, SacrificialSelector
 from bw_navigation.selector_algorithms.base_selector import BaseSelector
 from bw_navigation.selector_algorithms.match_state import MatchState
 
@@ -38,6 +38,7 @@ class TargetSelector:
         self.selection_algorithm: BaseSelector = {
             "sacrificial_selector": SacrificialSelector,
             "push_from_behind_selector": PushFromBehindSelector,
+            "crash_selector": CrashSelector,
         }[self.algorithm_name]()
 
         all_robots = RobotFleetConfig.from_dict(robot_config)
