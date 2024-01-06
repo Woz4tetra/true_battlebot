@@ -63,8 +63,6 @@ class TargetSelector:
         self.filter_lock = Lock()
         self.obstacle_lock = Lock()
         self.filter_states = EstimatedObjectArray()
-        self.cloud_obstacles = PointCloud2()
-        self.cloud_timer = rospy.Timer(rospy.Duration(1.0), self.publish_cloud_obstacles)
 
     def field_callback(self, msg: EstimatedObject) -> None:
         self.field = msg
@@ -99,12 +97,9 @@ class TargetSelector:
                     cloud_obstacles = single_cloud_obstacle
                 else:
                     cloud_obstacles = np.append(cloud_obstacles, single_cloud_obstacle, axis=0)
-        self.cloud_obstacles = self.get_obstacle_cloud(self.obstacles.header, cloud_obstacles)
+        cloud_msg = self.get_obstacle_cloud(self.obstacles.header, cloud_obstacles)
+        self.obstacle_cloud_pub.publish(cloud_msg)
         self.obstacle_pub.publish(self.obstacles)
-
-    def publish_cloud_obstacles(self) -> None:
-        if self.cloud_obstacles.header.frame_id:
-            self.obstacle_cloud_pub.publish(self.cloud_obstacles)
 
     def get_obstacle_point(self, center: Pose2D, radius: float, num_points: int) -> np.ndarray:
         angles = np.linspace(0, 2 * np.pi, num_points + 1)[1:]

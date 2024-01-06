@@ -1,5 +1,7 @@
 import math
+from enum import Enum, auto
 
+import rospy
 from bw_interfaces.msg import EstimatedObject
 from bw_tools.structs.pose2d import Pose2D
 from bw_tools.structs.xy import XY
@@ -9,6 +11,13 @@ from std_msgs.msg import Header
 from bw_navigation.selector_algorithms.match_state import MatchState, SelectionResult
 
 from .base_selector import BaseSelector
+
+
+class PushFromBehindState(Enum):
+    IDLE = auto()
+    PUSH = auto()
+    GET_BEHIND = auto()
+    GET_NEAR = auto()
 
 
 class PushFromBehindSelector(BaseSelector):
@@ -22,6 +31,7 @@ class PushFromBehindSelector(BaseSelector):
     def __init__(self) -> None:
         self.keep_back_distance = 0.1
         self.on_target_lateral_threshold = 0.075
+        self.state = PushFromBehindState.IDLE
 
     def get_target(self, match_state: MatchState) -> SelectionResult:
         """
@@ -33,6 +43,7 @@ class PushFromBehindSelector(BaseSelector):
         """
         if self.is_on_target(match_state):
             push_target = self.compute_push_target(match_state)
+            self.set_state(PushFromBehindState.PUSH)
             return SelectionResult(
                 goal=PoseStamped(
                     header=Header(frame_id=match_state.frame_id),
@@ -42,6 +53,7 @@ class PushFromBehindSelector(BaseSelector):
             )
         pose_behind_opponent = self.compute_pose_behind_opponent(match_state)
         if self.is_point_in_bounds(pose_behind_opponent.to_point(), match_state.field):
+            self.set_state(PushFromBehindState.GET_BEHIND)
             return SelectionResult(
                 goal=PoseStamped(
                     header=Header(frame_id=match_state.frame_id),
@@ -51,6 +63,7 @@ class PushFromBehindSelector(BaseSelector):
             )
 
         nearest_pose_to_opponent = self.compute_nearest_pose_to_opponent(match_state)
+        self.set_state(PushFromBehindState.GET_NEAR)
         return SelectionResult(
             goal=PoseStamped(
                 header=Header(frame_id=match_state.frame_id),
@@ -58,6 +71,11 @@ class PushFromBehindSelector(BaseSelector):
             ),
             ignore_opponent_obstacles=False,
         )
+
+    def set_state(self, state: PushFromBehindState) -> None:
+        if self.state != state:
+            self.state = state
+            rospy.loginfo(f"PushFromBehindSelector state changed to {state}")
 
     def is_on_target(self, match_state: MatchState) -> bool:
         """
@@ -109,10 +127,9 @@ class PushFromBehindSelector(BaseSelector):
         """
         Compute a pose close to the opponent that is still inside the field
         """
-        guidance_pose = match_state.guidance_pose
         opponent_pose = match_state.opponent_pose
         controlled_pose = match_state.controlled_pose
-        distance_to_opponent = guidance_pose.magnitude(controlled_pose)
+        distance_to_opponent = opponent_pose.magnitude(controlled_pose)
         distance_near_opponent = distance_to_opponent - self.keep_back_distance
         interpolation_ratio = distance_near_opponent / distance_to_opponent
         point_near_opponent = self.interpolate(

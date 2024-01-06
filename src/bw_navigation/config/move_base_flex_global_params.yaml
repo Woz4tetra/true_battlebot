@@ -3,10 +3,10 @@ planners:
       type: global_planner/GlobalPlanner
 
 controllers:
-    # - name: TebLocalPlannerROS
-    #   type: teb_local_planner/TebLocalPlannerROS
-    - name: DWAPlannerROS
-      type: dwa_local_planner/DWAPlannerROS
+    - name: TebLocalPlannerROS
+      type: teb_local_planner/TebLocalPlannerROS
+    # - name: DWAPlannerROS
+    #   type: dwa_local_planner/DWAPlannerROS
 
 recovery_behaviors:
     - name: "reset_costmap"
