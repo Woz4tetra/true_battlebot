@@ -123,7 +123,7 @@ publish_cost_grid: true
 ## Oscillation Prevention Parameters ##
 
 # How far the robot must travel in meters before oscillation flags are reset
-oscillation_reset_dist: 0.125
+oscillation_reset_dist: 0.025
 
 oscillation_reset_angle: 10.0
 

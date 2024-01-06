@@ -29,8 +29,8 @@ class PushFromBehindSelector(BaseSelector):
     """
 
     def __init__(self) -> None:
-        self.keep_back_distance = 0.2
-        self.on_target_lateral_threshold = 0.075
+        self.keep_back_buffer = 0.05
+        self.on_target_lateral_threshold = 0.1
         self.state = PushFromBehindState.IDLE
 
     def get_target(self, match_state: MatchState) -> SelectionResult:
@@ -101,7 +101,9 @@ class PushFromBehindSelector(BaseSelector):
         guidance_pose = match_state.guidance_pose
         opponent_pose = match_state.opponent_pose
         distance_to_opponent = match_state.guidance_to_opponent_magnitude
-        interpolation_ratio = self.keep_back_distance / distance_to_opponent
+        if distance_to_opponent <= 0.0:
+            return match_state.controlled_pose
+        interpolation_ratio = self.keep_back_distance(match_state) / distance_to_opponent
         target_point = self.interpolate(guidance_pose.to_point(), opponent_pose.to_point(), interpolation_ratio)
         target_pose = Pose2D(target_point.x, target_point.y, match_state.guidance_to_opponent_heading + math.pi)
         return target_pose
@@ -113,7 +115,7 @@ class PushFromBehindSelector(BaseSelector):
         guidance_pose = match_state.guidance_pose
         opponent_pose = match_state.opponent_pose
         distance_to_opponent = match_state.guidance_to_opponent_magnitude
-        distance_behind_opponent = distance_to_opponent + self.keep_back_distance
+        distance_behind_opponent = distance_to_opponent + self.keep_back_distance(match_state)
         interpolation_ratio = distance_behind_opponent / distance_to_opponent
         point_behind_opponent = self.interpolate(
             guidance_pose.to_point(), opponent_pose.to_point(), interpolation_ratio
@@ -130,9 +132,9 @@ class PushFromBehindSelector(BaseSelector):
         opponent_pose = match_state.opponent_pose
         controlled_pose = match_state.controlled_pose
         distance_to_opponent = opponent_pose.magnitude(controlled_pose)
-        if distance_to_opponent < self.keep_back_distance:
+        if distance_to_opponent < self.keep_back_distance(match_state):
             return controlled_pose
-        distance_near_opponent = distance_to_opponent - self.keep_back_distance
+        distance_near_opponent = distance_to_opponent - self.keep_back_distance(match_state)
         interpolation_ratio = distance_near_opponent / distance_to_opponent
         point_near_opponent = self.interpolate(
             controlled_pose.to_point(), opponent_pose.to_point(), interpolation_ratio
@@ -146,6 +148,12 @@ class PushFromBehindSelector(BaseSelector):
         half_x = field.size.x / 2
         half_y = field.size.y / 2
         return -half_x <= point.x <= half_x and -half_y <= point.y <= half_y
+
+    def keep_back_distance(self, match_state: MatchState) -> float:
+        """
+        Compute the distance to keep back from the opponent
+        """
+        return match_state.controlled_diameter / 2 + match_state.opponent_diameter / 2 + self.keep_back_buffer
 
     def interpolate(self, obj1: XY, obj2: XY, t: float) -> XY:
         """

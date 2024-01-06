@@ -34,7 +34,7 @@ planner_max_retries: -1
 controller_frequency: 20.0
 
 # How long the controller will wait in seconds without receiving a valid control before giving up
-controller_patience: 3.0
+controller_patience: 2.5
 
 # How many times we will recall the controller in an attempt to find a valid command before giving up
 controller_max_retries: -1
@@ -49,4 +49,4 @@ recovery_patience: 15.0
 oscillation_timeout: 1.5
 
 # How far in meters the robot must move to be considered not to be oscillating
-oscillation_distance: 0.15
+oscillation_distance: 0.025

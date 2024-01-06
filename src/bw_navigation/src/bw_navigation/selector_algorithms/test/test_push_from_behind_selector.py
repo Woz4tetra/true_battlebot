@@ -13,7 +13,7 @@ from nav_msgs.msg import Odometry
 @pytest.fixture
 def push_from_behind_selector() -> PushFromBehindSelector:
     selector = PushFromBehindSelector()
-    selector.keep_back_distance = 0.1
+    selector.keep_back_buffer = 0.1
     selector.on_target_lateral_threshold = 0.075
     return selector
 

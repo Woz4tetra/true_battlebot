@@ -978,11 +978,11 @@ MonoBehaviour:
     epsilon: 0.000000001
     tolerance: 0
   angularPid:
-    kp: 1
-    ki: 0
-    kd: 0
+    kp: 2
+    ki: 1
+    kd: 0.001
     kf: 1
-    i_zone: 0
+    i_zone: 10
     i_max: 0
     epsilon: 0.000000001
     tolerance: 0

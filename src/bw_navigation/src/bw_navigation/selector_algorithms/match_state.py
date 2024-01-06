@@ -3,6 +3,7 @@ from functools import cached_property
 
 from bw_interfaces.msg import EstimatedObject
 from bw_tools.structs.pose2d import Pose2D
+from bw_tools.structs.xy import XY
 from geometry_msgs.msg import PoseStamped
 
 
@@ -33,6 +34,18 @@ class MatchState:
     @cached_property
     def guidance_to_opponent_magnitude(self) -> float:
         return self.guidance_pose.magnitude(self.opponent_pose)
+
+    @cached_property
+    def guidance_diameter(self) -> float:
+        return XY(self.guidance_bot.size.x, self.guidance_bot.size.y).magnitude()
+
+    @cached_property
+    def opponent_diameter(self) -> float:
+        return XY(self.opponent_bot.size.x, self.opponent_bot.size.y).magnitude()
+
+    @cached_property
+    def controlled_diameter(self) -> float:
+        return XY(self.controlled_bot.size.x, self.controlled_bot.size.y).magnitude()
 
 
 @dataclass
