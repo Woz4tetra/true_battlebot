@@ -5,6 +5,7 @@ from bw_tools.typing import get_param
 from py_trees import display
 from py_trees.trees import BehaviourTree
 from py_trees.visitors import DisplaySnapshotVisitor
+from std_msgs.msg import String
 
 from bw_behaviors.container import Container
 from bw_behaviors.subtrees import make_mode_tree
@@ -14,6 +15,7 @@ class SparseDisplaySnapshotVisitor(DisplaySnapshotVisitor):
     def __init__(self) -> None:
         super().__init__()
         self.status_str = ""
+        self.tree_snapshot_pub = rospy.Publisher("tree_snapshot", String, queue_size=1, latch=True)
 
     def finalise(self) -> None:
         status_str = ""
@@ -31,7 +33,7 @@ class SparseDisplaySnapshotVisitor(DisplaySnapshotVisitor):
             status_str = display.unicode_blackboard_activity_stream()
         if status_str != self.status_str:
             self.status_str = status_str
-            print(status_str)
+            self.tree_snapshot_pub.publish(self.status_str)
 
 
 class TreesNode:
@@ -55,8 +57,13 @@ class TreesNode:
     def run(self):
         self.tree.setup(timeout=15)
         rate = rospy.Rate(self.tick_rate)
+        prev_tip = None
         while not rospy.is_shutdown():
             self.tree.tick()
+            tip = self.tree.tip()
+            if prev_tip != tip and tip is not None:
+                rospy.loginfo(f"Tip: {tip.name}")
+                prev_tip = tip
             rate.sleep()
         self.tree.shutdown()
 

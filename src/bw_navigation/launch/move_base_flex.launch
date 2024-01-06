@@ -34,5 +34,6 @@
 	<node name="target_selector" pkg="bw_navigation" type="target_selector.py" output="screen">
 		<remap from="obstacles" to="/move_base_flex/TebLocalPlannerROS/obstacles" />
 		<rosparam command="load" file="$(arg robots_config)" ns="robots" />
+		<param name="algorithm" value="push_from_behind_selector" />
 	</node>
 </launch>

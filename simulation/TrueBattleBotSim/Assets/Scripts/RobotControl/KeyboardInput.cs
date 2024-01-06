@@ -13,20 +13,37 @@ class KeyboardInput : MonoBehaviour
     public void Update()
     {
         updateCommand();
-        TwistMsg twist = controller.getGroundTruth().twist.twist;
-        Debug.Log($"odom: {twist.linear.x}, {twist.angular.z}");
     }
 
     private void updateCommand()
     {
-        float linear = Input.GetAxis("Vertical") * linearScale;
-        float angular = Input.GetAxis("Horizontal") * -angularScale;
+
+        float angular = 0.0f;
+        float linear = 0.0f;
+        if (Input.GetKey(KeyCode.A))
+        {
+            angular += angularScale;
+        }
+
+        if (Input.GetKey(KeyCode.D))
+        {
+            angular += -angularScale;
+        }
+
+        if (Input.GetKey(KeyCode.W))
+        {
+            linear += linearScale;
+        }
+
+        if (Input.GetKey(KeyCode.S))
+        {
+            linear += -linearScale;
+        }
         TwistMsg command = new TwistMsg
         {
             linear = new Vector3Msg { x = linear },
             angular = new Vector3Msg { z = angular }
         };
-        Debug.Log($"cmd: {command.linear.x}, {command.angular.z}");
         controller.setCommand(command);
     }
 }

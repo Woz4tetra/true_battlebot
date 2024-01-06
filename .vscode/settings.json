@@ -31,8 +31,8 @@
     "git.openRepositoryInParentFolders": "always",
     "[python]": {
         "editor.codeActionsOnSave": {
-            "source.organizeImports": true,
-            "source.fixAll": true
+            "source.organizeImports": "explicit",
+            "source.fixAll": "explicit"
         },
         "editor.defaultFormatter": "ms-python.black-formatter",
         "editor.formatOnSave": true
