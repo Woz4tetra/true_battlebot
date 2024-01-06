@@ -130,6 +130,8 @@ class PushFromBehindSelector(BaseSelector):
         opponent_pose = match_state.opponent_pose
         controlled_pose = match_state.controlled_pose
         distance_to_opponent = opponent_pose.magnitude(controlled_pose)
+        if distance_to_opponent < self.keep_back_distance:
+            return controlled_pose
         distance_near_opponent = distance_to_opponent - self.keep_back_distance
         interpolation_ratio = distance_near_opponent / distance_to_opponent
         point_near_opponent = self.interpolate(
