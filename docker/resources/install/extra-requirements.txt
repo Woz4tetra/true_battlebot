@@ -4,3 +4,4 @@ py_trees==2.2.3
 pytest
 dacite
 pymongo
+ansi2html

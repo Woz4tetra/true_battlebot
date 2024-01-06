@@ -47,9 +47,6 @@ class TargetSelector:
 
         self.ignore_opponent_obstacles = False
 
-        self.obstacles = ObstacleArrayMsg()
-        self.obstacles.obstacles = [ObstacleMsg() for _ in range(len(self.non_controlled_robots))]
-
         self.field = EstimatedObject()
 
         self.obstacle_pub = rospy.Publisher("obstacles", ObstacleArrayMsg, queue_size=10)
@@ -71,6 +68,7 @@ class TargetSelector:
         with self.filter_lock:
             self.filter_states = msg
         cloud_obstacles = np.array([], dtype=np.float32)
+        obstacles = ObstacleArrayMsg()
         for robot in msg.robots:  # type: ignore
             robot: EstimatedObject
             robot_name = robot.label
@@ -81,15 +79,17 @@ class TargetSelector:
             with self.obstacle_lock:
                 object_id = self.non_controlled_robot_names.index(robot_name)
                 position = robot.state.pose.pose.position
-                self.obstacles.header = robot.header
+                obstacles.header = robot.header
                 diameter = max(robot.size.x, robot.size.y, robot.size.z)
-                self.obstacles.obstacles[object_id] = ObstacleMsg(  # type: ignore
-                    header=robot.header,
-                    id=object_id,
-                    radius=diameter,  # TEB actually uses this as diameter
-                    polygon=Polygon(points=[position]),
-                    orientation=robot.state.pose.pose.orientation,
-                    velocities=robot.state.twist,
+                obstacles.obstacles.append(  # type: ignore
+                    ObstacleMsg(
+                        header=robot.header,
+                        id=object_id,
+                        radius=diameter,  # TEB actually uses this as diameter
+                        polygon=Polygon(points=[position]),
+                        orientation=robot.state.pose.pose.orientation,
+                        velocities=robot.state.twist,
+                    )
                 )
                 object_pose = Pose2D.from_msg(robot.state.pose.pose)
                 single_cloud_obstacle = self.get_obstacle_point(object_pose, diameter / 2, 8)
@@ -97,9 +97,10 @@ class TargetSelector:
                     cloud_obstacles = single_cloud_obstacle
                 else:
                     cloud_obstacles = np.append(cloud_obstacles, single_cloud_obstacle, axis=0)
-        cloud_msg = self.get_obstacle_cloud(self.obstacles.header, cloud_obstacles)
-        self.obstacle_cloud_pub.publish(cloud_msg)
-        self.obstacle_pub.publish(self.obstacles)
+        if len(obstacles.obstacles):  # type: ignore
+            cloud_msg = self.get_obstacle_cloud(obstacles.header, cloud_obstacles)
+            self.obstacle_cloud_pub.publish(cloud_msg)
+        self.obstacle_pub.publish(obstacles)
 
     def get_obstacle_point(self, center: Pose2D, radius: float, num_points: int) -> np.ndarray:
         angles = np.linspace(0, 2 * np.pi, num_points + 1)[1:]

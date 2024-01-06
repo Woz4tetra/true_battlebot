@@ -29,7 +29,7 @@ class PushFromBehindSelector(BaseSelector):
     """
 
     def __init__(self) -> None:
-        self.keep_back_distance = 0.1
+        self.keep_back_distance = 0.2
         self.on_target_lateral_threshold = 0.075
         self.state = PushFromBehindState.IDLE
 
@@ -75,7 +75,7 @@ class PushFromBehindSelector(BaseSelector):
     def set_state(self, state: PushFromBehindState) -> None:
         if self.state != state:
             self.state = state
-            rospy.loginfo(f"PushFromBehindSelector state changed to {state}")
+            rospy.logdebug(f"PushFromBehindSelector state changed to {state}")
 
     def is_on_target(self, match_state: MatchState) -> bool:
         """

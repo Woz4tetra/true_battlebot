@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import py_trees
 import rospy
+from ansi2html import Ansi2HTMLConverter
 from bw_tools.typing import get_param
 from py_trees import display
 from py_trees.trees import BehaviourTree
@@ -16,6 +17,7 @@ class SparseDisplaySnapshotVisitor(DisplaySnapshotVisitor):
         super().__init__()
         self.status_str = ""
         self.tree_snapshot_pub = rospy.Publisher("tree_snapshot", String, queue_size=1, latch=True)
+        self.ansi_converter = Ansi2HTMLConverter()
 
     def finalise(self) -> None:
         status_str = ""
@@ -28,12 +30,12 @@ class SparseDisplaySnapshotVisitor(DisplaySnapshotVisitor):
                 previously_visited=self.previously_visited,
             )
         if self.display_blackboard:
-            status_str = display.unicode_blackboard(key_filter=self.visited_blackboard_keys)
+            status_str += display.unicode_blackboard(key_filter=self.visited_blackboard_keys)
         if self.display_activity_stream:
-            status_str = display.unicode_blackboard_activity_stream()
+            status_str += display.unicode_blackboard_activity_stream()
         if status_str != self.status_str:
             self.status_str = status_str
-            self.tree_snapshot_pub.publish(self.status_str)
+            self.tree_snapshot_pub.publish(self.ansi_converter.convert(self.status_str))
 
 
 class TreesNode:

@@ -35,16 +35,20 @@ def make_match_state(control: Pose2D, guidance: Pose2D, opponent: Pose2D, size: 
 
 
 @pytest.mark.parametrize(
-    ("is_on_target", "in_bounds", "state"),
+    ("is_on_target", "in_bounds", "state", "ignore_opponents"),
     [
-        (True, False, PushFromBehindState.PUSH),
-        (True, True, PushFromBehindState.PUSH),
-        (False, True, PushFromBehindState.GET_BEHIND),
-        (False, False, PushFromBehindState.GET_NEAR),
+        (True, False, PushFromBehindState.PUSH, True),
+        (True, True, PushFromBehindState.PUSH, True),
+        (False, True, PushFromBehindState.GET_BEHIND, False),
+        (False, False, PushFromBehindState.GET_NEAR, False),
     ],
 )
 def test_get_target(
-    push_from_behind_selector: PushFromBehindSelector, is_on_target: bool, in_bounds: bool, state: PushFromBehindState
+    push_from_behind_selector: PushFromBehindSelector,
+    is_on_target: bool,
+    in_bounds: bool,
+    state: PushFromBehindState,
+    ignore_opponents: bool,
 ) -> None:
     def target_override(match_state: MatchState) -> bool:
         return is_on_target
@@ -62,8 +66,9 @@ def test_get_target(
         size=XY(1.0, 1.0),
     )
 
-    push_from_behind_selector.get_target(match_state)
+    result = push_from_behind_selector.get_target(match_state)
     assert push_from_behind_selector.state == state
+    assert result.ignore_opponent_obstacles == ignore_opponents
 
 
 def test_is_on_target(push_from_behind_selector: PushFromBehindSelector) -> None:
