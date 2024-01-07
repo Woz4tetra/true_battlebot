@@ -31,6 +31,5 @@ tmux send -t "${SESSION}" 'source /opt/${ORGANIZATION}/set_log_format.sh' ENTER
 tmux send -t "${SESSION}" 'roslaunch --wait bw_bringup bw_bringup.launch --screen &' ENTER
 tmux send -t "${SESSION}" 'echo $! > /opt/${ORGANIZATION}/roslaunch_pid' ENTER
 
-sleep 2
-/opt/"${ORGANIZATION}"/scripts/logs
+/opt/"${ORGANIZATION}"/scripts/logs -w
 sleep infinity

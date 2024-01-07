@@ -3,5 +3,5 @@ BASE_DIR=$(realpath "$(dirname $0)")
 
 ${BASE_DIR}/docker/scripts/copy_project
 ${BASE_DIR}/docker/scripts/run_containers
-${BASE_DIR}/docker/scripts/tail_container_logs
+${BASE_DIR}/docker/scripts/tail_container_logs -w
 ${BASE_DIR}/docker/scripts/stop_container
