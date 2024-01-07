@@ -81,3 +81,5 @@ if ! shopt -oq posix; then
 fi
 
 alias rm="rm -I"
+
+source /opt/${ORGANIZATION}/entrypoint.sh

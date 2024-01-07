@@ -103,7 +103,7 @@ function initTreeSnapshotSubscriber() {
     });
 }
 
-function initSnapshotCaret() {
+function initCarets() {
     var toggler = document.getElementsByClassName("caret");
     console.log(`Found ${toggler.length} carets`);
     var i;
@@ -111,6 +111,40 @@ function initSnapshotCaret() {
     for (i = 0; i < toggler.length; i++) {
         toggler[i].addEventListener("click", function () {
             console.log("Clicked caret");
+            this.parentElement
+                .querySelector(".nested")
+                .classList.toggle("active");
+            this.classList.toggle("caret-down");
+        });
+    }
+}
+
+function initHealthSummarySubscriber() {
+    var listener = new ROSLIB.Topic({
+        ros: ros,
+        name: "/health",
+        messageType: "bw_interfaces/HealthSummary",
+    });
+
+    listener.subscribe(function (message) {
+        message.active_nodes.forEach((node) => {
+            console.log(`Found active node ${node}`);
+            // document.getElementById(node).classList.add("active");
+        });
+        message.dead_nodes.forEach((node) => {
+            console.log(`Found dead node ${node}`);
+            // document.getElementById(node).classList.add("dead");
+        });
+    });
+}
+
+function initCarets() {
+    var toggler = document.getElementsByClassName("caret");
+    console.log(`Found ${toggler.length} carets`);
+    var i;
+
+    for (i = 0; i < toggler.length; i++) {
+        toggler[i].addEventListener("click", function () {
             this.parentElement
                 .querySelector(".nested")
                 .classList.toggle("active");
@@ -144,6 +178,7 @@ window.onload = function () {
     initRequestFieldPublisher();
     initRecordService();
     initTreeSnapshotSubscriber();
-    initSnapshotCaret();
+    initCarets();
+    initHealthSummarySubscriber();
     console.log("App loaded");
 };
