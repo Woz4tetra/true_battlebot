@@ -127,13 +127,27 @@ function initHealthSummarySubscriber() {
     });
 
     listener.subscribe(function (message) {
+        document.getElementById("health-active-count").innerHTML =
+            "Active nodes: " + message.active_nodes.length;
+        document.getElementById("health-dead-count").innerHTML =
+            "Dead nodes: " + message.dead_nodes.length;
+
+        let active_list = document.getElementById("health-active-list");
+        active_list.innerHTML = "";
         message.active_nodes.forEach((node) => {
-            console.log(`Found active node ${node}`);
-            // document.getElementById(node).classList.add("active");
+            element = document.createElement("div");
+            element.classList.add("grid-item");
+            element.innerHTML = node;
+            active_list.appendChild(element);
         });
+
+        let dead_list = document.getElementById("health-dead-list");
+        dead_list.innerHTML = "";
         message.dead_nodes.forEach((node) => {
-            console.log(`Found dead node ${node}`);
-            // document.getElementById(node).classList.add("dead");
+            element = document.createElement("div");
+            element.classList.add("grid-item");
+            element.innerHTML = node;
+            dead_list.appendChild(element);
         });
     });
 }

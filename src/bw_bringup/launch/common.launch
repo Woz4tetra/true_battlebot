@@ -26,4 +26,5 @@
         <arg name="robots_config"
             value="$(find bw_bringup)/config/robots.yaml" />
     </include>
+    <include file="$(find bw_system_health)/launch/system_health.launch" />
 </launch>
