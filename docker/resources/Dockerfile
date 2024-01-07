@@ -170,7 +170,6 @@ ENV IMAGE_VERSION=${IMAGE_VERSION}
 COPY --chown=1000:1000 ./install/bashrc ${HOME}/.bashrc
 
 COPY --chown=1000:1000 \
-    ./launch/entrypoint.sh \
     ./launch/set_log_format.sh \
     ./launch/launch.sh \
     ./launch/roscore.sh \
