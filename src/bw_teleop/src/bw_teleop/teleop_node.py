@@ -56,5 +56,5 @@ class TeleopNode:
 
 
 if __name__ == "__main__":
-    rospy.init_node("bw_teleop")
+    rospy.init_node("bw_teleop", log_level=rospy.DEBUG)
     TeleopNode().run()

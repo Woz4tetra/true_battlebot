@@ -462,6 +462,9 @@ GameObject:
   - component: {fileID: 8575747899302142240}
   - component: {fileID: 6355694855304006745}
   - component: {fileID: 7016529410798994689}
+  - component: {fileID: 7476005470379129722}
+  - component: {fileID: 4331783685755869673}
+  - component: {fileID: 5519234970927404793}
   m_Layer: 6
   m_Name: Main bot
   m_TagString: Untagged
@@ -537,10 +540,10 @@ ArticulationBody:
     target: 0
     targetVelocity: 0
     driveType: 0
-  m_LinearDamping: 1
-  m_AngularDamping: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0
   m_JointFriction: 0.05
-  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_CenterOfMass: {x: 0, y: 0.05, z: 0}
   m_InertiaTensor: {x: 0.01, y: 0.05, z: 0.01}
   m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
   m_IncludeLayers:
@@ -549,7 +552,7 @@ ArticulationBody:
   m_ExcludeLayers:
     serializedVersion: 2
     m_Bits: 0
-  m_ImplicitCom: 1
+  m_ImplicitCom: 0
   m_ImplicitTensor: 1
   m_Immovable: 0
   m_UseGravity: 1
@@ -566,10 +569,68 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f9b26e993356c0fa1a59dbfbda2f0b1a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  baseTopic: main_bot
+  parentFrame: map
   baseWidth: 0.3
   leftWheel: {fileID: 234145475386730121}
   rightWheel: {fileID: 8633397056333115285}
+  linearPid:
+    kp: 0.01
+    ki: 0
+    kd: 0
+    kf: 1
+    i_zone: 0
+    i_max: 0
+    epsilon: 0.000000001
+    tolerance: 0
+  angularPid:
+    kp: 2
+    ki: 1
+    kd: 0.001
+    kf: 1
+    i_zone: 10
+    i_max: 0
+    epsilon: 0.000000001
+    tolerance: 0
+--- !u!114 &7476005470379129722
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3943261646546904708}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ec44692c016b38f2fa5a1ac478811855, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  baseTopic: main_bot
+--- !u!114 &4331783685755869673
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3943261646546904708}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cdcdcfb4a221bb3b68e7574f1643d4ad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  frameId: ma
+--- !u!114 &5519234970927404793
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3943261646546904708}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1cfaef01096bc8508a46259d2d63ff08, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  linearScale: 1
+  angularScale: 3
 --- !u!1 &4211652632592029307
 GameObject:
   m_ObjectHideFlags: 0
@@ -896,7 +957,7 @@ SphereCollider:
     m_Bits: 0
   m_ExcludeLayers:
     serializedVersion: 2
-    m_Bits: 8
+    m_Bits: 64
   m_LayerOverridePriority: 0
   m_IsTrigger: 0
   m_ProvidesContacts: 0
@@ -1132,7 +1193,7 @@ SphereCollider:
     m_Bits: 0
   m_ExcludeLayers:
     serializedVersion: 2
-    m_Bits: 8
+    m_Bits: 64
   m_LayerOverridePriority: 0
   m_IsTrigger: 0
   m_ProvidesContacts: 0
@@ -1224,9 +1285,9 @@ ArticulationBody:
     target: 0
     targetVelocity: 0
     driveType: 0
-  m_LinearDamping: 0.05
-  m_AngularDamping: 0.05
-  m_JointFriction: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0
+  m_JointFriction: 0
   m_CenterOfMass: {x: 0, y: 0, z: 0}
   m_InertiaTensor: {x: 1, y: 1, z: 1}
   m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}

@@ -5,6 +5,8 @@ planners:
 controllers:
     - name: TebLocalPlannerROS
       type: teb_local_planner/TebLocalPlannerROS
+    # - name: DWAPlannerROS
+    #   type: dwa_local_planner/DWAPlannerROS
 
 recovery_behaviors:
     - name: "reset_costmap"
@@ -32,7 +34,7 @@ planner_max_retries: -1
 controller_frequency: 20.0
 
 # How long the controller will wait in seconds without receiving a valid control before giving up
-controller_patience: 1.0
+controller_patience: 2.5
 
 # How many times we will recall the controller in an attempt to find a valid command before giving up
 controller_max_retries: -1
@@ -44,7 +46,7 @@ recovery_enabled: true
 recovery_patience: 15.0
 
 # How long in seconds to allow for oscillation before executing recovery behaviors
-oscillation_timeout: 0.0
+oscillation_timeout: 1.5
 
 # How far in meters the robot must move to be considered not to be oscillating
-oscillation_distance: 0.5
+oscillation_distance: 0.025

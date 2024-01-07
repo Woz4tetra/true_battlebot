@@ -6,7 +6,7 @@
 ## Robot Configuration Parameters ##
 
 # Maximum translational acceleration of the robot in meters/sec^2
-acc_lim_x: 1.0 # 0.5
+acc_lim_x: 0.5 # 0.5
 
 # Maximum angular acceleration of the robot in radians/sec^2
 acc_lim_theta: 3.0 # 12.0
@@ -21,7 +21,7 @@ max_vel_x_backwards: 2.0 # 0.2
 
 # Maximum angular velocity of the robot in radians/secThe following
 # parameters are relevant only for carlike robots:
-max_vel_theta: 3.0 # 5.0
+max_vel_theta: 6.0 # 5.0
 
 ## The following parameters are relevant only for holonomic robots:
 
@@ -65,7 +65,7 @@ footprint_model/type: "circular" # "point"
 # This parameter is only relevant for type "circular". It contains the
 # radius of the circle. The center of the circle is located at the
 # robot's axis of rotation.
-footprint_model/radius: 0.15 # 0.2
+footprint_model/radius: 0.1 # 0.2
 
 # This parameter is only relevant for type "line". It contains the start
 # coordinates of the line segment.
@@ -188,7 +188,7 @@ exact_arc_length: true # false
 shrink_horizon_min_duration: 10.0 # 10.0
 
 # Minimum desired separation from obstacles in meters
-min_obstacle_dist: 0.1 # 0.5
+min_obstacle_dist: 0.015 # 0.5
 
 # Specify if obstacles of the local costmap should be taken into
 # account. Each cell that is marked as obstacle is considered as a
@@ -196,11 +196,11 @@ min_obstacle_dist: 0.1 # 0.5
 # costmap since it increases computation time. In future releases this
 # circumstance is going to be addressed as well as providing an
 # additional api for dynamic obstacles.
-include_costmap_obstacles: false # true
+include_costmap_obstacles: true # true
 
 # Limit the occupied local costmap obstacles taken into account for
 # planning behind the robot (specify distance in meters).
-costmap_obstacles_behind_robot_dist: 1.0 # 1.0
+costmap_obstacles_behind_robot_dist: 0.2 # 1.0
 
 # Each obstacle position is attached to the closest pose on the
 # trajectory in order to keep a distance. Additional neighbors can be
@@ -213,7 +213,7 @@ obstacle_poses_affected: 30 # 30
 # Buffer zone around obstacles with non-zero penalty costs (should be
 # larger than min_obstacle_dist in order to take effect). Also refer to
 # the weight weight_inflation.
-inflation_dist: 0.08 # 0.6
+inflation_dist: 0.03 # 0.6
 
 # If this parameter is set to true, the motion of obstacles with non-
 # zero velocity (provided via user-supplied obstacles on topic
@@ -263,11 +263,11 @@ no_outer_iterations: 5 # 4
 
 # Add a small safety margin to penalty functions for hard-constraint
 # approximations
-penalty_epsilon: 0.15 # 0.1
+penalty_epsilon: 0.1 # 0.1
 
 # Optimization weight for satisfying the maximum allowed translational
 # velocity
-weight_max_vel_x: 5.0 # 2.0
+weight_max_vel_x: 2.0 # 2.0
 
 # Optimization weight for satisfying the maximum allowed strafing
 # velocity
@@ -275,7 +275,7 @@ weight_max_vel_y: 1.0 # 2.0
 
 # Optimization weight for satisfying the maximum allowed angular
 # velocity
-weight_max_vel_theta: 5.0 # 1.0
+weight_max_vel_theta: 1.0 # 1.0
 
 # Optimization weight for satisfying the maximum allowed translational
 # acceleration
@@ -304,21 +304,21 @@ weight_kinematics_forward_drive: 1.0 # 1.0
 
 # Optimization weight for enforcing a minimum turning radius (only for
 # carlike robots).
-weight_kinematics_turning_radius: 10.0 # 1.0
+weight_kinematics_turning_radius: 1.0 # 1.0
 
 # Optimization weight for contracting the trajectory w.r.t
 # transition/execution time
 weight_optimaltime: 1.0 # 1.0
 
 # Optimization weight for keeping a minimum distance from obstacles
-weight_obstacle: 50.0 # 50.0
+weight_obstacle: 25.0 # 50.0
 
 # Optimization weight for keeping a minimum distance from dynamic obstacles
-weight_dynamic_obstacle: 50.0 # 50.0
+weight_dynamic_obstacle: 25.0 # 50.0
 
 # Optimization weight for minimizing the distance to via-points (resp.
 # reference path). New in version 0.4
-weight_viapoint: 10.0 # 1.0
+weight_viapoint: 1.0 # 1.0
 
 # Optimization weight for the inflation penalty (should be small).
 weight_inflation: 0.1 # 0.1
@@ -404,11 +404,11 @@ switching_blocking_period: 0.0 # 0.0
 
 # Topic name of the odometry message, provided by the robot driver or
 # simulator.
-odom_topic: "/mini_bot/odom" # "odom"
+# odom_topic: "odom"
 
 # Global planning frame (in case of a static map, this parameter must be
 # usually changed to "/map".
-map_frame: "map" # "odom"
+# map_frame: "map" # "odom"
 
 ###########################################################################################
 ## NOTE: Costmap conversion is experimental. Its purpose is to combine many point        ##

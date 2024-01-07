@@ -91,6 +91,34 @@ function setRecordState(button, state) {
     );
 }
 
+function initTreeSnapshotSubscriber() {
+    var listener = new ROSLIB.Topic({
+        ros: ros,
+        name: "/tree_snapshot",
+        messageType: "std_msgs/String",
+    });
+
+    listener.subscribe(function (message) {
+        document.getElementById("tree-snapshot").innerHTML = message.data;
+    });
+}
+
+function initSnapshotCaret() {
+    var toggler = document.getElementsByClassName("caret");
+    console.log(`Found ${toggler.length} carets`);
+    var i;
+
+    for (i = 0; i < toggler.length; i++) {
+        toggler[i].addEventListener("click", function () {
+            console.log("Clicked caret");
+            this.parentElement
+                .querySelector(".nested")
+                .classList.toggle("active");
+            this.classList.toggle("caret-down");
+        });
+    }
+}
+
 window.onload = function () {
     var robot_ip = location.hostname;
 
@@ -98,9 +126,24 @@ window.onload = function () {
         url: "ws://" + robot_ip + ":9090",
     });
 
+    ros.on("connection", function () {
+        console.log("Connected to websocket server.");
+    });
+
+    ros.on("error", function (error) {
+        console.log("Error connecting to websocket server: ", error);
+    });
+
+    ros.on("close", function () {
+        console.log("Connection to websocket server closed.");
+    });
+
     initSummarySubscriber();
     initCageCornerPublisher();
     initRobotModePublisher();
     initRequestFieldPublisher();
     initRecordService();
+    initTreeSnapshotSubscriber();
+    initSnapshotCaret();
+    console.log("App loaded");
 };

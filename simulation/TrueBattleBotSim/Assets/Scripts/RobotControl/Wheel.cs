@@ -6,11 +6,13 @@ class Wheel : MonoBehaviour
     [SerializeField] private float wheelRadius = 1.0f;
     private ArticulationBody body;
     private float angularVelocity = 0.0f;
-    // private PID pid = new PID(1.5f, 0.0f, 0.0f);
 
     void Start()
     {
         body = GetComponent<ArticulationBody>();
+        body.automaticInertiaTensor = false;
+        body.inertiaTensor = new Vector3(1e-4f, 1e-4f, 1e-4f);
+        body.inertiaTensorRotation = Quaternion.identity;
     }
 
     public void setVelocity(float groundVelocity)
