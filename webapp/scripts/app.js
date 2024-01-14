@@ -103,7 +103,7 @@ function initTreeSnapshotSubscriber() {
     });
 }
 
-function initSnapshotCaret() {
+function initCarets() {
     var toggler = document.getElementsByClassName("caret");
     console.log(`Found ${toggler.length} carets`);
     var i;
@@ -111,6 +111,54 @@ function initSnapshotCaret() {
     for (i = 0; i < toggler.length; i++) {
         toggler[i].addEventListener("click", function () {
             console.log("Clicked caret");
+            this.parentElement
+                .querySelector(".nested")
+                .classList.toggle("active");
+            this.classList.toggle("caret-down");
+        });
+    }
+}
+
+function initHealthSummarySubscriber() {
+    var listener = new ROSLIB.Topic({
+        ros: ros,
+        name: "/health",
+        messageType: "bw_interfaces/HealthSummary",
+    });
+
+    listener.subscribe(function (message) {
+        document.getElementById("health-active-count").innerHTML =
+            "Active nodes: " + message.active_nodes.length;
+        document.getElementById("health-dead-count").innerHTML =
+            "Dead nodes: " + message.dead_nodes.length;
+
+        let active_list = document.getElementById("health-active-list");
+        active_list.innerHTML = "";
+        message.active_nodes.forEach((node) => {
+            element = document.createElement("div");
+            element.classList.add("grid-item");
+            element.innerHTML = node;
+            active_list.appendChild(element);
+        });
+
+        let dead_list = document.getElementById("health-dead-list");
+        dead_list.innerHTML = "";
+        message.dead_nodes.forEach((node) => {
+            element = document.createElement("div");
+            element.classList.add("grid-item");
+            element.innerHTML = node;
+            dead_list.appendChild(element);
+        });
+    });
+}
+
+function initCarets() {
+    var toggler = document.getElementsByClassName("caret");
+    console.log(`Found ${toggler.length} carets`);
+    var i;
+
+    for (i = 0; i < toggler.length; i++) {
+        toggler[i].addEventListener("click", function () {
             this.parentElement
                 .querySelector(".nested")
                 .classList.toggle("active");
@@ -144,6 +192,7 @@ window.onload = function () {
     initRequestFieldPublisher();
     initRecordService();
     initTreeSnapshotSubscriber();
-    initSnapshotCaret();
+    initCarets();
+    initHealthSummarySubscriber();
     console.log("App loaded");
 };

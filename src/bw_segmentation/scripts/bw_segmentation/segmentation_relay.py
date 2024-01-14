@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from threading import Lock
 from typing import Dict, Tuple
 
 import cv2
@@ -23,6 +24,7 @@ class SegmentationRelay:
         }
         self.real_model_labels = tuple(Label)
 
+        self.lock = Lock()
         self.simulated_segmentations: Dict[int, Label] = {}
         self.bridge = CvBridge()
         self.rgb_image = None
@@ -36,6 +38,10 @@ class SegmentationRelay:
         )
 
     def segmentation_image_callback(self, msg: Image) -> None:
+        with self.lock:
+            self.process_image(msg)
+
+    def process_image(self, msg: Image) -> None:
         if len(self.simulated_segmentations) == 0:
             rospy.logwarn("No simulated segmentation received yet")
             return
@@ -114,6 +120,10 @@ class SegmentationRelay:
 
     def simulated_segmentation_callback(self, msg: SegmentationInstanceArray) -> None:
         rospy.loginfo_once("Received simulated segmentation")
+        with self.lock:
+            self.process_segmentation(msg)
+
+    def process_segmentation(self, msg: SegmentationInstanceArray) -> None:
         for instant in msg.instances:  # type: ignore
             instant: SegmentationInstance
             if instant.label not in self.simulated_to_real_labels:

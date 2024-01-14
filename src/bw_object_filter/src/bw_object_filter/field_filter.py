@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import copy
 import math
 from typing import Optional, Tuple
 
@@ -7,13 +6,15 @@ import numpy as np
 import rospy
 import tf2_ros
 from bw_interfaces.msg import CageCorner as RosCageCorner
-from bw_interfaces.msg import EstimatedObject, SegmentationInstanceArray
+from bw_interfaces.msg import EstimatedObject, SegmentationInstance, SegmentationInstanceArray
+from bw_tools.configs.field_type import FIELD_CONFIG, FieldType
 from bw_tools.structs.cage_corner import CageCorner
 from bw_tools.structs.rpy import RPY
 from bw_tools.structs.transform3d import Transform3D
+from bw_tools.structs.xy import XY
 from bw_tools.transforms import lookup_pose_in_frame
 from bw_tools.typing import get_param, seconds_to_duration
-from geometry_msgs.msg import Point, PointStamped, PoseStamped, Quaternion, Vector3
+from geometry_msgs.msg import Point, PointStamped, Pose, PoseStamped, Quaternion, Vector3
 from image_geometry import PinholeCameraModel
 from sensor_msgs.msg import CameraInfo, Imu
 from std_msgs.msg import ColorRGBA, Empty, Header
@@ -37,7 +38,14 @@ class FieldFilter:
         self.map_frame = get_param("~map_frame", "map")
         self.relative_map_frame = get_param("~relative_map_frame", "map_relative")
         auto_initialize = get_param("~auto_initialize", False)
+        self.always_use_default_dims = get_param("~always_use_default_dims", False)
+        self.expected_size = FIELD_CONFIG[FieldType(get_param("~field_type", "nhrl_small"))].size
+        field_dims_buffer = get_param("~field_dims_buffer", 0.05)
+        buffer_extents = XY(field_dims_buffer, field_dims_buffer)
+        self.extents_range = (self.expected_size - buffer_extents, self.expected_size + buffer_extents)
+        rospy.loginfo(f"Extents range: {self.extents_range}")
 
+        self.unbounded_dims = (10.0, 10.0)
         self.has_manual_query_been_received = auto_initialize
         self.has_manual_query = auto_initialize
         self.current_imu = Imu()
@@ -117,11 +125,6 @@ class FieldFilter:
         self.plane_request_pub.publish(request_point)
 
     def plane_response_callback(self, plane: PlaneStamped) -> None:
-        field_segmentation = get_field_segmentation(self.segmentation)
-        if field_segmentation is None:
-            rospy.logwarn("No field segmentation received. Cannot estimate field.")
-            return
-
         plane_pose = PoseStamped(header=plane.header)
         plane_pose.pose.position = Point(plane.pose.translation.x, plane.pose.translation.y, plane.pose.translation.z)
         plane_pose.pose.orientation = plane.pose.rotation
@@ -133,28 +136,25 @@ class FieldFilter:
         lens_plane_pose.pose.orientation = self.rotate_field_orientation(
             lens_plane_pose.pose.orientation, self.field_rotate_tf
         )
-        plane_transform = Transform3D.from_position_and_quaternion(
-            lens_plane_pose.pose.position, lens_plane_pose.pose.orientation
-        )
 
-        plane_center = plane_transform.position_array
-        plane_normal = plane_transform.rotation_matrix @ np.array((0, 0, 1))
+        field_centered_pose = lens_plane_pose.pose
+        extents = self.unbounded_dims
 
-        rays = raycast_segmentation(self.camera_model, field_segmentation)
-        projected_points = project_segmentation(rays, plane_center, plane_normal)
+        field_segmentation = None if self.always_use_default_dims else get_field_segmentation(self.segmentation)
+        if field_segmentation:
+            field_centered_pose, extents = self.compute_plane_from_segmentation(
+                lens_plane_pose.pose, field_segmentation
+            )
+            passes = self.extents_range[0] < extents < self.extents_range[1]
+        else:
+            passes = False
 
-        flattened_points = points_transform(projected_points, plane_transform.inverse().tfmat)
-        flattened_points2d = flattened_points[:, :2]
-        min_rect = find_minimum_rectangle(flattened_points2d)
-        extents = get_rectangle_extents(min_rect)
-        angle = get_rectangle_angle(min_rect)
-        rospy.loginfo(f"Field angle: {angle}. Extents: {extents}")
-        centroid = np.mean(min_rect, axis=0)
-        field_centered_plane = Transform3D.from_position_and_rpy(
-            Vector3(centroid[0], centroid[1], 0), RPY((0, 0, angle))
-        ).forward_by(plane_transform)
+        if passes:
+            rospy.loginfo("Field passes validation.")
+        else:
+            rospy.logwarn("Field does not pass validation. Using default values.")
 
-        lens_field_pose = PoseStamped(header=self.segmentation.header, pose=field_centered_plane.to_pose_msg())
+        lens_field_pose = PoseStamped(header=self.segmentation.header, pose=field_centered_pose)
         base_field_pose = lookup_pose_in_frame(
             self.tf_buffer, lens_field_pose, self.base_frame, timeout=seconds_to_duration(30.0)
         )
@@ -168,8 +168,35 @@ class FieldFilter:
         self.estimated_field.state.pose.pose = base_field_pose.pose
         self.estimated_field_pub.publish(self.estimated_field)
         self.publish_field_markers(self.estimated_field)
-        self.publish_debug_markers(flattened_points, min_rect, centroid)
         self.reset_filters()
+
+    def compute_plane_from_segmentation(
+        self, lens_plane_pose: Pose, field_segmentation: SegmentationInstance
+    ) -> Tuple[Pose, XY]:
+        plane_transform = Transform3D.from_position_and_quaternion(
+            lens_plane_pose.position, lens_plane_pose.orientation
+        )
+
+        plane_center = plane_transform.position_array
+        plane_normal = plane_transform.rotation_matrix @ np.array((0, 0, 1))
+
+        rays = raycast_segmentation(self.camera_model, field_segmentation)
+        projected_points = project_segmentation(rays, plane_center, plane_normal)
+
+        flattened_points = points_transform(projected_points, plane_transform.inverse().tfmat)
+        flattened_points2d = flattened_points[:, :2]
+        min_rect = find_minimum_rectangle(flattened_points2d)
+        extents = get_rectangle_extents(min_rect)
+        angle = get_rectangle_angle(min_rect)
+        centroid = np.mean(min_rect, axis=0)
+        field_centered_plane = Transform3D.from_position_and_rpy(
+            Vector3(centroid[0], centroid[1], 0), RPY((0, 0, angle))
+        ).forward_by(plane_transform)
+
+        self.publish_debug_markers(flattened_points, min_rect, centroid)
+        rospy.loginfo(f"Field angle: {angle}. Extents: {extents}")
+
+        return field_centered_plane.to_pose_msg(), extents
 
     def reset_filters(self) -> None:
         self.reset_filters_pub.publish(Empty())

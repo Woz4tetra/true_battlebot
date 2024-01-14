@@ -28,7 +28,6 @@
 
 #include "base_estimation.h"
 
-
 class RecommendedPlanePoint : BaseEstimation
 {
 private:
@@ -36,22 +35,22 @@ private:
     ros::Publisher _recommended_marker_pub;
     ros::Publisher _field_marker_pub;
     std_msgs::ColorRGBA _field_color;
+    geometry_msgs::PointStamped _recommended_point;
 
-    bool find_recommended_point(geometry_msgs::PointStamped& point_msg, cv::Mat depth_image, cv::Mat mask);
+    bool find_recommended_point(geometry_msgs::PointStamped &point_msg, cv::Mat depth_image, cv::Mat mask);
     geometry_msgs::Point convert_point_to_msg(const cv::Point2i point, float depth);
-    std::vector<std::vector<geometry_msgs::Point>> project_contour_to_3d(cv::Mat depth_image, const bw_interfaces::SegmentationInstanceArrayConstPtr& segmentation);
+    std::vector<std::vector<geometry_msgs::Point>> project_contour_to_3d(cv::Mat depth_image, const bw_interfaces::SegmentationInstanceArrayConstPtr &segmentation);
 
 protected:
     void synced_callback(
-        const sensor_msgs::ImageConstPtr& depth_image,
-        const bw_interfaces::SegmentationInstanceArrayConstPtr& segmentation);
+        const sensor_msgs::ImageConstPtr &depth_image,
+        const bw_interfaces::SegmentationInstanceArrayConstPtr &segmentation);
 
 public:
-    RecommendedPlanePoint(ros::NodeHandle* nodehandle);
+    RecommendedPlanePoint(ros::NodeHandle *nodehandle);
     ~RecommendedPlanePoint();
     int run();
 };
-
 
 visualization_msgs::Marker contour_to_marker(std_msgs::Header header, std::vector<geometry_msgs::Point> points_msg, std_msgs::ColorRGBA color, int marker_id = 0, double line_width = 0.01)
 {

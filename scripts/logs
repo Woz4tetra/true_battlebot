@@ -186,12 +186,18 @@ def get_log_paths(search_dir: str) -> list[str]:
     return glob.glob(os.path.join(search_dir, "*.log"))
 
 
-def find_latest_log_file(search_dir: str) -> str:
+def find_latest_log_file(search_dir: str, wait_for_new_file: bool) -> str:
     list_of_files = get_log_paths(search_dir)
     if len(list_of_files) == 0:
         sys.stdout.write(COLORS.YELLOW + f"Waiting for log files to appear in {search_dir}\n")
         while len(list_of_files) == 0:
             list_of_files = get_log_paths(search_dir)
+            time.sleep(1.0)
+    if wait_for_new_file:
+        now = time.time()
+        list_of_files = []
+        while len(list_of_files) == 0:
+            list_of_files = list(filter(lambda f: os.path.getctime(f) > now, get_log_paths(search_dir)))
             time.sleep(1.0)
     latest_file = max(list_of_files, key=os.path.getctime)
     return os.path.join(search_dir, latest_file)
@@ -221,6 +227,12 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("-a", "--all", action="store_true", help="Show all lines in the file and exit")
     parser.add_argument("-v", "--verbose", action="store_true", help="Show all info in each log line")
+    parser.add_argument(
+        "-w",
+        "--wait-file",
+        action="store_true",
+        help="Wait for a new file to appear. Ignored if filename is supplied.",
+    )
 
     for pattern in FILTER_PATTERNS:
         parser.add_argument(f"--{pattern}", type=str, help="Include by " + pattern)
@@ -286,6 +298,7 @@ def make_log_filters(args: argparse.Namespace) -> LogFilter:
 
 def main() -> None:
     args = parse_args()
+    wait_file = args.wait_file
     filename = args.filename
     print_all = args.all
     num_lines = args.num
@@ -305,7 +318,7 @@ def main() -> None:
     )
 
     if filename is None:
-        filename = find_latest_log_file(DEFAULT_DIR)
+        filename = find_latest_log_file(DEFAULT_DIR, wait_file)
 
     if print_all:
         print_entire_file(filename, inputs)

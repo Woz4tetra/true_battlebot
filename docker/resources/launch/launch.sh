@@ -27,11 +27,9 @@ trap 'int_handler' SIGINT
 
 tmux send -t "${SESSION}" 'source /opt/${ORGANIZATION}/scripts/lib/enable_tmux_logger.sh ${PROJECT_NAME}' ENTER
 tmux send -t "${SESSION}" 'source /opt/${ORGANIZATION}/scripts/lib/set_master.sh ${ROS_MASTER_INTERFACE}' ENTER
-tmux send -t "${SESSION}" 'source /opt/${ORGANIZATION}/entrypoint.sh' ENTER
 tmux send -t "${SESSION}" 'source /opt/${ORGANIZATION}/set_log_format.sh' ENTER
 tmux send -t "${SESSION}" 'roslaunch --wait bw_bringup bw_bringup.launch --screen &' ENTER
 tmux send -t "${SESSION}" 'echo $! > /opt/${ORGANIZATION}/roslaunch_pid' ENTER
 
-sleep 2
-/opt/"${ORGANIZATION}"/scripts/logs
+/opt/"${ORGANIZATION}"/scripts/logs -w
 sleep infinity
