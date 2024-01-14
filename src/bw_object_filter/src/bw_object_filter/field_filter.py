@@ -38,6 +38,7 @@ class FieldFilter:
         self.map_frame = get_param("~map_frame", "map")
         self.relative_map_frame = get_param("~relative_map_frame", "map_relative")
         auto_initialize = get_param("~auto_initialize", False)
+        self.always_use_default_dims = get_param("~always_use_default_dims", False)
         self.expected_size = FIELD_CONFIG[FieldType(get_param("~field_type", "nhrl_small"))].size
         field_dims_buffer = get_param("~field_dims_buffer", 0.05)
         buffer_extents = XY(field_dims_buffer, field_dims_buffer)
@@ -139,7 +140,7 @@ class FieldFilter:
         field_centered_pose = lens_plane_pose.pose
         extents = self.unbounded_dims
 
-        field_segmentation = get_field_segmentation(self.segmentation)
+        field_segmentation = None if self.always_use_default_dims else get_field_segmentation(self.segmentation)
         if field_segmentation:
             field_centered_pose, extents = self.compute_plane_from_segmentation(
                 lens_plane_pose.pose, field_segmentation
