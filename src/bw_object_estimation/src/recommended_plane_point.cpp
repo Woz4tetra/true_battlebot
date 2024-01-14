@@ -1,8 +1,6 @@
 #include "recommended_plane_point.h"
 
-
-RecommendedPlanePoint::RecommendedPlanePoint(ros::NodeHandle* nodehandle) :
-    BaseEstimation(nodehandle)
+RecommendedPlanePoint::RecommendedPlanePoint(ros::NodeHandle *nodehandle) : BaseEstimation(nodehandle)
 {
     _recommended_point_pub = nh.advertise<geometry_msgs::PointStamped>("estimation/recommended_field_point", 1);
     _recommended_marker_pub = nh.advertise<visualization_msgs::MarkerArray>("estimation/recommended_point_marker", 1);
@@ -10,6 +8,8 @@ RecommendedPlanePoint::RecommendedPlanePoint(ros::NodeHandle* nodehandle) :
 
     _field_color.g = 1.0;
     _field_color.a = 1.0;
+
+    _recommended_point.point.z = 1.0;
 
     ROS_INFO("RecommendedPlanePoint node initialized");
 }
@@ -19,11 +19,12 @@ RecommendedPlanePoint::~RecommendedPlanePoint()
 }
 
 void RecommendedPlanePoint::synced_callback(
-    const sensor_msgs::ImageConstPtr& depth_image,
-    const bw_interfaces::SegmentationInstanceArrayConstPtr& segmentation)
+    const sensor_msgs::ImageConstPtr &depth_image,
+    const bw_interfaces::SegmentationInstanceArrayConstPtr &segmentation)
 {
     cv::Mat depth_cv_image;
-    if (!get_depth_image(depth_cv_image, depth_image)) {
+    if (!get_depth_image(depth_cv_image, depth_image))
+    {
         return;
     }
 
@@ -32,7 +33,8 @@ void RecommendedPlanePoint::synced_callback(
     for (size_t index = 0; index < segmentation->instances.size(); index++)
     {
         bw_interfaces::SegmentationInstance instance = segmentation->instances[index];
-        if (is_label_included(instance.label)) {
+        if (is_label_included(instance.label))
+        {
             std::vector<std::vector<cv::Point>> cv_contours = get_cv_contours(instance.contours);
             cv::drawContours(field_mask, cv_contours, -1, cv::Scalar(255), cv::FILLED);
             num_contours += cv_contours.size();
@@ -42,7 +44,8 @@ void RecommendedPlanePoint::synced_callback(
     for (size_t index = 0; index < segmentation->instances.size(); index++)
     {
         bw_interfaces::SegmentationInstance instance = segmentation->instances[index];
-        if (is_label_included(instance.label)) {
+        if (is_label_included(instance.label))
+        {
             continue;
         }
 
@@ -50,36 +53,38 @@ void RecommendedPlanePoint::synced_callback(
         cv::drawContours(field_mask, cv_contours, -1, cv::Scalar(0), cv::FILLED);
     }
 
-    if (num_contours > 0) {
-        geometry_msgs::PointStamped point_msg;
-        if (find_recommended_point(point_msg, depth_cv_image, field_mask)) {
-            point_msg.header = segmentation->header;
-            _recommended_point_pub.publish(point_msg);
+    if (num_contours > 0)
+    {
+        find_recommended_point(_recommended_point, depth_cv_image, field_mask);
 
-            visualization_msgs::MarkerArray marker_array;
-            marker_array.markers.push_back(point_to_marker(point_msg));
-            _recommended_marker_pub.publish(marker_array);
-        }
-
-        if (_field_marker_pub.getNumSubscribers() > 0) {
+        if (_field_marker_pub.getNumSubscribers() > 0)
+        {
             std::vector<std::vector<geometry_msgs::Point>> points = project_contour_to_3d(depth_cv_image, segmentation);
             visualization_msgs::MarkerArray marker_array;
-            for (size_t index = 0; index < points.size(); index++) {
+            for (size_t index = 0; index < points.size(); index++)
+            {
                 marker_array.markers.push_back(contour_to_marker(segmentation->header, points[index], _field_color, index));
             }
             _field_marker_pub.publish(marker_array);
         }
     }
+    _recommended_point.header = segmentation->header;
+    _recommended_point_pub.publish(_recommended_point);
+
+    visualization_msgs::MarkerArray marker_array;
+    marker_array.markers.push_back(point_to_marker(_recommended_point));
+    _recommended_marker_pub.publish(marker_array);
 }
 
-std::vector<std::vector<geometry_msgs::Point>> RecommendedPlanePoint::project_contour_to_3d(cv::Mat depth_image, const bw_interfaces::SegmentationInstanceArrayConstPtr& segmentation)
+std::vector<std::vector<geometry_msgs::Point>> RecommendedPlanePoint::project_contour_to_3d(cv::Mat depth_image, const bw_interfaces::SegmentationInstanceArrayConstPtr &segmentation)
 {
     std::vector<std::vector<geometry_msgs::Point>> all_points;
     for (size_t index = 0; index < segmentation->instances.size(); index++)
     {
         std::vector<geometry_msgs::Point> points;
         bw_interfaces::SegmentationInstance instance = segmentation->instances[index];
-        if (!is_label_included(instance.label)) {
+        if (!is_label_included(instance.label))
+        {
             continue;
         }
 
@@ -100,15 +105,18 @@ std::vector<std::vector<geometry_msgs::Point>> RecommendedPlanePoint::project_co
     return all_points;
 }
 
-bool RecommendedPlanePoint::find_recommended_point(geometry_msgs::PointStamped& point_msg, cv::Mat depth_image, cv::Mat mask) {
-    if (cv::countNonZero(mask) == 0) {
+bool RecommendedPlanePoint::find_recommended_point(geometry_msgs::PointStamped &point_msg, cv::Mat depth_image, cv::Mat mask)
+{
+    if (cv::countNonZero(mask) == 0)
+    {
         ROS_WARN("No white pixels in field mask");
         return false;
     }
 
     // If center is white, return the center point
     cv::Point2i center(depth_image.cols / 2, depth_image.rows / 2);
-    if (mask.at<uchar>(center.y, center.x) != 0) {
+    if (mask.at<uchar>(center.y, center.x) != 0)
+    {
         point_msg.point = convert_point_to_msg(center, depth_image.at<float>(center.y, center.x));
         return true;
     }

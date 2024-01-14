@@ -1,6 +1,7 @@
 from typing import Tuple
 
 import numpy as np
+from bw_tools.structs.xy import XY
 from scipy.spatial import ConvexHull
 
 
@@ -61,11 +62,11 @@ def find_minimum_rectangle(points: np.ndarray) -> np.ndarray:
     return rval
 
 
-def get_rectangle_extents(rectangle: np.ndarray) -> Tuple[float, float]:
+def get_rectangle_extents(rectangle: np.ndarray) -> XY:
     """rectangle is a 4x2 matrix of points"""
     width = float(np.linalg.norm(rectangle[0] - rectangle[1]))
     height = float(np.linalg.norm(rectangle[1] - rectangle[2]))
-    return width, height
+    return XY(width, height)
 
 
 def get_rectangle_angle(rectangle: np.ndarray) -> float:

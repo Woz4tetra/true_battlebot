@@ -35,3 +35,20 @@ class XY(Sequence):
             dx = self.x
             dy = self.y
         return math.sqrt(dx * dx + dy * dy)
+
+    def __sub__(self, other: XY) -> XY:
+        return XY(self.x - other.x, self.y - other.y)
+
+    def __add__(self, other: XY) -> XY:
+        return XY(self.x + other.x, self.y + other.y)
+
+    def __radd__(self, other: XY) -> XY:
+        return self + other
+
+    def __eq__(self, __value: object) -> bool:
+        if not isinstance(__value, XY):
+            return False
+        return self.x == __value.x and self.y == __value.y
+
+    def __lt__(self, other: XY) -> bool:
+        return self.x < other.x and self.y < other.y
