@@ -23,7 +23,7 @@ void RecommendedPlanePoint::synced_callback(
     const bw_interfaces::SegmentationInstanceArrayConstPtr &segmentation)
 {
     cv::Mat depth_cv_image;
-    if (!get_depth_image(depth_cv_image, depth_image))
+    if (!get_depth_image(_camera_model, depth_cv_image, depth_image))
     {
         return;
     }

@@ -33,8 +33,16 @@
         <param name="general/base_frame" value="$(arg camera_name)" />
         <param name="svo_file" value="$(arg svo_file)" />
         <param name="mapping/clicked_point_topic" value="plane_request" />
-        <remap from="$(arg camera_name)/plane" to="$(arg camera_name)/plane_response" />
+        <remap from="$(arg camera_name)/plane" to="$(arg camera_name)/zed_plane_response" />
     </node>
+
+    <group ns="$(arg camera_name)">
+        <node name="zed_plane_connector" pkg="bw_object_filter" type="zed_plane_connector.py"
+            output="screen" respawn="true">
+            <remap from="plane" to="zed_plane_response" />
+            <remap from="pose" to="plane_response" />
+        </node>
+    </group>
 
     <node pkg="apriltag_ros" type="apriltag_ros_continuous_node" name="$(arg camera_name)_apriltag"
         required="false" output="screen">
