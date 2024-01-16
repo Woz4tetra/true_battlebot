@@ -46,6 +46,8 @@ def compute_pose_behind_opponent(match_state: MatchState, keep_back_buffer: floa
     opponent_pose = match_state.opponent_pose
     distance_to_opponent = match_state.guidance_to_opponent_magnitude
     distance_behind_opponent = distance_to_opponent + keep_back_distance(match_state, keep_back_buffer)
+    if distance_to_opponent <= 0.0:
+        return match_state.controlled_pose
     interpolation_ratio = distance_behind_opponent / distance_to_opponent
     point_behind_opponent = interpolate(guidance_pose.to_point(), opponent_pose.to_point(), interpolation_ratio)
     pose_behind_opponent = Pose2D(

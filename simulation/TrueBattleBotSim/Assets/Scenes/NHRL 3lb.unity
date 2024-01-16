@@ -809,6 +809,10 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 1593765079}
     - target: {fileID: 8809695231059794595, guid: 02776528625a7739c85182f650a7f4ab, type: 3}
+      propertyPath: m_Enabled
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8809695231059794595, guid: 02776528625a7739c85182f650a7f4ab, type: 3}
       propertyPath: plane_request_topic
       value: camera_0/plane_request
       objectReference: {fileID: 0}
