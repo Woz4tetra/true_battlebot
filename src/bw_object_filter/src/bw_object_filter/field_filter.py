@@ -19,7 +19,6 @@ from image_geometry import PinholeCameraModel
 from sensor_msgs.msg import CameraInfo, Imu
 from std_msgs.msg import ColorRGBA, Empty, Header
 from visualization_msgs.msg import Marker, MarkerArray
-from zed_interfaces.msg import PlaneStamped
 
 from bw_object_filter.field_math.find_minimum_rectangle import (
     find_minimum_rectangle,
@@ -40,12 +39,12 @@ class FieldFilter:
         auto_initialize = get_param("~auto_initialize", False)
         self.always_use_default_dims = get_param("~always_use_default_dims", False)
         self.expected_size = FIELD_CONFIG[FieldType(get_param("~field_type", "nhrl_small"))].size
-        field_dims_buffer = get_param("~field_dims_buffer", 0.05)
+        field_dims_buffer = get_param("~field_dims_buffer", 0.25)
         buffer_extents = XY(field_dims_buffer, field_dims_buffer)
         self.extents_range = (self.expected_size - buffer_extents, self.expected_size + buffer_extents)
         rospy.loginfo(f"Extents range: {self.extents_range}")
 
-        self.unbounded_dims = (10.0, 10.0)
+        self.unbounded_dims = self.expected_size + XY(0.5, 0.5)
         self.has_manual_query_been_received = auto_initialize
         self.has_manual_query = auto_initialize
         self.current_imu = Imu()
@@ -70,7 +69,7 @@ class FieldFilter:
         self.camera_model = PinholeCameraModel()
 
         self.plane_request_pub = rospy.Publisher("plane_request", PointStamped, queue_size=1)
-        self.plane_response_sub = rospy.Subscriber("plane_response", PlaneStamped, self.plane_response_callback)
+        self.plane_response_sub = rospy.Subscriber("plane_response", PoseStamped, self.plane_response_callback)
         self.estimated_field_pub = rospy.Publisher("filter/field", EstimatedObject, queue_size=1, latch=True)
         self.estimated_field_marker_pub = rospy.Publisher("filter/field/marker", MarkerArray, queue_size=1, latch=True)
         self.debug_marker_pub = rospy.Publisher("filter/field/debug", MarkerArray, queue_size=1, latch=True)
@@ -104,7 +103,7 @@ class FieldFilter:
         if not self.has_manual_query_been_received:
             return
         if self.has_manual_query:
-            rospy.loginfo("Manual plane request received")
+            rospy.loginfo("Requesting plane from manual query.")
             self.has_manual_query = False
             should_request = True
         else:
@@ -117,6 +116,7 @@ class FieldFilter:
             self.prev_request_time = rospy.Time.now()
 
     def manual_request_callback(self, _: Empty) -> None:
+        rospy.loginfo("Manual plane request received")
         self.has_manual_query = True
         self.has_manual_query_been_received = True
 
@@ -124,10 +124,8 @@ class FieldFilter:
         rospy.loginfo("Requesting plane")
         self.plane_request_pub.publish(request_point)
 
-    def plane_response_callback(self, plane: PlaneStamped) -> None:
-        plane_pose = PoseStamped(header=plane.header)
-        plane_pose.pose.position = Point(plane.pose.translation.x, plane.pose.translation.y, plane.pose.translation.z)
-        plane_pose.pose.orientation = plane.pose.rotation
+    def plane_response_callback(self, plane_pose: PoseStamped) -> None:
+        rospy.loginfo("Received plane response")
         lens_plane_pose = lookup_pose_in_frame(
             self.tf_buffer, plane_pose, self.segmentation.header.frame_id, timeout=seconds_to_duration(30.0)
         )
@@ -139,6 +137,7 @@ class FieldFilter:
 
         field_centered_pose = lens_plane_pose.pose
         extents = self.unbounded_dims
+        passes = False
 
         field_segmentation = None if self.always_use_default_dims else get_field_segmentation(self.segmentation)
         if field_segmentation:
@@ -146,13 +145,13 @@ class FieldFilter:
                 lens_plane_pose.pose, field_segmentation
             )
             passes = self.extents_range[0] < extents < self.extents_range[1]
-        else:
-            passes = False
 
         if passes:
             rospy.loginfo("Field passes validation.")
         else:
             rospy.logwarn("Field does not pass validation. Using default values.")
+            field_centered_pose = lens_plane_pose.pose
+            extents = self.unbounded_dims
 
         lens_field_pose = PoseStamped(header=self.segmentation.header, pose=field_centered_pose)
         base_field_pose = lookup_pose_in_frame(

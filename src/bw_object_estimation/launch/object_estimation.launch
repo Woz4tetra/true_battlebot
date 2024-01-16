@@ -19,9 +19,11 @@
 
 		<!-- <node pkg="bw_object_estimation" type="field_estimation" name="field_estimation"
 			output="screen">
+			<rosparam param="include_labels">[field]</rosparam>
 			<param name="ransac_threshold" value="0.01" />
 			<param name="ransac_max_iterations" value="100" />
-			<param name="queue_size" value="1" />
+			<remap from="depth/camera_info" to="rgb/camera_info" />
+			<remap from="depth/image_raw" to="depth/depth_registered" />
 		</node> -->
 	</group>
 </launch>
