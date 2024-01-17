@@ -17,5 +17,5 @@ class MotorDescription:
 
     def to_bytes(self) -> bytes:
         data = struct.pack("<B", self.num_channels) + b"".join([c.to_bytes() for c in self.commands])
-        header = Header(self.device_id, HeaderType.MOTOR, len(data) + Header.sizeof())
+        header = Header(len(data) + Header.sizeof(), HeaderType.MOTOR, self.device_id)
         return header.to_bytes() + data

@@ -82,7 +82,7 @@ class MiniBotBridge:
         # Timer will loop at ~2.38 hours
         microseconds = int(timestamp * 1e6) & ((2 << 31) - 1)
         rospy.logdebug("Sending ping")
-        self.send_packet(PingInfo(Header(self.device_id), microseconds).to_bytes())
+        self.send_packet(PingInfo(Header.from_id(self.device_id), microseconds).to_bytes())
 
     def ping_callback(self, ping_info: PingInfo) -> None:
         timestamp = self.get_ping_time()

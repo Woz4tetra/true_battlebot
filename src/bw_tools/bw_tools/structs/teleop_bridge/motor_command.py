@@ -1,7 +1,7 @@
-from ctypes import Structure, c_int8, c_uint8
+from ctypes import LittleEndianStructure, c_int8, c_uint8
 
 
-class MotorCommand(Structure):
+class MotorCommand(LittleEndianStructure):
     _fields_ = [
         ("_direction", c_int8),
         ("_speed", c_uint8),

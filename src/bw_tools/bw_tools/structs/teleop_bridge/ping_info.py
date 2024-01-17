@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from ctypes import Structure, c_uint32, sizeof
+from ctypes import LittleEndianStructure, c_uint32, sizeof
 
 from bw_tools.structs.teleop_bridge.header import Header
 from bw_tools.structs.teleop_bridge.header_type import HeaderType
 
 
-class PingInfo(Structure):
+class PingInfo(LittleEndianStructure):
     _pack_ = 1
     _fields_ = [
         ("_header", Header),

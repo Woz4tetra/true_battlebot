@@ -14,6 +14,10 @@ class Header(LittleEndianStructure):
         ("_device_id", c_uint8),
     ]
 
+    @classmethod
+    def from_id(cls, device_id: int) -> Header:
+        return cls(0, 0, device_id)
+
     @property
     def device_id(self) -> int:
         return self._device_id
