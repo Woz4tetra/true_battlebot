@@ -28,7 +28,7 @@ class Config:
     def to_dict(self) -> dict:
         return asdict(self)
 
-    def as_bytes(self) -> bytes:
+    def to_bytes(self) -> bytes:
         ssid = fill_string(self.ssid, 33)  # max length of ssid is 32 + null terminator
         password = fill_string(self.password, 64)  # max length of password is 63 + null terminator
         port = struct.pack("<H", self.port)
@@ -36,8 +36,8 @@ class Config:
         header = Header(self.device_id, HeaderType.CONFIG, len(data))
         return header.as_bytes() + data
 
-    def as_serial_bytes(self) -> bytes:
-        return to_serial_packet(self.as_bytes())
+    def to_serial_bytes(self) -> bytes:
+        return to_serial_packet(self.to_bytes())
 
     @classmethod
     def from_bytes(cls, packet: bytes) -> Config:

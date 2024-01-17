@@ -25,7 +25,7 @@ def motor_demo():
 
 def config_demo():
     config = Config(ssid="HavocNet", port=4176, device_id=1, password="something")
-    packet = config.as_bytes()
+    packet = config.to_bytes()
     sock.sendto(packet, ("192.168.8.187", 4176))
     time.sleep(0.1)
 

@@ -1,30 +1,39 @@
 from __future__ import annotations
 
-import struct
+from ctypes import Structure, c_uint32, sizeof
 
 from bw_tools.structs.teleop_bridge.header import Header
 from bw_tools.structs.teleop_bridge.header_type import HeaderType
 
 
-class PingInfo:
-    byte_code = "<I"
-    length = struct.calcsize(byte_code)
+class PingInfo(Structure):
+    _pack_ = 1
+    _fields_ = [
+        ("_header", Header),
+        ("_timestamp", c_uint32),
+    ]
 
-    def __init__(self, device_id: int, timestamp: int) -> None:
-        self.device_id = device_id
-        self.timestamp = timestamp
+    @property
+    def timestamp(self) -> int:
+        return self._timestamp
 
-    def as_bytes(self) -> bytes:
-        data = struct.pack("<I", self.timestamp)
-        header = Header(self.device_id, HeaderType.PING, len(data))
-        return header.as_bytes() + data
+    @property
+    def header(self) -> Header:
+        return self._header
+
+    def to_bytes(self) -> bytes:
+        self._header = Header(self.header.device_id, HeaderType.PING, PingInfo.sizeof())
+        return bytes(self)
 
     @classmethod
-    def from_bytes(cls, header: Header, packet: bytes) -> PingInfo:
-        if header.size != cls.length + Header.length:
-            raise ValueError(f"Invalid packet size: {header.size}")
-        if header.type != HeaderType.PING:
-            raise ValueError(f"Invalid packet type: {header.type}")
-        packet = packet[Header.length : header.size]
-        (timestamp,) = struct.unpack(cls.byte_code, packet)
-        return cls(header.device_id, timestamp)
+    def from_bytes(cls, packet: bytes) -> PingInfo:
+        self = cls.from_buffer_copy(packet)
+        if self.header.size != cls.sizeof():
+            raise ValueError(f"Invalid packet size: {self.header.size}")
+        if self.header.type != HeaderType.PING:
+            raise ValueError(f"Invalid packet type: {self.header.type}")
+        return self
+
+    @classmethod
+    def sizeof(cls) -> int:
+        return sizeof(cls)

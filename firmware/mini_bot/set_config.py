@@ -54,7 +54,7 @@ def main() -> None:
     while not password:
         password = getpass.getpass(f"Enter password for {config.ssid}: ")
         config.password = password
-    data = config.as_serial_bytes()
+    data = config.to_serial_bytes()
     device = serial.Serial(args.device, baud)
 
     device.write(data)
