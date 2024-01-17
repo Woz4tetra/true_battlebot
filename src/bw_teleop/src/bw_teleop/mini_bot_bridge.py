@@ -27,6 +27,7 @@ class MiniBotBridge:
         self.max_speed = get_param("~max_speed", 1.0)
         self.deadzone = get_param("~deadzone", 0.05)
         self.command_timeout = seconds_to_duration(get_param("~command_timeout", 0.5))
+        self.ping_timeout = get_param("~ping_timeout", 0.5)
 
         self.packet = b""
         self.last_command_time = rospy.Time.now()
@@ -36,6 +37,7 @@ class MiniBotBridge:
         self.socket.setblocking(False)
 
         self.start_time = time.perf_counter()
+        self.prev_ping_time = time.perf_counter()
 
         self.ping_pub = rospy.Publisher("ping", Float64, queue_size=1)
         self.twist_sub = rospy.Subscriber("cmd_vel", Twist, self.twist_callback, queue_size=1)
@@ -64,7 +66,6 @@ class MiniBotBridge:
         self.set_velocities(left_velocity, right_velocity)
 
     def set_velocities(self, left_velocity: float, right_velocity: float) -> None:
-        rospy.logdebug(f"Sending velocities {left_velocity}, {right_velocity}")
         commands = [self.velocity_to_command(left_velocity), self.velocity_to_command(right_velocity)]
         self.packet = MotorDescription(self.device_id, commands).to_bytes()
 
@@ -81,10 +82,10 @@ class MiniBotBridge:
         timestamp = self.get_ping_time()
         # Timer will loop at ~2.38 hours
         microseconds = int(timestamp * 1e6) & ((2 << 31) - 1)
-        rospy.logdebug("Sending ping")
         self.send_packet(PingInfo(Header.from_id(self.device_id), microseconds).to_bytes())
 
     def ping_callback(self, ping_info: PingInfo) -> None:
+        self.prev_ping_time = time.perf_counter()
         timestamp = self.get_ping_time()
         latency = timestamp - ping_info.timestamp * 1e-6
         self.ping_pub.publish(latency)
@@ -117,9 +118,15 @@ class MiniBotBridge:
         except ValueError as e:
             rospy.logwarn("Failed to parse packet. %s: %s" % (packet, e))
 
+    def check_ping(self) -> None:
+        ping_delay = time.perf_counter() - self.prev_ping_time
+        if ping_delay > self.ping_timeout:
+            rospy.logwarn_throttle(1.0, f"No ping received for {ping_delay:0.4f} seconds")
+
     def run(self) -> None:
         rate = rospy.Rate(1000)
         while not rospy.is_shutdown():
+            self.check_ping()
             self.receive()
             rate.sleep()
 

@@ -22,7 +22,7 @@ class PingInfo(LittleEndianStructure):
         return self._header
 
     def to_bytes(self) -> bytes:
-        self._header = Header(self.header.device_id, HeaderType.PING, PingInfo.sizeof())
+        self._header = Header(PingInfo.sizeof(), HeaderType.PING, self.header.device_id)
         return bytes(self)
 
     @classmethod
