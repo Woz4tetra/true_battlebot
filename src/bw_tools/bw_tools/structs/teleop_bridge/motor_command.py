@@ -1,13 +1,19 @@
-import struct
+from ctypes import LittleEndianStructure, c_int8, c_uint8
 
 
-class MotorCommand:
-    byte_code = "<bB"
-    length = struct.calcsize(byte_code)
+class MotorCommand(LittleEndianStructure):
+    _fields_ = [
+        ("_direction", c_int8),
+        ("_speed", c_uint8),
+    ]
 
-    def __init__(self, direction: int, speed: int) -> None:
-        self.direction = direction
-        self.speed = speed
+    @property
+    def direction(self) -> int:
+        return self._direction
 
-    def as_bytes(self) -> bytes:
-        return struct.pack(self.byte_code, self.direction, self.speed)
+    @property
+    def speed(self) -> int:
+        return self._speed
+
+    def to_bytes(self) -> bytes:
+        return bytes(self)

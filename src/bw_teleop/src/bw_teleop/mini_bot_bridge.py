@@ -27,14 +27,17 @@ class MiniBotBridge:
         self.max_speed = get_param("~max_speed", 1.0)
         self.deadzone = get_param("~deadzone", 0.05)
         self.command_timeout = seconds_to_duration(get_param("~command_timeout", 0.5))
+        self.ping_timeout = get_param("~ping_timeout", 0.5)
 
         self.packet = b""
         self.last_command_time = rospy.Time.now()
 
         self.socket = socket.socket(type=socket.SOCK_DGRAM)
         self.socket.bind(("0.0.0.0", self.port))
+        self.socket.setblocking(False)
 
         self.start_time = time.perf_counter()
+        self.prev_ping_time = time.perf_counter()
 
         self.ping_pub = rospy.Publisher("ping", Float64, queue_size=1)
         self.twist_sub = rospy.Subscriber("cmd_vel", Twist, self.twist_callback, queue_size=1)
@@ -42,6 +45,7 @@ class MiniBotBridge:
         self.send_timer = rospy.Timer(seconds_to_duration(1.0 / self.rate), self.send_timer_callback)
 
     def send_packet(self, packet: bytes) -> None:
+        rospy.logdebug(f"Sending packet to {self.destination}:{self.port}. {len(packet)} bytes. {packet}")
         self.socket.sendto(packet, (self.destination, self.port))
 
     def velocity_to_command(self, velocity: float) -> MotorCommand:
@@ -63,7 +67,7 @@ class MiniBotBridge:
 
     def set_velocities(self, left_velocity: float, right_velocity: float) -> None:
         commands = [self.velocity_to_command(left_velocity), self.velocity_to_command(right_velocity)]
-        self.packet = MotorDescription(self.device_id, commands).as_bytes()
+        self.packet = MotorDescription(self.device_id, commands).to_bytes()
 
     def send_timer_callback(self, event) -> None:
         if rospy.Time.now() - self.last_command_time > self.command_timeout:
@@ -78,22 +82,27 @@ class MiniBotBridge:
         timestamp = self.get_ping_time()
         # Timer will loop at ~2.38 hours
         microseconds = int(timestamp * 1e6) & ((2 << 31) - 1)
-        self.send_packet(PingInfo(self.device_id, microseconds).as_bytes())
+        self.send_packet(PingInfo(Header.from_id(self.device_id), microseconds).to_bytes())
 
     def ping_callback(self, ping_info: PingInfo) -> None:
+        self.prev_ping_time = time.perf_counter()
         timestamp = self.get_ping_time()
         latency = timestamp - ping_info.timestamp * 1e-6
         self.ping_pub.publish(latency)
 
     def receive(self) -> None:
-        (packet, (address, port)) = self.socket.recvfrom(BUFFER_SIZE)
+        try:
+            (packet, (address, port)) = self.socket.recvfrom(BUFFER_SIZE)
+        except BlockingIOError:
+            return
+        rospy.logdebug(f"Received packet from {address}:{port}. {len(packet)} bytes. {packet}")
         if address != self.destination or port != self.port:
             rospy.logwarn(f"Received packet from an unknown address: {address}:{port}")
             return
         read_size = len(packet)
         if read_size == 0:
             return
-        if read_size < Header.length:
+        if read_size < Header.sizeof():
             rospy.logwarn("Received packet is too small to be valid")
             return
         header = Header.from_bytes(packet)
@@ -105,20 +114,25 @@ class MiniBotBridge:
             return
         try:
             if header.type == HeaderType.PING:
-                ping_info = PingInfo.from_bytes(header, packet)
-                self.ping_callback(ping_info)
+                self.ping_callback(PingInfo.from_bytes(packet))
         except ValueError as e:
             rospy.logwarn("Failed to parse packet. %s: %s" % (packet, e))
+
+    def check_ping(self) -> None:
+        ping_delay = time.perf_counter() - self.prev_ping_time
+        if ping_delay > self.ping_timeout:
+            rospy.logwarn_throttle(1.0, f"No ping received for {ping_delay:0.4f} seconds")
 
     def run(self) -> None:
         rate = rospy.Rate(1000)
         while not rospy.is_shutdown():
+            self.check_ping()
             self.receive()
             rate.sleep()
 
 
 def main() -> None:
-    rospy.init_node("mini_bot_bridge")
+    rospy.init_node("mini_bot_bridge", log_level=rospy.DEBUG)
     MiniBotBridge().run()
 
 
