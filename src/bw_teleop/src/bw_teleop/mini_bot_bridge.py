@@ -132,7 +132,7 @@ class MiniBotBridge:
 
 
 def main() -> None:
-    rospy.init_node("mini_bot_bridge", log_level=rospy.DEBUG)
+    rospy.init_node("mini_bot_bridge")
     MiniBotBridge().run()
 
 
