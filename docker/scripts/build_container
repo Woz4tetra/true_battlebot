@@ -24,7 +24,6 @@ docker build \
     --build-arg CUDA_VERSION_MAJOR=${CUDA_VERSION_MAJOR} \
     --build-arg CUDA_VERSION_MINOR=${CUDA_VERSION_MINOR} \
     --build-arg CUDNN_VERSION_MAJOR=${CUDNN_VERSION_MAJOR} \
-    --build-arg IMAGE_VERSION=${IMAGE_VERSION} \
     -t ${IMAGE_VERSION} .
 
 CONTAINERS=$(docker ps -a --format "{{.Names}}" | grep -e "${PROJECT_NAME}")

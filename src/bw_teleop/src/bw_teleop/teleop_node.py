@@ -42,8 +42,7 @@ class TeleopNode:
         self.cmd_vel_pubs[robot.name].publish(msg)
 
     def filtered_states_callback(self, msg: EstimatedObjectArray) -> None:
-        for robot in msg.robots:  # type: ignore
-            robot: EstimatedObject
+        for robot in msg.robots:
             if robot.label in self.states:
                 self.states[robot.label] = self.is_orientation_right_side_up(robot.state.pose.pose.orientation)
 

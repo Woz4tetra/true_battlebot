@@ -1,4 +1,4 @@
-from bw_tools.typing import seconds_to_duration
+import rospy
 from py_trees.behaviour import Behaviour
 from py_trees.common import ParallelPolicy
 from py_trees.composites import Parallel, Selector, Sequence
@@ -16,7 +16,7 @@ def make_fight_behavior(container: Container) -> Behaviour:
     set_goal = SetGoalToOptimalAttack(container, concurrency_slot=0)
     get_path = GetPath(container)
     wait_for_target = WaitForTargetToMove(
-        container, min_next_time_to_move=seconds_to_duration(1.0), moved_threshold=0.25
+        container, min_next_time_to_move=rospy.Duration.from_sec(1.0), moved_threshold=0.25
     )
     exe_selector = Selector(
         "fight_exe_selector",

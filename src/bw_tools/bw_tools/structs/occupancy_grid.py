@@ -6,6 +6,7 @@ from typing import Any, Dict, Optional, Tuple
 
 import cv2
 import numpy as np
+import rospy
 from nav_msgs.msg import MapMetaData as RosMapMetaData
 from nav_msgs.msg import OccupancyGrid as RosOccupancyGrid
 from numpy import typing as npt
@@ -13,7 +14,6 @@ from numpy import typing as npt
 from bw_tools.structs.header import Header
 from bw_tools.structs.pose2d import Pose2D
 from bw_tools.structs.transform3d import Transform3D
-from bw_tools.typing import seconds_to_time
 
 MapImage = npt.NDArray[np.uint8]  # MxN
 MapBytes = npt.NDArray[np.int8]  # (M*N)x1
@@ -40,7 +40,7 @@ class MapMetaData:
 
     def to_msg(self) -> RosMapMetaData:
         return RosMapMetaData(
-            map_load_time=seconds_to_time(self.map_load_time),
+            map_load_time=rospy.Time.from_sec(self.map_load_time),
             resolution=self.resolution,
             width=self.width,
             height=self.height,

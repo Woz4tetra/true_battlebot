@@ -81,7 +81,7 @@ class SegmentationRelay:
                 has_holes=has_holes,
             )
             object_counts[label] += 1
-            segmentation_array.instances.append(segmentation)  # type: ignore
+            segmentation_array.instances.append(segmentation)
 
             if debug_image is not None:
                 debug_image = cv2.drawContours(debug_image, contours, -1, color=color_rgb, thickness=1)
@@ -107,7 +107,7 @@ class SegmentationRelay:
     def to_contours_msg(self, contours: np.ndarray) -> Contour:
         contour_msg = Contour()
         for x, y in contours[:, 0]:
-            contour_msg.points.append(UVKeypoint(x, y))  # type: ignore
+            contour_msg.points.append(UVKeypoint(x, y))
         contour_msg.area = cv2.contourArea(contours)
         return contour_msg
 
@@ -124,8 +124,7 @@ class SegmentationRelay:
             self.process_segmentation(msg)
 
     def process_segmentation(self, msg: SegmentationInstanceArray) -> None:
-        for instant in msg.instances:  # type: ignore
-            instant: SegmentationInstance
+        for instant in msg.instances:
             if instant.label not in self.simulated_to_real_labels:
                 continue
             color = instant.class_index

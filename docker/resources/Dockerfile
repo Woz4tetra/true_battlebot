@@ -3,7 +3,6 @@ ARG UBUNTU_VERSION_MINOR
 ARG CUDA_VERSION_MAJOR
 ARG CUDA_VERSION_MINOR
 ARG CUDNN_VERSION_MAJOR
-ARG IMAGE_VERSION
 
 FROM nvidia/cuda:${CUDA_VERSION_MAJOR}.${CUDA_VERSION_MINOR}-cudnn${CUDNN_VERSION_MAJOR}-devel-ubuntu${UBUNTU_VERSION_MAJOR}.${UBUNTU_VERSION_MINOR}
 
@@ -16,7 +15,6 @@ ARG UBUNTU_VERSION_MINOR
 ARG CUDA_VERSION_MAJOR
 ARG CUDA_VERSION_MINOR
 ARG CUDNN_VERSION_MAJOR
-ARG IMAGE_VERSION
 
 ENV ROS_DISTRO=${ROS_DISTRO}
 ENV PROJECT_NAME=${PROJECT_NAME}
@@ -106,6 +104,15 @@ COPY --chown=1000:1000 \
 RUN bash /opt/${ORGANIZATION}/install/install_torchscript.sh
 
 # ---
+# Arduino IDE
+# ---
+
+COPY --chown=1000:1000 \
+    ./install/install_arduino_ide.sh \
+    /opt/${ORGANIZATION}/install/
+RUN bash /opt/${ORGANIZATION}/install/install_arduino_ide.sh
+
+# ---
 # ROS base workspace
 # ---
 
@@ -114,6 +121,7 @@ ENV PATH=${HOME}/.local/bin${PATH:+:${PATH}}
 ENV BASE_ROS_WS_ROOT=${HOME}/base_ws
 
 COPY --chown=1000:1000 \
+    ./install/${ROS_DISTRO}.rosinstall \
     ./install/install_ros.sh \
     /opt/${ORGANIZATION}/install/
 RUN bash /opt/${ORGANIZATION}/install/install_ros.sh
@@ -160,7 +168,6 @@ ENV PATH=/opt/${ORGANIZATION}/scripts${PATH:+:${PATH}} \
     PYTHONPATH=/opt/${ORGANIZATION}/${PROJECT_NAME}/src/bw_tools${PYTHONPATH:+:${PYTHONPATH}} \
     PYTHONIOENCODING=utf-8 \
     PLATFORMIO_CORE_DIR=${ROS_WS_ROOT}/.platformio
-ENV IMAGE_VERSION=${IMAGE_VERSION}
 
 
 # ---

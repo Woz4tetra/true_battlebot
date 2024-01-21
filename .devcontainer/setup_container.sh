@@ -22,8 +22,6 @@ ln -sf docker-compose.gpu-${HAS_GPU}.yaml docker-compose.gpu.yaml
 PROJECT_NAME=$(${DIR}/../docker/get_project_name)
 ln -sf docker-compose.${PROJECT_NAME}.yaml docker-compose.yaml
 
-PROJECT_DIR=$(realpath "${DIR}/../")
-
 cat <<EOT > ${DIR}/.env
 ORGANIZATION=$(${DIR}/../docker/get_organization)
 IMAGE_VERSION=$(${DIR}/../docker/get_image_tag)

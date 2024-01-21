@@ -1,10 +1,7 @@
 from typing import Optional
 
 import numpy as np
-from bw_interfaces.msg import Contour, SegmentationInstance, UVKeypoint
-from bw_tools.structs.rpy import RPY
-from bw_tools.structs.transform3d import Transform3D
-from geometry_msgs.msg import Vector3
+from bw_interfaces.msg import SegmentationInstance
 from image_geometry import PinholeCameraModel
 
 
@@ -40,10 +37,8 @@ def line_plane_intersection(
 
 def raycast_segmentation(camera_model: PinholeCameraModel, segmentation: SegmentationInstance) -> np.ndarray:
     rays = []
-    for contour in segmentation.contours:  # type: ignore
-        contour: Contour
-        for point in contour.points:  # type: ignore
-            point: UVKeypoint
+    for contour in segmentation.contours:
+        for point in contour.points:
             ray = np.array(camera_model.projectPixelTo3dRay((point.x, point.y)))
             rays.append(ray)
     return np.array(rays)

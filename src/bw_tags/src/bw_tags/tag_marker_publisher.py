@@ -7,7 +7,7 @@ import tf2_geometry_msgs
 import tf2_ros
 from apriltag_ros.msg import AprilTagDetection, AprilTagDetectionArray
 from bw_tools.structs.transform3d import Transform3D
-from bw_tools.typing import get_param, seconds_to_duration
+from bw_tools.typing import get_param
 from geometry_msgs.msg import Point, Pose, PoseArray, PoseStamped, Quaternion, Vector3
 from std_msgs.msg import ColorRGBA
 from tf2_ros import ConnectivityException, ExtrapolationException, LookupException  # type: ignore
@@ -26,7 +26,7 @@ class TagMarkerPublisher:
         self.marker_publish_rate = get_param("~marker_publish_rate", 0.0)
         self.debug = get_param("~debug", False)
         self.base_frame = get_param("~base_frame", "")
-        self.stale_detection_seconds = seconds_to_duration(get_param("~stale_detection_seconds", 1.0))
+        self.stale_detection_seconds = rospy.Duration.from_sec(get_param("~stale_detection_seconds", 1.0))
 
         self.tag_msg = AprilTagDetectionArray()
         self.rotate_quat = (0.5, -0.5, -0.5, -0.5)
@@ -159,7 +159,7 @@ class TagMarkerPublisher:
             self.prep_text_marker(text_marker, name)
             self.prep_square_marker(square_marker, size)
 
-            markers.markers.extend(  # type: ignore
+            markers.markers.extend(
                 [
                     x_position_marker,
                     y_position_marker,
@@ -221,9 +221,9 @@ class TagMarkerPublisher:
         marker.pose = copy.deepcopy(pose.pose)
         marker.header = pose.header
         if self.marker_publish_rate > 0.0:
-            marker.lifetime = seconds_to_duration(2.0 / self.marker_publish_rate)
+            marker.lifetime = rospy.Duration.from_sec(2.0 / self.marker_publish_rate)
         else:
-            marker.lifetime = seconds_to_duration(0.0)
+            marker.lifetime = rospy.Duration.from_sec(0.0)
         marker.ns = name
         marker.id = 0  # all waypoint names should be unique
         marker.frame_locked = False

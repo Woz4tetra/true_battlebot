@@ -6,7 +6,6 @@ import rospy
 from std_msgs.msg import Header as RosHeader
 
 from bw_tools.structs.context_sequence_counter import ContextSequenceCounter
-from bw_tools.typing import seconds_to_time
 
 
 @dataclass(frozen=True, eq=True)
@@ -31,7 +30,7 @@ class Header:
         return cls(msg.stamp.to_sec(), msg.frame_id, msg.seq)
 
     def to_msg(self) -> RosHeader:
-        return RosHeader(stamp=seconds_to_time(self.stamp), frame_id=self.frame_id, seq=self.seq)
+        return RosHeader(stamp=rospy.Time.from_sec(self.stamp), frame_id=self.frame_id, seq=self.seq)
 
     def __str__(self) -> str:
         return "%s(stamp=%0.3f, frame_id=%s, seq=%d)" % (self.__class__.__name__, self.stamp, self.frame_id, self.seq)

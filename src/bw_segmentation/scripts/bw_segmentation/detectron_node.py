@@ -156,7 +156,7 @@ class DetectronNode:
                     object_index=object_idx,
                     has_holes=mask.has_holes,
                 )
-                msg.instances.append(segmentation_instance)  # type: ignore
+                msg.instances.append(segmentation_instance)
                 if debug_image is not None:
                     bbox_array = bbox_tensor * self.decimate if self.decimate != 1.0 else bbox_tensor
                     bbox: BoundingBox = tuple(map(int, bbox_array))  # type: ignore

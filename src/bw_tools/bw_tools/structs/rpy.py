@@ -12,7 +12,7 @@ class RPY(Tuple[float, float, float]):
         vals = tuple(iterable)
         if (num := len(vals)) != 3:
             raise TypeError(f"Expected 3 elements, got {num} from {iterable}")
-        return tuple.__new__(cls, vals)  # type: ignore
+        return tuple.__new__(cls, vals)
 
     @classmethod
     def from_array(cls, np_array: np.ndarray) -> RPY:
@@ -55,6 +55,10 @@ class RPY(Tuple[float, float, float]):
 
     def to_quaternion(self) -> RosQuaternion:
         return RosQuaternion(*tf_conversions.transformations.quaternion_from_euler(self.roll, self.pitch, self.yaw))
+
+    @classmethod
+    def from_degrees(cls, iterable: Iterable[float]) -> RPY:
+        return cls(np.deg2rad(np.array(iterable)))
 
     @classmethod
     def from_quaternion(cls, quat: RosQuaternion) -> RPY:

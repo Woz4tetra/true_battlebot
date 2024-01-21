@@ -45,7 +45,7 @@
     ],
     "python.analysis.extraPaths": [
         "/home/bwbots/ros_ws/devel/lib/python3/dist-packages",
-        "/home/bwbots/dep_ws/devel/lib/python3.9/site-packages",
+        "/home/bwbots/dep_ws/install/lib/python3.9/site-packages",
         "/home/bwbots/base_ws/install/lib/python3.9/site-packages"
     ],
     "files.associations": {
