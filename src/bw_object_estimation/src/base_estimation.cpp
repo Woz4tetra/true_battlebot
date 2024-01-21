@@ -34,7 +34,7 @@ void BaseEstimation::depth_callback(const sensor_msgs::ImageConstPtr &depth_imag
 
 void BaseEstimation::segmentation_callback(const bw_interfaces::SegmentationInstanceArrayConstPtr &segmentation)
 {
-    if (_depth_msg->header.frame_id.length() != 0)
+    if (_depth_msg != NULL && _depth_msg->header.frame_id.length() != 0)
     {
         synced_callback(_depth_msg, segmentation);
     }
@@ -62,7 +62,9 @@ bool BaseEstimation::is_label_included(std::string label)
 cv::Point3d BaseEstimation::get_ray(cv::Point2d centroid_uv, cv::Mat depth_image)
 {
     cv::Point3d ray = _camera_model.projectPixelTo3dRay(centroid_uv);
-    float z_meters = depth_image.at<float>((int)centroid_uv.y, (int)centroid_uv.x);
+    int cx = std::min(depth_image.cols, std::max(0, (int)centroid_uv.x));
+    int cy = std::min(depth_image.rows, std::max(0, (int)centroid_uv.y));
+    float z_meters = depth_image.at<float>(cy, cx);
     float x_meters = ray.x * z_meters;
     float y_meters = ray.y * z_meters;
     return cv::Point3d(x_meters, y_meters, z_meters);

@@ -1,6 +1,8 @@
 #!/usr/bin/env python
+import threading
 from typing import List, Optional, Tuple
 
+import numpy as np
 import rospy
 import tf2_ros
 from apriltag_ros.msg import AprilTagDetection, AprilTagDetectionArray
@@ -70,6 +72,7 @@ class RobotFilter:
         self.robot_configs = {config.name: config for config in self.robots.robots}
         rotate_quat = (0.0, 0.0, -0.707, 0.707)
         self.apriltag_rotate_tf = Transform3D.from_position_and_quaternion(Vector3(), Quaternion(*rotate_quat))
+        self.locks = {robot.name: threading.Lock() for robot in self.robots.robots}
         self.robot_filters = {
             robot.name: DriveKalmanModel(self.update_delay, self.process_noise, self.friction_factor, robot.radius)
             for robot in self.robots.robots
@@ -178,26 +181,36 @@ class RobotFilter:
 
         assigned = measurement_sorter.get_ids(map_measurements)
         for robot_name, measurement_index in assigned.items():
-            robot_filter = self.robot_filters[robot_name]
-            camera_measurement = robots[measurement_index]
-            robot_config = self.robot_configs[robot_name]
-            map_pose = map_measurements[measurement_index]
-            if robot_config.team == RobotTeam.OUR_TEAM:
-                covariance = self.our_robot_heuristics.compute_covariance(camera_measurement)
-            else:
-                covariance = self.their_robot_heuristics.compute_covariance(camera_measurement)
-                # map_pose, velocity = self.get_delta_measurements(
-                #     camera_measurement.header.stamp.to_sec(), robot_name, map_pose
-                # )
-                # self.update_cmd_vel(velocity, robot_config)
-                self.update_cmd_vel(Twist(), robot_config)
-                robot_filter.object_radius = self.get_object_radius(camera_measurement)
+            with self.locks[robot_name]:
+                camera_measurement = robots[measurement_index]
+                map_measurement = map_measurements[measurement_index]
+                self.apply_sorted_measurement(robot_name, map_measurement, camera_measurement)
 
-            pose = PoseWithCovariance()
-            pose.pose = map_pose
-            pose.covariance = covariance  # type: ignore
+    def apply_sorted_measurement(
+        self, robot_name: str, map_measurement: Pose, camera_measurement: EstimatedObject
+    ) -> None:
+        robot_filter = self.robot_filters[robot_name]
+        robot_config = self.robot_configs[robot_name]
+        if robot_config.team == RobotTeam.OUR_TEAM:
+            covariance = self.our_robot_heuristics.compute_covariance(camera_measurement)
+        else:
+            covariance = self.their_robot_heuristics.compute_covariance(camera_measurement)
+            # map_pose, velocity = self.get_delta_measurements(
+            #     camera_measurement.header.stamp.to_sec(), robot_name, map_pose
+            # )
+            # self.update_cmd_vel(velocity, robot_config)
+            self.update_cmd_vel(Twist(), robot_config)
+            robot_filter.object_radius = self.get_object_radius(camera_measurement)
+
+        pose = PoseWithCovariance()
+        pose.pose = map_measurement
+        pose.covariance = covariance  # type: ignore
+        try:
             # robot_filter.update_pose(pose)
             robot_filter.update_position(pose)
+        except np.linalg.LinAlgError as e:
+            rospy.logwarn(f"Failed to update from robot measurement. Resetting filter. {e}")
+            robot_filter.reset()
 
     def get_object_radius(self, object_estimate: EstimatedObject) -> float:
         measured_radius = (
@@ -259,12 +272,18 @@ class RobotFilter:
             if robot_name not in self.robot_filters:
                 rospy.logwarn(f"Tag id {tag_id} is not a robot")
                 continue
-            robot_filter = self.robot_filters[robot_name]
-            robot_filter.update_pose(detection.pose.pose)
+            with self.locks[robot_name]:
+                robot_filter = self.robot_filters[robot_name]
+                try:
+                    robot_filter.update_pose(detection.pose.pose)
+                except np.linalg.LinAlgError as e:
+                    rospy.logwarn(f"Failed to update from tag. Resetting filter. {e}")
+                    robot_filter.reset()
+                    continue
 
-            is_right_side_up = self.is_id_right_side_up(tag_id)
-            if is_right_side_up is not None:
-                robot_filter.is_right_side_up = is_right_side_up
+                is_right_side_up = self.is_id_right_side_up(tag_id)
+                if is_right_side_up is not None:
+                    robot_filter.is_right_side_up = is_right_side_up
 
     def rotate_tag_orientation(
         self,
@@ -286,15 +305,22 @@ class RobotFilter:
         else:
             measurement.covariance = self.our_robot_cmd_vel_heuristics.compute_covariance(measurement)
 
-        robot_filter = self.robot_filters[robot_config.name]
-        robot_filter.update_cmd_vel(measurement)
+        robot_name = robot_config.name
+        with self.locks[robot_name]:
+            robot_filter = self.robot_filters[robot_name]
+            try:
+                robot_filter.update_cmd_vel(measurement)
+            except np.linalg.LinAlgError as e:
+                rospy.logwarn(f"Failed to update from velocity. Resetting filter. {e}")
+                robot_filter.reset()
 
     def reset_callback(self, _: Empty) -> None:
         self.field_received = True
         rospy.loginfo("Resetting filters.")
         rospy.sleep(0.25)
-        for robot_filter in self.robot_filters.values():
-            robot_filter.reset()
+        for robot_name, robot_filter in self.robot_filters.items():
+            with self.locks[robot_name]:
+                robot_filter.reset()
 
     def transform_to_map(self, header: RosHeader, pose: Pose) -> Optional[Pose]:
         pose_stamped = PoseStamped(header=header, pose=pose)
@@ -312,8 +338,13 @@ class RobotFilter:
                 self.update_cmd_vel(Twist(), config)
 
     def predict_all_filters(self) -> None:
-        for robot_filter in self.robot_filters.values():
-            robot_filter.predict()
+        for robot_name, robot_filter in self.robot_filters.items():
+            with self.locks[robot_name]:
+                try:
+                    robot_filter.predict()
+                except np.linalg.LinAlgError as e:
+                    rospy.logwarn(f"Failed predict. Resetting filter. {e}")
+                    robot_filter.reset()
 
     def get_robot_frame_id(self, robot_name: str) -> str:
         return self.robot_frame_prefix + "_" + robot_name
@@ -333,7 +364,9 @@ class RobotFilter:
         filtered_states = EstimatedObjectArray()
         for robot_name, bot_filter in self.robot_filters.items():
             robot_frame_id = self.get_robot_frame_id(robot_name)
-            pose, twist = bot_filter.get_state()
+            with self.locks[robot_name]:
+                pose, twist = bot_filter.get_state()
+                diameter = bot_filter.object_radius * 2
             state_msg = Odometry()
             state_msg.header.frame_id = self.map_frame
             state_msg.header.stamp = rospy.Time.now()
@@ -344,7 +377,6 @@ class RobotFilter:
             transforms.append(self.odom_to_transform(state_msg))
             self.filter_state_pubs[robot_name].publish(state_msg)
 
-            diameter = bot_filter.object_radius * 2
             filtered_states.robots.append(
                 EstimatedObject(
                     header=state_msg.header,
@@ -368,5 +400,4 @@ class RobotFilter:
 
 if __name__ == "__main__":
     rospy.init_node("robot_filter", log_level=rospy.DEBUG)
-    robot_filter = RobotFilter()
-    robot_filter.run()
+    RobotFilter().run()
