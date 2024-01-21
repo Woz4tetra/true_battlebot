@@ -9,7 +9,7 @@
 #include <WiFi.h>
 #include <WiFiUdp.h>
 #include <EEPROM.h>
-#include <ESP32_Servo.h>
+#include <ESP32Servo.h>
 
 /**
  * Neopixels
@@ -360,10 +360,13 @@ void setup()
     Serial.print("Listening on UDP port ");
     Serial.println(device_config->port);
 
-    // Setup PWM
-    Serial.println("Setting up PWM...");
+    // Setup servo control
+    Serial.println("Setting up servo control...");
     left_servo.attach(LEFT_OUTPUT_PIN);
     right_servo.attach(RIGHT_OUTPUT_PIN);
+    // initialize them to their neutral positions
+    left_servo.writeMicroseconds(1500);
+    right_servo.writeMicroseconds(1500);
 
     Serial.println("mini_bot setup complete");
 }
@@ -377,23 +380,34 @@ void setup()
  */
 void set_motor(uint8_t channel, uint8_t speed, int8_t direction)
 {
-  int position = map(speed * direction, -255, 255, 0, 180);
+  int position = 1500;
+
+  // reverse is 800-1100μs
+  if (direction < 0)
+  {
+    position = map(speed, 0, 255, 800, 1100);
+  }
+  // forward is 1900-2200μs
+  else if (direction > 0)
+  {
+    position = map(speed, 0, 255, 1900, 2200);
+  }
 
   if (channel) {
-    right_servo.write(position);
+    right_servo.writeMicroseconds(position);
   }
   else {
-    left_servo.write(position);
+    left_servo.writeMicroseconds(position);
   }
 
-  Serial.print("Setting motor ");
-  Serial.print(channel);
-  Serial.print(" to speed ");
-  Serial.print(speed);
-  Serial.print(" , direction ");
-  Serial.print(direction);
-  Serial.prit(" and position ");
-  Serial.println(position);
+  // Serial.print("Setting motor ");
+  // Serial.print(channel);
+  // Serial.print(" to speed ");
+  // Serial.print(speed);
+  // Serial.print(" , direction ");
+  // Serial.print(direction);
+  // Serial.prit(" and position ");
+  // Serial.println(position);
 }
 
 /**
