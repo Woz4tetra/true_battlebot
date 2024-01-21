@@ -39,7 +39,7 @@ class Pose2D:
 
     @classmethod
     def from_msg(cls, msg: RosPose) -> Pose2D:
-        angles = tf_conversions.transformations.euler_from_quaternion(  # type: ignore
+        angles = tf_conversions.transformations.euler_from_quaternion(
             (msg.orientation.x, msg.orientation.y, msg.orientation.z, msg.orientation.w)
         )
         return cls(
@@ -49,7 +49,7 @@ class Pose2D:
         )
 
     def to_msg(self) -> RosPose:
-        quat = tf_conversions.transformations.quaternion_from_euler(0.0, 0.0, self.theta)  # type: ignore
+        quat = tf_conversions.transformations.quaternion_from_euler(0.0, 0.0, self.theta)
         return RosPose(
             position=RosPoint(x=self.x, y=self.y, z=0.0),
             orientation=RosQuaternion(*quat),

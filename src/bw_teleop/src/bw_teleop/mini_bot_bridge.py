@@ -8,7 +8,7 @@ from bw_tools.structs.teleop_bridge.header_type import HeaderType
 from bw_tools.structs.teleop_bridge.motor_command import MotorCommand
 from bw_tools.structs.teleop_bridge.motor_description import MotorDescription
 from bw_tools.structs.teleop_bridge.ping_info import PingInfo
-from bw_tools.typing import get_param, seconds_to_duration
+from bw_tools.typing import get_param
 from geometry_msgs.msg import Twist
 from std_msgs.msg import Float64
 
@@ -26,7 +26,7 @@ class MiniBotBridge:
         self.speed_to_command = 255 / self.max_ground_speed
         self.max_speed = get_param("~max_speed", 1.0)
         self.deadzone = get_param("~deadzone", 0.05)
-        self.command_timeout = seconds_to_duration(get_param("~command_timeout", 0.5))
+        self.command_timeout = rospy.Duration.from_sec(get_param("~command_timeout", 0.5))
         self.ping_timeout = get_param("~ping_timeout", 0.5)
 
         self.packet = b""
@@ -41,8 +41,8 @@ class MiniBotBridge:
 
         self.ping_pub = rospy.Publisher("ping", Float64, queue_size=1)
         self.twist_sub = rospy.Subscriber("cmd_vel", Twist, self.twist_callback, queue_size=1)
-        self.ping_timer = rospy.Timer(seconds_to_duration(0.25), self.ping_timer_callback)
-        self.send_timer = rospy.Timer(seconds_to_duration(1.0 / self.rate), self.send_timer_callback)
+        self.ping_timer = rospy.Timer(rospy.Duration.from_sec(0.25), self.ping_timer_callback)
+        self.send_timer = rospy.Timer(rospy.Duration.from_sec(1.0 / self.rate), self.send_timer_callback)
 
     def send_packet(self, packet: bytes) -> None:
         rospy.logdebug(f"Sending packet to {self.destination}:{self.port}. {len(packet)} bytes. {packet}")

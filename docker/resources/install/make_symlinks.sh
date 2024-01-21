@@ -9,3 +9,6 @@ ln -s /opt/${ORGANIZATION}/${PROJECT_NAME}/src/bw_data/data/zed/settings /usr/lo
 
 sudo rm -r /usr/local/zed/resources
 ln -s /opt/${ORGANIZATION}/${PROJECT_NAME}/src/bw_data/data/zed/resources /usr/local/zed/resources
+
+mkdir -p ${HOME}/.arduinoIDE/arduino-cli.yaml
+ln -s /opt/${ORGANIZATION}/${PROJECT_NAME}/firmware/arduino_ide/arduino-cli.yaml ${HOME}/.arduinoIDE/arduino-cli.yaml

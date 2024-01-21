@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 from threading import Lock
-from typing import Optional, Tuple
+from typing import Optional, Tuple, cast
 
 import numpy as np
 import rospy
@@ -9,7 +9,7 @@ from bw_tools.configs.robot_config import RobotFleetConfig, RobotTeam
 from bw_tools.structs.pose2d import Pose2D
 from bw_tools.typing import get_param
 from costmap_converter.msg import ObstacleArrayMsg, ObstacleMsg
-from geometry_msgs.msg import Polygon, PoseStamped
+from geometry_msgs.msg import Point32, Polygon, PoseStamped
 from sensor_msgs import point_cloud2
 from sensor_msgs.msg import PointCloud2, PointField
 from std_msgs.msg import Header
@@ -70,8 +70,7 @@ class TargetSelector:
             self.filter_states = msg
         cloud_obstacles = np.array([], dtype=np.float32)
         obstacles = ObstacleArrayMsg()
-        for robot in msg.robots:  # type: ignore
-            robot: EstimatedObject
+        for robot in msg.robots:
             robot_name = robot.label
             if self.ignore_opponent_obstacles and robot_name in self.their_robot_names:
                 continue
@@ -79,10 +78,10 @@ class TargetSelector:
                 continue
             with self.obstacle_lock:
                 object_id = self.non_controlled_robot_names.index(robot_name)
-                position = robot.state.pose.pose.position
+                position = cast(Point32, robot.state.pose.pose.position)
                 obstacles.header = robot.header
                 diameter = max(robot.size.x, robot.size.y, robot.size.z)
-                obstacles.obstacles.append(  # type: ignore
+                obstacles.obstacles.append(
                     ObstacleMsg(
                         header=robot.header,
                         id=object_id,
@@ -98,7 +97,7 @@ class TargetSelector:
                     cloud_obstacles = single_cloud_obstacle
                 else:
                     cloud_obstacles = np.append(cloud_obstacles, single_cloud_obstacle, axis=0)
-        if len(obstacles.obstacles):  # type: ignore
+        if len(obstacles.obstacles):
             cloud_msg = self.get_obstacle_cloud(obstacles.header, cloud_obstacles)
             self.obstacle_cloud_pub.publish(cloud_msg)
         self.obstacle_pub.publish(obstacles)
@@ -121,8 +120,7 @@ class TargetSelector:
 
     def get_robot_state(self, name: str) -> Optional[EstimatedObject]:
         with self.filter_lock:
-            for robot in self.filter_states.robots:  # type: ignore
-                robot: EstimatedObject
+            for robot in self.filter_states.robots:
                 if robot.label == name:
                     return robot
             return None
@@ -131,8 +129,7 @@ class TargetSelector:
         opponent_poses = []
         opponent_states = []
         with self.filter_lock:
-            for robot in self.filter_states.robots:  # type: ignore
-                robot: EstimatedObject
+            for robot in self.filter_states.robots:
                 if robot.label in self.their_robot_names:
                     opponent_poses.append(Pose2D.from_msg(robot.state.pose.pose))
                     opponent_states.append(robot)

@@ -13,7 +13,7 @@ from bw_tools.structs.rpy import RPY
 from bw_tools.structs.transform3d import Transform3D
 from bw_tools.structs.xy import XY
 from bw_tools.transforms import lookup_pose_in_frame
-from bw_tools.typing import get_param, seconds_to_duration
+from bw_tools.typing import get_param
 from geometry_msgs.msg import Point, PointStamped, Pose, PoseStamped, Quaternion, Vector3
 from image_geometry import PinholeCameraModel
 from sensor_msgs.msg import CameraInfo, Imu
@@ -58,9 +58,9 @@ class FieldFilter:
         }
         self.estimated_field = EstimatedObject()
 
-        self.tf_buffer = tf2_ros.Buffer()  # type: ignore
-        self.tf_listener = tf2_ros.TransformListener(self.tf_buffer)  # type: ignore
-        self.tf_broadcaster = tf2_ros.TransformBroadcaster()  # type: ignore
+        self.tf_buffer = tf2_ros.Buffer()
+        self.tf_listener = tf2_ros.TransformListener(self.tf_buffer)
+        self.tf_broadcaster = tf2_ros.TransformBroadcaster()
 
         self.field_rotate_tf = Transform3D.from_position_and_rpy(Vector3(), RPY((0, -np.pi / 2, 0)))
 
@@ -127,7 +127,7 @@ class FieldFilter:
     def plane_response_callback(self, plane_pose: PoseStamped) -> None:
         rospy.loginfo("Received plane response")
         lens_plane_pose = lookup_pose_in_frame(
-            self.tf_buffer, plane_pose, self.segmentation.header.frame_id, timeout=seconds_to_duration(30.0)
+            self.tf_buffer, plane_pose, self.segmentation.header.frame_id, timeout=rospy.Duration.from_sec(30.0)
         )
         if lens_plane_pose is None:
             return
@@ -155,7 +155,7 @@ class FieldFilter:
 
         lens_field_pose = PoseStamped(header=self.segmentation.header, pose=field_centered_pose)
         base_field_pose = lookup_pose_in_frame(
-            self.tf_buffer, lens_field_pose, self.base_frame, timeout=seconds_to_duration(30.0)
+            self.tf_buffer, lens_field_pose, self.base_frame, timeout=rospy.Duration.from_sec(30.0)
         )
         if base_field_pose is None:
             return
@@ -243,7 +243,7 @@ class FieldFilter:
         field_pose = estimated_field.state.pose.pose
         transform = Transform3D.from_pose_msg(field_pose).inverse()
 
-        field_tf = tf2_ros.TransformStamped()  # type: ignore
+        field_tf = tf2_ros.TransformStamped()
         field_tf.header.stamp = estimated_field.header.stamp
         field_tf.header.frame_id = self.relative_map_frame
         field_tf.child_frame_id = estimated_field.header.frame_id
@@ -252,7 +252,7 @@ class FieldFilter:
 
     def publish_aligned_tf(self) -> tf2_ros.TransformStamped:
         transform = self.get_cage_aligned_transform()
-        aligned_tf = tf2_ros.TransformStamped()  # type: ignore
+        aligned_tf = tf2_ros.TransformStamped()
         aligned_tf.header.stamp = rospy.Time.now()
         aligned_tf.header.frame_id = self.map_frame
         aligned_tf.child_frame_id = self.relative_map_frame

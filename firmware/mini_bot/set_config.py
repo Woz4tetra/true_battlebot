@@ -3,7 +3,7 @@ import getpass
 import json
 import struct
 import time
-from typing import Protocol
+from typing import Protocol, cast
 
 import serial
 from bw_tools.structs.teleop_bridge.config import Config
@@ -43,7 +43,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Configure a Mini Bot")
     parser.add_argument("config", default="./config.json", nargs="?", help="JSON configuration file")
     parser.add_argument("-d", "--device", default="/dev/ttyACM0", help="Serial device")
-    args: CommandLineArgs = parser.parse_args()  # type: ignore
+    args = cast(CommandLineArgs, parser.parse_args())
 
     baud = 115200
 

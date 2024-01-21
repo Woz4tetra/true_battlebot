@@ -5,8 +5,12 @@ import rospy
 import tf2_geometry_msgs
 import tf2_ros
 from geometry_msgs.msg import Pose, PoseStamped, TransformStamped
-
-from bw_tools.typing import seconds_to_time
+from tf2_ros import (
+    ConnectivityException,  # type: ignore
+    ExtrapolationException,  # type: ignore
+    InvalidArgumentException,  # type: ignore
+    LookupException,  # type: ignore
+)
 
 
 def lookup_transform(
@@ -21,21 +25,16 @@ def lookup_transform(
     Call tf_buffer.lookup_transform. Return None if the look up fails
     """
     if time_window is None:
-        time_lookup = seconds_to_time(0)
+        time_lookup = rospy.Time(0)
     else:
         time_lookup = rospy.Time.now() - time_window
 
     if timeout is None:
-        timeout = rospy.Duration(1.0)  # type: ignore
+        timeout = rospy.Duration.from_sec(1.0)
 
     try:
         return tf_buffer.lookup_transform(parent_link, child_link, time_lookup, timeout)
-    except (
-        tf2_ros.LookupException,  # type: ignore
-        tf2_ros.ConnectivityException,  # type: ignore
-        tf2_ros.ExtrapolationException,  # type: ignore
-        tf2_ros.InvalidArgumentException,  # type: ignore
-    ) as e:
+    except (LookupException, ConnectivityException, ExtrapolationException, InvalidArgumentException) as e:
         if not silent:
             rospy.logwarn("Failed to look up %s to %s. %s" % (parent_link, child_link, e))
         return None

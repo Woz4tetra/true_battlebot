@@ -1,6 +1,6 @@
 import argparse
 import time
-from typing import Protocol
+from typing import Protocol, cast
 
 import serial
 
@@ -13,7 +13,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Configure a Mini Bot")
     parser.add_argument("config", default="./config.json", nargs="?", help="JSON configuration file")
     parser.add_argument("-d", "--device", default="/dev/ttyACM0", help="Serial device")
-    args: CommandLineArgs = parser.parse_args()  # type: ignore
+    args = cast(CommandLineArgs, parser.parse_args())
 
     baud = 115200
     device = serial.Serial(args.device, baudrate=baud)

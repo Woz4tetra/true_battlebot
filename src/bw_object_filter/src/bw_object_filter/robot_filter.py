@@ -13,7 +13,7 @@ from bw_tools.structs.pose2d_stamped import Pose2DStamped
 from bw_tools.structs.transform3d import Transform3D
 from bw_tools.structs.twist2d import Twist2D
 from bw_tools.transforms import lookup_pose_in_frame
-from bw_tools.typing import get_param, seconds_to_duration
+from bw_tools.typing import get_param
 from geometry_msgs.msg import (
     Pose,
     PoseStamped,
@@ -46,7 +46,7 @@ class RobotFilter:
         self.map_frame = get_param("~map_frame", "map")
         self.robot_frame_prefix = get_param("~robot_frame_prefix", "base_link")
 
-        self.command_timeout = seconds_to_duration(get_param("~command_timeout", 0.5))
+        self.command_timeout = rospy.Duration.from_sec(get_param("~command_timeout", 0.5))
 
         self.apriltag_base_covariance_scalar = get_param("~apriltag_base_covariance_scalar", 0.00001)
         self.our_base_covariance = get_param("~our_robot_estimate_base_covariance_scalar", 0.001)
@@ -105,9 +105,9 @@ class RobotFilter:
             ),
         }
 
-        self.tf_buffer = tf2_ros.Buffer()  # type: ignore
-        self.tf_listener = tf2_ros.TransformListener(self.tf_buffer)  # type: ignore
-        self.tf_broadcaster = tf2_ros.TransformBroadcaster()  # type: ignore
+        self.tf_buffer = tf2_ros.Buffer()
+        self.tf_listener = tf2_ros.TransformListener(self.tf_buffer)
+        self.tf_broadcaster = tf2_ros.TransformBroadcaster()
 
         self.filter_state_pubs = {
             robot.name: rospy.Publisher(f"{robot.name}/odom", Odometry, queue_size=10) for robot in self.robots.robots
@@ -155,8 +155,7 @@ class RobotFilter:
             rospy.logdebug("Field not received. Skipping robot estimation callback.")
             return
         measurements = {label: [] for label in self.measurement_sorters.keys()}
-        for robot in msg.robots:  # type: ignore
-            robot: EstimatedObject
+        for robot in msg.robots:
             try:
                 label = Label(robot.label)
             except ValueError:
@@ -196,7 +195,7 @@ class RobotFilter:
 
             pose = PoseWithCovariance()
             pose.pose = map_pose
-            pose.covariance = covariance
+            pose.covariance = covariance  # type: ignore
             # robot_filter.update_pose(pose)
             robot_filter.update_position(pose)
 
@@ -346,7 +345,7 @@ class RobotFilter:
             self.filter_state_pubs[robot_name].publish(state_msg)
 
             diameter = bot_filter.object_radius * 2
-            filtered_states.robots.append(  # type: ignore
+            filtered_states.robots.append(
                 EstimatedObject(
                     header=state_msg.header,
                     state=state_msg,

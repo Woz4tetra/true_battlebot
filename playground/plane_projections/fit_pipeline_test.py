@@ -115,10 +115,8 @@ def plot_plane(ax, point: np.ndarray, normal: np.ndarray, width: float = 5.0, he
 
 def plot_segmentation(axis, segmentation: SegmentationInstance):
     seg_points = []
-    for contour in field_segmentation.contours:  # type: ignore
-        contour: Contour
-        for point in contour.points:  # type: ignore
-            point: UVKeypoint
+    for contour in field_segmentation.contours:
+        for point in contour.points:
             seg_points.append((point.x, -point.y))
     seg_points = np.array(seg_points)
     axis.plot(seg_points[:, 0], seg_points[:, 1], marker=".")

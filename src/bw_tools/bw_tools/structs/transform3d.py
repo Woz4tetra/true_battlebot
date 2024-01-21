@@ -101,7 +101,7 @@ class Transform3D:
         inv_tfmat = np.eye(4)
         inv_tfmat[0:3, 0:3] = self.tfmat[0:3, 0:3].T
         inv_tfmat[0:3, 3] = -inv_tfmat[0:3, 0:3] @ self.tfmat[0:3, 3]
-        return Transform3D(inv_tfmat)  # type: ignore
+        return Transform3D(inv_tfmat)
 
     @classmethod
     def from_position_and_quaternion(
