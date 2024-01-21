@@ -1,16 +1,20 @@
 board_manager:
-  additional_urls: []
+  additional_urls:
+  - http://arduino.esp8266.com/stable/package_esp8266com_index.json
 build_cache:
   compilations_before_purge: 10
   ttl: 720h0m0s
 daemon:
   port: "50051"
 directories:
+  builtin:
+    libraries: /home/bwbots/.arduino15/libraries
   data: /home/bwbots/.arduino15
   downloads: /home/bwbots/.arduino15/staging
   user: /home/bwbots/Arduino
 library:
   enable_unsafe_install: false
+locale: en
 logging:
   file: ""
   format: text
