@@ -364,8 +364,6 @@ void setup()
     Serial.println("Setting up PWM...");
     left_servo.attach(LEFT_OUTPUT_PIN);
     right_servo.attach(RIGHT_OUTPUT_PIN);
-    // pwm.attachPin(LEFT_OUTPUT_PIN, PWM_FREQUENCY, 10);
-    // pwm.attachPin(RIGHT_OUTPUT_PIN, PWM_FREQUENCY, 10);
 
     Serial.println("mini_bot setup complete");
 }
