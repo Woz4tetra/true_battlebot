@@ -28,10 +28,11 @@ char read_buffer[PACKET_MAX_LENGTH]; // Buffer to read packets into
 
 const int NUM_MOTORS = 2; // This robot has two motors
 
-int active_mode_hue = 0;             // While motor commands are active, the hue of neopixel will cycle
-int idle_mode_color = 0;             // When no motor commands are active, flash a single channel with this color (red)
-uint32_t prev_packet_time = 0;       // The last time a packet was received (milliseconds)
-const uint32_t PACKET_TIMEOUT = 500; // If no packets are received for this long, turn off motors (milliseconds)
+int active_mode_hue = 0;                  // While motor commands are active, the hue of neopixel will cycle
+int idle_mode_color = 0;                  // When no motor commands are active, flash a single channel with this color (red)
+uint32_t prev_packet_time = 0;            // The last time a packet was received (milliseconds)
+const uint32_t PACKET_WARN_TIMEOUT = 500; // If no packets are received for this long, flash yellow (milliseconds)
+const uint32_t PACKET_STOP_TIMEOUT = 500; // If no packets are received for this long, turn off motors (milliseconds)
 
 const int CONFIG_SET_ADDRESS = 1; // EEPROM address to store whether config is set
 
@@ -591,7 +592,8 @@ void loop()
     check_clear();
 
     // If no packets have been received for a while, turn off motors
-    if (now - prev_packet_time > PACKET_TIMEOUT)
+    uint32_t packet_delay = now - prev_packet_time;
+    if (packet_delay > PACKET_STOP_TIMEOUT)
     {
         // No packets received in a while, turn off motors
         for (int channel = 0; channel < NUM_MOTORS; channel++)
@@ -599,8 +601,15 @@ void loop()
             set_motor(channel, 0, 0);
         }
         pixels.setBrightness(20);
-        pixels.fill(pixels.Color(idle_mode_color, 0, 0));
-        idle_mode_color = (idle_mode_color + 1) % 255;
+        pixels.fill(pixels.Color(idle_mode_color / 5, 0, 0));
+        idle_mode_color = (idle_mode_color + 1) % 1275;
+    }
+    else if (packet_delay > PACKET_WARN_TIMEOUT)
+    {
+        pixels.setBrightness(20);
+        int channel = idle_mode_color / 3;
+        pixels.fill(pixels.Color(channel, channel, 0));
+        idle_mode_color = (idle_mode_color + 1) % 765;
     }
     else
     {
