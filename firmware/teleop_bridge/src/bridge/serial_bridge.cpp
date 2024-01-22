@@ -17,12 +17,12 @@ bool SerialBridge::update()
     // Serial doesn't process packets once config is set.
     if (state_ == WAITING_FOR_CONFIG)
     {
-        if (process_serial_packet())
+        if (device_config_->device_id != NULL_DEVICE_ID)
         {
-            if (device_config_->device_id == NULL_DEVICE_ID)
-            {
-                state_ = READY;
-            }
+            state_ = READY;
+        }
+        else if (process_serial_packet())
+        {
             return true;
         }
     }

@@ -64,9 +64,6 @@ void setup()
  */
 void loop()
 {
-    // Check if the serial port has a "clear" command
-    persistent_config_inst->check_clear();
-
     serial_interface->update();
     serial_bridge::SerialBridgeState serial_state = serial_interface->get_state();
     if (serial_state == serial_bridge::WAITING_FOR_CONFIG)
@@ -75,6 +72,9 @@ void loop()
     }
     else
     {
+        // Check if the serial port has a "clear" command
+        persistent_config_inst->check_clear();
+
         if (udp_interface->update())
         {
             // TODO update status lights
