@@ -22,7 +22,8 @@ base_controller::BaseController *controller;
 persistent_config::PersistentConfig *persistent_config_inst;
 status_neopixel::StatusNeopixel *neopixel_status;
 
-uint32_t last_command = 0; // The last time a packet was received (milliseconds)
+const int COMMAND_TIMEOUT = 250; // Stop motors if no command is received for this many milliseconds
+uint32_t last_command = 0;       // The last time a packet was received (milliseconds)
 
 /**
  * @brief Setup the mini_bot
@@ -96,7 +97,7 @@ void loop()
             neopixel_status->set_state(status_base::CONNECTING);
             break;
         case udp_bridge::READY:
-            if (now - last_command > 1000)
+            if (now - last_command > COMMAND_TIMEOUT)
             {
                 controller->stop_all_motors();
                 neopixel_status->set_state(status_base::TIMED_OUT);
