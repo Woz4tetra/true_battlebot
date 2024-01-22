@@ -104,15 +104,6 @@ COPY --chown=1000:1000 \
 RUN bash /opt/${ORGANIZATION}/install/install_torchscript.sh
 
 # ---
-# Arduino IDE
-# ---
-
-COPY --chown=1000:1000 \
-    ./install/install_arduino_ide.sh \
-    /opt/${ORGANIZATION}/install/
-RUN bash /opt/${ORGANIZATION}/install/install_arduino_ide.sh
-
-# ---
 # ROS base workspace
 # ---
 
