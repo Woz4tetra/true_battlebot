@@ -26,10 +26,9 @@ const int COMMAND_TIMEOUT = 250; // Stop motors if no command is received for th
 uint32_t last_command = 0;       // The last time a packet was received (milliseconds)
 
 /**
- * @brief Setup the mini_bot
+ * @brief Setup the teleop bridge
  *
- * This method sets up the mini_bot by initializing the neopixel, reading the
- * config from EEPROM, and connecting to WiFi.
+ * This method sets up the teleop bridge by initializing relevent components.
  */
 void setup()
 {
