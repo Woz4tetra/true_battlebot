@@ -30,6 +30,7 @@ class DetectronNode:
         self.nms_threshold = get_param("~nms_threshold", 0.4)
         self.mask_conversion_threshold = get_param("~mask_conversion_threshold", 0.5)
         self.decimate = get_param("~decimate", 1.0)
+        self.image_delay_threshold = rospy.Duration.from_sec(get_param("~image_delay_threshold", 0.2))
 
         with open(self.metadata_path, "r") as file:
             self.metadata = ModelMetadata.from_dict(json.load(file))
@@ -197,7 +198,13 @@ class DetectronNode:
         return contour_msgs
 
     def image_callback(self, msg: Image) -> None:
+        image_delay = rospy.Time.now() - msg.header.stamp
+        rospy.logdebug(f"Callback delay is: {(rospy.Time.now() - msg.header.stamp).to_sec()}")
+        if image_delay > self.image_delay_threshold:
+            rospy.logdebug("Image is too old. Ignoring.")
+            return
         if self.process_queue.full():
+            rospy.logdebug("Queue full")
             return
         self.process_queue.put(msg)
 
@@ -225,7 +232,7 @@ class DetectronNode:
     def run(self) -> None:
         while not rospy.is_shutdown():
             if self.process_queue.empty():
-                rospy.sleep(0.01)
+                rospy.sleep(0.001)
                 continue
             self.process_image(self.process_queue.get())
 
