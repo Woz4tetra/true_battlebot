@@ -38,14 +38,45 @@ void EscTankController::set_motor(uint8_t channel, uint8_t speed, int8_t directi
     switch (channel)
     {
     case LEFT_CHANNEL:
-        right_servo_.writeMicroseconds(pulse_width);
+        left_servo_.writeMicroseconds(pulse_width);
+        left_direction_ = direction;
+        left_speed_ = speed;
         break;
     case RIGHT_CHANNEL:
-        left_servo_.writeMicroseconds(pulse_width);
+        right_servo_.writeMicroseconds(pulse_width);
+        right_direction_ = direction;
+        right_speed_ = speed;
         break;
     default:
         Serial.print("Invalid channel ");
         Serial.println(channel);
         break;
+    }
+}
+
+void EscTankController::get_motor(uint8_t channel, uint8_t &speed, int8_t &direction)
+{
+    switch (channel)
+    {
+    case LEFT_CHANNEL:
+        direction = left_direction_;
+        speed = left_speed_;
+        break;
+    case RIGHT_CHANNEL:
+        direction = right_direction_;
+        speed = right_speed_;
+        break;
+    default:
+        speed = 0;
+        direction = 0;
+        break;
+    }
+}
+
+void EscTankController::stop_all_motors()
+{
+    for (int i = 0; i < NUM_CHANNELS; i++)
+    {
+        set_motor(i, 0, 0);
     }
 }

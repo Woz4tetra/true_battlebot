@@ -10,6 +10,7 @@
 #include <bridge/serial_bridge.h>
 #include <bridge/persistent_config.h>
 #include <motors/esc_tank_controller.h>
+#include <status_lights/status_neopixel.h>
 
 char UDP_READ_BUFFER[bridge::PACKET_MAX_LENGTH];
 char SERIAL_READ_BUFFER[bridge::PACKET_MAX_LENGTH];
@@ -19,6 +20,9 @@ udp_bridge::UdpBridge *udp_interface;
 serial_bridge::SerialBridge *serial_interface;
 base_controller::BaseController *controller;
 persistent_config::PersistentConfig *persistent_config_inst;
+status_neopixel::StatusNeopixel *neopixel_status;
+
+uint32_t last_command = 0; // The last time a packet was received (milliseconds)
 
 /**
  * @brief Setup the mini_bot
@@ -38,6 +42,8 @@ void setup()
     controller = new esc_tank_controller::EscTankController(17, 9); // TODO make this configurable from build args
     udp_interface = udp_bridge::UdpBridge::get_instance(DEVICE_CONFIG, UDP_READ_BUFFER, controller);
     serial_interface = serial_bridge::SerialBridge::get_instance(DEVICE_CONFIG, SERIAL_READ_BUFFER, persistent_config_inst);
+    neopixel_status = new status_neopixel::StatusNeopixel();
+    neopixel_status->begin();
 
     persistent_config_inst->begin();
 
@@ -64,11 +70,12 @@ void setup()
  */
 void loop()
 {
+    uint32_t now = millis();
     serial_interface->update();
     serial_bridge::SerialBridgeState serial_state = serial_interface->get_state();
     if (serial_state == serial_bridge::WAITING_FOR_CONFIG)
     {
-        // TODO update status lights
+        neopixel_status->set_state(status_base::WAITING_FOR_CONFIG);
     }
     else
     {
@@ -77,8 +84,31 @@ void loop()
 
         if (udp_interface->update())
         {
-            // TODO update status lights
+            last_command = now;
         }
         udp_bridge::UdpBridgeState udp_state = udp_interface->get_state();
+        switch (udp_state)
+        {
+        case udp_bridge::INIT:
+            neopixel_status->set_state(status_base::CONNECTING);
+            break;
+        case udp_bridge::CONNECTING:
+            neopixel_status->set_state(status_base::CONNECTING);
+            break;
+        case udp_bridge::READY:
+            if (now - last_command > 1000)
+            {
+                controller->stop_all_motors();
+                neopixel_status->set_state(status_base::TIMED_OUT);
+            }
+            else
+            {
+                neopixel_status->set_state(status_base::OK);
+            }
+            break;
+        default:
+            break;
+        }
     }
+    neopixel_status->update();
 }

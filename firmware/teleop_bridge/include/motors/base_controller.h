@@ -18,6 +18,8 @@ namespace base_controller
          * @param direction The direction to set the motor to (negative == backwards, 0 == stop, positive == forward)
          */
         virtual void set_motor(uint8_t channel, uint8_t speed, int8_t direction);
+        virtual void get_motor(uint8_t channel, uint8_t &speed, int8_t &direction);
+        virtual void stop_all_motors();
     };
 } // namespace base_controller
 

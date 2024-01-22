@@ -3,8 +3,28 @@
 #ifndef __STATUS_BASE_H__
 #define __STATUS_BASE_H__
 
-uint32_t prev_packet_time = 0;            // The last time a packet was received (milliseconds)
-const uint32_t PACKET_WARN_TIMEOUT = 250; // If no packets are received for this long, flash yellow (milliseconds)
-const uint32_t PACKET_STOP_TIMEOUT = 500; // If no packets are received for this long, turn off motors (milliseconds)
+namespace status_base
+{
+    enum StatusState
+    {
+        WAITING_FOR_CONFIG,
+        CONNECTING,
+        TIMED_OUT,
+        OK
+    };
+
+    class StatusBase
+    {
+    public:
+        StatusBase() { state_ = WAITING_FOR_CONFIG; }
+        virtual void begin();
+        virtual void update();
+        void set_state(StatusState state) { state_ = state; }
+        StatusState get_state() { return state_; }
+
+    protected:
+        StatusState state_;
+    };
+} // namespace status_base
 
 #endif // __STATUS_BASE_H__
