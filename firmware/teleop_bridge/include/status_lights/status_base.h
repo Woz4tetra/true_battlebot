@@ -20,6 +20,7 @@ namespace status_base
         virtual void begin();
         virtual void update();
         void set_state(StatusState state) { state_ = state; }
+        virtual void set_speed_readout(int speed);
         StatusState get_state() { return state_; }
 
     protected:

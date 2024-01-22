@@ -84,3 +84,8 @@ void StatusNeopixel::update()
     }
     pixels_->show();
 }
+
+void StatusNeopixel::set_speed_readout(int speed)
+{
+    pixels_->setBrightness(min(255, max(20, speed)));
+}

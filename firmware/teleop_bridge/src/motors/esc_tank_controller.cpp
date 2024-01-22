@@ -15,17 +15,18 @@ void EscTankController::begin()
     right_servo_.attach(right_output_pin_);
 }
 
-void EscTankController::set_motor(uint8_t channel, uint8_t speed, int8_t direction)
+void EscTankController::set_motor(uint8_t channel, int velocity)
 {
     int pulse_width;
+    int speed = abs(velocity);
 
     // reverse is 800-1100μs
-    if (direction < 0)
+    if (velocity < 0)
     {
         pulse_width = map(speed, 0, 255, 800, 1100);
     }
     // forward is 1900-2200μs
-    else if (direction > 0)
+    else if (velocity > 0)
     {
         pulse_width = map(speed, 0, 255, 1900, 2200);
     }
@@ -39,13 +40,11 @@ void EscTankController::set_motor(uint8_t channel, uint8_t speed, int8_t directi
     {
     case LEFT_CHANNEL:
         left_servo_.writeMicroseconds(pulse_width);
-        left_direction_ = direction;
-        left_speed_ = speed;
+        left_velocity_ = velocity;
         break;
     case RIGHT_CHANNEL:
         right_servo_.writeMicroseconds(pulse_width);
-        right_direction_ = direction;
-        right_speed_ = speed;
+        right_velocity_ = velocity;
         break;
     default:
         Serial.print("Invalid channel ");
@@ -54,21 +53,18 @@ void EscTankController::set_motor(uint8_t channel, uint8_t speed, int8_t directi
     }
 }
 
-void EscTankController::get_motor(uint8_t channel, uint8_t &speed, int8_t &direction)
+void EscTankController::get_motor(uint8_t channel, int &velocity)
 {
     switch (channel)
     {
     case LEFT_CHANNEL:
-        direction = left_direction_;
-        speed = left_speed_;
+        velocity = left_velocity_;
         break;
     case RIGHT_CHANNEL:
-        direction = right_direction_;
-        speed = right_speed_;
+        velocity = right_velocity_;
         break;
     default:
-        speed = 0;
-        direction = 0;
+        velocity = 0;
         break;
     }
 }
@@ -77,6 +73,6 @@ void EscTankController::stop_all_motors()
 {
     for (int i = 0; i < NUM_CHANNELS; i++)
     {
-        set_motor(i, 0, 0);
+        set_motor(i, 0);
     }
 }

@@ -21,7 +21,15 @@ bool BaseBridge::process_motor_packet(char *packet, int packet_size)
     {
         uint8_t speed = motor_desc->commands[channel].speed;
         int8_t direction = motor_desc->commands[channel].direction;
-        set_motor(channel, speed, direction);
+        int velocity;
+        if (direction < 0)
+            velocity = -speed;
+        else if (direction > 0)
+            velocity = speed;
+        else
+            velocity = 0;
+
+        set_motor(channel, velocity);
     }
 
     return true;

@@ -61,6 +61,22 @@ void setup()
     Serial.println("teleop_bridge setup complete");
 }
 
+int get_max_motor_speed()
+{
+    int max_speed = 0;
+    for (int channel = 0; channel < controller->get_num_channels(); channel++)
+    {
+        int velocity;
+        controller->get_motor(channel, velocity);
+        int speed = abs(velocity);
+        if (speed > max_speed)
+        {
+            max_speed = speed;
+        }
+    }
+    return max_speed;
+}
+
 /**
  * @brief The main loop
  *
@@ -104,6 +120,7 @@ void loop()
             else
             {
                 neopixel_status->set_state(status_base::OK);
+                neopixel_status->set_speed_readout(get_max_motor_speed());
             }
             break;
         default:

@@ -2,5 +2,6 @@
     <node name="mini_bot_bridge" pkg="bw_teleop" type="mini_bot_bridge.py" output="screen"
         required="false">
         <remap from="cmd_vel" to="cmd_vel/relative" />
+        <param name="destination" value="192.168.8.233" />
     </node>
 </launch>

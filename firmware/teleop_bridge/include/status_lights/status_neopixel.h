@@ -13,6 +13,7 @@ namespace status_neopixel
         StatusNeopixel();
         void begin();
         void update();
+        void set_speed_readout(int speed);
 
     private:
         Adafruit_NeoPixel *pixels_;

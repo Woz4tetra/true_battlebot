@@ -16,15 +16,15 @@ namespace esc_tank_controller
     public:
         EscTankController(int left_output_pin, int right_output_pin);
         void begin();
-        void set_motor(uint8_t channel, uint8_t speed, int8_t direction);
-        void get_motor(uint8_t channel, uint8_t &speed, int8_t &direction);
+        void set_motor(uint8_t channel, int velocity);
+        void get_motor(uint8_t channel, int &velocity);
         void stop_all_motors();
+        int get_num_channels() { return NUM_CHANNELS; }
 
     private:
         int left_output_pin_, right_output_pin_;
         Servo left_servo_, right_servo_;
-        uint8_t left_speed_ = 0, right_speed_ = 0;
-        int8_t left_direction_ = 0, right_direction_ = 0;
+        uint8_t left_velocity_ = 0, right_velocity_ = 0;
     };
 } // namespace esc_tank_controller
 
