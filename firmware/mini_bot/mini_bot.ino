@@ -32,7 +32,7 @@ const int NUM_MOTORS = 2; // This robot has two motors
 int active_mode_hue = 0;                  // While motor commands are active, the hue of neopixel will cycle
 int idle_mode_color = 0;                  // When no motor commands are active, flash a single channel with this color (red)
 uint32_t prev_packet_time = 0;            // The last time a packet was received (milliseconds)
-const uint32_t PACKET_WARN_TIMEOUT = 500; // If no packets are received for this long, flash yellow (milliseconds)
+const uint32_t PACKET_WARN_TIMEOUT = 250; // If no packets are received for this long, flash yellow (milliseconds)
 const uint32_t PACKET_STOP_TIMEOUT = 500; // If no packets are received for this long, turn off motors (milliseconds)
 
 const int CONFIG_SET_ADDRESS = 1; // EEPROM address to store whether config is set
@@ -46,8 +46,11 @@ const char SERIAL_PACKET_C1 = 'w';
  */
 Servo left_servo;
 Servo right_servo;
-const int LEFT_OUTPUT_PIN = 17;
-const int RIGHT_OUTPUT_PIN = 9;
+const int LEFT_OUTPUT_PIN = 17; // maps to channel 1 on the ESC
+const int RIGHT_OUTPUT_PIN = 9; // maps to channel 2 on the ESC
+const int LEFT_CHANNEL = 0;
+const int RIGHT_CHANNEL = 1;
+const int STOP_MOTOR_PULSE_WIDTH = 1500;
 
 /**
  * Packet structs
@@ -365,8 +368,8 @@ void setup()
     left_servo.attach(LEFT_OUTPUT_PIN);
     right_servo.attach(RIGHT_OUTPUT_PIN);
     // initialize them to their neutral positions
-    left_servo.writeMicroseconds(1500);
-    right_servo.writeMicroseconds(1500);
+    set_motor(LEFT_CHANNEL, 0, 0);
+    set_motor(RIGHT_CHANNEL, 0, 0);
 
     Serial.println("mini_bot setup complete");
 }
@@ -380,34 +383,37 @@ void setup()
  */
 void set_motor(uint8_t channel, uint8_t speed, int8_t direction)
 {
-  int position = 1500;
+    int pulse_width;
 
-  // reverse is 800-1100μs
-  if (direction < 0)
-  {
-    position = map(speed, 0, 255, 800, 1100);
-  }
-  // forward is 1900-2200μs
-  else if (direction > 0)
-  {
-    position = map(speed, 0, 255, 1900, 2200);
-  }
+    // reverse is 800-1100μs
+    if (direction < 0)
+    {
+        pulse_width = map(speed, 0, 255, 800, 1100);
+    }
+    // forward is 1900-2200μs
+    else if (direction > 0)
+    {
+        pulse_width = map(speed, 0, 255, 1900, 2200);
+    }
+    // stop is 1500μs
+    else
+    {
+        pulse_width = STOP_MOTOR_PULSE_WIDTH;
+    }
 
-  if (channel) {
-    right_servo.writeMicroseconds(position);
-  }
-  else {
-    left_servo.writeMicroseconds(position);
-  }
-
-  // Serial.print("Setting motor ");
-  // Serial.print(channel);
-  // Serial.print(" to speed ");
-  // Serial.print(speed);
-  // Serial.print(" , direction ");
-  // Serial.print(direction);
-  // Serial.prit(" and position ");
-  // Serial.println(position);
+    switch (channel)
+    {
+    case LEFT_CHANNEL:
+        right_servo.writeMicroseconds(pulse_width);
+        break;
+    case RIGHT_CHANNEL:
+        left_servo.writeMicroseconds(pulse_width);
+        break;
+    default:
+        Serial.print("Invalid servo channel ");
+        Serial.println(channel);
+        break;
+    }
 }
 
 /**
