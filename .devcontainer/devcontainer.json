@@ -32,7 +32,6 @@
                 "matangover.mypy",
                 "ms-python.black-formatter",
                 "twxs.cmake",
-                "ms-azuretools.vscode-docker",
                 "ms-vscode.cpptools-extension-pack",
                 "redhat.vscode-xml"
             ]
