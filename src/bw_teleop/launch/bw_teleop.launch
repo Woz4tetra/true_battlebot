@@ -1,6 +1,3 @@
 <launch>
-    <arg name="robots_config" default="$(find bw_bringup)/config/robots.yaml" />
-    <node name="bw_teleop" pkg="bw_teleop" type="teleop_node.py" output="screen" required="false">
-        <rosparam command="load" file="$(arg robots_config)" ns="robots" />
-    </node>
+    <node name="bw_teleop" pkg="bw_teleop" type="teleop_node.py" output="screen" required="false" />
 </launch>

@@ -1,11 +1,10 @@
 <launch>
+    <rosparam command="load" file="$(find bw_bringup)/config/robots.yaml" ns="robots" />
     <group ns="mini_bot">
         <include file="$(find bw_teleop)/launch/mini_bot_bridge.launch" />
         <include file="$(find bw_teleop)/launch/simple_teleop.launch" />
         <include file="$(find bw_bringup)/launch/subsystems/twist_mux.launch" />
     </group>
-    <include file="$(find bw_teleop)/launch/bw_teleop.launch">
-        <arg name="robots_config"
-            value="$(find bw_bringup)/config/robots.yaml" />
-    </include>
+    <include
+        file="$(find bw_teleop)/launch/bw_teleop.launch" />
 </launch>

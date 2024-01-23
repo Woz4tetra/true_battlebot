@@ -37,7 +37,7 @@ from bw_object_filter.robot_measurement_sorter import RobotMeasurementSorter
 
 class RobotFilter:
     def __init__(self) -> None:
-        robot_config = get_param("~robots", None)
+        robot_config = get_param("/robots", None)
         if robot_config is None:
             raise ValueError("Must specify robot_config in the parameter server")
         rospy.logdebug(f"Robot config: {robot_config}")

@@ -23,6 +23,8 @@ class RobotConfig:
     up_id: int = -1
     down_id: int = -1
     radius: float = 0.0
+    bridge_id: int = -1
+    base_width: float = 1.0
 
     @property
     def team(self) -> RobotTeam:

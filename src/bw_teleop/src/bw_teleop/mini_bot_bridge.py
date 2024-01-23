@@ -1,8 +1,12 @@
 #!/usr/bin/env python
 import socket
+import struct
 import time
+from typing import Optional
 
 import rospy
+from bw_interfaces.msg import MotorVelocities
+from bw_tools.configs.robot_config import RobotFleetConfig
 from bw_tools.structs.teleop_bridge.header import Header
 from bw_tools.structs.teleop_bridge.header_type import HeaderType
 from bw_tools.structs.teleop_bridge.motor_command import MotorCommand
@@ -12,41 +16,92 @@ from bw_tools.typing import get_param
 from geometry_msgs.msg import Twist
 from std_msgs.msg import Float64
 
-BUFFER_SIZE = 255
+BUFFER_SIZE = 512
+
+
+def is_loopback(host: str):
+    loopback_checker = {
+        socket.AF_INET: lambda x: struct.unpack("!I", socket.inet_aton(x))[0] >> (32 - 8) == 127,
+        socket.AF_INET6: lambda x: x == "::1",
+    }
+    for family in (socket.AF_INET, socket.AF_INET6):
+        try:
+            r = socket.getaddrinfo(host, None, family, socket.SOCK_STREAM)
+        except socket.gaierror:
+            return False
+        for family, _, _, _, sockaddr in r:
+            if not loopback_checker[family](sockaddr[0]):
+                return False
+    return True
 
 
 class MiniBotBridge:
     def __init__(self) -> None:
-        self.rate = get_param("~rate", 50)
+        robot_config = get_param("/robots", None)
+        if robot_config is None:
+            raise ValueError("Must specify robot_config in the parameter server")
+        self.robots = RobotFleetConfig.from_dict(robot_config)
+
+        self.robot_name = get_param("~robot_name", "mini_bot")
+
+        mini_bot_config = None
+        for robot in self.robots.robots:
+            if robot.name == self.robot_name:
+                mini_bot_config = robot
+                break
+        if mini_bot_config is None:
+            raise ValueError(f"Could not find robot with name {self.robot_name}")
+        self.mini_bot_config = mini_bot_config
+
+        self.rate = get_param("~rate", 1000)
         self.port = get_param("~port", 4176)
-        self.device_id = get_param("~device_id", 1)
-        self.destination = get_param("~destination", "192.168.8.187")
-        self.base_width = get_param("~base_width", 0.1315)
-        self.max_ground_speed = get_param("~max_ground_speed", 0.5)
-        self.speed_to_command = 255 / self.max_ground_speed
+        self.device_id = self.mini_bot_config.bridge_id
+        self.base_radius = self.mini_bot_config.base_width / 2
+        self.broadcast_address = get_param("~broadcast_address", "192.168.8.255")
+        self.deadzone = get_param("~deadzone", 0.0)
         self.max_speed = get_param("~max_speed", 1.0)
-        self.deadzone = get_param("~deadzone", 0.05)
+        self.speed_to_command = 255 / self.max_speed
         self.command_timeout = rospy.Duration.from_sec(get_param("~command_timeout", 0.5))
         self.ping_timeout = get_param("~ping_timeout", 0.5)
+
+        self.left_direction = 1 if get_param("~flip_left", True) else -1
+        self.right_direction = 1 if get_param("~flip_right", False) else -1
+
+        self.destination = ""
+        self.blacklist_ips = set()
+        self.whitelist_ips = set()
 
         self.packet = b""
         self.last_command_time = rospy.Time.now()
 
         self.socket = socket.socket(type=socket.SOCK_DGRAM)
         self.socket.bind(("0.0.0.0", self.port))
+        self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
         self.socket.setblocking(False)
 
         self.start_time = time.perf_counter()
         self.prev_ping_time = time.perf_counter()
 
         self.ping_pub = rospy.Publisher("ping", Float64, queue_size=1)
+        self.motor_velocities_pub = rospy.Publisher("motor_velocities", MotorVelocities, queue_size=1)
         self.twist_sub = rospy.Subscriber("cmd_vel", Twist, self.twist_callback, queue_size=1)
-        self.ping_timer = rospy.Timer(rospy.Duration.from_sec(0.25), self.ping_timer_callback)
+        self.ping_timer = rospy.Timer(rospy.Duration.from_sec(0.2), self.ping_timer_callback)
         self.send_timer = rospy.Timer(rospy.Duration.from_sec(1.0 / self.rate), self.send_timer_callback)
 
     def send_packet(self, packet: bytes) -> None:
-        rospy.logdebug(f"Sending packet to {self.destination}:{self.port}. {len(packet)} bytes. {packet}")
-        self.socket.sendto(packet, (self.destination, self.port))
+        if self.destination:
+            rospy.logdebug(f"Sending packet to {self.destination}:{self.port}. {len(packet)} bytes. {packet}")
+            try:
+                self.socket.sendto(packet, (self.destination, self.port))
+            except BlockingIOError as e:
+                rospy.logwarn(f"Failed to send packet. {e}")
+
+    def broadcast_packet(self, packet: bytes) -> None:
+        rospy.logdebug(f"Broadcasting packet. {len(packet)} bytes. {packet}")
+        try:
+            self.socket.sendto(packet, (self.broadcast_address, self.port))
+        except BlockingIOError as e:
+            rospy.logwarn(f"Failed to broadcast packet. {e}")
 
     def velocity_to_command(self, velocity: float) -> MotorCommand:
         if abs(velocity) < self.deadzone:
@@ -57,8 +112,8 @@ class MiniBotBridge:
 
     def twist_callback(self, msg: Twist) -> None:
         self.last_command_time = rospy.Time.now()
-        left_velocity = msg.linear.x - msg.angular.z * self.base_width / 2
-        right_velocity = msg.linear.x + msg.angular.z * self.base_width / 2
+        left_velocity = msg.linear.x - msg.angular.z * self.base_radius
+        right_velocity = msg.linear.x + msg.angular.z * self.base_radius
         max_speed = max(abs(left_velocity), abs(right_velocity))
         if max_speed > self.max_speed:
             left_velocity *= self.max_speed / max_speed
@@ -66,7 +121,11 @@ class MiniBotBridge:
         self.set_velocities(left_velocity, right_velocity)
 
     def set_velocities(self, left_velocity: float, right_velocity: float) -> None:
-        commands = [self.velocity_to_command(left_velocity), self.velocity_to_command(right_velocity)]
+        commands = [
+            self.velocity_to_command(self.left_direction * left_velocity),
+            self.velocity_to_command(self.right_direction * right_velocity),
+        ]
+        self.motor_velocities_pub.publish(MotorVelocities(velocities=[left_velocity, right_velocity]))
         self.packet = MotorDescription(self.device_id, commands).to_bytes()
 
     def send_timer_callback(self, event) -> None:
@@ -82,7 +141,7 @@ class MiniBotBridge:
         timestamp = self.get_ping_time()
         # Timer will loop at ~2.38 hours
         microseconds = int(timestamp * 1e6) & ((2 << 31) - 1)
-        self.send_packet(PingInfo(Header.from_id(self.device_id), microseconds).to_bytes())
+        self.broadcast_packet(PingInfo(Header.from_id(0), microseconds).to_bytes())
 
     def ping_callback(self, ping_info: PingInfo) -> None:
         self.prev_ping_time = time.perf_counter()
@@ -90,28 +149,58 @@ class MiniBotBridge:
         latency = timestamp - ping_info.timestamp * 1e-6
         self.ping_pub.publish(latency)
 
+    def is_address_ok(self, address: str, port: int) -> bool:
+        if address in self.blacklist_ips:
+            return False
+        if address not in self.whitelist_ips:
+            if is_loopback(address):
+                self.blacklist_ips.add(address)
+                return False
+            else:
+                self.whitelist_ips.add(address)
+
+        if port != self.port:
+            rospy.logwarn(f"Received packet from an unknown address: {address}:{port}")
+            return False
+
+        return True
+
+    def parse_header(self, packet: bytes) -> Optional[Header]:
+        read_size = len(packet)
+        if read_size == 0:
+            return None
+        if read_size < Header.sizeof():
+            rospy.logwarn("Received packet is too small to be valid")
+            return None
+        header = Header.from_bytes(packet)
+        if header.device_id != self.device_id:
+            rospy.logdebug(
+                f"Received packet for a different device. Received {header.device_id} != expected {self.device_id}"
+            )
+            return None
+
+        if header.size != read_size:
+            rospy.logwarn(f"Received packet size does not match header. Expected: {header.size}. Read: {read_size}")
+            return None
+
+        return header
+
     def receive(self) -> None:
         try:
             (packet, (address, port)) = self.socket.recvfrom(BUFFER_SIZE)
         except BlockingIOError:
             return
+
+        if not self.is_address_ok(address, port):
+            return
+
         rospy.logdebug(f"Received packet from {address}:{port}. {len(packet)} bytes. {packet}")
-        if address != self.destination or port != self.port:
-            rospy.logwarn(f"Received packet from an unknown address: {address}:{port}")
+
+        header = self.parse_header(packet)
+        if not header:
             return
-        read_size = len(packet)
-        if read_size == 0:
-            return
-        if read_size < Header.sizeof():
-            rospy.logwarn("Received packet is too small to be valid")
-            return
-        header = Header.from_bytes(packet)
-        if header.device_id != self.device_id:
-            rospy.logwarn("Received packet for a different device")
-            return
-        if header.size != read_size:
-            rospy.logwarn(f"Received packet size does not match header. Expected: {header.size}. Read: {read_size}")
-            return
+        self.destination = address
+
         try:
             if header.type == HeaderType.PING:
                 self.ping_callback(PingInfo.from_bytes(packet))
@@ -124,7 +213,7 @@ class MiniBotBridge:
             rospy.logwarn_throttle(1.0, f"No ping received for {ping_delay:0.4f} seconds")
 
     def run(self) -> None:
-        rate = rospy.Rate(1000)
+        rate = rospy.Rate(self.rate)
         while not rospy.is_shutdown():
             self.check_ping()
             self.receive()
@@ -132,7 +221,9 @@ class MiniBotBridge:
 
 
 def main() -> None:
-    rospy.init_node("mini_bot_bridge")
+    # log_level = rospy.DEBUG
+    log_level = rospy.INFO
+    rospy.init_node("mini_bot_bridge", log_level=log_level)
     MiniBotBridge().run()
 
 

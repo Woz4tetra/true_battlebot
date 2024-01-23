@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
-	<arg name="robots_config" default="$(find bw_bringup)/config/robots.yaml" />
 	<node pkg="mbf_costmap_nav" type="mbf_costmap_nav" respawn="true" name="move_base_flex"
 		output="screen">
 		<remap from="/cmd_vel" to="/mini_bot/cmd_vel/navigation" />
@@ -33,7 +32,6 @@
 	<node name="field_map_converter" pkg="bw_navigation" type="map_converter.py" output="screen" />
 	<node name="target_selector" pkg="bw_navigation" type="target_selector.py" output="screen">
 		<remap from="obstacles" to="/move_base_flex/TebLocalPlannerROS/obstacles" />
-		<rosparam command="load" file="$(arg robots_config)" ns="robots" />
 		<!-- <param name="algorithm" value="sacrificial_selector" /> -->
 		<!-- <param name="algorithm" value="push_from_behind_selector" /> -->
 		<param name="algorithm" value="crash_selector" />
