@@ -58,9 +58,8 @@ void UdpBridge::connecting_callback()
 bool UdpBridge::ready_callback()
 {
     // Check for UDP packets. If a packet is received, process it.
-    int packet_size = UDP.parsePacket();
     bool processed_packet = false;
-    if (packet_size)
+    if (UDP.parsePacket())
     {
         read_length_ = UDP.read(buffer_, PACKET_MAX_LENGTH);
         if (process_packet(buffer_, read_length_))

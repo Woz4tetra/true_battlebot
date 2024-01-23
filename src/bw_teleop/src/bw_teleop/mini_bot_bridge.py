@@ -3,6 +3,7 @@ import socket
 import time
 
 import rospy
+from bw_interfaces.msg import MotorVelocities
 from bw_tools.structs.teleop_bridge.header import Header
 from bw_tools.structs.teleop_bridge.header_type import HeaderType
 from bw_tools.structs.teleop_bridge.motor_command import MotorCommand
@@ -21,13 +22,16 @@ class MiniBotBridge:
         self.port = get_param("~port", 4176)
         self.device_id = get_param("~device_id", 1)
         self.destination = get_param("~destination", "192.168.8.187")
-        self.base_width = get_param("~base_width", 0.1315)
+        self.base_radius = get_param("~base_width", 0.1315) / 2
         self.max_ground_speed = get_param("~max_ground_speed", 0.5)
         self.speed_to_command = 255 / self.max_ground_speed
         self.max_speed = get_param("~max_speed", 1.0)
         self.deadzone = get_param("~deadzone", 0.05)
         self.command_timeout = rospy.Duration.from_sec(get_param("~command_timeout", 0.5))
         self.ping_timeout = get_param("~ping_timeout", 0.5)
+
+        self.left_direction = 1 if get_param("~flip_left", True) else -1
+        self.right_direction = 1 if get_param("~flip_right", False) else -1
 
         self.packet = b""
         self.last_command_time = rospy.Time.now()
@@ -40,6 +44,7 @@ class MiniBotBridge:
         self.prev_ping_time = time.perf_counter()
 
         self.ping_pub = rospy.Publisher("ping", Float64, queue_size=1)
+        self.motor_velocities_pub = rospy.Publisher("motor_velocities", MotorVelocities, queue_size=1)
         self.twist_sub = rospy.Subscriber("cmd_vel", Twist, self.twist_callback, queue_size=1)
         self.ping_timer = rospy.Timer(rospy.Duration.from_sec(0.25), self.ping_timer_callback)
         self.send_timer = rospy.Timer(rospy.Duration.from_sec(1.0 / self.rate), self.send_timer_callback)
@@ -57,8 +62,8 @@ class MiniBotBridge:
 
     def twist_callback(self, msg: Twist) -> None:
         self.last_command_time = rospy.Time.now()
-        left_velocity = msg.linear.x - msg.angular.z * self.base_width / 2
-        right_velocity = msg.linear.x + msg.angular.z * self.base_width / 2
+        left_velocity = msg.linear.x - msg.angular.z * self.base_radius
+        right_velocity = msg.linear.x + msg.angular.z * self.base_radius
         max_speed = max(abs(left_velocity), abs(right_velocity))
         if max_speed > self.max_speed:
             left_velocity *= self.max_speed / max_speed
@@ -66,7 +71,11 @@ class MiniBotBridge:
         self.set_velocities(left_velocity, right_velocity)
 
     def set_velocities(self, left_velocity: float, right_velocity: float) -> None:
-        commands = [self.velocity_to_command(left_velocity), self.velocity_to_command(right_velocity)]
+        commands = [
+            self.velocity_to_command(self.left_direction * left_velocity),
+            self.velocity_to_command(self.right_direction * right_velocity),
+        ]
+        self.motor_velocities_pub.publish(MotorVelocities(velocities=[left_velocity, right_velocity]))
         self.packet = MotorDescription(self.device_id, commands).to_bytes()
 
     def send_timer_callback(self, event) -> None:

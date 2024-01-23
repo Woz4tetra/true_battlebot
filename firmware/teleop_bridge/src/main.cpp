@@ -44,8 +44,10 @@ void setup()
     serial_interface = serial_bridge::SerialBridge::get_instance(DEVICE_CONFIG, SERIAL_READ_BUFFER, persistent_config_inst);
     neopixel_status = new status_neopixel::StatusNeopixel();
     neopixel_status->begin();
-
     persistent_config_inst->begin();
+
+    controller->begin();
+    controller->stop_all_motors();
 
     // Read config from EEPROM
     if (persistent_config_inst->is_set())
@@ -106,8 +108,6 @@ void loop()
         switch (udp_state)
         {
         case udp_bridge::INIT:
-            neopixel_status->set_state(status_base::CONNECTING);
-            break;
         case udp_bridge::CONNECTING:
             neopixel_status->set_state(status_base::CONNECTING);
             break;

@@ -24,7 +24,7 @@ namespace esc_tank_controller
     private:
         int left_output_pin_, right_output_pin_;
         Servo left_servo_, right_servo_;
-        uint8_t left_velocity_ = 0, right_velocity_ = 0;
+        int left_velocity_ = 0, right_velocity_ = 0;
     };
 } // namespace esc_tank_controller
 
