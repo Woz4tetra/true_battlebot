@@ -20,15 +20,15 @@ void EscTankController::set_motor(uint8_t channel, int velocity)
     int pulse_width;
     int speed = abs(velocity);
 
-    // reverse is 800-1100μs
+    // reverse is 800-1500μs
     if (velocity < 0)
     {
-        pulse_width = map(speed, 0, 255, 1500, 800);
+        pulse_width = map(speed, 0, 255, STOP_MOTOR_PULSE_WIDTH, 800);
     }
-    // forward is 1900-2200μs
+    // forward is 1500-2200μs
     else if (velocity > 0)
     {
-        pulse_width = map(speed, 0, 255, 1500, 2200);
+        pulse_width = map(speed, 0, 255, STOP_MOTOR_PULSE_WIDTH, 2200);
     }
     // stop is 1500μs
     else

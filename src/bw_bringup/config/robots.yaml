@@ -1,6 +1,20 @@
 robots:
-    - { name: mini_bot, up_id: 41, down_id: 76, radius: 0.1 }
-    - { name: main_bot, up_id: 42, down_id: 99, radius: 0.18 }
+    - {
+          name: mini_bot,
+          up_id: 41,
+          down_id: 76,
+          radius: 0.1, # for path planning
+          bridge_id: 1,
+          base_width: 0.1315, # for teleop
+      }
+    - {
+          name: main_bot,
+          up_id: 42,
+          down_id: 99,
+          radius: 0.18,
+          bridge_id: 2,
+          base_width: 0.2,
+      }
     - { name: referee }
     - { name: opponent_1 }
     # - { name: opponent_2 }

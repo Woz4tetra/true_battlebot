@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import rospy
-from bw_interfaces.msg import EstimatedObject, EstimatedObjectArray
+from bw_interfaces.msg import EstimatedObjectArray
 from bw_tools.configs.robot_config import RobotConfig, RobotFleetConfig, RobotTeam
 from bw_tools.typing import get_param
 from geometry_msgs.msg import Quaternion, Twist
@@ -9,7 +9,7 @@ from tf_conversions import transformations
 
 class TeleopNode:
     def __init__(self) -> None:
-        robot_config = get_param("~robots", None)
+        robot_config = get_param("/robots", None)
         if robot_config is None:
             raise ValueError("Must specify robot_config in the parameter server")
         self.robots = RobotFleetConfig.from_dict(robot_config)

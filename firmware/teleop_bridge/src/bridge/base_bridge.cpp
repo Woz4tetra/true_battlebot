@@ -110,7 +110,8 @@ bool BaseBridge::process_packet(char *packet, int packet_size)
     }
 
     // Check that the device ID matches the device ID in the header.
-    if (header->device_id != device_config_->device_id)
+    // If the packet is a ping packet, the device ID doesn't matter.
+    if (header->device_id != device_config_->device_id && header->type != PING)
     {
         return false;
     }

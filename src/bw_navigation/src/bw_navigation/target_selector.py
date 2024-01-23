@@ -27,7 +27,7 @@ CLOUD_FIELDS = [
 
 class TargetSelector:
     def __init__(self) -> None:
-        robot_config = get_param("~robots", None)
+        robot_config = get_param("/robots", None)
         if robot_config is None:
             raise ValueError("Must specify robot_config in the parameter server")
         self.robot_radius = get_param("~robot_radius", 0.2)
