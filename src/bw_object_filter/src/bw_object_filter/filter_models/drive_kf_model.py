@@ -8,6 +8,7 @@ from .helpers import (
     NUM_MEASUREMENTS,
     NUM_STATES,
     NUM_STATES_1ST_ORDER,
+    STATE_t,
     flip_quat_upside_down,
     jit_predict,
     jit_update,
@@ -52,7 +53,7 @@ class DriveKalmanModel(FilterModel):
             measurement, noise = pose_to_measurement(msg)
             measurement = np.nan_to_num(measurement, copy=False)
             self.state, self.covariance = jit_update(
-                self.state, self.covariance, self.pose_H, measurement, noise, angle_wrapped=True
+                self.state, self.covariance, self.pose_H, measurement, noise, (STATE_t,)
             )
         else:
             self.teleport(msg)
@@ -62,14 +63,16 @@ class DriveKalmanModel(FilterModel):
             measurement, noise = pose_to_measurement(msg)
             measurement = np.nan_to_num(measurement, copy=False)
             self.state, self.covariance = jit_update(
-                self.state, self.covariance, self.position_H, measurement, noise, angle_wrapped=True
+                self.state, self.covariance, self.position_H, measurement, noise, (STATE_t,)
             )
         else:
             self.teleport(msg)
 
     def update_cmd_vel(self, msg: TwistWithCovariance) -> None:
         measurement, noise = twist_to_measurement(msg)
-        self.state, self.covariance = jit_update(self.state, self.covariance, self.cmd_vel_H, measurement, noise)
+        self.state, self.covariance = jit_update(
+            self.state, self.covariance, self.cmd_vel_H, measurement, noise, tuple()
+        )
 
     def get_state(self) -> Tuple[PoseWithCovariance, TwistWithCovariance]:
         pose = measurement_to_pose(self.state, self.covariance)
