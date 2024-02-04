@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import argparse
 import time
 from typing import Protocol, cast
