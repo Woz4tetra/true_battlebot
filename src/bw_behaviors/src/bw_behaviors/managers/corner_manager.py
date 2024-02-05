@@ -22,7 +22,7 @@ class CornerManager:
         self.field = field
 
     def get_goal(self) -> Optional[Pose2DStamped]:
-        if len(self.field.header.frame_id) == 0:
+        if len(self.field.state.header.frame_id) == 0:
             rospy.logwarn("No field received yet")
             return None
 

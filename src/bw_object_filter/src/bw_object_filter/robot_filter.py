@@ -1,11 +1,10 @@
 #!/usr/bin/env python
-import threading
 from typing import List, Optional, Tuple
 
 import numpy as np
 import rospy
 import tf2_ros
-from apriltag_ros.msg import AprilTagDetection, AprilTagDetectionArray
+from apriltag_ros.msg import AprilTagDetectionArray
 from bw_interfaces.msg import EstimatedObject, EstimatedObjectArray
 from bw_tools.configs.robot_config import RobotConfig, RobotFleetConfig, RobotTeam
 from bw_tools.structs.header import Header
@@ -14,9 +13,11 @@ from bw_tools.structs.pose2d import Pose2D
 from bw_tools.structs.pose2d_stamped import Pose2DStamped
 from bw_tools.structs.transform3d import Transform3D
 from bw_tools.structs.twist2d import Twist2D
+from bw_tools.structs.xyz import XYZ
 from bw_tools.transforms import lookup_pose_in_frame
 from bw_tools.typing import get_param
 from geometry_msgs.msg import (
+    Point,
     Pose,
     PoseStamped,
     PoseWithCovariance,
@@ -27,7 +28,6 @@ from geometry_msgs.msg import (
     Vector3,
 )
 from nav_msgs.msg import Odometry
-from std_msgs.msg import Empty
 from std_msgs.msg import Header as RosHeader
 
 from bw_object_filter.covariances import ApriltagHeuristics, CmdVelHeuristics, RobotHeuristics
@@ -59,12 +59,15 @@ class RobotFilter:
         self.motion_speed_threshold = get_param("~motion_speed_threshold", 0.25)
         self.robot_min_radius = get_param("~robot_min_radius", 0.1)
         self.robot_max_radius = get_param("~robot_max_radius", 0.4)
+        field_buffer = get_param("~field_buffer", 0.1)
+        self.field_buffer = XYZ(field_buffer, field_buffer, field_buffer)
 
         self.robots = RobotFleetConfig.from_dict(robot_config)
         self.check_unique(self.robots)
 
         self.prev_cmd_time = rospy.Time.now()
-        self.field_received = False
+        self.field = EstimatedObject()
+        self.field_bounds = (XYZ(0.0, 0.0, 0.0), XYZ(0.0, 0.0, 0.0))
         self.robot_names = {}
         for config in self.robots.robots:
             self.robot_names[config.up_id] = config.name
@@ -72,7 +75,6 @@ class RobotFilter:
         self.robot_configs = {config.name: config for config in self.robots.robots}
         rotate_quat = (0.0, 0.0, -0.707, 0.707)
         self.apriltag_rotate_tf = Transform3D.from_position_and_quaternion(Vector3(), Quaternion(*rotate_quat))
-        self.locks = {robot.name: threading.Lock() for robot in self.robots.robots}
         self.robot_filters = {
             robot.name: DriveKalmanModel(self.update_delay, self.process_noise, self.friction_factor, robot.radius)
             for robot in self.robots.robots
@@ -120,7 +122,7 @@ class RobotFilter:
         self.robots_sub = rospy.Subscriber(
             "estimation/robots", EstimatedObjectArray, self.robot_estimation_callback, queue_size=50
         )
-        self.reset_sub = rospy.Subscriber("reset_filters", Empty, self.reset_callback, queue_size=1)
+        self.field_sub = rospy.Subscriber("filter/field", EstimatedObject, self.field_callback, queue_size=1)
         self.tags_sub = rospy.Subscriber("tag_detections", AprilTagDetectionArray, self.tags_callback, queue_size=25)
         self.cmd_vel_subs = [
             rospy.Subscriber(
@@ -154,7 +156,7 @@ class RobotFilter:
         return None
 
     def robot_estimation_callback(self, msg: EstimatedObjectArray) -> None:
-        if not self.field_received:
+        if not self.field_received():
             rospy.logdebug("Field not received. Skipping robot estimation callback.")
             return
         measurements = {label: [] for label in self.measurement_sorters.keys()}
@@ -173,18 +175,20 @@ class RobotFilter:
     ) -> None:
         map_measurements: List[Pose] = []
         for measurement in robots:
-            map_pose = self.transform_to_map(measurement.header, measurement.state.pose.pose)
+            map_pose = self.transform_to_map(measurement.state.header, measurement.state.pose.pose)
             if map_pose is None:
                 rospy.logwarn(f"Could not transform pose for measurement {measurement}")
+                continue
+            if not self.is_in_field_bounds(map_pose.position):
+                rospy.logdebug(f"Robot {measurement.label} is out of bounds. Skipping.")
                 continue
             map_measurements.append(map_pose)
 
         assigned = measurement_sorter.get_ids(map_measurements)
         for robot_name, measurement_index in assigned.items():
-            with self.locks[robot_name]:
-                camera_measurement = robots[measurement_index]
-                map_measurement = map_measurements[measurement_index]
-                self.apply_sorted_measurement(robot_name, map_measurement, camera_measurement)
+            camera_measurement = robots[measurement_index]
+            map_measurement = map_measurements[measurement_index]
+            self.apply_sorted_measurement(robot_name, map_measurement, camera_measurement)
 
     def apply_sorted_measurement(
         self, robot_name: str, map_measurement: Pose, camera_measurement: EstimatedObject
@@ -245,25 +249,30 @@ class RobotFilter:
         return heading_pose.to_msg(), velocity.to_msg()
 
     def tags_callback(self, msg: AprilTagDetectionArray) -> None:
-        if not self.field_received:
-            rospy.logdebug("Field not received. Skipping robot estimation callback.")
+        if not self.field_received():
+            rospy.logdebug("Field not received. Skipping tag callback.")
             return
-        assert msg.detections is not None
+        self.transform_tags_to_map(msg)
+        self.apply_tag_measurement(msg)
 
+    def transform_tags_to_map(self, msg: AprilTagDetectionArray) -> None:
         for detection in msg.detections:
-            detection: AprilTagDetection
             pose = detection.pose.pose.pose
             pose.orientation = self.rotate_tag_orientation(pose.orientation, self.apriltag_rotate_tf)
             covariance = self.tag_heurstics.compute_covariance(detection)
-            detection.pose.pose.covariance = covariance
+            detection.pose.pose.covariance = covariance  # type: ignore
             map_pose = self.transform_to_map(detection.pose.header, detection.pose.pose.pose)
             if map_pose is None:
                 rospy.logwarn(f"Could not transform pose for tag {detection}")
                 continue
             detection.pose.pose.pose = map_pose
 
+    def apply_tag_measurement(self, msg: AprilTagDetectionArray) -> None:
         for detection in msg.detections:
-            detection: AprilTagDetection
+            pose = detection.pose.pose.pose
+            if not self.is_in_field_bounds(pose.position):
+                rospy.logdebug(f"Tag {detection.id} is out of bounds. Skipping.")
+                continue
             if len(detection.id) != 1:
                 rospy.logwarn("Bundle detection not supported")
                 continue
@@ -272,18 +281,17 @@ class RobotFilter:
             if robot_name not in self.robot_filters:
                 rospy.logwarn(f"Tag id {tag_id} is not a robot")
                 continue
-            with self.locks[robot_name]:
-                robot_filter = self.robot_filters[robot_name]
-                try:
-                    robot_filter.update_pose(detection.pose.pose)
-                except np.linalg.LinAlgError as e:
-                    rospy.logwarn(f"Failed to update from tag. Resetting filter. {e}")
-                    robot_filter.reset()
-                    continue
+            robot_filter = self.robot_filters[robot_name]
+            try:
+                robot_filter.update_pose(detection.pose.pose)
+            except np.linalg.LinAlgError as e:
+                rospy.logwarn(f"Failed to update from tag. Resetting filter. {e}")
+                robot_filter.reset()
+                continue
 
-                is_right_side_up = self.is_id_right_side_up(tag_id)
-                if is_right_side_up is not None:
-                    robot_filter.is_right_side_up = is_right_side_up
+            is_right_side_up = self.is_id_right_side_up(tag_id)
+            if is_right_side_up is not None:
+                robot_filter.is_right_side_up = is_right_side_up
 
     def rotate_tag_orientation(
         self,
@@ -299,28 +307,45 @@ class RobotFilter:
         self.prev_cmd_time = rospy.Time.now()
 
     def update_cmd_vel(self, msg: Twist, robot_config: RobotConfig):
+        if not self.field_received():
+            rospy.logdebug("Field not received. Skipping twist callback.")
+            return
         measurement = TwistWithCovariance(twist=msg)
         if robot_config.team == RobotTeam.OUR_TEAM:
-            measurement.covariance = self.our_robot_cmd_vel_heuristics.compute_covariance(measurement)
+            measurement.covariance = self.our_robot_cmd_vel_heuristics.compute_covariance(measurement)  # type: ignore
         else:
-            measurement.covariance = self.our_robot_cmd_vel_heuristics.compute_covariance(measurement)
+            measurement.covariance = self.our_robot_cmd_vel_heuristics.compute_covariance(measurement)  # type: ignore
 
         robot_name = robot_config.name
-        with self.locks[robot_name]:
-            robot_filter = self.robot_filters[robot_name]
-            try:
-                robot_filter.update_cmd_vel(measurement)
-            except np.linalg.LinAlgError as e:
-                rospy.logwarn(f"Failed to update from velocity. Resetting filter. {e}")
-                robot_filter.reset()
+        robot_filter = self.robot_filters[robot_name]
+        try:
+            robot_filter.update_cmd_vel(measurement)
+        except np.linalg.LinAlgError as e:
+            rospy.logwarn(f"Failed to update from velocity. Resetting filter. {e}")
+            robot_filter.reset()
 
-    def reset_callback(self, _: Empty) -> None:
-        self.field_received = True
+    def field_callback(self, msg: EstimatedObject) -> None:
+        self.field = msg
+        half_x = msg.size.x / 2
+        half_y = msg.size.y / 2
+        self.field_bounds = (
+            XYZ(-half_x, -half_y, 0.0) - self.field_buffer,
+            XYZ(half_x, half_y, msg.size.z) + self.field_buffer,
+        )
         rospy.loginfo("Resetting filters.")
-        rospy.sleep(0.25)
+        rospy.sleep(0.2)  # wait for changes in TF tree to propagate
         for robot_name, robot_filter in self.robot_filters.items():
-            with self.locks[robot_name]:
-                robot_filter.reset()
+            robot_filter.reset()
+
+    def field_received(self) -> bool:
+        return self.field.state.header.stamp != rospy.Time(0)
+
+    def is_in_field_bounds(self, position: Point) -> bool:
+        if not self.field_received():
+            rospy.logwarn("Field not received. Skipping field bounds check.")
+            return False
+        xyz = XYZ.from_msg(Vector3(position.x, position.y, position.z))
+        return self.field_bounds[0] < xyz < self.field_bounds[1]
 
     def transform_to_map(self, header: RosHeader, pose: Pose) -> Optional[Pose]:
         pose_stamped = PoseStamped(header=header, pose=pose)
@@ -338,13 +363,14 @@ class RobotFilter:
                 self.update_cmd_vel(Twist(), config)
 
     def predict_all_filters(self) -> None:
+        if not self.field_received():
+            return
         for robot_name, robot_filter in self.robot_filters.items():
-            with self.locks[robot_name]:
-                try:
-                    robot_filter.predict()
-                except np.linalg.LinAlgError as e:
-                    rospy.logwarn(f"Failed predict. Resetting filter. {e}")
-                    robot_filter.reset()
+            try:
+                robot_filter.predict()
+            except np.linalg.LinAlgError as e:
+                rospy.logwarn(f"Failed predict. Resetting filter. {e}")
+                robot_filter.reset()
 
     def get_robot_frame_id(self, robot_name: str) -> str:
         return self.robot_frame_prefix + "_" + robot_name
@@ -364,9 +390,8 @@ class RobotFilter:
         filtered_states = EstimatedObjectArray()
         for robot_name, bot_filter in self.robot_filters.items():
             robot_frame_id = self.get_robot_frame_id(robot_name)
-            with self.locks[robot_name]:
-                pose, twist = bot_filter.get_state()
-                diameter = bot_filter.object_radius * 2
+            pose, twist = bot_filter.get_state()
+            diameter = bot_filter.object_radius * 2
             state_msg = Odometry()
             state_msg.header.frame_id = self.map_frame
             state_msg.header.stamp = rospy.Time.now()
@@ -379,7 +404,6 @@ class RobotFilter:
 
             filtered_states.robots.append(
                 EstimatedObject(
-                    header=state_msg.header,
                     state=state_msg,
                     size=Vector3(diameter, diameter, diameter),
                     label=robot_name,

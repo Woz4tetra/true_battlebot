@@ -57,7 +57,7 @@ def measurement_to_pose(state: np.ndarray, covariance: np.ndarray) -> PoseWithCo
     ros_covariance = [0 for _ in range(NUM_POSE_STATES_ROS * NUM_POSE_STATES_ROS)]
     for mat_index, msg_index in POSE_COVARIANCE_INDICES.items():
         ros_covariance[msg_index] = covariance[mat_index]
-    pose.covariance = ros_covariance
+    pose.covariance = ros_covariance  # type: ignore
     return pose
 
 
@@ -89,20 +89,26 @@ def measurement_to_twist(state: np.ndarray, covariance: np.ndarray) -> TwistWith
     ros_covariance = [0 for _ in range(NUM_POSE_STATES_ROS * NUM_POSE_STATES_ROS)]
     for mat_index, msg_index in TWIST_COVARIANCE_INDICES.items():
         ros_covariance[msg_index] = covariance[mat_index]
-    twist.covariance = ros_covariance
+    twist.covariance = ros_covariance  # type: ignore
     return twist
 
+
 @njit
-def input_modulus(value, min_value, max_value):
+def input_modulus(value: float, min_value: float, max_value: float) -> float:
+    """
+    Bound the number between min_value and max_value, wrapping around if it goes over.
+
+    Examples:
+        input_modulus(1, -1, 3) == 1
+        input_modulus(6, -1, 3) == 2
+        input_modulus(0, -1, 3) == 0
+        input_modulus(5, -1, 3) == 1
+    """
     modulus = max_value - min_value
 
-    # Wrap input if it's above the maximum input
-    num_max = int((value - min_value) / modulus)
-    value -= num_max * modulus
-
-    # Wrap input if it's below the minimum input
-    num_min = int((value - max_value) / modulus)
-    value -= num_min * modulus
+    value -= min_value
+    value %= modulus
+    value += min_value
 
     return value
 
@@ -114,7 +120,7 @@ def normalize_theta(theta):
 
 
 @njit
-def state_transition_fn(state, dt, friction_factor):
+def state_transition(state, dt, friction_factor):
     x = state[STATE_x]
     y = state[STATE_y]
     theta = normalize_theta(state[STATE_t])
@@ -137,31 +143,54 @@ def state_transition_fn(state, dt, friction_factor):
     return next_state
 
 
-
 @njit
-# flake8: noqa: N803 N806
-def jit_update(x, P, H, z, R, angle_wrapped=False):
-    y = z - H @ x  # error (residual)
-    if angle_wrapped:
-        angle_error = y[STATE_t]
-        angle_error = normalize_theta(angle_error)
-        y[STATE_t] = angle_error
-    PHT = P @ H.T
-    S = H @ PHT + R  # project system uncertainty into measurement space
-    SI = np.linalg.inv(S)
-    K = PHT @ SI  # map system uncertainty into kalman gain
-    x = x + K @ y  # predict new x with residual scaled by the kalman gain
-    P = (np.eye(len(x)) - K @ H) @ P  # updated state covariance matrix
-    return x, P
+def is_invertible(matrix: np.ndarray) -> bool:
+    return matrix.shape[0] == matrix.shape[1] and np.linalg.matrix_rank(matrix) == matrix.shape[0]
 
 
 @njit
-# flake8: noqa: N803 N806
-def jit_predict(x, P, Q, dt, friction_factor):
-    n = len(x)
+def jit_update(
+    state_x: np.ndarray,
+    covariance_p: np.ndarray,
+    observation_model_h: np.ndarray,
+    measurement_z: np.ndarray,
+    noise_r: np.ndarray,
+    angle_wrap_states: Tuple[int, ...],
+) -> Tuple[np.ndarray, np.ndarray]:
+    y = measurement_z - observation_model_h @ state_x  # error (residual)
+    if len(angle_wrap_states) != 0:
+        # numba doesn't like it when you supply an empty tuple since it can't
+        # resolve the type of its element
+        for state_index in angle_wrap_states:
+            error = y[state_index]
+            error = normalize_theta(error)
+            y[state_index] = error
+    pht = covariance_p @ observation_model_h.T
+    uncertainty = observation_model_h @ pht + noise_r  # project system uncertainty into measurement space
+    if is_invertible(uncertainty):
+        uncertainty_inv = np.linalg.inv(uncertainty)
+    else:
+        uncertainty_inv = np.linalg.pinv(uncertainty)
+    kalman_gain = pht @ uncertainty_inv  # map system uncertainty into kalman gain
+    state_x = state_x + kalman_gain @ y  # predict new x with residual scaled by the kalman gain
+    covariance_p = (
+        np.eye(len(state_x)) - kalman_gain @ observation_model_h
+    ) @ covariance_p  # updated state covariance matrix
+    return state_x, covariance_p
+
+
+@njit
+def jit_predict(
+    state_x: np.ndarray,
+    covariance_p: np.ndarray,
+    process_noise_q: np.ndarray,
+    dt: float,
+    friction_factor: float,
+) -> Tuple[np.ndarray, np.ndarray]:
+    n = len(state_x)
     n_half = n // 2
-    F = np.eye(n)
-    F[0:n_half, n_half:n] = np.eye(n_half) * dt
-    x = state_transition_fn(x, dt, friction_factor)
-    P = F @ P @ F.T + Q
-    return x, P
+    state_transition_model_f = np.eye(n)
+    state_transition_model_f[0:n_half, n_half:n] = np.eye(n_half) * dt
+    state_x = state_transition(state_x, dt, friction_factor)
+    covariance_p = state_transition_model_f @ covariance_p @ state_transition_model_f.T + process_noise_q
+    return state_x, covariance_p

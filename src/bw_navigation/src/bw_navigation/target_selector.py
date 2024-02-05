@@ -79,11 +79,11 @@ class TargetSelector:
             with self.obstacle_lock:
                 object_id = self.non_controlled_robot_names.index(robot_name)
                 position = cast(Point32, robot.state.pose.pose.position)
-                obstacles.header = robot.header
+                obstacles.header = robot.state.header
                 diameter = max(robot.size.x, robot.size.y, robot.size.z)
                 obstacles.obstacles.append(
                     ObstacleMsg(
-                        header=robot.header,
+                        header=robot.state.header,
                         id=object_id,
                         radius=diameter,  # TEB actually uses this as diameter
                         polygon=Polygon(points=[position]),
@@ -143,14 +143,14 @@ class TargetSelector:
     def compute_goal(
         self, controlled: EstimatedObject, guidance: EstimatedObject, opponent: EstimatedObject, field: EstimatedObject
     ) -> Tuple[PoseStamped, bool]:
-        state = MatchState(controlled.header.frame_id, controlled, guidance, opponent, field)
+        state = MatchState(controlled.state.header.frame_id, controlled, guidance, opponent, field)
         result = self.selection_algorithm.get_target(state)
         return result.goal, result.ignore_opponent_obstacles
 
     def goal_update(self) -> None:
         with self.obstacle_lock:
             self.ignore_opponent_obstacles = False
-            if len(self.field.header.frame_id) == 0:
+            if len(self.field.state.header.frame_id) == 0:
                 return
 
             guidance_pose = self.get_robot_state(self.guidance_bot_name)

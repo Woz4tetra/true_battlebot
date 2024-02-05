@@ -9,9 +9,10 @@ from bw_interfaces.msg import CageCorner as RosCageCorner
 from bw_interfaces.msg import EstimatedObject, SegmentationInstance, SegmentationInstanceArray
 from bw_tools.configs.field_type import FIELD_CONFIG, FieldType
 from bw_tools.structs.cage_corner import CageCorner
+from bw_tools.structs.labels import Label
 from bw_tools.structs.rpy import RPY
 from bw_tools.structs.transform3d import Transform3D
-from bw_tools.structs.xy import XY
+from bw_tools.structs.xyz import XYZ
 from bw_tools.transforms import lookup_pose_in_frame
 from bw_tools.typing import get_param
 from geometry_msgs.msg import Point, PointStamped, Pose, PoseStamped, Quaternion, Vector3
@@ -40,11 +41,11 @@ class FieldFilter:
         self.always_use_default_dims = get_param("~always_use_default_dims", False)
         self.expected_size = FIELD_CONFIG[FieldType(get_param("~field_type", "nhrl_small"))].size
         field_dims_buffer = get_param("~field_dims_buffer", 0.25)
-        buffer_extents = XY(field_dims_buffer, field_dims_buffer)
+        buffer_extents = XYZ(field_dims_buffer, field_dims_buffer, field_dims_buffer)
         self.extents_range = (self.expected_size - buffer_extents, self.expected_size + buffer_extents)
         rospy.loginfo(f"Extents range: {self.extents_range}")
 
-        self.unbounded_dims = self.expected_size + XY(0.5, 0.5)
+        self.unbounded_dims = self.expected_size + XYZ(0.5, 0.5, 0.0)
         self.has_manual_query_been_received = auto_initialize
         self.has_manual_query = auto_initialize
         self.current_imu = Imu()
@@ -74,7 +75,6 @@ class FieldFilter:
         self.estimated_field_marker_pub = rospy.Publisher("filter/field/marker", MarkerArray, queue_size=1, latch=True)
         self.debug_marker_pub = rospy.Publisher("filter/field/debug", MarkerArray, queue_size=1, latch=True)
         self.corner_pub = rospy.Publisher("cage_corner", RosCageCorner, queue_size=1, latch=True)
-        self.reset_filters_pub = rospy.Publisher("reset_filters", Empty, queue_size=1)
 
         self.recommended_point_sub = rospy.Subscriber(
             "estimation/recommended_field_point", PointStamped, self.recommended_point_callback
@@ -160,18 +160,20 @@ class FieldFilter:
         if base_field_pose is None:
             return
 
-        self.estimated_field = EstimatedObject(
-            header=base_field_pose.header,
-            size=Vector3(x=extents[0], y=extents[1]),
-        )
-        self.estimated_field.state.pose.pose = base_field_pose.pose
+        transform = Transform3D.from_pose_msg(base_field_pose.pose).inverse()
+
+        self.estimated_field = EstimatedObject()
+        self.estimated_field.size = extents.to_msg()
+        self.estimated_field.state.header = Header(frame_id=self.relative_map_frame, stamp=rospy.Time.now())
+        self.estimated_field.state.child_frame_id = self.base_frame
+        self.estimated_field.state.pose.pose = transform.to_pose_msg()
+        self.estimated_field.label = Label.FIELD.value
         self.estimated_field_pub.publish(self.estimated_field)
         self.publish_field_markers(self.estimated_field)
-        self.reset_filters()
 
     def compute_plane_from_segmentation(
         self, lens_plane_pose: Pose, field_segmentation: SegmentationInstance
-    ) -> Tuple[Pose, XY]:
+    ) -> Tuple[Pose, XYZ]:
         plane_transform = Transform3D.from_position_and_quaternion(
             lens_plane_pose.position, lens_plane_pose.orientation
         )
@@ -195,10 +197,7 @@ class FieldFilter:
         self.publish_debug_markers(flattened_points, min_rect, centroid)
         rospy.loginfo(f"Field angle: {angle}. Extents: {extents}")
 
-        return field_centered_plane.to_pose_msg(), extents
-
-    def reset_filters(self) -> None:
-        self.reset_filters_pub.publish(Empty())
+        return field_centered_plane.to_pose_msg(), XYZ.from_xy(extents, self.expected_size.z)
 
     def rotate_field_orientation(
         self,
@@ -219,7 +218,7 @@ class FieldFilter:
 
     def corner_side_callback(self, corner: RosCageCorner) -> None:
         rospy.loginfo("Cage corner set. Resetting filters.")
-        self.reset_filters()
+        self.estimated_field_pub.publish(self.estimated_field)
         self.cage_corner = CageCorner.from_msg(corner)
         self.corner_pub.publish(corner)
 
@@ -241,12 +240,12 @@ class FieldFilter:
 
     def publish_field_tf(self, estimated_field: EstimatedObject) -> tf2_ros.TransformStamped:
         field_pose = estimated_field.state.pose.pose
-        transform = Transform3D.from_pose_msg(field_pose).inverse()
+        transform = Transform3D.from_pose_msg(field_pose)
 
         field_tf = tf2_ros.TransformStamped()
-        field_tf.header.stamp = estimated_field.header.stamp
-        field_tf.header.frame_id = self.relative_map_frame
-        field_tf.child_frame_id = estimated_field.header.frame_id
+        field_tf.header.stamp = estimated_field.state.header.stamp
+        field_tf.header.frame_id = estimated_field.state.header.frame_id
+        field_tf.child_frame_id = estimated_field.state.child_frame_id
         field_tf.transform = transform.to_msg()
         return field_tf
 
@@ -336,13 +335,14 @@ class FieldFilter:
         self, estimated_object: EstimatedObject, color: ColorRGBA, id: int = 0
     ) -> Marker:
         marker = Marker()
-        marker.header = Header(frame_id=estimated_object.header.frame_id, stamp=rospy.Time.now())
+        marker.header = Header(frame_id=self.map_frame, stamp=rospy.Time.now())
         marker.type = Marker.CUBE
         marker.ns = estimated_object.label
         marker.id = id
         marker.action = Marker.ADD
         marker.frame_locked = False
-        marker.pose = estimated_object.state.pose.pose
+        marker.pose.orientation.w = 1.0
+        marker.pose.position.z += estimated_object.size.z * 0.5
         marker.scale.x = estimated_object.size.x if estimated_object.size.x > 0 else 0.01
         marker.scale.y = estimated_object.size.y if estimated_object.size.y > 0 else 0.01
         marker.scale.z = estimated_object.size.z if estimated_object.size.z > 0 else 0.01
@@ -375,9 +375,9 @@ class FieldFilter:
     def run(self) -> None:
         while not rospy.is_shutdown():
             rospy.sleep(0.5)
-            if len(self.estimated_field.header.frame_id) == 0:
+            if len(self.estimated_field.state.header.frame_id) == 0:
                 continue
-            self.estimated_field.header.stamp = rospy.Time.now()
+            self.estimated_field.state.header.stamp = rospy.Time.now()
             self.publish_transforms()
 
 
