@@ -47,7 +47,7 @@ void ObjectEstimation::synced_callback(
             continue;
         }
         robot_msg.label = instance.label;
-        robot_msg.header = segmentation->header;
+        robot_msg.state.header = segmentation->header;
         robot_array.robots.push_back(robot_msg);
 
         robot_poses.poses.push_back(robot_msg.state.pose.pose);

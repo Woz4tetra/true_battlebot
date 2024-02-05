@@ -1,3 +1,4 @@
+from threading import Lock
 from typing import Tuple
 
 import numpy as np
@@ -27,6 +28,7 @@ class DriveKalmanModel(FilterModel):
         self.friction_factor = friction_factor
         self.process_noise = process_noise
         self.object_radius = object_radius
+        self.lock = Lock()
 
         # measurement function for landmarks. Use only pose.
         self.pose_H = np.zeros((NUM_MEASUREMENTS, NUM_STATES))
@@ -43,10 +45,11 @@ class DriveKalmanModel(FilterModel):
         self.reset()
 
     def predict(self) -> None:
-        self.clamp_divergent()
-        self.state, self.covariance = jit_predict(
-            self.state, self.covariance, self.process_noise_Q, self.dt, self.friction_factor
-        )
+        with self.lock:
+            self._clamp_divergent()
+            self.state, self.covariance = jit_predict(
+                self.state, self.covariance, self.process_noise_Q, self.dt, self.friction_factor
+            )
 
     def update_pose(self, msg: PoseWithCovariance) -> None:
         if self.is_initialized:
@@ -60,45 +63,50 @@ class DriveKalmanModel(FilterModel):
 
     def update_position(self, msg: PoseWithCovariance) -> None:
         if self.is_initialized:
-            measurement, noise = pose_to_measurement(msg)
-            measurement = np.nan_to_num(measurement, copy=False)
-            self.state, self.covariance = jit_update(
-                self.state, self.covariance, self.position_H, measurement, noise, (STATE_t,)
-            )
+            with self.lock:
+                measurement, noise = pose_to_measurement(msg)
+                measurement = np.nan_to_num(measurement, copy=False)
+                self.state, self.covariance = jit_update(
+                    self.state, self.covariance, self.position_H, measurement, noise, (STATE_t,)
+                )
         else:
             self.teleport(msg)
 
     def update_cmd_vel(self, msg: TwistWithCovariance) -> None:
-        measurement, noise = twist_to_measurement(msg)
-        self.state, self.covariance = jit_update(
-            self.state, self.covariance, self.cmd_vel_H, measurement, noise, tuple()
-        )
+        with self.lock:
+            measurement, noise = twist_to_measurement(msg)
+            self.state, self.covariance = jit_update(
+                self.state, self.covariance, self.cmd_vel_H, measurement, noise, tuple()
+            )
 
     def get_state(self) -> Tuple[PoseWithCovariance, TwistWithCovariance]:
-        pose = measurement_to_pose(self.state, self.covariance)
-        if not self.is_right_side_up:
-            pose.pose.orientation = flip_quat_upside_down(pose.pose.orientation)
-        return (
-            pose,
-            measurement_to_twist(self.state, self.covariance),
-        )
+        with self.lock:
+            pose = measurement_to_pose(self.state, self.covariance)
+            if not self.is_right_side_up:
+                pose.pose.orientation = flip_quat_upside_down(pose.pose.orientation)
+            return (
+                pose,
+                measurement_to_twist(self.state, self.covariance),
+            )
 
-    def clamp_divergent(self) -> None:
+    def _clamp_divergent(self) -> None:
         self.state = np.nan_to_num(self.state, copy=False, nan=0.0, posinf=0.0, neginf=0.0)
         self.covariance = np.nan_to_num(self.covariance, copy=False, nan=1e-3, posinf=1e-3, neginf=1e-3)
 
     def teleport(self, msg: PoseWithCovariance) -> None:
-        measurement, measurement_noise = pose_to_measurement(msg)
-        self.state = np.zeros(NUM_STATES)
-        self.state[0:NUM_STATES_1ST_ORDER] = measurement
-        self.covariance = np.eye(NUM_STATES)
-        self.covariance[0:NUM_STATES_1ST_ORDER, 0:NUM_STATES_1ST_ORDER] = measurement_noise
-        self.is_initialized = True
+        with self.lock:
+            measurement, measurement_noise = pose_to_measurement(msg)
+            self.state = np.zeros(NUM_STATES)
+            self.state[0:NUM_STATES_1ST_ORDER] = measurement
+            self.covariance = np.eye(NUM_STATES)
+            self.covariance[0:NUM_STATES_1ST_ORDER, 0:NUM_STATES_1ST_ORDER] = measurement_noise
+            self.is_initialized = True
 
     def reset(self) -> None:
-        self.state = np.zeros(NUM_STATES)
-        self.covariance = np.eye(NUM_STATES)
-        self.process_noise_Q = np.eye(NUM_STATES) * self.process_noise
+        with self.lock:
+            self.state = np.zeros(NUM_STATES)
+            self.covariance = np.eye(NUM_STATES)
+            self.process_noise_Q = np.eye(NUM_STATES) * self.process_noise
 
-        self.is_initialized = False
-        self.is_right_side_up = True
+            self.is_initialized = False
+            self.is_right_side_up = True

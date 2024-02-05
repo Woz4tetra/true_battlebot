@@ -4,8 +4,10 @@ import math
 from dataclasses import dataclass
 from typing import Optional, Sequence, Tuple, Union, overload
 
+from geometry_msgs.msg import Vector3
 
-@dataclass(frozen=True)
+
+@dataclass
 class XY(Sequence):
     x: float
     y: float
@@ -14,12 +16,10 @@ class XY(Sequence):
         return self.x, self.y
 
     @overload
-    def __getitem__(self, idx: int) -> float:
-        ...
+    def __getitem__(self, idx: int) -> float: ...
 
     @overload
-    def __getitem__(self, idx: slice) -> Tuple[float, ...]:
-        ...
+    def __getitem__(self, idx: slice) -> Tuple[float, ...]: ...
 
     def __getitem__(self, idx: Union[int, slice]) -> Union[float, Tuple[float, ...]]:
         return self.to_tuple()[idx]
@@ -52,3 +52,10 @@ class XY(Sequence):
 
     def __lt__(self, other: XY) -> bool:
         return self.x < other.x and self.y < other.y
+
+    @classmethod
+    def from_msg(cls, msg: Vector3) -> XY:
+        return XY(msg.x, msg.y)
+
+    def to_msg(self) -> Vector3:
+        return Vector3(x=self.x, y=self.y, z=0.0)
