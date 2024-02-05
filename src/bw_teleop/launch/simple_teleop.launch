@@ -1,7 +1,7 @@
 <launch>
     <node name="usb_joystick" pkg="joy" type="joy_node" output="screen" required="false">
         <param name="dev" value="/dev/input/js0" type="str" />
-        <param name="deadzone" value="0.03" />
+        <param name="deadzone" value="0.075" />
         <param name="autorepeat_rate" value="30.0" />
     </node>
 
@@ -10,7 +10,7 @@
         <param name="axis_angular" value="0" />
         <param name="enable_button" value="5" />
         <param name="scale_linear" value="1" />
-        <param name="scale_angular" value="-3" />
+        <param name="scale_angular" value="3" />
         <remap from="cmd_vel" to="cmd_vel/teleop" />
     </node>
 </launch>

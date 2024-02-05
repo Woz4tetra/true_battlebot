@@ -12,6 +12,9 @@
 #include <motors/esc_tank_controller.h>
 #include <status_lights/status_neopixel.h>
 
+#define CHANNEL_1 9  // A1 -> channel 1 (left)
+#define CHANNEL_2 17 // A2 -> channel 2 (right)
+
 char UDP_READ_BUFFER[bridge::PACKET_MAX_LENGTH];
 char SERIAL_READ_BUFFER[bridge::PACKET_MAX_LENGTH];
 
@@ -39,7 +42,7 @@ void setup()
     DEVICE_CONFIG->device_id = bridge::NULL_DEVICE_ID;
 
     persistent_config_inst = persistent_config::PersistentConfig::get_instance();
-    controller = new esc_tank_controller::EscTankController(17, 9); // TODO make this configurable from build args
+    controller = new esc_tank_controller::EscTankController(CHANNEL_1, CHANNEL_2); // TODO make this configurable from build args
     udp_interface = udp_bridge::UdpBridge::get_instance(DEVICE_CONFIG, UDP_READ_BUFFER, controller);
     serial_interface = serial_bridge::SerialBridge::get_instance(DEVICE_CONFIG, SERIAL_READ_BUFFER, persistent_config_inst);
     neopixel_status = new status_neopixel::StatusNeopixel();

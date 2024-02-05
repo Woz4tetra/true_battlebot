@@ -181,10 +181,10 @@ class RobotFilter:
 
         assigned = measurement_sorter.get_ids(map_measurements)
         for robot_name, measurement_index in assigned.items():
-            with self.locks[robot_name]:
-                camera_measurement = robots[measurement_index]
-                map_measurement = map_measurements[measurement_index]
-                self.apply_sorted_measurement(robot_name, map_measurement, camera_measurement)
+            # with self.locks[robot_name]:
+            camera_measurement = robots[measurement_index]
+            map_measurement = map_measurements[measurement_index]
+            self.apply_sorted_measurement(robot_name, map_measurement, camera_measurement)
 
     def apply_sorted_measurement(
         self, robot_name: str, map_measurement: Pose, camera_measurement: EstimatedObject
@@ -272,18 +272,18 @@ class RobotFilter:
             if robot_name not in self.robot_filters:
                 rospy.logwarn(f"Tag id {tag_id} is not a robot")
                 continue
-            with self.locks[robot_name]:
-                robot_filter = self.robot_filters[robot_name]
-                try:
-                    robot_filter.update_pose(detection.pose.pose)
-                except np.linalg.LinAlgError as e:
-                    rospy.logwarn(f"Failed to update from tag. Resetting filter. {e}")
-                    robot_filter.reset()
-                    continue
+            # with self.locks[robot_name]:
+            robot_filter = self.robot_filters[robot_name]
+            try:
+                robot_filter.update_pose(detection.pose.pose)
+            except np.linalg.LinAlgError as e:
+                rospy.logwarn(f"Failed to update from tag. Resetting filter. {e}")
+                robot_filter.reset()
+                continue
 
-                is_right_side_up = self.is_id_right_side_up(tag_id)
-                if is_right_side_up is not None:
-                    robot_filter.is_right_side_up = is_right_side_up
+            is_right_side_up = self.is_id_right_side_up(tag_id)
+            if is_right_side_up is not None:
+                robot_filter.is_right_side_up = is_right_side_up
 
     def rotate_tag_orientation(
         self,
@@ -306,21 +306,21 @@ class RobotFilter:
             measurement.covariance = self.our_robot_cmd_vel_heuristics.compute_covariance(measurement)
 
         robot_name = robot_config.name
-        with self.locks[robot_name]:
-            robot_filter = self.robot_filters[robot_name]
-            try:
-                robot_filter.update_cmd_vel(measurement)
-            except np.linalg.LinAlgError as e:
-                rospy.logwarn(f"Failed to update from velocity. Resetting filter. {e}")
-                robot_filter.reset()
+        # with self.locks[robot_name]:
+        robot_filter = self.robot_filters[robot_name]
+        try:
+            robot_filter.update_cmd_vel(measurement)
+        except np.linalg.LinAlgError as e:
+            rospy.logwarn(f"Failed to update from velocity. Resetting filter. {e}")
+            robot_filter.reset()
 
     def reset_callback(self, _: Empty) -> None:
         self.field_received = True
         rospy.loginfo("Resetting filters.")
         rospy.sleep(0.25)
         for robot_name, robot_filter in self.robot_filters.items():
-            with self.locks[robot_name]:
-                robot_filter.reset()
+            # with self.locks[robot_name]:
+            robot_filter.reset()
 
     def transform_to_map(self, header: RosHeader, pose: Pose) -> Optional[Pose]:
         pose_stamped = PoseStamped(header=header, pose=pose)
@@ -339,12 +339,12 @@ class RobotFilter:
 
     def predict_all_filters(self) -> None:
         for robot_name, robot_filter in self.robot_filters.items():
-            with self.locks[robot_name]:
-                try:
-                    robot_filter.predict()
-                except np.linalg.LinAlgError as e:
-                    rospy.logwarn(f"Failed predict. Resetting filter. {e}")
-                    robot_filter.reset()
+            # with self.locks[robot_name]:
+            try:
+                robot_filter.predict()
+            except np.linalg.LinAlgError as e:
+                rospy.logwarn(f"Failed predict. Resetting filter. {e}")
+                robot_filter.reset()
 
     def get_robot_frame_id(self, robot_name: str) -> str:
         return self.robot_frame_prefix + "_" + robot_name
@@ -364,9 +364,9 @@ class RobotFilter:
         filtered_states = EstimatedObjectArray()
         for robot_name, bot_filter in self.robot_filters.items():
             robot_frame_id = self.get_robot_frame_id(robot_name)
-            with self.locks[robot_name]:
-                pose, twist = bot_filter.get_state()
-                diameter = bot_filter.object_radius * 2
+            # with self.locks[robot_name]:
+            pose, twist = bot_filter.get_state()
+            diameter = bot_filter.object_radius * 2
             state_msg = Odometry()
             state_msg.header.frame_id = self.map_frame
             state_msg.header.stamp = rospy.Time.now()
