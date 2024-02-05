@@ -255,7 +255,7 @@ class RobotFilter:
             pose = detection.pose.pose.pose
             pose.orientation = self.rotate_tag_orientation(pose.orientation, self.apriltag_rotate_tf)
             covariance = self.tag_heurstics.compute_covariance(detection)
-            detection.pose.pose.covariance = covariance
+            detection.pose.pose.covariance = covariance  # type: ignore
             map_pose = self.transform_to_map(detection.pose.header, detection.pose.pose.pose)
             if map_pose is None:
                 rospy.logwarn(f"Could not transform pose for tag {detection}")
@@ -301,9 +301,9 @@ class RobotFilter:
     def update_cmd_vel(self, msg: Twist, robot_config: RobotConfig):
         measurement = TwistWithCovariance(twist=msg)
         if robot_config.team == RobotTeam.OUR_TEAM:
-            measurement.covariance = self.our_robot_cmd_vel_heuristics.compute_covariance(measurement)
+            measurement.covariance = self.our_robot_cmd_vel_heuristics.compute_covariance(measurement)  # type: ignore
         else:
-            measurement.covariance = self.our_robot_cmd_vel_heuristics.compute_covariance(measurement)
+            measurement.covariance = self.our_robot_cmd_vel_heuristics.compute_covariance(measurement)  # type: ignore
 
         robot_name = robot_config.name
         with self.locks[robot_name]:

@@ -22,7 +22,7 @@
 - git:
     local-name: zed-ros-wrapper
     uri: https://github.com/stereolabs/zed-ros-wrapper.git
-    version: v4.0.5
+    version: 09264539ecf7bf6cbf4533cfe35f696df5c06cfe
 - git:
     local-name: zed-ros-interfaces
     uri: https://github.com/stereolabs/zed-ros-interfaces.git

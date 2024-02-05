@@ -57,7 +57,7 @@ def measurement_to_pose(state: np.ndarray, covariance: np.ndarray) -> PoseWithCo
     ros_covariance = [0 for _ in range(NUM_POSE_STATES_ROS * NUM_POSE_STATES_ROS)]
     for mat_index, msg_index in POSE_COVARIANCE_INDICES.items():
         ros_covariance[msg_index] = covariance[mat_index]
-    pose.covariance = ros_covariance
+    pose.covariance = ros_covariance  # type: ignore
     return pose
 
 
@@ -89,7 +89,7 @@ def measurement_to_twist(state: np.ndarray, covariance: np.ndarray) -> TwistWith
     ros_covariance = [0 for _ in range(NUM_POSE_STATES_ROS * NUM_POSE_STATES_ROS)]
     for mat_index, msg_index in TWIST_COVARIANCE_INDICES.items():
         ros_covariance[msg_index] = covariance[mat_index]
-    twist.covariance = ros_covariance
+    twist.covariance = ros_covariance  # type: ignore
     return twist
 
 

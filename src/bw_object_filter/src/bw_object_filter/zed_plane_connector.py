@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 import rospy
 from geometry_msgs.msg import PoseStamped
-from visualization_msgs.msg import Marker
 from zed_interfaces.msg import PlaneStamped
 
 
@@ -22,5 +21,4 @@ if __name__ == "__main__":
     rospy.init_node("zed_plane_connector")
     pose_pub = rospy.Publisher("pose", PoseStamped, queue_size=10)
     rospy.Subscriber("plane", PlaneStamped, plane_callback, callback_args=pose_pub)
-    rospy.Subscriber("plane_marker", Marker, lambda msg: None)  # fixes a bug in zed_wrapper
     rospy.spin()
