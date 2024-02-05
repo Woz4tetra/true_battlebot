@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import math
 import socket
 import struct
 import time
@@ -35,6 +36,28 @@ def is_loopback(host: str):
     return True
 
 
+class MacroPwm:
+    def __init__(self, cycle_time: float, min_value: float, max_value: float) -> None:
+        self.cycle_time = cycle_time
+        self.min_value = min_value
+        self.max_value = max_value
+        self.prev_time = time.perf_counter()
+
+    def update(self, value: float) -> float:
+        abs_value = abs(value)
+        if abs_value > self.max_value or abs_value < self.min_value:
+            return value
+        now = time.perf_counter()
+        percent_cycle = abs_value / (self.max_value - self.min_value)
+        switch_over_time = self.cycle_time * percent_cycle + self.prev_time
+        over_cycle_time = self.cycle_time + self.prev_time
+        if now > over_cycle_time:
+            self.prev_time = now
+        if now > switch_over_time:
+            return math.copysign(self.min_value, value)
+        return math.copysign(self.max_value, value)
+
+
 class MiniBotBridge:
     def __init__(self) -> None:
         robot_config = get_param("/robots", None)
@@ -59,19 +82,24 @@ class MiniBotBridge:
         self.base_radius = self.mini_bot_config.base_width / 2
         self.broadcast_address = get_param("~broadcast_address", "192.168.8.255")
         self.deadzone = get_param("~deadzone", 0.0)
+        self.min_speed = get_param("~min_speed", 0.2)
         self.max_speed = get_param("~max_speed", 1.0)
+        self.macro_pwm_cycle_time = get_param("~macro_pwm_cycle_time", 0.05)
         self.speed_to_command = 255 / self.max_speed
         self.command_timeout = rospy.Duration.from_sec(get_param("~command_timeout", 0.5))
         self.ping_timeout = get_param("~ping_timeout", 0.5)
 
-        self.left_direction = 1 if get_param("~flip_left", True) else -1
-        self.right_direction = 1 if get_param("~flip_right", False) else -1
+        self.left_direction = 1 if get_param("~flip_left", False) else -1
+        self.right_direction = 1 if get_param("~flip_right", True) else -1
+
+        self.left_pwm = MacroPwm(self.macro_pwm_cycle_time, 0.0, self.min_speed)
+        self.right_pwm = MacroPwm(self.macro_pwm_cycle_time, 0.0, self.min_speed)
 
         self.destination = ""
         self.blacklist_ips = set()
         self.whitelist_ips = set()
 
-        self.packet = b""
+        self.velocities = MotorVelocities(velocities=[0, 0])
         self.last_command_time = rospy.Time.now()
 
         self.socket = socket.socket(type=socket.SOCK_DGRAM)
@@ -104,7 +132,7 @@ class MiniBotBridge:
             rospy.logwarn(f"Failed to broadcast packet. {e}")
 
     def velocity_to_command(self, velocity: float) -> MotorCommand:
-        if abs(velocity) < self.deadzone:
+        if abs(velocity) <= self.deadzone:
             return MotorCommand(0, 0)
         direction = 1 if velocity > 0 else -1
         speed = min(255, int(abs(velocity) * self.speed_to_command))
@@ -114,25 +142,27 @@ class MiniBotBridge:
         self.last_command_time = rospy.Time.now()
         left_velocity = msg.linear.x - msg.angular.z * self.base_radius
         right_velocity = msg.linear.x + msg.angular.z * self.base_radius
-        max_speed = max(abs(left_velocity), abs(right_velocity))
-        if max_speed > self.max_speed:
-            left_velocity *= self.max_speed / max_speed
-            right_velocity *= self.max_speed / max_speed
+        larger_speed = max(abs(left_velocity), abs(right_velocity))
+        if larger_speed > self.max_speed:
+            left_velocity *= self.max_speed / larger_speed
+            right_velocity *= self.max_speed / larger_speed
         self.set_velocities(left_velocity, right_velocity)
 
     def set_velocities(self, left_velocity: float, right_velocity: float) -> None:
-        commands = [
-            self.velocity_to_command(self.left_direction * left_velocity),
-            self.velocity_to_command(self.right_direction * right_velocity),
-        ]
-        self.motor_velocities_pub.publish(MotorVelocities(velocities=[left_velocity, right_velocity]))
-        self.packet = MotorDescription(self.device_id, commands).to_bytes()
+        self.velocities = MotorVelocities(velocities=[left_velocity, right_velocity])
+        self.motor_velocities_pub.publish(self.velocities)
 
     def send_timer_callback(self, event) -> None:
         if rospy.Time.now() - self.last_command_time > self.command_timeout:
             self.set_velocities(0, 0)
-        if len(self.packet) > 0:
-            self.send_packet(self.packet)
+        left_velocity = self.left_pwm.update(self.velocities.velocities[0])
+        right_velocity = self.right_pwm.update(self.velocities.velocities[1])
+        commands = [
+            self.velocity_to_command(self.left_direction * left_velocity),
+            self.velocity_to_command(self.right_direction * right_velocity),
+        ]
+        packet = MotorDescription(self.device_id, commands).to_bytes()
+        self.send_packet(packet)
 
     def get_ping_time(self) -> float:
         return time.perf_counter() - self.start_time
