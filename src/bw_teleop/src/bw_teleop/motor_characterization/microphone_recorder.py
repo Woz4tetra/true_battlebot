@@ -25,10 +25,12 @@ class MicrophoneRecorder:
         self.should_record = False
 
     def start(self) -> None:
+        rospy.logdebug("Starting recording")
         self.record_thread.start()
         self.should_record = True
 
     def stop(self) -> None:
+        rospy.logdebug("Stopping recording")
         self.should_record = False
         self.record_thread.join()
 
@@ -49,12 +51,16 @@ class MicrophoneRecorder:
         self.audio_queue.put(indata.copy())
 
     def record_task(self) -> None:
+        rospy.logdebug("Recording task started")
         while self._keep_recording():
+            rospy.logdebug("Waiting for split")
             path = self.split_queue.get()
+            rospy.loginfo(f"Recording audio to {path}")
             self._record_split(path)
+        rospy.logdebug("Recording task finished")
 
     def _record_split(self, path: str) -> None:
-        with SoundFile(path, mode="x", samplerate=self.sample_rate, channels=self.channels, subtype="") as file:
+        with SoundFile(path, mode="x", samplerate=self.sample_rate, channels=self.channels, subtype=None) as file:
             with InputStream(
                 samplerate=self.sample_rate, device=self.device_id, channels=self.channels, callback=self.callback
             ):

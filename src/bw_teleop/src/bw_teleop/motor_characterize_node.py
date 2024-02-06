@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import random
+import sys
 import time
 from threading import Thread
 from typing import Generator, List, Tuple
@@ -29,6 +30,8 @@ class MotorCharacterizeNode:
         audio_directory = get_param("~audio_directory", "")
         self.ping_timeout = get_param("~ping_timeout", 0.5)
 
+        random.seed(port)
+
         self.left_direction = 1 if get_param("~flip_left", False) else -1
         self.right_direction = 1 if get_param("~flip_right", True) else -1
 
@@ -53,6 +56,7 @@ class MotorCharacterizeNode:
             self.signal_exit()
 
     def signal_exit(self) -> None:
+        rospy.loginfo("Signaling exit")
         self.should_exit = True
 
     def wait_for_ping(self) -> None:
@@ -82,6 +86,8 @@ class MotorCharacterizeNode:
         stop_motor = MotorCommand.from_values(0)
         commands = [stop_motor] * num_channels
         for channel, velocity in self.iterate_samples(num_channels):
+            if self.should_exit:
+                break
             rospy.loginfo(f"Recording channel {channel} at velocity {velocity}")
             path = self.recording.split()
             command = MotorCommand.from_values(velocity)
@@ -95,10 +101,14 @@ class MotorCharacterizeNode:
                 )
             )
             self.spin_motor_for(commands, 3.0)
+        commands = [stop_motor] * num_channels
+        self.bridge.send_command(commands)
 
     def spin_motor_for(self, commands: List[MotorCommand], duration: float) -> None:
         start_time = time.perf_counter()
         while time.perf_counter() - start_time < duration:
+            if self.should_exit:
+                break
             self.bridge.send_command(commands)
             time.sleep(0.02)
 
@@ -114,16 +124,13 @@ class MotorCharacterizeNode:
             if self.should_exit:
                 rospy.loginfo("Exiting motor characterization node")
                 break
-
-    def shutdown(self) -> None:
         self.recording.stop()
 
 
 def main() -> None:
     log_level = rospy.DEBUG
-    rospy.init_node("motor_characterization", log_level=log_level, disable_signals=True)
+    rospy.init_node("motor_characterization", log_level=log_level)
     node = MotorCharacterizeNode()
-    rospy.on_shutdown(node.shutdown)
     node.run()
 
 
