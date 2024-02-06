@@ -7,7 +7,6 @@ import time
 from typing import Protocol, cast
 
 import serial
-
 from bw_tools.structs.teleop_bridge.config import Config
 from bw_tools.structs.teleop_bridge.header import MAX_PACKET_SIZE
 from bw_tools.structs.teleop_bridge.serial_packet import SerialHeader

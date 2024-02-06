@@ -7,3 +7,5 @@ pymongo
 ansi2html
 svgwrite
 pyserial
+PySoundFile
+sounddevice
