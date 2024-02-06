@@ -29,9 +29,9 @@ class MotorDescription(Packet):
         struct_cls = STRUCT_CACHE[num_channels]
         return cls(
             struct_cls(
-                Header.from_values(sizeof(struct_cls), cls.TYPE, device_id),
+                Header.from_values(sizeof(struct_cls), cls.TYPE, device_id).struct,
                 num_channels,
-                *motors,
+                *[motor.struct for motor in motors],
             )
         )
 

@@ -35,7 +35,7 @@ class ConfigPacket(Packet):
         password_buffer = cls.PasswordBuffer(*password_bytes)
         return cls(
             cls.STRUCT(
-                Header.from_values(cls.sizeof(), cls.TYPE, device_id),
+                Header.from_values(cls.sizeof(), cls.TYPE, device_id).struct,
                 port,
                 ssid_buffer,
                 password_buffer,

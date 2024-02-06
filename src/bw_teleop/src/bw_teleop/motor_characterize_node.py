@@ -32,7 +32,7 @@ class MotorCharacterizeNode:
         self.left_direction = 1 if get_param("~flip_left", False) else -1
         self.right_direction = 1 if get_param("~flip_right", True) else -1
 
-        self.prev_ping_time = time.perf_counter()
+        self.prev_ping_time = 0.0
         self.should_exit = False
 
         self.bridge = BridgeInterface(broadcast_address, port, device_id, {PingInfo: self.ping_callback})
@@ -55,10 +55,18 @@ class MotorCharacterizeNode:
     def signal_exit(self) -> None:
         self.should_exit = True
 
+    def wait_for_ping(self) -> None:
+        rospy.loginfo("Waiting for ping")
+        while True:
+            ping_delay = time.perf_counter() - self.prev_ping_time
+            if ping_delay < self.ping_timeout:
+                break
+        rospy.loginfo("Ping received")
+
     def check_ping(self) -> None:
         ping_delay = time.perf_counter() - self.prev_ping_time
         if ping_delay > self.ping_timeout:
-            rospy.logerr(1.0, f"No ping received for {ping_delay:0.4f} seconds. Exiting.")
+            rospy.logerr(f"No ping received for {ping_delay:0.4f} seconds. Exiting.")
             self.signal_exit()
 
     def iterate_samples(self, num_channels: int) -> Generator[Tuple[int, int], None, None]:
@@ -95,7 +103,8 @@ class MotorCharacterizeNode:
             time.sleep(0.02)
 
     def run(self) -> None:
-        self.run_experiment()
+        self.wait_for_ping()
+        self.experiment_thread.start()
         self.recording.start()
         rate = rospy.Rate(self.rate)
         while not rospy.is_shutdown():

@@ -18,7 +18,7 @@ class PingInfo(Packet):
 
     @classmethod
     def from_values(cls, device_id: int, timestamp: int) -> PingInfo:
-        return cls(cls.STRUCT(Header.from_values(cls.sizeof(), cls.TYPE, device_id), timestamp))
+        return cls(cls.STRUCT(Header.from_values(cls.sizeof(), cls.TYPE, device_id).struct, timestamp))
 
     @property
     def header(self) -> Header:

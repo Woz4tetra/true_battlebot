@@ -36,6 +36,7 @@ class MicrophoneRecorder:
         return self.should_record
 
     def split(self) -> str:
+        os.makedirs(self.directory, exist_ok=True)
         filename = datetime.now().strftime("audio_%Y-%m-%d_%H-%M-%S.wav")
         path = os.path.join(self.directory, filename)
         self.split_queue.put(path)
