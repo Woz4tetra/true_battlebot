@@ -22,7 +22,7 @@ class MiniBotBridge:
         device_id = self.mini_bot_config.bridge_id
         broadcast_address = get_param("~broadcast_address", "192.168.8.255")
 
-        self.rate = get_param("~rate", 1000)
+        self.rate = get_param("~rate", 50)
         self.base_radius = self.mini_bot_config.base_width / 2
         self.deadzone = get_param("~deadzone", 0.0)
         self.min_speed = get_param("~min_speed", 0.2)
@@ -97,7 +97,7 @@ class MiniBotBridge:
             rospy.logwarn_throttle(1.0, f"No ping received for {ping_delay:0.4f} seconds")
 
     def run(self) -> None:
-        rate = rospy.Rate(self.rate)
+        rate = rospy.Rate(1000)
         while not rospy.is_shutdown():
             self.check_ping()
             self.bridge.receive()
