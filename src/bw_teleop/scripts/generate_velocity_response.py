@@ -29,6 +29,7 @@ class MotorCharacterizationSample:
             filename=msg.filename,
         )
 
+
 def compute_frequency(path: str) -> float:
     sample_rate, data = wavfile.read(path)
 
@@ -98,6 +99,8 @@ def main() -> None:
         # print(sample.channel, sample.velocity)
         frequency = compute_frequency(sample.filename)
         data[sample.channel]["velocities"].append(sample.velocity)
+        if sample.velocity < 0:
+            frequency = -frequency
         data[sample.channel]["frequencies"].append(frequency)
 
     for channel, channel_data in data.items():
