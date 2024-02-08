@@ -1,7 +1,8 @@
 <launch>
     <node name="mini_bot_bridge" pkg="bw_teleop" type="mini_bot_bridge.py" output="screen"
         required="false">
-        <param name="lookup_table_path" value="$(find bw_teleop)/config/lookup_table.json" />
+        <param name="lookup_table_path"
+            value="$(find bw_teleop)/config/asymmetric_lookup_table.json" />
         <remap from="cmd_vel" to="cmd_vel/relative" />
     </node>
 </launch>

@@ -1,6 +1,7 @@
 import argparse
 import csv
 import json
+import math
 from typing import Any, Callable
 
 import numpy as np
@@ -16,7 +17,21 @@ def linear_function(x, a, b):
     return (a / b) * x
 
 
-def frequency_to_velocity(
+def symmetric_frequency_to_velocity(
+    velocity: float,
+    nonlinear_fit: Callable[[float], float],
+    linear_fit: Callable[[float], float],
+    lower_vel: float,
+    upper_vel: float,
+) -> float:
+    abs_velocity = np.abs(velocity)
+    if abs_velocity > max(upper_vel, lower_vel):
+        return math.copysign(nonlinear_fit(abs_velocity), velocity)
+    else:
+        return linear_fit(velocity)
+
+
+def asymmetric_frequency_to_velocity(
     velocity: float,
     nonlinear_fit: Callable[[float], float],
     lower_linear_fit: Callable[[float], float],
@@ -98,7 +113,14 @@ def main() -> None:
     output_frequencies = []
     for velocity in input_velocities:
         output_frequencies.append(
-            frequency_to_velocity(
+            # symmetric_frequency_to_velocity(
+            #     velocity,
+            #     nonlinear_fit,
+            #     upper_linear_fit,
+            #     lower_vel,
+            #     upper_vel,
+            # )
+            asymmetric_frequency_to_velocity(
                 velocity,
                 nonlinear_fit,
                 lower_linear_fit,
