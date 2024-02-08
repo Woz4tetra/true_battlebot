@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import json
 import math
 import time
 
@@ -12,11 +13,8 @@ from std_msgs.msg import Float64
 
 from bw_teleop.bridge_interface import BridgeInterface
 from bw_teleop.macro_pwm import MacroPwm
+from bw_teleop.motor_characterization.lookup_table_conversion import LookupTable
 from bw_teleop.parameters import load_rosparam_robot_config
-from bw_teleop.src.bw_teleop.motor_characterization.continuous_command_conversion import (
-    ConversionConstants,
-    get_conversion_function,
-)
 
 
 class MiniBotBridge:
@@ -35,24 +33,20 @@ class MiniBotBridge:
         self.macro_pwm_cycle_time = get_param("~macro_pwm_cycle_time", 0.1)
         self.command_timeout = rospy.Duration.from_sec(get_param("~command_timeout", 0.5))
         self.ping_timeout = get_param("~ping_timeout", 0.5)
+        self.lookup_table_path = get_param("~lookup_table_path", "")
+        self.ground_vel_to_frequency = 1.0 / (math.tau * self.wheel_radius)
+        with open(self.lookup_table_path) as file:
+            self.lookup_table = LookupTable.from_dict(json.load(file))
 
         self.left_direction = 1 if get_param("~flip_left", False) else -1
         self.right_direction = 1 if get_param("~flip_right", True) else -1
 
-        self.constants = ConversionConstants(
-            upper_coeffs=(1.3096800864301728, 0.48987082799389764, -1.428279276496851, 67.51232442014316),
-            lower_coeffs=(0.4203725313535373, 0.6271734426948566, -2.0787755742640286, 44.16671487514272),
-            upper_freq=9.5,
-            lower_freq=-8.5,
-            upper_vel=100.47172399201347,
-            lower_vel=-55.0321287689962,
-            ground_vel_to_frequency=1.0 / (math.tau * self.wheel_radius),
+        self.left_pwm = MacroPwm(
+            self.macro_pwm_cycle_time, 0.0, self.lookup_table.lower_cutoff, self.lookup_table.upper_cutoff
         )
-        self.velocity_to_command = get_conversion_function(self.constants)
-        self.velocity_to_command = get_conversion_function(self.constants)
-
-        self.left_pwm = MacroPwm(self.macro_pwm_cycle_time, 0.0, self.constants.lower_vel, self.constants.upper_vel)
-        self.right_pwm = MacroPwm(self.macro_pwm_cycle_time, 0.0, self.constants.lower_vel, self.constants.upper_vel)
+        self.right_pwm = MacroPwm(
+            self.macro_pwm_cycle_time, 0.0, self.lookup_table.lower_cutoff, self.lookup_table.upper_cutoff
+        )
 
         self.last_command_time = rospy.Time.now()
 
@@ -82,14 +76,19 @@ class MiniBotBridge:
         if larger_speed > self.max_speed:
             left_velocity *= self.max_speed / larger_speed
             right_velocity *= self.max_speed / larger_speed
-        self.set_velocities(left_velocity, right_velocity)
-
-    def set_velocities(self, left_velocity: float, right_velocity: float) -> None:
-        left_command = self.velocity_to_command(self.left_direction * left_velocity)
-        right_command = self.velocity_to_command(self.right_direction * right_velocity)
-        self.command = [left_command, right_command]
-        velocities = MotorVelocities(velocities=[left_command, right_command])
+        velocities = self.set_velocities(left_velocity, right_velocity)
         self.motor_velocities_pub.publish(velocities)
+
+    def set_velocities(self, left_velocity: float, right_velocity: float) -> MotorVelocities:
+        left_frequency = self.left_direction * left_velocity * self.ground_vel_to_frequency
+        right_frequency = self.right_direction * right_velocity * self.ground_vel_to_frequency
+        left_command = self.lookup_table.frequency_to_command(left_frequency)
+        right_command = self.lookup_table.frequency_to_command(right_frequency)
+        self.command = [left_command, right_command]
+        return MotorVelocities(velocities=[left_command, right_command])
+
+    def set_stop(self) -> None:
+        self.command = [0.0, 0.0]
 
     def send_command(self) -> None:
         left_command = self.pwm_command_packet(self.left_pwm, self.command[0])
@@ -114,7 +113,7 @@ class MiniBotBridge:
         while not rospy.is_shutdown():
             self.check_ping()
             if rospy.Time.now() - self.last_command_time > self.command_timeout:
-                self.set_velocities(0, 0)
+                self.set_stop()
             self.bridge.receive()
             self.send_command()
             rate.sleep()

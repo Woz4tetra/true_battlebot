@@ -44,7 +44,10 @@ def fit_data_segment(data: np.ndarray) -> tuple[Callable[[Any], float], np.ndarr
     velocities = np.append(velocities, 0.0)
 
     p0 = [max(frequencies), np.median(velocities), 1, min(frequencies)]  # this is an mandatory initial guess
-    popt, pcov = curve_fit(fit_function, velocities, frequencies, p0=p0, method="dogbox")
+    try:
+        popt, pcov = curve_fit(fit_function, velocities, frequencies, p0=p0, method="dogbox")
+    except RuntimeError:
+        popt = p0
 
     return fit_function, popt  # type: ignore
 
