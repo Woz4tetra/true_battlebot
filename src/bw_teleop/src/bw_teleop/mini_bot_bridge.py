@@ -12,7 +12,6 @@ from geometry_msgs.msg import Twist
 from std_msgs.msg import Float64
 
 from bw_teleop.bridge_interface import BridgeInterface
-from bw_teleop.macro_pwm import MacroPwm
 from bw_teleop.motor_characterization.lookup_table_conversion import LookupTable
 from bw_teleop.parameters import load_rosparam_robot_config
 
@@ -41,13 +40,6 @@ class MiniBotBridge:
         self.left_direction = 1 if get_param("~flip_left", False) else -1
         self.right_direction = 1 if get_param("~flip_right", True) else -1
 
-        self.left_pwm = MacroPwm(
-            self.macro_pwm_cycle_time, 0.0, self.lookup_table.lower_cutoff, self.lookup_table.upper_cutoff
-        )
-        self.right_pwm = MacroPwm(
-            self.macro_pwm_cycle_time, 0.0, self.lookup_table.lower_cutoff, self.lookup_table.upper_cutoff
-        )
-
         self.last_command_time = rospy.Time.now()
 
         self.prev_ping_time = time.perf_counter()
@@ -60,10 +52,9 @@ class MiniBotBridge:
         self.twist_sub = rospy.Subscriber("cmd_vel", Twist, self.twist_callback, queue_size=1)
         self.ping_timer = rospy.Timer(rospy.Duration.from_sec(0.2), self.ping_timer_callback)
 
-    def pwm_command_packet(self, pwm: MacroPwm, command: float) -> MotorCommand:
+    def pwm_command_packet(self, command: float) -> MotorCommand:
         if abs(command) <= self.deadzone:
             return MotorCommand.from_values(0)
-        command = pwm.update(command)
         direction = 1 if command > 0 else -1
         bounded_command = int(direction * min(255, abs(command)))
         return MotorCommand.from_values(bounded_command)
@@ -91,8 +82,8 @@ class MiniBotBridge:
         self.command = [0.0, 0.0]
 
     def send_command(self) -> None:
-        left_command = self.pwm_command_packet(self.left_pwm, self.command[0])
-        right_command = self.pwm_command_packet(self.right_pwm, self.command[1])
+        left_command = self.pwm_command_packet(self.command[0])
+        right_command = self.pwm_command_packet(self.command[1])
         self.bridge.send_command([left_command, right_command])
 
     def ping_timer_callback(self, event) -> None:

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
-from typing import Callable
 
 import numpy as np
 from dacite import from_dict
@@ -28,7 +27,3 @@ class LookupTable:
 
     def frequency_to_command(self, frequency: float) -> float:
         return float(self.velocities[np.argmin(np.abs(self.freq_array - frequency))])
-
-
-def get_conversion_function() -> Callable[[float], float]:
-    pass
