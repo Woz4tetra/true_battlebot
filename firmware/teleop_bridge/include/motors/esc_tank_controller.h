@@ -14,17 +14,17 @@ namespace esc_tank_controller
     class EscTankController : public base_controller::BaseController
     {
     public:
-        EscTankController(int left_output_pin, int right_output_pin);
+        EscTankController();
         void begin();
         void set_motor(uint8_t channel, int velocity);
-        void get_motor(uint8_t channel, int &velocity);
+        int get_motor(uint8_t channel);
         void stop_all_motors();
         int get_num_channels() { return NUM_CHANNELS; }
+        int get_pulse_width(uint8_t channel);
 
     private:
-        int left_output_pin_, right_output_pin_;
-        Servo left_servo_, right_servo_;
         int left_velocity_ = 0, right_velocity_ = 0;
+        int left_pulse_width_ = 0, right_pulse_width_ = 0;
     };
 } // namespace esc_tank_controller
 

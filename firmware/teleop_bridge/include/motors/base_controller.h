@@ -29,10 +29,9 @@ namespace base_controller
          * @brief Get the motor channel
          *
          * @param channel The motor channel to get
-         * @param speed The speed of the motor (0..255)
-         * @param direction The direction of the motor (negative == backwards, 0 == stop, positive == forward)
+         * @return int The speed of the motor
          */
-        virtual void get_motor(uint8_t channel, int &velocity);
+        virtual int get_motor(uint8_t channel);
 
         /**
          * @brief Stop all motors

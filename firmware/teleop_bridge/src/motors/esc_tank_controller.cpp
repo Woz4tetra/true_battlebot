@@ -3,16 +3,12 @@
 using namespace base_controller;
 using namespace esc_tank_controller;
 
-EscTankController::EscTankController(int left_output_pin, int right_output_pin) : BaseController()
+EscTankController::EscTankController() : BaseController()
 {
-    left_output_pin_ = left_output_pin;
-    right_output_pin_ = right_output_pin;
 }
 
 void EscTankController::begin()
 {
-    left_servo_.attach(left_output_pin_);
-    right_servo_.attach(right_output_pin_);
 }
 
 void EscTankController::set_motor(uint8_t channel, int velocity)
@@ -39,11 +35,11 @@ void EscTankController::set_motor(uint8_t channel, int velocity)
     switch (channel)
     {
     case LEFT_CHANNEL:
-        left_servo_.writeMicroseconds(pulse_width);
+        left_pulse_width_ = pulse_width;
         left_velocity_ = velocity;
         break;
     case RIGHT_CHANNEL:
-        right_servo_.writeMicroseconds(pulse_width);
+        right_pulse_width_ = pulse_width;
         right_velocity_ = velocity;
         break;
     default:
@@ -53,19 +49,29 @@ void EscTankController::set_motor(uint8_t channel, int velocity)
     }
 }
 
-void EscTankController::get_motor(uint8_t channel, int &velocity)
+int EscTankController::get_motor(uint8_t channel)
 {
     switch (channel)
     {
     case LEFT_CHANNEL:
-        velocity = left_velocity_;
-        break;
+        return left_velocity_;
     case RIGHT_CHANNEL:
-        velocity = right_velocity_;
-        break;
+        return right_velocity_;
     default:
-        velocity = 0;
-        break;
+        return 0;
+    }
+}
+
+int EscTankController::get_pulse_width(uint8_t channel)
+{
+    switch (channel)
+    {
+    case LEFT_CHANNEL:
+        return left_pulse_width_;
+    case RIGHT_CHANNEL:
+        return right_pulse_width_;
+    default:
+        return 0;
     }
 }
 
