@@ -168,9 +168,7 @@ class Transform3D:
         return hash(tuple([tuple(row) for row in self.tfmat]))
 
     def __str__(self) -> str:
-        return (
-            f"{self.__class__.__name__}.from_position_and_rpy(" f"Vector3({self.x, self.y, self.z}), RPY({self.rpy}))"
-        )
+        return f"{self.__class__.__name__}.from_position_and_rpy(Vector3({self.x, self.y, self.z}), RPY({self.rpy}))"
 
     def ___repr__(self) -> str:
-        return f"{self.__class__.__name__}({self.tfmat})"
+        return f"{self.__class__.__name__}({self.tfmat.tolist()})"
