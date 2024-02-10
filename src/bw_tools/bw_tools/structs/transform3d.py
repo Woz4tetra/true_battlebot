@@ -157,8 +157,8 @@ class Transform3D:
     @classmethod
     def from_pose2d(cls, pose2d: Pose2D) -> Transform3D:
         tfmat = transformations.euler_matrix(0.0, 0.0, pose2d.theta)
-        tfmat[0, 0] = pose2d.x
-        tfmat[0, 1] = pose2d.y
+        tfmat[0, 3] = pose2d.x
+        tfmat[1, 3] = pose2d.y
         return Transform3D(tfmat)
 
     def to_pose2d(self) -> Pose2D:
