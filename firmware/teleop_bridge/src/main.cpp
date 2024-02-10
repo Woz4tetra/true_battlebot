@@ -39,10 +39,11 @@ uint32_t last_command = 0;       // The last time a packet was received (millise
 #define MINIMUM_FORWARD_PULSE_WIDTH 1610
 hw_timer_t *Timer0_Cfg = NULL, *Timer1_Cfg = NULL;
 
-void IRAM_ATTR Timer0_ISR()
+// void IRAM_ATTR LeftTimer_ISR()
+void update_left_servo()
 {
     int pulse_width = left_pulse_width;
-    if (MINIMUM_BACKWARD_PULSE_WIDTH <= left_pulse_width || left_pulse_width <= MINIMUM_FORWARD_PULSE_WIDTH)
+    if ((MINIMUM_BACKWARD_PULSE_WIDTH <= left_pulse_width || left_pulse_width <= MINIMUM_FORWARD_PULSE_WIDTH) && left_pulse_width != STOP_PULSE)
     {
         if (left_counter > left_on_counts)
         {
@@ -53,7 +54,7 @@ void IRAM_ATTR Timer0_ISR()
             pulse_width = left_pulse_width > STOP_PULSE ? MINIMUM_FORWARD_PULSE_WIDTH : MINIMUM_BACKWARD_PULSE_WIDTH;
         }
     }
-    left_servo.writeMicroseconds(left_pulse_width);
+    left_servo.writeMicroseconds(pulse_width);
     left_counter++;
     if (left_counter >= 100)
     {
@@ -61,10 +62,11 @@ void IRAM_ATTR Timer0_ISR()
     }
 }
 
-void IRAM_ATTR Timer1_ISR()
+// void IRAM_ATTR RightTimer_ISR()
+void update_right_servo()
 {
     int pulse_width = right_pulse_width;
-    if (MINIMUM_BACKWARD_PULSE_WIDTH <= right_pulse_width || right_pulse_width <= MINIMUM_FORWARD_PULSE_WIDTH)
+    if ((MINIMUM_BACKWARD_PULSE_WIDTH <= right_pulse_width || right_pulse_width <= MINIMUM_FORWARD_PULSE_WIDTH) && right_pulse_width != STOP_PULSE)
     {
         if (right_counter > right_on_counts)
         {
@@ -75,7 +77,7 @@ void IRAM_ATTR Timer1_ISR()
             pulse_width = right_pulse_width > STOP_PULSE ? MINIMUM_FORWARD_PULSE_WIDTH : MINIMUM_BACKWARD_PULSE_WIDTH;
         }
     }
-    right_servo.writeMicroseconds(right_pulse_width);
+    right_servo.writeMicroseconds(pulse_width);
     right_counter++;
     if (right_counter >= 100)
     {
@@ -100,16 +102,16 @@ int get_max_motor_speed()
 
 int compute_pwm_percentages(int pulse_width)
 {
-    int on_counts = 0;
+    float on_counts = 0.0;
     if (pulse_width < STOP_PULSE)
     {
-        on_counts = 100 * (pulse_width - STOP_PULSE) / (MINIMUM_FORWARD_PULSE_WIDTH - STOP_PULSE);
+        on_counts = 100.0 * (float)(STOP_PULSE - pulse_width) / (MINIMUM_FORWARD_PULSE_WIDTH - STOP_PULSE);
     }
     else
     {
-        on_counts = 100 * (pulse_width - STOP_PULSE) / (STOP_PULSE - MINIMUM_BACKWARD_PULSE_WIDTH);
+        on_counts = 100.0 * (float)(pulse_width - STOP_PULSE) / (STOP_PULSE - MINIMUM_BACKWARD_PULSE_WIDTH);
     }
-    return on_counts;
+    return (int)on_counts;
 }
 
 /**
@@ -124,15 +126,18 @@ void setup()
     left_servo.attach(CHANNEL_1);
     right_servo.attach(CHANNEL_2);
 
-    Timer0_Cfg = timerBegin(0, 80, true);
-    timerAttachInterrupt(Timer0_Cfg, &Timer0_ISR, true);
-    timerAlarmWrite(Timer0_Cfg, 100000, true); // 0.1ms
-    timerAlarmEnable(Timer0_Cfg);
+    left_servo.writeMicroseconds(STOP_PULSE);
+    right_servo.writeMicroseconds(STOP_PULSE);
 
-    Timer1_Cfg = timerBegin(0, 80, true);
-    timerAttachInterrupt(Timer1_Cfg, &Timer1_ISR, true);
-    timerAlarmWrite(Timer1_Cfg, 100000, true); // 0.1ms
-    timerAlarmEnable(Timer1_Cfg);
+    // Timer0_Cfg = timerBegin(0, 80, true);
+    // timerAttachInterrupt(Timer0_Cfg, &LeftTimer_ISR, true);
+    // timerAlarmWrite(Timer0_Cfg, 100, true); // 0.1ms
+    // timerAlarmEnable(Timer0_Cfg);
+
+    // Timer1_Cfg = timerBegin(1, 80, true);
+    // timerAttachInterrupt(Timer1_Cfg, &RightTimer_ISR, true);
+    // timerAlarmWrite(Timer1_Cfg, 100, true); // 0.1ms
+    // timerAlarmEnable(Timer1_Cfg);
 
     // Reset config
     DEVICE_CONFIG = new bridge::config_info_t;
@@ -212,6 +217,9 @@ void loop()
             }
             left_on_counts = compute_pwm_percentages(left_pulse_width);
             right_on_counts = compute_pwm_percentages(right_pulse_width);
+
+            update_left_servo();
+            update_right_servo();
             break;
         default:
             break;

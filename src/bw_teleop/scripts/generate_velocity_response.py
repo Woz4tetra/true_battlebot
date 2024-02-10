@@ -96,7 +96,6 @@ def main() -> None:
                 "velocities": [],
                 "frequencies": [],
             }
-        # print(sample.channel, sample.velocity)
         frequency = compute_frequency(sample.filename)
         data[sample.channel]["velocities"].append(sample.velocity)
         if sample.velocity < 0:
