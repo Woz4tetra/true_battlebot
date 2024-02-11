@@ -12,8 +12,8 @@
 #include <motors/esc_tank_controller.h>
 #include <status_lights/status_neopixel.h>
 
-#define CHANNEL_1 9  // A1 -> channel 1 (left)
-#define CHANNEL_2 17 // A2 -> channel 2 (right)
+#define CHANNEL_1 17 // A1 -> channel 1 (left)
+#define CHANNEL_2 9  // A2 -> channel 2 (right)
 
 Servo left_servo, right_servo;
 const int STOP_PULSE = esc_tank_controller::STOP_MOTOR_PULSE_WIDTH;

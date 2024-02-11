@@ -1,7 +1,7 @@
 <launch>
     <node name="usb_joystick" pkg="joy" type="joy_node" output="screen" required="false">
         <param name="dev" value="/dev/input/js0" type="str" />
-        <param name="deadzone" value="0.075" />
+        <param name="deadzone" value="0.2" />
         <param name="autorepeat_rate" value="30.0" />
     </node>
 

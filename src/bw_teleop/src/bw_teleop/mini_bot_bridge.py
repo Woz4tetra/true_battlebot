@@ -14,6 +14,7 @@ from std_msgs.msg import Float64
 from bw_teleop.bridge_interface import BridgeInterface
 from bw_teleop.motor_characterization.lookup_table_conversion import LookupTable
 from bw_teleop.parameters import load_rosparam_robot_config
+from bw_teleop.slew_rate_limiter import SlewLimiter
 
 
 class MiniBotBridge:
@@ -29,6 +30,7 @@ class MiniBotBridge:
         self.deadzone = get_param("~deadzone", 0.0)
         self.max_speed = get_param("~max_speed", 1.5)
         self.wheel_radius = get_param("~wheel_radius", 0.02)
+        self.limited_acceleration = get_param("~limited_acceleration", 2.0)
         self.macro_pwm_cycle_time = get_param("~macro_pwm_cycle_time", 0.1)
         self.command_timeout = rospy.Duration.from_sec(get_param("~command_timeout", 0.5))
         self.ping_timeout = get_param("~ping_timeout", 0.5)
@@ -37,7 +39,7 @@ class MiniBotBridge:
 
         self.rotation_fudge_factor = 3.0
         self.left_right_imbalance_factor = 0.7
-        self.backwards_reduction_factor = 0.4
+        self.backwards_reduction_factor = 1.0
 
         with open(self.lookup_table_path) as file:
             self.lookup_table = LookupTable.from_dict(json.load(file))
@@ -49,6 +51,8 @@ class MiniBotBridge:
 
         self.prev_ping_time = time.perf_counter()
         self.command = [0.0, 0.0]
+        self.left_limiter = SlewLimiter(self.limited_acceleration, 1000.0)
+        self.right_limiter = SlewLimiter(self.limited_acceleration, 1000.0)
 
         self.bridge = BridgeInterface(broadcast_address, port, device_id, {PingInfo: self.ping_callback})
 
@@ -78,6 +82,10 @@ class MiniBotBridge:
         if larger_speed > self.max_speed:
             left_velocity *= self.max_speed / larger_speed
             right_velocity *= self.max_speed / larger_speed
+
+        left_velocity = math.copysign(self.left_limiter.calculate(abs(left_velocity)), left_velocity)
+        right_velocity = math.copysign(self.right_limiter.calculate(abs(right_velocity)), right_velocity)
+
         velocities = self.set_velocities(left_velocity, right_velocity)
         self.motor_velocities_pub.publish(velocities)
 
