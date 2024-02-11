@@ -1356,6 +1356,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 8575747899302142240}
     m_Modifications:
+    - target: {fileID: 932029207014480428, guid: 690edcf002475fb40911308c85139c0d, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 932029207014480428, guid: 690edcf002475fb40911308c85139c0d, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0.5
+      objectReference: {fileID: 0}
     - target: {fileID: 2673931187065592263, guid: 690edcf002475fb40911308c85139c0d, type: 3}
       propertyPath: m_Name
       value: Apriltag 42
@@ -1378,7 +1386,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3438224951605282176, guid: 690edcf002475fb40911308c85139c0d, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 0.7071068
+      value: -0.7071068
       objectReference: {fileID: 0}
     - target: {fileID: 3438224951605282176, guid: 690edcf002475fb40911308c85139c0d, type: 3}
       propertyPath: m_LocalRotation.x
@@ -1386,11 +1394,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3438224951605282176, guid: 690edcf002475fb40911308c85139c0d, type: 3}
       propertyPath: m_LocalRotation.y
-      value: -0.7071068
+      value: 0.7071068
       objectReference: {fileID: 0}
     - target: {fileID: 3438224951605282176, guid: 690edcf002475fb40911308c85139c0d, type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 3438224951605282176, guid: 690edcf002475fb40911308c85139c0d, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -1514,11 +1522,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1366885877405254007, guid: 1d9af030e15d626d9826f6cbbb49eacf, type: 3}
       propertyPath: m_LocalRotation.y
-      value: -0
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1366885877405254007, guid: 1d9af030e15d626d9826f6cbbb49eacf, type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0.7071068
+      value: -0.7071068
       objectReference: {fileID: 0}
     - target: {fileID: 1366885877405254007, guid: 1d9af030e15d626d9826f6cbbb49eacf, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -1535,6 +1543,14 @@ PrefabInstance:
     - target: {fileID: 5982259595971942597, guid: 1d9af030e15d626d9826f6cbbb49eacf, type: 3}
       propertyPath: m_Name
       value: Apriltag 99
+      objectReference: {fileID: 0}
+    - target: {fileID: 8503624630592865074, guid: 1d9af030e15d626d9826f6cbbb49eacf, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 8503624630592865074, guid: 1d9af030e15d626d9826f6cbbb49eacf, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0.5
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
