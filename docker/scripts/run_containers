@@ -26,4 +26,9 @@ cd ${BASE_DIR}/../resources
 
 ln -sf docker-compose.gpu-${HAS_GPU}.yaml docker-compose.gpu.yaml
 
-docker-compose -f docker-compose.roscore.yml -f docker-compose.${PROJECT_NAME}.yml -f docker-compose.gpu.yaml up -d
+docker-compose \
+-f docker-compose.roscore.yml \
+-f docker-compose.${PROJECT_NAME}.yml \
+-f docker-compose.gpu.yaml \
+-f docker-compose.webapp.yml \
+up -d

@@ -4,10 +4,10 @@
 tag_family:        'tag36h11'  # options: tagStandard52h13, tagStandard41h12, tag36h11, tag25h9, tag16h5, tagCustom48h12, tagCircle21h7, tagCircle49h12
 tag_threads:       4          # default: 2
 tag_decimate:      1.0        # default: 1.0
-tag_blur:          2.0        # default: 0.0. Gaussian blur kernel = (int)(4 * tag_blur), round up to nearest odd number
+tag_blur:          1.0        # default: 0.0. Gaussian blur kernel = (int)(4 * tag_blur), round up to nearest odd number
 tag_refine_edges:  1          # default: 1 (all values greater than 0 have the same effect)
 tag_debug:         0          # default: 0 (doesn't work as expected? use publish_tag_detections_image)
-max_hamming_dist:  2          # default: 2 (Tunable parameter with 2 being a good choice - values >=3 consume large amounts of memory. Choose the largest value possible.)
+max_hamming_dist:  3          # default: 2 (Tunable parameter with 2 being a good choice - values >=3 consume large amounts of memory. Choose the largest value possible.)
 remove_duplicates: true
 # Other parameters
 publish_tf:        false      # default: false
@@ -36,10 +36,10 @@ publish_tag_detections_image: true
 #   ]
 standalone_tags:
   [
-      {id: 41, size: 0.08, name: mini_bot_up},
-      {id: 76, size: 0.08, name: mini_bot_down},
-      {id: 42, size: 0.08, name: main_bot_up},
-      {id: 99, size: 0.08, name: main_bot_down},
+      {id: 41, size: 0.063, name: mini_bot_up},
+      {id: 76, size: 0.063, name: mini_bot_down},
+      {id: 42, size: 0.063, name: main_bot_up},
+      {id: 99, size: 0.063, name: main_bot_down},
   ]
 # ## Tag bundle definitions
 # ### Remarks

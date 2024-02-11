@@ -170,5 +170,5 @@ class Transform3D:
     def __str__(self) -> str:
         return f"{self.__class__.__name__}.from_position_and_rpy(Vector3({self.x, self.y, self.z}), RPY({self.rpy}))"
 
-    def ___repr__(self) -> str:
+    def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.tfmat.tolist()})"

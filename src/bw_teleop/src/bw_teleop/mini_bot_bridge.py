@@ -4,12 +4,13 @@ import math
 import time
 
 import rospy
-from bw_interfaces.msg import MotorVelocities
+from bw_interfaces.msg import EstimatedObject, EstimatedObjectArray, MotorVelocities
 from bw_tools.structs.teleop_bridge.motor_command import MotorCommand
 from bw_tools.structs.teleop_bridge.ping_info import PingInfo
 from bw_tools.typing import get_param
-from geometry_msgs.msg import Twist
+from geometry_msgs.msg import Quaternion, Twist
 from std_msgs.msg import Float64
+from tf import transformations
 
 from bw_teleop.bridge_interface import BridgeInterface
 from bw_teleop.motor_characterization.lookup_table_conversion import LookupTable
@@ -30,7 +31,7 @@ class MiniBotBridge:
         self.deadzone = get_param("~deadzone", 0.0)
         self.max_speed = get_param("~max_speed", 1.5)
         self.wheel_radius = get_param("~wheel_radius", 0.02)
-        self.limited_acceleration = get_param("~limited_acceleration", 2.0)
+        self.limited_acceleration = get_param("~limited_acceleration", 5.0)
         self.macro_pwm_cycle_time = get_param("~macro_pwm_cycle_time", 0.1)
         self.command_timeout = rospy.Duration.from_sec(get_param("~command_timeout", 0.5))
         self.ping_timeout = get_param("~ping_timeout", 0.5)
@@ -53,13 +54,19 @@ class MiniBotBridge:
         self.command = [0.0, 0.0]
         self.left_limiter = SlewLimiter(self.limited_acceleration, 1000.0)
         self.right_limiter = SlewLimiter(self.limited_acceleration, 1000.0)
+        self.mini_bot_state = EstimatedObject()
 
         self.bridge = BridgeInterface(broadcast_address, port, device_id, {PingInfo: self.ping_callback})
 
         self.ping_pub = rospy.Publisher("ping", Float64, queue_size=1)
         self.motor_velocities_pub = rospy.Publisher("motor_velocities", MotorVelocities, queue_size=1)
-        self.twist_sub = rospy.Subscriber("cmd_vel", Twist, self.twist_callback, queue_size=1)
+
         self.ping_timer = rospy.Timer(rospy.Duration.from_sec(0.2), self.ping_timer_callback)
+
+        self.twist_sub = rospy.Subscriber("cmd_vel", Twist, self.twist_callback, queue_size=1)
+        self.filter_state_array_sub = rospy.Subscriber(
+            "filtered_states", EstimatedObjectArray, self.filtered_states_callback, queue_size=50
+        )
 
     def pwm_command_packet(self, command: float) -> MotorCommand:
         if abs(command) <= self.deadzone:
@@ -76,8 +83,12 @@ class MiniBotBridge:
             linear_x *= self.backwards_reduction_factor
         left_velocity = linear_x - angular_z * self.base_radius * self.rotation_fudge_factor
         right_velocity = linear_x + angular_z * self.base_radius * self.rotation_fudge_factor
-        left_velocity *= self.left_right_imbalance_factor
-        right_velocity *= 2 - self.left_right_imbalance_factor
+        if self.is_right_side_up():
+            left_velocity *= self.left_right_imbalance_factor
+            right_velocity *= 2 - self.left_right_imbalance_factor
+        else:
+            left_velocity *= 2 - self.left_right_imbalance_factor
+            right_velocity *= self.left_right_imbalance_factor
         larger_speed = max(abs(left_velocity), abs(right_velocity))
         if larger_speed > self.max_speed:
             left_velocity *= self.max_speed / larger_speed
@@ -88,6 +99,18 @@ class MiniBotBridge:
 
         velocities = self.set_velocities(left_velocity, right_velocity)
         self.motor_velocities_pub.publish(velocities)
+
+    def is_right_side_up(self) -> bool:
+        return self.is_orientation_right_side_up(self.mini_bot_state.state.pose.pose.orientation)
+
+    def filtered_states_callback(self, msg: EstimatedObjectArray) -> None:
+        for robot in msg.robots:
+            if robot.label == self.mini_bot_config.name:
+                self.mini_bot_state = robot
+
+    def is_orientation_right_side_up(self, quaternion: Quaternion) -> bool:
+        angles = transformations.euler_from_quaternion((quaternion.x, quaternion.y, quaternion.z, quaternion.w))
+        return abs(angles[0]) < 1.5
 
     def set_velocities(self, left_velocity: float, right_velocity: float) -> MotorVelocities:
         left_frequency = self.left_direction * left_velocity * self.ground_vel_to_frequency

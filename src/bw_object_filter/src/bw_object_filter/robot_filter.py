@@ -11,6 +11,7 @@ from bw_tools.structs.header import Header
 from bw_tools.structs.labels import Label
 from bw_tools.structs.pose2d import Pose2D
 from bw_tools.structs.pose2d_stamped import Pose2DStamped
+from bw_tools.structs.rpy import RPY
 from bw_tools.structs.transform3d import Transform3D
 from bw_tools.structs.twist2d import Twist2D
 from bw_tools.structs.xyz import XYZ
@@ -73,8 +74,7 @@ class RobotFilter:
             self.robot_names[config.up_id] = config.name
             self.robot_names[config.down_id] = config.name
         self.robot_configs = {config.name: config for config in self.robots.robots}
-        rotate_quat = (0.0, 0.0, -0.707, 0.707)
-        self.apriltag_rotate_tf = Transform3D.from_position_and_quaternion(Vector3(), Quaternion(*rotate_quat))
+        self.apriltag_rotate_tf = Transform3D.from_position_and_rpy(Vector3(), RPY((0.0, 0.0, np.pi / 2)))
         self.robot_filters = {
             robot.name: DriveKalmanModel(self.update_delay, self.process_noise, self.friction_factor, robot.radius)
             for robot in self.robots.robots
