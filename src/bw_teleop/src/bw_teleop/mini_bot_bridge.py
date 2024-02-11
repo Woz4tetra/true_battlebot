@@ -31,16 +31,14 @@ class MiniBotBridge:
         self.deadzone = get_param("~deadzone", 0.0)
         self.max_speed = get_param("~max_speed", 1.5)
         self.wheel_radius = get_param("~wheel_radius", 0.02)
-        self.limited_acceleration = get_param("~limited_acceleration", 5.0)
-        self.macro_pwm_cycle_time = get_param("~macro_pwm_cycle_time", 0.1)
         self.command_timeout = rospy.Duration.from_sec(get_param("~command_timeout", 0.5))
         self.ping_timeout = get_param("~ping_timeout", 0.5)
         self.lookup_table_path = get_param("~lookup_table_path", "")
         self.ground_vel_to_frequency = 1.0 / (math.tau * self.wheel_radius)
 
         self.rotation_fudge_factor = 3.0
+        self.linear_fudge_factor = 1.5
         self.left_right_imbalance_factor = 0.7
-        self.backwards_reduction_factor = 1.0
 
         with open(self.lookup_table_path) as file:
             self.lookup_table = LookupTable.from_dict(json.load(file))
@@ -52,8 +50,6 @@ class MiniBotBridge:
 
         self.prev_ping_time = time.perf_counter()
         self.command = [0.0, 0.0]
-        self.left_limiter = SlewLimiter(self.limited_acceleration, 1000.0)
-        self.right_limiter = SlewLimiter(self.limited_acceleration, 1000.0)
         self.mini_bot_state = EstimatedObject()
 
         self.bridge = BridgeInterface(broadcast_address, port, device_id, {PingInfo: self.ping_callback})
@@ -77,12 +73,10 @@ class MiniBotBridge:
 
     def twist_callback(self, msg: Twist) -> None:
         self.last_command_time = rospy.Time.now()
-        linear_x = msg.linear.x
-        angular_z = msg.angular.z
-        if linear_x < 0.0:
-            linear_x *= self.backwards_reduction_factor
-        left_velocity = linear_x - angular_z * self.base_radius * self.rotation_fudge_factor
-        right_velocity = linear_x + angular_z * self.base_radius * self.rotation_fudge_factor
+        linear_x = msg.linear.x * self.linear_fudge_factor
+        angular_z = msg.angular.z * self.rotation_fudge_factor
+        left_velocity = linear_x - angular_z * self.base_radius
+        right_velocity = linear_x + angular_z * self.base_radius
         if self.is_right_side_up():
             left_velocity *= self.left_right_imbalance_factor
             right_velocity *= 2 - self.left_right_imbalance_factor
@@ -93,9 +87,6 @@ class MiniBotBridge:
         if larger_speed > self.max_speed:
             left_velocity *= self.max_speed / larger_speed
             right_velocity *= self.max_speed / larger_speed
-
-        left_velocity = math.copysign(self.left_limiter.calculate(abs(left_velocity)), left_velocity)
-        right_velocity = math.copysign(self.right_limiter.calculate(abs(right_velocity)), right_velocity)
 
         velocities = self.set_velocities(left_velocity, right_velocity)
         self.motor_velocities_pub.publish(velocities)

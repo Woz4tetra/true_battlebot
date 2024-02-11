@@ -107,10 +107,10 @@ is_footprint_dynamic: false # false
 ## Goal Tolerance Parameters ##
 
 # Allowed final euclidean distance to the goal position in meters
-xy_goal_tolerance: 0.15 # 0.2
+xy_goal_tolerance: 0.2 # 0.2
 
 # Allowed final orientation error in radians
-yaw_goal_tolerance: 0.2 # 0.2
+yaw_goal_tolerance: 0.25 # 0.2
 
 # Remove the goal velocity constraint such that the robot can arrive at
 # the goal with maximum speed
@@ -300,7 +300,7 @@ weight_kinematics_nh: 1000.0 # 1000.0
 # directions (positive transl. velocities). A small weight (e.g. 1.0)
 # still allows driving backwards. A value around 1000 almost prevents
 # backward driving (but cannot be guaranteed).
-weight_kinematics_forward_drive: 1.0 # 1.0
+weight_kinematics_forward_drive: 1000.0 # 1.0
 
 # Optimization weight for enforcing a minimum turning radius (only for
 # carlike robots).
