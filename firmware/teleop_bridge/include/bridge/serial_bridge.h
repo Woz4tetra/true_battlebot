@@ -30,7 +30,7 @@ namespace serial_bridge
 
     protected:
         void set_motor(uint8_t channel, int velocity);
-        void respond_to_ping(bridge::ping_packet_p packet);
+        void respond_to_ping(bridge::ping_info_p packet);
         void respond_to_config(bridge::config_info_p config_info);
 
     private:

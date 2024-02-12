@@ -2,45 +2,35 @@
 
 using namespace base_controller;
 using namespace esc_tank_controller;
+using namespace esc_motor;
 
-EscTankController::EscTankController() : BaseController()
+EscTankController::EscTankController(EscMotor *left_motor, EscMotor *right_motor) : BaseController()
 {
+    left_motor_ = left_motor;
+    right_motor_ = right_motor;
 }
 
 void EscTankController::begin()
 {
+    left_motor_->begin();
+    right_motor_->begin();
 }
 
-void EscTankController::set_motor(uint8_t channel, int velocity)
+void EscTankController::update()
 {
-    int pulse_width;
-    int speed = abs(velocity);
+    left_motor_->update();
+    right_motor_->update();
+}
 
-    // reverse is 800-1500μs
-    if (velocity < 0)
-    {
-        pulse_width = map(speed, 0, 255, STOP_MOTOR_PULSE_WIDTH, 800);
-    }
-    // forward is 1500-2200μs
-    else if (velocity > 0)
-    {
-        pulse_width = map(speed, 0, 255, STOP_MOTOR_PULSE_WIDTH, 2200);
-    }
-    // stop is 1500μs
-    else
-    {
-        pulse_width = STOP_MOTOR_PULSE_WIDTH;
-    }
-
+void EscTankController::set_motor(uint8_t channel, int command)
+{
     switch (channel)
     {
     case LEFT_CHANNEL:
-        left_pulse_width_ = pulse_width;
-        left_velocity_ = velocity;
+        left_motor_->set_command(command);
         break;
     case RIGHT_CHANNEL:
-        right_pulse_width_ = pulse_width;
-        right_velocity_ = velocity;
+        right_motor_->set_command(command);
         break;
     default:
         Serial.print("Invalid channel ");
@@ -54,22 +44,9 @@ int EscTankController::get_motor(uint8_t channel)
     switch (channel)
     {
     case LEFT_CHANNEL:
-        return left_velocity_;
+        return left_motor_->get_command();
     case RIGHT_CHANNEL:
-        return right_velocity_;
-    default:
-        return 0;
-    }
-}
-
-int EscTankController::get_pulse_width(uint8_t channel)
-{
-    switch (channel)
-    {
-    case LEFT_CHANNEL:
-        return left_pulse_width_;
-    case RIGHT_CHANNEL:
-        return right_pulse_width_;
+        return right_motor_->get_command();
     default:
         return 0;
     }

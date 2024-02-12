@@ -23,7 +23,8 @@ namespace bridge
     {
         MOTOR = 0x01,
         PING = 0x02,
-        CONFIG = 0x03
+        CONFIG = 0x03,
+        IMU = 0x04,
         // Put more commands here if needed
     };
 
@@ -46,12 +47,6 @@ namespace bridge
         uint32_t time;
     } ping_info_t, *ping_info_p;
 
-    typedef union ping_packet
-    {
-        ping_info_t data;
-        uint8_t bytes[sizeof(ping_info_t)];
-    } ping_packet_t, *ping_packet_p;
-
     // CONFIG
     const int SSID_LENGTH = 33;
     const int PASSWORD_LENGTH = 64;
@@ -62,11 +57,20 @@ namespace bridge
         char wifi_info[SSID_LENGTH + PASSWORD_LENGTH];
     } config_info_t, *config_info_p;
 
-    typedef union config_packet
+    // IMU
+    typedef struct vector_3d
     {
-        config_info_t data;
-        uint8_t bytes[sizeof(config_info_t)];
-    } config_packet_t, *config_packet_p;
+        float x;
+        float y;
+        float z;
+    } vector_3d_t, *vector_3d_p;
+
+    typedef struct imu_data : header
+    {
+        vector_3d_t accel;
+        vector_3d_t gyro;
+        vector_3d_t orientation;
+    } imu_data_t, *imu_data_p;
 
 }; // namespace bridge
 

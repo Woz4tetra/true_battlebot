@@ -1,2 +1,2 @@
 #!/bin/bash
-platformio device monitor --baud 115200
+platformio device monitor --baud 115200 --port /dev/ttyACM0
