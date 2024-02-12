@@ -75,7 +75,6 @@ bool UdpBridge::ready_callback()
             processed_packet = true;
         }
     }
-    send_imu();
     return processed_packet;
 }
 

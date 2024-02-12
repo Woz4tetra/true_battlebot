@@ -32,6 +32,7 @@ namespace udp_bridge
         }
         bool update();
         UdpBridgeState get_state() { return state_; }
+        void send_imu();
 
     protected:
         void set_motor(uint8_t channel, int velocity);
@@ -57,7 +58,6 @@ namespace udp_bridge
         void init_callback();
         void connecting_callback();
         bool ready_callback();
-        void send_imu();
     };
 } // namespace udp_bridge
 

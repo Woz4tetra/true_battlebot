@@ -25,6 +25,7 @@ bool ImuSensor::begin()
 
     // Use external crystal for better accuracy
     bno->setExtCrystalUse(true);
+
     return true;
 }
 

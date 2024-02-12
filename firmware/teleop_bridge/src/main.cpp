@@ -20,7 +20,7 @@
 #define CHANNEL_2 9  // A2 -> channel 2 (right)
 
 const float MAX_SPEED = 1.5f;
-const float BASE_RADIUS = 0.1f;
+const float IMU_CONVERSION_RADIUS = 0.1f;
 
 char UDP_READ_BUFFER[bridge::PACKET_MAX_LENGTH];
 uint8_t UDP_WRITE_BUFFER[bridge::PACKET_MAX_LENGTH];
@@ -37,6 +37,9 @@ status_neopixel::StatusNeopixel *neopixel_status;
 
 const int COMMAND_TIMEOUT = 250; // Stop motors if no command is received for this many milliseconds
 uint32_t last_command = 0;       // The last time a packet was received (milliseconds)
+
+const int IMU_SEND_INTERVAL = 100;
+uint32_t last_imu_send = 0;
 
 int get_max_motor_speed()
 {
@@ -70,18 +73,20 @@ void setup()
 
     imu_sensor_inst = new imu_sensor::ImuSensor();
 
-    base_feedback::BaseFeedback *left_feedback = new imu_feedback::ImuFeedback(imu_sensor_inst, BASE_RADIUS);
+    base_feedback::BaseFeedback *left_feedback = new imu_feedback::ImuFeedback(imu_sensor_inst, IMU_CONVERSION_RADIUS);
     speed_pid::SpeedPID *left_pid = new speed_pid::SpeedPID();
-    left_pid->Kp = 0.5;
-    left_pid->Ki = 0.0;
-    left_pid->Kd = 0.0;
+    left_pid->Kp = 1.0;
+    left_pid->Ki = 0.05;
+    left_pid->Kd = 0.001;
+    left_pid->set_deadzones(1.0, 0.0, 0.0);
     left_motor = new esc_motor::EscMotor(CHANNEL_1, MAX_SPEED, left_feedback, left_pid);
 
-    base_feedback::BaseFeedback *right_feedback = new imu_feedback::ImuFeedback(imu_sensor_inst, -BASE_RADIUS);
+    base_feedback::BaseFeedback *right_feedback = new imu_feedback::ImuFeedback(imu_sensor_inst, -IMU_CONVERSION_RADIUS);
     speed_pid::SpeedPID *right_pid = new speed_pid::SpeedPID();
-    right_pid->Kp = 0.5;
-    right_pid->Ki = 0.0;
-    right_pid->Kd = 0.0;
+    right_pid->Kp = 1.0;
+    right_pid->Ki = 0.05;
+    right_pid->Kd = 0.001;
+    right_pid->set_deadzones(1.0, 0.0, 0.0);
     right_motor = new esc_motor::EscMotor(CHANNEL_2, MAX_SPEED, right_feedback, right_pid);
 
     controller = new esc_tank_controller::EscTankController(left_motor, right_motor);
@@ -165,6 +170,12 @@ void loop()
 
             imu_sensor_inst->update();
             controller->update();
+
+            if (now - last_imu_send > IMU_SEND_INTERVAL)
+            {
+                udp_interface->send_imu();
+                last_imu_send = now;
+            }
 
             break;
         default:

@@ -15,7 +15,7 @@ namespace imu_sensor
         ImuSensor();
         bool begin();
         bool update();
-        float get_angular_z() { return angular_vel_->gyro.z; }
+        float get_angular_z() { return angular_vel_->gyro.y; } // IMU is mounted sideways
         bool is_connected() { return _connected; }
         bool get_imu_data(bridge::imu_data_p imu_data);
         bool has_data();

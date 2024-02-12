@@ -21,14 +21,10 @@ void EscMotor::begin()
 
 void EscMotor::update()
 {
-    float command_velocity;
-    if (feedback_->has_feedback())
+    float command_velocity = get_velocity();
+    if (command_velocity != 0.0 && feedback_->has_feedback())
     {
         command_velocity = pid_->compute(feedback_->get_feedback());
-    }
-    else
-    {
-        command_velocity = get_velocity();
     }
     int pulse_width = velocity_to_pulse(command_velocity);
     update_servo(pulse_width);

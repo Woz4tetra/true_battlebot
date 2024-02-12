@@ -42,7 +42,7 @@ class MiniBotBridge:
 
         self.rotation_fudge_factor = 3.0
         self.linear_fudge_factor = 1.5
-        self.left_right_imbalance_factor = 0.7
+        self.left_right_imbalance_factor = 0.5
 
         with open(self.lookup_table_path) as file:
             self.lookup_table = LookupTable.from_dict(json.load(file))
@@ -52,7 +52,7 @@ class MiniBotBridge:
 
         self.last_command_time = rospy.Time.now()
 
-        self.prev_ping_time = time.perf_counter()
+        self.prev_active_time = time.perf_counter()
         self.command = [0.0, 0.0]
         self.mini_bot_state = EstimatedObject()
 
@@ -82,14 +82,14 @@ class MiniBotBridge:
         self.last_command_time = rospy.Time.now()
         linear_x = msg.linear.x * self.linear_fudge_factor
         angular_z = msg.angular.z * self.rotation_fudge_factor
-        left_velocity = linear_x - angular_z * self.base_radius
-        right_velocity = linear_x + angular_z * self.base_radius
         if self.is_right_side_up():
-            left_velocity *= self.left_right_imbalance_factor
-            right_velocity *= 2 - self.left_right_imbalance_factor
+            left_factor = self.left_right_imbalance_factor
+            right_factor = 2 - self.left_right_imbalance_factor
         else:
-            left_velocity *= 2 - self.left_right_imbalance_factor
-            right_velocity *= self.left_right_imbalance_factor
+            left_factor = 2 - self.left_right_imbalance_factor
+            right_factor = self.left_right_imbalance_factor
+        left_velocity = linear_x * left_factor - angular_z * self.base_radius
+        right_velocity = linear_x * right_factor + angular_z * self.base_radius
         larger_speed = max(abs(left_velocity), abs(right_velocity))
         if larger_speed > self.max_speed:
             left_velocity *= self.max_speed / larger_speed
@@ -131,19 +131,20 @@ class MiniBotBridge:
 
     def ping_callback(self, ping_info: PingInfo) -> None:
         latency = self.bridge.compute_latency(ping_info)
-        self.prev_ping_time = time.perf_counter()
+        self.prev_active_time = time.perf_counter()
         self.ping_pub.publish(latency)
 
     def imu_callback(self, imu: ImuSensor) -> None:
         msg = imu.to_msg()
+        self.prev_active_time = time.perf_counter()
         msg.header.stamp = rospy.Time.now()
         msg.header.frame_id = self.robot_frame_prefix + "_" + self.mini_bot_config.name
         self.imu_pub.publish(msg)
 
     def check_ping(self) -> None:
-        ping_delay = time.perf_counter() - self.prev_ping_time
-        if ping_delay > self.ping_timeout:
-            rospy.logwarn_throttle(1.0, f"No ping received for {ping_delay:0.4f} seconds")
+        delay = time.perf_counter() - self.prev_active_time
+        if delay > self.ping_timeout:
+            rospy.logwarn_throttle(1.0, f"No data received for {delay:0.4f} seconds")
 
     def run(self) -> None:
         rate = rospy.Rate(self.rate)
