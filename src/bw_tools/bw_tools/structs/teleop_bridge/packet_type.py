@@ -6,3 +6,4 @@ class PacketType(IntEnum):
     MOTOR = 1
     PING = 2
     CONFIG = 3
+    IMU = 4

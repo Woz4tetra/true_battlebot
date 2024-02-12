@@ -16,5 +16,5 @@ float ImuFeedback::get_feedback()
 
 bool ImuFeedback::has_feedback()
 {
-    return sensor_->is_connected();
+    return sensor_->is_connected() && sensor_->has_data();
 }

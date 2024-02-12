@@ -14,10 +14,11 @@ namespace imu_sensor
     public:
         ImuSensor();
         bool begin();
-        void update();
+        bool update();
         float get_angular_z() { return angular_vel_->gyro.z; }
         bool is_connected() { return _connected; }
-        void get_imu_data(bridge::imu_data_p imu_data);
+        bool get_imu_data(bridge::imu_data_p imu_data);
+        bool has_data();
 
     private:
         Adafruit_BNO055 *bno;

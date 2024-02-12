@@ -5,6 +5,9 @@ using namespace imu_sensor;
 ImuSensor::ImuSensor()
 {
     bno = new Adafruit_BNO055(55, 0x28);
+    orientation_ = nullptr;
+    angular_vel_ = nullptr;
+    accel_ = nullptr;
 }
 
 bool ImuSensor::begin()
@@ -16,20 +19,46 @@ bool ImuSensor::begin()
         return false;
     }
 
+    orientation_ = new sensors_event_t;
+    angular_vel_ = new sensors_event_t;
+    accel_ = new sensors_event_t;
+
     // Use external crystal for better accuracy
     bno->setExtCrystalUse(true);
     return true;
 }
 
-void ImuSensor::update()
+bool ImuSensor::update()
 {
+    if (!_connected)
+    {
+        return false;
+    }
     bno->getEvent(orientation_, Adafruit_BNO055::VECTOR_EULER);
     bno->getEvent(angular_vel_, Adafruit_BNO055::VECTOR_GYROSCOPE);
     bno->getEvent(accel_, Adafruit_BNO055::VECTOR_LINEARACCEL);
+    return true;
 }
 
-void ImuSensor::get_imu_data(bridge::imu_data_p imu_data)
+bool ImuSensor::has_data()
 {
+    if (!_connected)
+    {
+        return false;
+    }
+    if (orientation_ == nullptr || angular_vel_ == nullptr || accel_ == nullptr)
+    {
+        return false;
+    }
+    return true;
+}
+
+bool ImuSensor::get_imu_data(bridge::imu_data_p imu_data)
+{
+    if (!has_data())
+    {
+        return false;
+    }
     imu_data->accel.x = accel_->acceleration.x;
     imu_data->accel.y = accel_->acceleration.y;
     imu_data->accel.z = accel_->acceleration.z;
@@ -41,4 +70,6 @@ void ImuSensor::get_imu_data(bridge::imu_data_p imu_data)
     imu_data->orientation.x = orientation_->orientation.x;
     imu_data->orientation.y = orientation_->orientation.y;
     imu_data->orientation.z = orientation_->orientation.z;
+
+    return true;
 }

@@ -4,6 +4,8 @@ from ctypes import (
     BigEndianStructure,
     LittleEndianStructure,
     Structure,
+    c_double,
+    c_float,
     c_int8,
     c_int16,
     c_int32,
@@ -20,7 +22,9 @@ from bw_tools.structs.teleop_bridge.packet_type import PacketType
 
 T = TypeVar("T", bound="Packet")
 
-SupportedTypes = Type[Union[c_int8, c_uint8, c_uint16, c_int16, c_uint32, c_int32, c_uint64, c_int64, Array, Structure]]
+SupportedTypes = Type[
+    Union[c_int8, c_uint8, c_uint16, c_int16, c_uint32, c_int32, c_uint64, c_int64, c_float, c_double, Array, Structure]
+]
 
 
 def build_struct(

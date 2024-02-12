@@ -99,15 +99,18 @@ void UdpBridge::respond_to_ping(ping_info_p packet)
 
 void UdpBridge::send_imu()
 {
-    Serial.println("something 0");
     if (!imu_sensor_inst_->is_connected())
     {
         return;
     }
-    Serial.println("something 1");
-    imu_sensor_inst_->update();
-    imu_sensor_inst_->get_imu_data((bridge::imu_data_p)write_buffer_);
-    UDP.beginPacket(UDP.remoteIP(), UDP.remotePort());
-    UDP.write(write_buffer_, sizeof(bridge::imu_data_t));
-    UDP.endPacket();
+    bridge::imu_data_p imu_struct = (bridge::imu_data_p)write_buffer_;
+    if (imu_sensor_inst_->get_imu_data(imu_struct))
+    {
+        imu_struct->size = sizeof(bridge::imu_data_t);
+        imu_struct->type = bridge::IMU;
+        imu_struct->device_id = device_config_->device_id;
+        UDP.beginPacket(UDP.remoteIP(), UDP.remotePort());
+        UDP.write(write_buffer_, sizeof(bridge::imu_data_t));
+        UDP.endPacket();
+    }
 }

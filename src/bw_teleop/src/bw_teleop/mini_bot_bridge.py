@@ -2,20 +2,23 @@
 import json
 import math
 import time
+from typing import Callable
 
 import rospy
 from bw_interfaces.msg import EstimatedObject, EstimatedObjectArray, MotorVelocities
+from bw_tools.structs.teleop_bridge.imu_sensor import ImuSensor
 from bw_tools.structs.teleop_bridge.motor_command import MotorCommand
+from bw_tools.structs.teleop_bridge.packet import Packet
 from bw_tools.structs.teleop_bridge.ping_info import PingInfo
 from bw_tools.typing import get_param
 from geometry_msgs.msg import Quaternion, Twist
+from sensor_msgs.msg import Imu
 from std_msgs.msg import Float64
 from tf import transformations
 
-from bw_teleop.bridge_interface import BridgeInterface
+from bw_teleop.bridge_interface import BridgeInterface, T
 from bw_teleop.motor_characterization.lookup_table_conversion import LookupTable
 from bw_teleop.parameters import load_rosparam_robot_config
-from bw_teleop.slew_rate_limiter import SlewLimiter
 
 
 class MiniBotBridge:
@@ -25,6 +28,7 @@ class MiniBotBridge:
         port = get_param("~port", 4176)
         device_id = self.mini_bot_config.bridge_id
         broadcast_address = get_param("~broadcast_address", "192.168.8.255")
+        self.robot_frame_prefix = get_param("~robot_frame_prefix", "base_link")
 
         self.rate = get_param("~rate", 1000)
         self.base_radius = self.mini_bot_config.base_width / 2
@@ -52,9 +56,12 @@ class MiniBotBridge:
         self.command = [0.0, 0.0]
         self.mini_bot_state = EstimatedObject()
 
-        self.bridge = BridgeInterface(broadcast_address, port, device_id, {PingInfo: self.ping_callback})
+        self.bridge = BridgeInterface(broadcast_address, port, device_id)
+        self.bridge.register_callback(PingInfo, self.ping_callback)
+        self.bridge.register_callback(ImuSensor, self.imu_callback)
 
         self.ping_pub = rospy.Publisher("ping", Float64, queue_size=1)
+        self.imu_pub = rospy.Publisher("imu", Imu, queue_size=1)
         self.motor_velocities_pub = rospy.Publisher("motor_velocities", MotorVelocities, queue_size=1)
 
         self.ping_timer = rospy.Timer(rospy.Duration.from_sec(0.2), self.ping_timer_callback)
@@ -126,6 +133,12 @@ class MiniBotBridge:
         latency = self.bridge.compute_latency(ping_info)
         self.prev_ping_time = time.perf_counter()
         self.ping_pub.publish(latency)
+
+    def imu_callback(self, imu: ImuSensor) -> None:
+        msg = imu.to_msg()
+        msg.header.stamp = rospy.Time.now()
+        msg.header.frame_id = self.robot_frame_prefix + "_" + self.mini_bot_config.name
+        self.imu_pub.publish(msg)
 
     def check_ping(self) -> None:
         ping_delay = time.perf_counter() - self.prev_ping_time

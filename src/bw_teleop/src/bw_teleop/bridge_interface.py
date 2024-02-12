@@ -14,6 +14,7 @@ from bw_tools.structs.teleop_bridge.ping_info import PingInfo
 BUFFER_SIZE = 512
 
 T = TypeVar("T", bound=Packet)
+T_co = TypeVar("T_co", bound=Packet, covariant=True)
 
 
 def is_loopback(host: str):
@@ -38,13 +39,12 @@ class BridgeInterface:
         broadcast_address: str,
         port: int,
         device_id: int,
-        packet_callbacks: Dict[Type[T], Callable[[T], None]],
     ) -> None:
         self.port = port
         self.device_id = device_id
         self.broadcast_address = broadcast_address
-        self.packet_type_to_class = {packet_cls.TYPE: packet_cls for packet_cls in packet_callbacks.keys()}
-        self.packet_callbacks = packet_callbacks
+        self.packet_type_to_class = {}
+        self.packet_callbacks = {}
 
         self.destination = ""
         self.blacklist_ips = set()
@@ -56,6 +56,10 @@ class BridgeInterface:
         self.socket.setblocking(False)
 
         self.start_time = time.perf_counter()
+
+    def register_callback(self, packet_cls: Type[T], callback: Callable[[T], None]) -> None:
+        self.packet_callbacks[packet_cls] = callback
+        self.packet_type_to_class[packet_cls.TYPE] = packet_cls
 
     def send_packet(self, packet: bytes) -> None:
         if self.destination:
