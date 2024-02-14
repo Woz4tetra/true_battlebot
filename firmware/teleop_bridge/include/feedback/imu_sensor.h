@@ -24,6 +24,7 @@ namespace imu_sensor
         Adafruit_BNO055 *bno;
         bool _connected = false;
         sensors_event_t *orientation_, *angular_vel_, *accel_;
+        uint32_t last_update_time_ = 0;
     };
 } // namespace imu_sensor
 

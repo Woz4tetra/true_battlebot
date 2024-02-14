@@ -78,7 +78,6 @@ void setup()
     angular_pid->Kp = 6.0;
     angular_pid->Ki = 0.1;
     angular_pid->Kd = 0.02;
-    angular_pid->set_deadzones(0.0, 0.1);
 
     controller = new esc_tank_controller::EscTankController(left_motor, right_motor, imu_sensor_inst, angular_pid, BASE_WIDTH, WHEEL_RADIUS);
     udp_interface = udp_bridge::UdpBridge::get_instance(DEVICE_CONFIG, UDP_READ_BUFFER, UDP_WRITE_BUFFER, controller, imu_sensor_inst);

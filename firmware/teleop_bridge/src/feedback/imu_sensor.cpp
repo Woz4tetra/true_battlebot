@@ -25,6 +25,8 @@ bool ImuSensor::begin()
 
     // Use external crystal for better accuracy
     bno->setExtCrystalUse(true);
+    delay(250); // Give the sensor time to initialize
+    last_update_time_ = millis();
 
     return true;
 }
@@ -35,9 +37,32 @@ bool ImuSensor::update()
     {
         return false;
     }
-    bno->getEvent(orientation_, Adafruit_BNO055::VECTOR_EULER);
-    bno->getEvent(angular_vel_, Adafruit_BNO055::VECTOR_GYROSCOPE);
-    bno->getEvent(accel_, Adafruit_BNO055::VECTOR_LINEARACCEL);
+
+    uint32_t current_time = millis();
+
+    if (current_time - last_update_time_ > 500)
+    {
+        Serial.println("BNO055 disconnected or has a fault. Trying to reestablish connection...");
+        if (bno->begin())
+        {
+            Serial.println("Connection to BNO055 reestablished.");
+        }
+        last_update_time_ = millis();
+        return false; // Wait for next update to try again
+    }
+    sensors_event_t orientation, angular_vel, accel;
+    bno->getEvent(&orientation, Adafruit_BNO055::VECTOR_EULER);
+    bno->getEvent(&angular_vel, Adafruit_BNO055::VECTOR_GYROSCOPE);
+    bno->getEvent(&accel, Adafruit_BNO055::VECTOR_ACCELEROMETER);
+    if (accel.acceleration.x != accel_->acceleration.x &&
+        accel.acceleration.y != accel_->acceleration.y &&
+        accel.acceleration.z != accel_->acceleration.z)
+    {
+        last_update_time_ = current_time;
+    }
+    *orientation_ = orientation;
+    *angular_vel_ = angular_vel;
+    *accel_ = accel;
     return true;
 }
 
