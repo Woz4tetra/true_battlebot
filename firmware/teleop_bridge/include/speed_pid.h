@@ -14,7 +14,7 @@ namespace speed_pid
         uint32_t current_time, prev_update_time;
         float dt;
         float out;
-        float deadzone_command, standstill_deadzone_command;
+        float deadzone_command;
         float K_ff; // feedforward constant
 
     public:
@@ -30,7 +30,7 @@ namespace speed_pid
         float limit(float value);
         float compute(float measurement);
         float get_last_command() { return out; };
-        void set_deadzones(float K_ff, float deadzone_command, float standstill_deadzone_command);
+        void set_deadzones(float K_ff, float deadzone_command);
 
         static float sign(float x);
         static int sign(int x);

@@ -29,7 +29,7 @@ namespace serial_bridge
         SerialBridgeState get_state() { return state_; }
 
     protected:
-        void set_motor(uint8_t channel, int velocity);
+        void set_motor(uint8_t channel, float velocity);
         void respond_to_ping(bridge::ping_info_p packet);
         void respond_to_config(bridge::config_info_p config_info);
 

@@ -29,7 +29,7 @@ bool SerialBridge::update()
     return false;
 }
 
-void SerialBridge::set_motor(uint8_t channel, int velocity)
+void SerialBridge::set_motor(uint8_t channel, float velocity_mps)
 {
     Serial.println("Setting motor over serial is not allowed.");
 }

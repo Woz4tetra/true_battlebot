@@ -31,11 +31,9 @@ def build_struct(
     fields: List[Tuple[str, SupportedTypes]], byteorder: Literal["big", "little"] = "little"
 ) -> Type[Structure]:
     class LittleStruct(LittleEndianStructure):
-        _pack_ = 1
         _fields_ = fields
 
     class BigStruct(BigEndianStructure):
-        _pack_ = 1
         _fields_ = fields
 
     return LittleStruct if byteorder == "little" else BigStruct

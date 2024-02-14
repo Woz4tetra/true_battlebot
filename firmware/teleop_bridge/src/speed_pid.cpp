@@ -12,13 +12,12 @@ SpeedPID::SpeedPID()
     prev_update_time = 0;
     dt = 0.0;
     out = 0.0;
-    command_min = -255;
-    command_max = 255;
+    command_min = -1000.0;
+    command_max = 1000.0;
     epsilon = 1E-3;
 
     K_ff = 0.0;
     deadzone_command = 0.0;
-    standstill_deadzone_command = 0.0;
     error_sum_clamp = 0.0;
     Kp = 1.0;
     Ki = 0.0;
@@ -35,11 +34,10 @@ int SpeedPID::sign(int x)
     return (x > 0) - (x < 0);
 }
 
-void SpeedPID::set_deadzones(float K_ff, float deadzone_command, float standstill_deadzone_command)
+void SpeedPID::set_deadzones(float K_ff, float deadzone_command)
 {
     this->K_ff = K_ff;
     this->deadzone_command = deadzone_command;
-    this->standstill_deadzone_command = standstill_deadzone_command;
 }
 
 void SpeedPID::set_target(float target)
@@ -136,11 +134,6 @@ float SpeedPID::compute(float measurement)
         }
     }
     out += feedforward;
-
-    if (standstill_deadzone_command != 0.0 && abs(target) > epsilon && abs(measurement) < epsilon)
-    {
-        out = sign(target) * standstill_deadzone_command;
-    }
 
     return limit(out);
 }

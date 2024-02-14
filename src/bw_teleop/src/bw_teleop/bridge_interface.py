@@ -2,7 +2,7 @@
 import socket
 import struct
 import time
-from typing import Callable, Dict, List, Optional, Type, TypeVar
+from typing import Callable, List, Optional, Type, TypeVar
 
 import rospy
 from bw_tools.structs.teleop_bridge.header import Header

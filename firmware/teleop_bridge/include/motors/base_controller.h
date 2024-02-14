@@ -23,7 +23,7 @@ namespace base_controller
          * @param speed The speed to set the motor to (0..255)
          * @param direction The direction to set the motor to (negative == backwards, 0 == stop, positive == forward)
          */
-        virtual void set_motor(uint8_t channel, int velocity);
+        virtual void set_motor(uint8_t channel, float velocity);
 
         /**
          * @brief Get the motor channel
@@ -31,7 +31,7 @@ namespace base_controller
          * @param channel The motor channel to get
          * @return int The speed of the motor
          */
-        virtual int get_motor(uint8_t channel);
+        virtual int get_command(uint8_t channel);
 
         /**
          * @brief Stop all motors

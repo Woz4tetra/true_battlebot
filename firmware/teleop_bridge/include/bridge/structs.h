@@ -31,8 +31,7 @@ namespace bridge
     // MOTOR
     typedef struct motor_command
     {
-        int8_t direction;
-        uint8_t speed;
+        int16_t velocity; // ground meters per second * 1000
     } motor_command_t, *motorCommand_p;
 
     typedef struct motor_description : header

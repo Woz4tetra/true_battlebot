@@ -35,7 +35,7 @@ namespace udp_bridge
         void send_imu();
 
     protected:
-        void set_motor(uint8_t channel, int velocity);
+        void set_motor(uint8_t channel, float velocity);
         void respond_to_ping(bridge::ping_info_p packet);
         void respond_to_config(bridge::config_info_p config_info);
 

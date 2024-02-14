@@ -1,16 +1,12 @@
 #include <motors/esc_motor.h>
 
 using namespace esc_motor;
-using namespace base_feedback;
-using namespace speed_pid;
 
-EscMotor::EscMotor(int pin, float max_speed, BaseFeedback *feedback, SpeedPID *pid)
+EscMotor::EscMotor(int pin, bool flipped)
 {
-    max_speed_ = max_speed;
     pin_ = pin;
+    flipped_ = flipped;
     servo_ = new Servo();
-    pid_ = pid;
-    feedback_ = feedback;
 }
 
 void EscMotor::begin()
@@ -19,30 +15,22 @@ void EscMotor::begin()
     stop();
 }
 
-void EscMotor::update()
-{
-    float command_velocity = get_velocity();
-    if (command_velocity != 0.0 && feedback_->has_feedback())
-    {
-        command_velocity = pid_->compute(feedback_->get_feedback());
-    }
-    int pulse_width = velocity_to_pulse(command_velocity);
-    update_servo(pulse_width);
-}
-
 void EscMotor::set_command(int command)
 {
-    pid_->set_target((float)command / 255.0 * max_speed_);
+    if (flipped_)
+    {
+        command = -command;
+    }
+    update_servo(command);
 }
 
 int EscMotor::get_command()
 {
-    return (int)(get_velocity() / max_speed_ * 255.0);
+    return last_command_;
 }
 
-int EscMotor::velocity_to_pulse(float velocity)
+int EscMotor::command_to_pulse(int command)
 {
-    int command = (int)(velocity / max_speed_ * 255.0);
     int speed = abs(command);
     int pulse_width;
     // reverse is 800-1500μs
@@ -64,37 +52,37 @@ int EscMotor::velocity_to_pulse(float velocity)
     return pulse_width;
 }
 
-int EscMotor::compute_pwm_percentages(int pulse_width)
+int EscMotor::compute_pwm_percentages(int command)
 {
     float on_counts = 0.0;
-    if (pulse_width < STOP_MOTOR_PULSE_WIDTH)
+    if (command < STOP_MOTOR_COMMAND)
     {
-        on_counts = 100.0 * (float)(STOP_MOTOR_PULSE_WIDTH - pulse_width) / (MINIMUM_FORWARD_PULSE_WIDTH - STOP_MOTOR_PULSE_WIDTH);
+        on_counts = 100.0 * (float)(STOP_MOTOR_COMMAND - command) / (UPPER_CUTOFF_COMMAND - STOP_MOTOR_COMMAND);
     }
     else
     {
-        on_counts = 100.0 * (float)(pulse_width - STOP_MOTOR_PULSE_WIDTH) / (STOP_MOTOR_PULSE_WIDTH - MINIMUM_BACKWARD_PULSE_WIDTH);
+        on_counts = 100.0 * (float)(command - STOP_MOTOR_COMMAND) / (STOP_MOTOR_COMMAND - LOWER_CUTOFF_COMMAND);
     }
     return (int)on_counts;
 }
 
-void EscMotor::update_servo(int pulse_width)
+void EscMotor::update_servo(int command)
 {
-    int on_counts = compute_pwm_percentages(pulse_width);
-    if ((MINIMUM_BACKWARD_PULSE_WIDTH <= pulse_width || pulse_width <= MINIMUM_FORWARD_PULSE_WIDTH) && pulse_width != STOP_MOTOR_PULSE_WIDTH)
+    int on_counts = compute_pwm_percentages(command);
+    if ((LOWER_CUTOFF_COMMAND <= command || command <= UPPER_CUTOFF_COMMAND) && command != STOP_MOTOR_COMMAND)
     {
         if (counter_ > on_counts)
         {
-            pulse_width = STOP_MOTOR_PULSE_WIDTH;
+            command = STOP_MOTOR_COMMAND;
         }
         else
         {
-            pulse_width = pulse_width > STOP_MOTOR_PULSE_WIDTH ? MINIMUM_FORWARD_PULSE_WIDTH : MINIMUM_BACKWARD_PULSE_WIDTH;
+            command = command > STOP_MOTOR_COMMAND ? UPPER_CUTOFF_COMMAND : LOWER_CUTOFF_COMMAND;
         }
     }
-    servo_->writeMicroseconds(pulse_width);
+    servo_->writeMicroseconds(command_to_pulse(command));
     counter_++;
-    if (counter_ >= 100)
+    if (counter_ >= 30)
     {
         counter_ = 0;
     }

@@ -19,17 +19,9 @@ bool BaseBridge::process_motor_packet(char *packet, int packet_size)
     // Set the motor speed and direction for each channel
     for (int channel = 0; channel < motor_desc->num_channels; channel++)
     {
-        uint8_t speed = motor_desc->commands[channel].speed;
-        int8_t direction = motor_desc->commands[channel].direction;
-        int velocity;
-        if (direction < 0)
-            velocity = -speed;
-        else if (direction > 0)
-            velocity = speed;
-        else
-            velocity = 0;
-
-        set_motor(channel, velocity);
+        int16_t velocity_command = motor_desc->commands[channel].velocity;
+        float velocity_mps = velocity_command / 1000.0;
+        set_motor(channel, velocity_mps);
     }
 
     return true;

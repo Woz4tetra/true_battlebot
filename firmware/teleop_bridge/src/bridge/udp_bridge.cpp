@@ -78,9 +78,9 @@ bool UdpBridge::ready_callback()
     return processed_packet;
 }
 
-void UdpBridge::set_motor(uint8_t channel, int velocity)
+void UdpBridge::set_motor(uint8_t channel, float velocity_mps)
 {
-    controller_->set_motor(channel, velocity);
+    controller_->set_motor(channel, velocity_mps);
 }
 
 void UdpBridge::respond_to_config(config_info_p config_info)

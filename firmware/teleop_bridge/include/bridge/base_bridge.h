@@ -16,7 +16,7 @@ public:
 protected:
     bridge::config_info_p device_config_;
 
-    virtual void set_motor(uint8_t channel, int velocity);
+    virtual void set_motor(uint8_t channel, float velocity);
     virtual void respond_to_ping(bridge::ping_info_p packet);
     virtual void respond_to_config(bridge::config_info_p config_info);
     bool process_packet(char *packet, int packet_size);

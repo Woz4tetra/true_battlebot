@@ -11,16 +11,14 @@
 #include <bridge/persistent_config.h>
 #include <motors/esc_tank_controller.h>
 #include <motors/esc_motor.h>
-#include <feedback/base_feedback.h>
-#include <feedback/imu_feedback.h>
 #include <feedback/imu_sensor.h>
 #include <status_lights/status_neopixel.h>
 
 #define CHANNEL_1 17 // A1 -> channel 1 (left)
 #define CHANNEL_2 9  // A2 -> channel 2 (right)
 
-const float MAX_SPEED = 1.5f;
-const float IMU_CONVERSION_RADIUS = 0.1f;
+const float WHEEL_RADIUS = 0.2f;
+const float BASE_WIDTH = 0.1f;
 
 char UDP_READ_BUFFER[bridge::PACKET_MAX_LENGTH];
 uint8_t UDP_WRITE_BUFFER[bridge::PACKET_MAX_LENGTH];
@@ -41,13 +39,13 @@ uint32_t last_command = 0;       // The last time a packet was received (millise
 const int IMU_SEND_INTERVAL = 100;
 uint32_t last_imu_send = 0;
 
-int get_max_motor_speed()
+int get_max_command()
 {
     int max_speed = 0;
     for (int channel = 0; channel < controller->get_num_channels(); channel++)
     {
-        int velocity = controller->get_motor(channel);
-        int speed = abs(velocity);
+        int command = controller->get_command(channel);
+        int speed = abs(command);
         if (speed > max_speed)
         {
             max_speed = speed;
@@ -73,23 +71,16 @@ void setup()
 
     imu_sensor_inst = new imu_sensor::ImuSensor();
 
-    base_feedback::BaseFeedback *left_feedback = new imu_feedback::ImuFeedback(imu_sensor_inst, IMU_CONVERSION_RADIUS);
-    speed_pid::SpeedPID *left_pid = new speed_pid::SpeedPID();
-    left_pid->Kp = 1.0;
-    left_pid->Ki = 0.05;
-    left_pid->Kd = 0.001;
-    left_pid->set_deadzones(1.0, 0.0, 0.0);
-    left_motor = new esc_motor::EscMotor(CHANNEL_1, MAX_SPEED, left_feedback, left_pid);
+    left_motor = new esc_motor::EscMotor(CHANNEL_1, true);
+    right_motor = new esc_motor::EscMotor(CHANNEL_2, false);
 
-    base_feedback::BaseFeedback *right_feedback = new imu_feedback::ImuFeedback(imu_sensor_inst, -IMU_CONVERSION_RADIUS);
-    speed_pid::SpeedPID *right_pid = new speed_pid::SpeedPID();
-    right_pid->Kp = 1.0;
-    right_pid->Ki = 0.05;
-    right_pid->Kd = 0.001;
-    right_pid->set_deadzones(1.0, 0.0, 0.0);
-    right_motor = new esc_motor::EscMotor(CHANNEL_2, MAX_SPEED, right_feedback, right_pid);
+    speed_pid::SpeedPID *angular_pid = new speed_pid::SpeedPID();
+    angular_pid->Kp = 6.0;
+    angular_pid->Ki = 0.1;
+    angular_pid->Kd = 0.02;
+    angular_pid->set_deadzones(0.0, 0.1);
 
-    controller = new esc_tank_controller::EscTankController(left_motor, right_motor);
+    controller = new esc_tank_controller::EscTankController(left_motor, right_motor, imu_sensor_inst, angular_pid, BASE_WIDTH, WHEEL_RADIUS);
     udp_interface = udp_bridge::UdpBridge::get_instance(DEVICE_CONFIG, UDP_READ_BUFFER, UDP_WRITE_BUFFER, controller, imu_sensor_inst);
     serial_interface = serial_bridge::SerialBridge::get_instance(DEVICE_CONFIG, SERIAL_READ_BUFFER, persistent_config_inst);
     neopixel_status = new status_neopixel::StatusNeopixel();
@@ -165,7 +156,7 @@ void loop()
             else
             {
                 neopixel_status->set_state(status_base::OK);
-                neopixel_status->set_speed_readout(get_max_motor_speed());
+                neopixel_status->set_speed_readout(get_max_command());
             }
 
             imu_sensor_inst->update();
