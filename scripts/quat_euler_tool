@@ -1,0 +1,477 @@
+#!/usr/bin/env python
+import argparse
+import math
+from collections import namedtuple
+from enum import Enum
+from typing import Dict, Literal, Protocol, Tuple, Union, cast
+
+import numpy as np
+import yaml
+
+Euler = namedtuple("Euler", ("roll", "pitch", "yaw"))
+Quaternion = namedtuple("Quaternion", ("x", "y", "z", "w"))
+
+# axis sequences for Euler angles
+_NEXT_AXIS = [1, 2, 0, 1]
+
+# epsilon for testing whether a number is close to zero
+_EPS = np.finfo(float).eps * 4.0
+
+AXIS_KEY = Union[str, Tuple[int, int, int, int]]
+
+# map axes strings to/from tuples of inner axis, parity, repetition, frame
+_AXES2TUPLE: Dict[str, Tuple[int, int, int, int]] = {
+    "sxyz": (0, 0, 0, 0),
+    "sxyx": (0, 0, 1, 0),
+    "sxzy": (0, 1, 0, 0),
+    "sxzx": (0, 1, 1, 0),
+    "syzx": (1, 0, 0, 0),
+    "syzy": (1, 0, 1, 0),
+    "syxz": (1, 1, 0, 0),
+    "syxy": (1, 1, 1, 0),
+    "szxy": (2, 0, 0, 0),
+    "szxz": (2, 0, 1, 0),
+    "szyx": (2, 1, 0, 0),
+    "szyz": (2, 1, 1, 0),
+    "rzyx": (0, 0, 0, 1),
+    "rxyx": (0, 0, 1, 1),
+    "ryzx": (0, 1, 0, 1),
+    "rxzx": (0, 1, 1, 1),
+    "rxzy": (1, 0, 0, 1),
+    "ryzy": (1, 0, 1, 1),
+    "rzxy": (1, 1, 0, 1),
+    "ryxy": (1, 1, 1, 1),
+    "ryxz": (2, 0, 0, 1),
+    "rzxz": (2, 0, 1, 1),
+    "rxyz": (2, 1, 0, 1),
+    "rzyz": (2, 1, 1, 1),
+}
+
+_TUPLE2AXES = dict((v, k) for k, v in _AXES2TUPLE.items())
+
+
+def euler_matrix(euler_angles: Euler, axes: AXIS_KEY = "sxyz") -> np.ndarray:
+    """
+    Ripped from tf_conversions.transformations for portability.
+    Return homogeneous rotation matrix from Euler angles and axis sequence.
+
+    euler_angles: Euler's roll, pitch and yaw angles in that order.
+    axes: One of 24 axis sequences as string or encoded tuple
+
+    >>> R = euler_matrix((1, 2, 3), 'syxz')
+    >>> np.allclose(np.sum(R[0]), -1.34786452)
+    True
+    >>> R = euler_matrix((1, 2, 3), (0, 1, 0, 1))
+    >>> np.allclose(np.sum(R[0]), -0.383436184)
+    True
+    >>> ai, aj, ak = (4.0*math.pi) * (np.random.random(3) - 0.5)
+    >>> for axes in _AXES2TUPLE.keys():
+            R = euler_matrix((ai, aj, ak), axes)
+    >>> for axes in _TUPLE2AXES.keys():
+            R = euler_matrix((ai, aj, ak), axes)
+
+    """
+    if isinstance(axes, str):
+        firstaxis, parity, repetition, frame = _AXES2TUPLE[axes]
+    else:
+        _ = _TUPLE2AXES[axes]  # ensure key is valid. Throw exception otherwise.
+        firstaxis, parity, repetition, frame = axes
+
+    i = firstaxis
+    j = _NEXT_AXIS[i + parity]
+    k = _NEXT_AXIS[i - parity + 1]
+
+    ai, aj, ak = euler_angles
+
+    if frame:
+        ai, ak = ak, ai
+    if parity:
+        ai, aj, ak = -ai, -aj, -ak
+
+    si, sj, sk = math.sin(ai), math.sin(aj), math.sin(ak)
+    ci, cj, ck = math.cos(ai), math.cos(aj), math.cos(ak)
+    cc, cs = ci * ck, ci * sk
+    sc, ss = si * ck, si * sk
+
+    mat = np.identity(4)
+    if repetition:
+        mat[i, i] = cj
+        mat[i, j] = sj * si
+        mat[i, k] = sj * ci
+        mat[j, i] = sj * sk
+        mat[j, j] = -cj * ss + cc
+        mat[j, k] = -cj * cs - sc
+        mat[k, i] = -sj * ck
+        mat[k, j] = cj * sc + cs
+        mat[k, k] = cj * cc - ss
+    else:
+        mat[i, i] = cj * ck
+        mat[i, j] = sj * sc - cs
+        mat[i, k] = sj * cc + ss
+        mat[j, i] = cj * sk
+        mat[j, j] = sj * ss + cc
+        mat[j, k] = sj * cs - sc
+        mat[k, i] = -sj
+        mat[k, j] = cj * si
+        mat[k, k] = cj * ci
+    return mat
+
+
+def euler_from_matrix(matrix: np.ndarray, axes: AXIS_KEY = "sxyz") -> Euler:
+    """
+    Ripped from tf_conversions.transformations for portability.
+    Return Euler angles from rotation matrix for specified axis sequence.
+
+    axes : One of 24 axis sequences as string or encoded tuple
+
+    Note that many Euler angle triplets can describe one matrix.
+
+    >>> R0 = euler_matrix(1, 2, 3, 'syxz')
+    >>> al, be, ga = euler_from_matrix(R0, 'syxz')
+    >>> R1 = euler_matrix(al, be, ga, 'syxz')
+    >>> np.allclose(R0, R1)
+    True
+    >>> angles = (4.0*math.pi) * (np.random.random(3) - 0.5)
+    >>> for axes in _AXES2TUPLE.keys():
+    ...    R0 = euler_matrix(axes=axes, *angles)
+    ...    R1 = euler_matrix(axes=axes, *euler_from_matrix(R0, axes))
+    ...    if not np.allclose(R0, R1): print axes, "failed"
+
+    """
+    if isinstance(axes, str):
+        firstaxis, parity, repetition, frame = _AXES2TUPLE[axes]
+    else:
+        _ = _TUPLE2AXES[axes]  # ensure key is valid. Throw exception otherwise.
+        firstaxis, parity, repetition, frame = axes
+
+    i = firstaxis
+    j = _NEXT_AXIS[i + parity]
+    k = _NEXT_AXIS[i - parity + 1]
+
+    mat = np.array(matrix, dtype=np.float64, copy=False)[:3, :3]
+    if repetition:
+        sy = math.sqrt(mat[i, j] * mat[i, j] + mat[i, k] * mat[i, k])
+        if sy > _EPS:
+            ax = math.atan2(mat[i, j], mat[i, k])
+            ay = math.atan2(sy, mat[i, i])
+            az = math.atan2(mat[j, i], -mat[k, i])
+        else:
+            ax = math.atan2(-mat[j, k], mat[j, j])
+            ay = math.atan2(sy, mat[i, i])
+            az = 0.0
+    else:
+        cy = math.sqrt(mat[i, i] * mat[i, i] + mat[j, i] * mat[j, i])
+        if cy > _EPS:
+            ax = math.atan2(mat[k, j], mat[k, k])
+            ay = math.atan2(-mat[k, i], cy)
+            az = math.atan2(mat[j, i], mat[i, i])
+        else:
+            ax = math.atan2(-mat[j, k], mat[j, j])
+            ay = math.atan2(-mat[k, i], cy)
+            az = 0.0
+
+    if parity:
+        ax, ay, az = -ax, -ay, -az
+    if frame:
+        ax, az = az, ax
+    return Euler(ax, ay, az)
+
+
+def quaternion_matrix(quaternion: Quaternion) -> np.ndarray:
+    """
+    Ripped from tf_conversions.transformations for portability.
+    Return homogeneous rotation matrix from quaternion.
+
+    >>> R = quaternion_matrix(Quaternion(x=0.06146124, y=0, z=0, w=0.99810947))
+    >>> np.allclose(R, rotation_matrix(0.123, (1, 0, 0)))
+    True
+
+    """
+    q = np.array(quaternion, dtype=np.float64, copy=True)
+    nq = np.dot(q, q)
+    if nq < _EPS:
+        return np.identity(4)
+    q *= math.sqrt(2.0 / nq)
+    q = np.outer(q, q)
+    return np.array(
+        (
+            (1.0 - q[1, 1] - q[2, 2], q[0, 1] - q[2, 3], q[0, 2] + q[1, 3], 0.0),
+            (q[0, 1] + q[2, 3], 1.0 - q[0, 0] - q[2, 2], q[1, 2] - q[0, 3], 0.0),
+            (q[0, 2] - q[1, 3], q[1, 2] + q[0, 3], 1.0 - q[0, 0] - q[1, 1], 0.0),
+            (0.0, 0.0, 0.0, 1.0),
+        ),
+        dtype=np.float64,
+    )
+
+
+def quaternion_from_matrix(matrix: np.ndarray):
+    """
+    Ripped from tf_conversions.transformations for portability.
+    Return quaternion from rotation matrix.
+
+    >>> R = rotation_matrix(0.123, (1, 2, 3))
+    >>> q = quaternion_from_matrix(R)
+    >>> np.allclose(q, [0.0164262, 0.0328524, 0.0492786, 0.9981095])
+    True
+
+    """
+    q = np.empty((4,), dtype=np.float64)
+    mat = np.array(matrix, dtype=np.float64, copy=False)[:4, :4]
+    t = np.trace(mat)
+    if t > mat[3, 3]:
+        q[3] = t
+        q[2] = mat[1, 0] - mat[0, 1]
+        q[1] = mat[0, 2] - mat[2, 0]
+        q[0] = mat[2, 1] - mat[1, 2]
+    else:
+        i, j, k = 0, 1, 2
+        if mat[1, 1] > mat[0, 0]:
+            i, j, k = 1, 2, 0
+        if mat[2, 2] > mat[i, i]:
+            i, j, k = 2, 0, 1
+        t = mat[i, i] - (mat[j, j] + mat[k, k]) + mat[3, 3]
+        q[i] = t
+        q[j] = mat[i, j] + mat[j, i]
+        q[k] = mat[k, i] + mat[i, k]
+        q[3] = mat[k, j] - mat[j, k]
+    q *= 0.5 / math.sqrt(t * mat[3, 3])
+    return Quaternion(*q)
+
+
+class EulerUnit(Enum):
+    DEGREES = "deg"
+    RADIANS = "rad"
+
+
+class FormatOption(Enum):
+    LIST = "list"
+    NUMPY = "numpy"
+    LAUNCH = "launch"
+    YAML = "yaml"
+
+
+class ToEulerCommandLineArgs(Protocol):
+    command: Literal["euler"]
+    values: str
+    input_format: FormatOption
+    output_format: FormatOption
+    units: EulerUnit
+    precision: int
+
+
+class ToQuatCommandLineArgs(Protocol):
+    command: Literal["quat"]
+    values: str
+    input_format: FormatOption
+    output_format: FormatOption
+    units: EulerUnit
+    precision: int
+
+
+CommandLineArgs = Union[ToEulerCommandLineArgs, ToQuatCommandLineArgs]
+
+
+def parse_args() -> CommandLineArgs:
+    parser = argparse.ArgumentParser(description="quat_euler_tool")
+    sub_parsers = parser.add_subparsers(dest="command")
+    to_euler_parser = sub_parsers.add_parser("toeuler", help="Convert quaternion to euler")
+    to_euler_parser.add_argument("values", type=str, nargs="+", help="Quaternion values")
+    to_euler_parser.add_argument(
+        "-i",
+        "--input-format",
+        type=FormatOption,
+        choices=list(FormatOption),
+        default=FormatOption.NUMPY,
+        help="Input format",
+    )
+    to_euler_parser.add_argument(
+        "-o",
+        "--output-format",
+        type=FormatOption,
+        choices=list(FormatOption),
+        default=FormatOption.NUMPY,
+        help="Output format",
+    )
+    to_euler_parser.add_argument(
+        "-u",
+        "--units",
+        type=EulerUnit,
+        choices=list(EulerUnit),
+        default=EulerUnit.DEGREES,
+        help="Output units",
+    )
+    to_euler_parser.add_argument(
+        "-p",
+        "--precision",
+        type=int,
+        default=6,
+        help="Number of decimal places to round to",
+    )
+
+    to_quat_parser = sub_parsers.add_parser("toquat", help="Convert euler to quaternion")
+    to_quat_parser.add_argument("values", type=str, nargs="+", help="Euler values")
+    to_quat_parser.add_argument(
+        "-i",
+        "--input-format",
+        type=FormatOption,
+        choices=list(FormatOption),
+        default=FormatOption.NUMPY,
+        help="Input format",
+    )
+    to_quat_parser.add_argument(
+        "-o",
+        "--output-format",
+        type=FormatOption,
+        choices=list(FormatOption),
+        default=FormatOption.NUMPY,
+        help="Output format",
+    )
+    to_quat_parser.add_argument(
+        "-u",
+        "--units",
+        type=EulerUnit,
+        choices=list(EulerUnit),
+        default=EulerUnit.DEGREES,
+        help="Input units",
+    )
+    to_quat_parser.add_argument(
+        "-p",
+        "--precision",
+        type=int,
+        default=6,
+        help="Number of decimal places to round to",
+    )
+
+    return cast(CommandLineArgs, parser.parse_args())
+
+
+def load_quaternion(args: ToEulerCommandLineArgs) -> Quaternion:
+    if args.values is None:
+        raise ValueError("No values provided")
+
+    if args.input_format == FormatOption.NUMPY or args.input_format == FormatOption.LAUNCH:
+        values = Quaternion(*tuple(map(float, args.values)))
+    elif args.input_format == FormatOption.LIST:
+        agg_values = []
+        for value in args.values:
+            agg_values.extend(value.split(","))
+        values = Quaternion(*tuple(map(float, agg_values)))
+    elif args.input_format == FormatOption.YAML:
+        yaml_str = " ".join(args.values)
+        data = yaml.safe_load(yaml_str)
+        values = Quaternion(x=data["qx"], y=data["qy"], z=data["qz"], w=data["qw"])
+    else:
+        raise ValueError(f"Unsupported input format: {args.input_format}")
+    return values
+
+
+def load_euler(args: ToQuatCommandLineArgs) -> Euler:
+    if args.values is None:
+        raise ValueError("No values provided")
+
+    if args.input_format == FormatOption.NUMPY or args.input_format == FormatOption.LAUNCH:
+        values = Euler(*tuple(map(float, args.values)))
+    elif args.input_format == FormatOption.LIST:
+        agg_values = []
+        for value in args.values:
+            agg_values.extend(value.split(","))
+        values = Euler(*tuple(map(float, agg_values)))
+    elif args.input_format == FormatOption.YAML:
+        yaml_str = " ".join(args.values)
+        data = yaml.safe_load(yaml_str)
+        values = Euler(roll=float(data["roll"]), pitch=float(data["pitch"]), yaw=float(data["yaw"]))
+    else:
+        raise ValueError(f"Unsupported input format: {args.input_format}")
+    if args.units == EulerUnit.DEGREES:
+        values = Euler(*tuple(math.radians(v) for v in values))
+    elif args.units == EulerUnit.RADIANS:
+        pass
+    else:
+        raise ValueError(f"Unsupported units: {args.units}")
+    return values
+
+
+def convert_quat_to_euler_app(args: ToEulerCommandLineArgs) -> None:
+    values = load_quaternion(args)
+    angles = euler_from_matrix(quaternion_matrix(values))
+    if args.units == EulerUnit.DEGREES:
+        angles = Euler(*tuple(math.degrees(v) for v in angles))
+    elif args.units == EulerUnit.RADIANS:
+        pass
+    else:
+        raise ValueError(f"Unsupported units: {args.units}")
+
+    angles = Euler(*tuple(round(v, args.precision) for v in angles))
+
+    if args.output_format == FormatOption.NUMPY:
+        print(angles.roll, angles.pitch, angles.yaw)
+    elif args.output_format == FormatOption.LAUNCH:
+        format_str = "{:" + str(args.precision + 4) + "." + str(args.precision) + "f}"
+        for angle in angles:
+            print(format_str.format(angle), end=" ")
+        print()
+    elif args.output_format == FormatOption.LIST:
+        print(list(angles))
+    elif args.output_format == FormatOption.YAML:
+        print(
+            yaml.dump(
+                {
+                    "roll": float(angles.roll),
+                    "pitch": float(angles.pitch),
+                    "yaw": float(angles.yaw),
+                },
+                default_flow_style=True,
+                sort_keys=False,
+            )
+        )
+    else:
+        raise ValueError(f"Unsupported output format: {args.output_format}")
+
+
+def convert_euler_to_quat_app(args: ToQuatCommandLineArgs) -> None:
+    values = load_euler(args)
+    quat = quaternion_from_matrix(euler_matrix(values))
+
+    quat = Quaternion(*tuple(round(v, args.precision) for v in quat))
+
+    if args.output_format == FormatOption.NUMPY:
+        print(quat.x, quat.y, quat.z, quat.w)
+    elif args.output_format == FormatOption.LAUNCH:
+        format_str = "{:" + str(args.precision + 4) + "." + str(args.precision) + "f}"
+        for value in quat:
+            print(format_str.format(value), end=" ")
+        print()
+    elif args.output_format == FormatOption.LIST:
+        print(list(quat))
+    elif args.output_format == FormatOption.YAML:
+        print(
+            yaml.dump(
+                {
+                    "qx": float(quat.x),
+                    "qy": float(quat.y),
+                    "qz": float(quat.z),
+                    "qw": float(quat.w),
+                },
+                default_flow_style=True,
+                sort_keys=False,
+            )
+        )
+    else:
+        raise ValueError(f"Unsupported output format: {args.output_format}")
+
+
+def main() -> None:
+    args = parse_args()
+    apps = {
+        "toeuler": convert_quat_to_euler_app,
+        "toquat": convert_euler_to_quat_app,
+    }
+    try:
+        apps[args.command](args)
+    except BaseException as e:
+        print("Failed to convert", args, sep="\n")
+        raise e
+
+
+if __name__ == "__main__":
+    main()
