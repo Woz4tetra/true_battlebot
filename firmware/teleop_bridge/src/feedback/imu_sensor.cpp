@@ -63,7 +63,23 @@ bool ImuSensor::update()
     *orientation_ = orientation;
     *angular_vel_ = angular_vel;
     *accel_ = accel;
+
+    filtered_accel_ = filter_k_ * filtered_accel_ + (1 - filter_k_) * accel.acceleration.y;
+
     return true;
+}
+
+float ImuSensor::get_angular_z()
+{
+    // IMU is mounted sideways
+
+    float angular_z = angular_vel_->gyro.y;
+    if (filtered_accel_ < 0.0)
+    {
+        angular_z *= -1;
+    }
+
+    return angular_z;
 }
 
 bool ImuSensor::has_data()
