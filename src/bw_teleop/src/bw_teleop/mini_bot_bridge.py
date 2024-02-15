@@ -2,15 +2,14 @@
 import time
 
 import rospy
-from bw_interfaces.msg import EstimatedObject, EstimatedObjectArray, MotorVelocities
+from bw_interfaces.msg import MotorVelocities
 from bw_tools.structs.teleop_bridge.imu_sensor import ImuSensor
 from bw_tools.structs.teleop_bridge.motor_command import MotorCommand
 from bw_tools.structs.teleop_bridge.ping_info import PingInfo
 from bw_tools.typing import get_param
-from geometry_msgs.msg import Quaternion, Twist
+from geometry_msgs.msg import Twist
 from sensor_msgs.msg import Imu
 from std_msgs.msg import Float64
-from tf import transformations
 
 from bw_teleop.bridge_interface import BridgeInterface
 from bw_teleop.parameters import load_rosparam_robot_config
