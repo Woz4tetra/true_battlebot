@@ -8,6 +8,7 @@
             <param name="model" value="$(arg model)" />
             <param name="metadata" value="$(arg metadata)" />
             <param name="decimate" value="2" />
+            <param name="threshold" value="0.5" />
         </node>
     </group>
 </launch>

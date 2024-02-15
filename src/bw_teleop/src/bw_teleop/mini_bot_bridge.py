@@ -50,7 +50,7 @@ class MiniBotBridge:
 
     def twist_callback(self, msg: Twist) -> None:
         self.last_command_time = rospy.Time.now()
-        linear_x = msg.linear.x
+        linear_x = msg.linear.x * 3
         angular_z = msg.angular.z
         left_velocity = linear_x - angular_z * self.base_radius
         right_velocity = linear_x + angular_z * self.base_radius
