@@ -194,3 +194,14 @@ def jit_predict(
     state_x = state_transition(state_x, dt, friction_factor)
     covariance_p = state_transition_model_f @ covariance_p @ state_transition_model_f.T + process_noise_q
     return state_x, covariance_p
+
+
+def warmup():
+    input_modulus(0, -1, 3)
+    normalize_theta(0)
+    state_transition(np.zeros(NUM_STATES), 0, 0)
+    is_invertible(np.eye(NUM_STATES))
+    jit_update(
+        np.zeros(NUM_STATES), np.eye(NUM_STATES), np.eye(NUM_STATES), np.zeros(NUM_STATES), np.eye(NUM_STATES), ()
+    )
+    jit_predict(np.zeros(NUM_STATES), np.eye(NUM_STATES), np.eye(NUM_STATES), 0, 0)

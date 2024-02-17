@@ -17,6 +17,7 @@ from .helpers import (
     measurement_to_twist,
     pose_to_measurement,
     twist_to_measurement,
+    warmup,
 )
 
 
@@ -43,6 +44,7 @@ class DriveKalmanModel(FilterModel):
         self.cmd_vel_H[0:NUM_STATES_1ST_ORDER, NUM_STATES_1ST_ORDER:NUM_STATES] = np.eye(NUM_MEASUREMENTS)
 
         self.reset()
+        warmup()
 
     def predict(self) -> None:
         with self.lock:

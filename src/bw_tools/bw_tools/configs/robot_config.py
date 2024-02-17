@@ -22,9 +22,9 @@ class RobotConfig:
     name: str
     up_id: int = -1
     down_id: int = -1
-    radius: float = 0.0
+    radius: float = 0.0  # outer radius of the robot
     bridge_id: int = -1
-    base_width: float = 1.0
+    base_width: float = 1.0  # distance between the wheels
 
     @property
     def team(self) -> RobotTeam:

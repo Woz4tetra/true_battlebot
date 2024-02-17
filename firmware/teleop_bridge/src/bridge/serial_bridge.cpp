@@ -29,12 +29,12 @@ bool SerialBridge::update()
     return false;
 }
 
-void SerialBridge::set_motor(uint8_t channel, int velocity)
+void SerialBridge::set_motor(uint8_t channel, float velocity_mps)
 {
     Serial.println("Setting motor over serial is not allowed.");
 }
 
-void SerialBridge::respond_to_ping(ping_packet_p packet)
+void SerialBridge::respond_to_ping(ping_info_p packet)
 {
     Serial.println("Responding to ping over serial is not allowed.");
 }
@@ -59,16 +59,14 @@ void SerialBridge::respond_to_config(config_info_p config_info)
         Serial.println("Config set in EEPROM");
     }
 
-    uint16_t packet_size = sizeof(config_info_t);
-    config_packet_t packet;
-    packet.data = *config_info;
+    int packet_size = sizeof(config_info_t);
 
     // Respond to the config packet with the received packet
     Serial.write(SERIAL_PACKET_C0);
     Serial.write(SERIAL_PACKET_C1);
     Serial.write(packet_size & 0xFF);
     Serial.write((packet_size >> 8) & 0xFF);
-    Serial.write(packet.bytes, packet_size);
+    Serial.write((uint8_t *)config_info, packet_size);
 }
 
 int SerialBridge::get_serial_packet_length()

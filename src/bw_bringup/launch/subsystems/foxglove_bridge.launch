@@ -22,7 +22,7 @@
         <param name="num_worker_threads" type="int" value="$(arg num_threads)" />
     </node>
 
-    <node pkg="nodelet" type="nodelet" name="foxglove_bridge"
+    <node pkg="nodelet" type="nodelet" name="foxglove_bridge" respawn="true" output="screen"
         args="load foxglove_bridge/foxglove_bridge_nodelet $(arg nodelet_manager)">
         <param name="port" type="int" value="$(arg port)" />
         <param name="address" type="string" value="$(arg address)" />

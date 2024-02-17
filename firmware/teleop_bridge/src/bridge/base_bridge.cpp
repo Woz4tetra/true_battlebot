@@ -19,17 +19,9 @@ bool BaseBridge::process_motor_packet(char *packet, int packet_size)
     // Set the motor speed and direction for each channel
     for (int channel = 0; channel < motor_desc->num_channels; channel++)
     {
-        uint8_t speed = motor_desc->commands[channel].speed;
-        int8_t direction = motor_desc->commands[channel].direction;
-        int velocity;
-        if (direction < 0)
-            velocity = -speed;
-        else if (direction > 0)
-            velocity = speed;
-        else
-            velocity = 0;
-
-        set_motor(channel, velocity);
+        int16_t velocity_command = motor_desc->commands[channel].velocity;
+        float velocity_mps = velocity_command / 1000.0;
+        set_motor(channel, velocity_mps);
     }
 
     return true;
@@ -46,12 +38,11 @@ bool BaseBridge::process_ping_packet(char *packet, int packet_size)
 
     // Cast packet to ping_info_p so we can access the fields.
     ping_info_p ping_info = (ping_info_p)packet;
-    ping_packet_t ping_packet;
-    ping_packet.data.size = sizeof(ping_info_t);
-    ping_packet.data.type = PING;
-    ping_packet.data.device_id = device_config_->device_id;
-    ping_packet.data.time = ping_info->time; // Echo the time back to the sender
-    respond_to_ping(&ping_packet);
+    ping_info->size = sizeof(ping_info_t);
+    ping_info->type = PING;
+    ping_info->device_id = device_config_->device_id;
+    ping_info->time = ping_info->time; // Echo the time back to the sender
+    respond_to_ping(ping_info);
     return true;
 }
 

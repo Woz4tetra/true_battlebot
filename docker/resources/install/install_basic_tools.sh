@@ -45,4 +45,5 @@ sudo apt-get install -y \
     libv4l-dev \
     libgeos-dev \
     ffmpeg \
-    libbluetooth-dev
+    libbluetooth-dev \
+    libportaudio2

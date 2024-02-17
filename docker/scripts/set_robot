@@ -24,4 +24,4 @@ docker run -it \
     -v=${PROJECT_DIR}/scripts:/opt/${ORGANIZATION}/scripts:rw \
     --rm \
     ${IMAGE_VERSION} \
-    /opt/${ORGANIZATION}/scripts/lib/set_robot.sh "${ROBOT_NAME}" "${MAP_NAME}"
+    /opt/${ORGANIZATION}/scripts/set_robot "${ROBOT_NAME}" "${MAP_NAME}"

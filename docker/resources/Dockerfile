@@ -158,7 +158,8 @@ ENV ROS_WS_SRC=${ROS_WS_ROOT}/src
 ENV PATH=/opt/${ORGANIZATION}/scripts${PATH:+:${PATH}} \
     PYTHONPATH=/opt/${ORGANIZATION}/${PROJECT_NAME}/src/bw_tools${PYTHONPATH:+:${PYTHONPATH}} \
     PYTHONIOENCODING=utf-8 \
-    PLATFORMIO_CORE_DIR=${ROS_WS_ROOT}/.platformio
+    PLATFORMIO_CORE_DIR=${ROS_WS_ROOT}/.platformio \
+    HISTCONTROL=ignoreboth:erasedups
 
 
 # ---

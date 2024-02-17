@@ -10,23 +10,49 @@
 #include <bridge/serial_bridge.h>
 #include <bridge/persistent_config.h>
 #include <motors/esc_tank_controller.h>
+#include <motors/esc_motor.h>
+#include <feedback/imu_sensor.h>
 #include <status_lights/status_neopixel.h>
 
-#define CHANNEL_1 9  // A1 -> channel 1 (left)
-#define CHANNEL_2 17 // A2 -> channel 2 (right)
+#define CHANNEL_1 17 // A1 -> channel 1 (left)
+#define CHANNEL_2 9  // A2 -> channel 2 (right)
+
+const float WHEEL_RADIUS = 0.2f;
+const float BASE_WIDTH = 0.1f;
 
 char UDP_READ_BUFFER[bridge::PACKET_MAX_LENGTH];
+uint8_t UDP_WRITE_BUFFER[bridge::PACKET_MAX_LENGTH];
 char SERIAL_READ_BUFFER[bridge::PACKET_MAX_LENGTH];
 
 bridge::config_info_p DEVICE_CONFIG;
 udp_bridge::UdpBridge *udp_interface;
 serial_bridge::SerialBridge *serial_interface;
-base_controller::BaseController *controller;
+esc_tank_controller::EscTankController *controller;
+esc_motor::EscMotor *left_motor, *right_motor;
+imu_sensor::ImuSensor *imu_sensor_inst;
 persistent_config::PersistentConfig *persistent_config_inst;
 status_neopixel::StatusNeopixel *neopixel_status;
 
 const int COMMAND_TIMEOUT = 250; // Stop motors if no command is received for this many milliseconds
 uint32_t last_command = 0;       // The last time a packet was received (milliseconds)
+
+const int IMU_SEND_INTERVAL = 100;
+uint32_t last_imu_send = 0;
+
+int get_max_command()
+{
+    int max_speed = 0;
+    for (int channel = 0; channel < controller->get_num_channels(); channel++)
+    {
+        int command = controller->get_command(channel);
+        int speed = abs(command);
+        if (speed > max_speed)
+        {
+            max_speed = speed;
+        }
+    }
+    return max_speed;
+}
 
 /**
  * @brief Setup the teleop bridge
@@ -42,12 +68,28 @@ void setup()
     DEVICE_CONFIG->device_id = bridge::NULL_DEVICE_ID;
 
     persistent_config_inst = persistent_config::PersistentConfig::get_instance();
-    controller = new esc_tank_controller::EscTankController(CHANNEL_1, CHANNEL_2); // TODO make this configurable from build args
-    udp_interface = udp_bridge::UdpBridge::get_instance(DEVICE_CONFIG, UDP_READ_BUFFER, controller);
+
+    imu_sensor_inst = new imu_sensor::ImuSensor();
+
+    left_motor = new esc_motor::EscMotor(CHANNEL_1, true);
+    right_motor = new esc_motor::EscMotor(CHANNEL_2, false);
+
+    speed_pid::SpeedPID *angular_pid = new speed_pid::SpeedPID();
+    angular_pid->Kp = 6.0;
+    angular_pid->Ki = 0.1;
+    angular_pid->Kd = 0.02;
+
+    controller = new esc_tank_controller::EscTankController(left_motor, right_motor, imu_sensor_inst, angular_pid, BASE_WIDTH, WHEEL_RADIUS);
+    udp_interface = udp_bridge::UdpBridge::get_instance(DEVICE_CONFIG, UDP_READ_BUFFER, UDP_WRITE_BUFFER, controller, imu_sensor_inst);
     serial_interface = serial_bridge::SerialBridge::get_instance(DEVICE_CONFIG, SERIAL_READ_BUFFER, persistent_config_inst);
     neopixel_status = new status_neopixel::StatusNeopixel();
     neopixel_status->begin();
     persistent_config_inst->begin();
+
+    if (!imu_sensor_inst->begin())
+    {
+        Serial.println("Failed to initialize IMU!");
+    }
 
     controller->begin();
     controller->stop_all_motors();
@@ -57,6 +99,12 @@ void setup()
     {
         Serial.println("Config is set");
         persistent_config_inst->read(DEVICE_CONFIG);
+        Serial.print("Device ID: ");
+        Serial.println(DEVICE_CONFIG->device_id);
+        Serial.print("Port: ");
+        Serial.println(DEVICE_CONFIG->port);
+        Serial.print("SSID: ");
+        Serial.println(DEVICE_CONFIG->wifi_info);
     }
     else
     {
@@ -64,22 +112,6 @@ void setup()
     }
 
     Serial.println("teleop_bridge setup complete");
-}
-
-int get_max_motor_speed()
-{
-    int max_speed = 0;
-    for (int channel = 0; channel < controller->get_num_channels(); channel++)
-    {
-        int velocity;
-        controller->get_motor(channel, velocity);
-        int speed = abs(velocity);
-        if (speed > max_speed)
-        {
-            max_speed = speed;
-        }
-    }
-    return max_speed;
 }
 
 /**
@@ -123,8 +155,18 @@ void loop()
             else
             {
                 neopixel_status->set_state(status_base::OK);
-                neopixel_status->set_speed_readout(get_max_motor_speed());
+                neopixel_status->set_speed_readout(get_max_command());
             }
+
+            imu_sensor_inst->update();
+            controller->update();
+
+            if (now - last_imu_send > IMU_SEND_INTERVAL)
+            {
+                udp_interface->send_imu();
+                last_imu_send = now;
+            }
+
             break;
         default:
             break;

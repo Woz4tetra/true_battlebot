@@ -1,0 +1,11 @@
+#!/usr/bin/env python
+import os
+
+project_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
+launch_dir = os.path.join(project_dir, "src", "bw_bringup", "launch")
+
+for launch in os.listdir(launch_dir):
+    if launch.endswith(".launch"):
+        if launch == "bw_bringup.launch":
+            continue
+        print(os.path.splitext(launch)[0])
