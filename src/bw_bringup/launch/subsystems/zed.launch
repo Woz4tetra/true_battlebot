@@ -42,6 +42,19 @@
             <remap from="plane" to="zed_plane_response" />
             <remap from="pose" to="plane_response" />
         </node>
+
+
+        <node pkg="nodelet" type="nodelet" args="manager" name="zed_image_proc"
+            output="screen" />
+        <node pkg="nodelet" type="nodelet" name="zed_image_readout" output="screen"
+            args="load image_proc/crop_decimate zed_image_proc --no-bond">
+            <remap from="camera/image_raw" to="rgb/image_rect_color" />
+            <remap from="camera/camera_info" to="rgb/camera_info" />
+            <remap from="camera_out/image_raw" to="readout/image_rect_color" />
+            <remap from="camera_out/camera_info" to="readout/camera_info" />
+            <param name="decimation_x" value="2" />
+            <param name="decimation_y" value="2" />
+        </node>
     </group>
 
     <node pkg="apriltag_ros" type="apriltag_ros_continuous_node" name="$(arg camera_name)_apriltag"

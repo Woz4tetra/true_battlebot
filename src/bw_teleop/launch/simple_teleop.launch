@@ -9,7 +9,7 @@
         <param name="axis_linear" value="1" />
         <param name="axis_angular" value="3" />
         <param name="enable_button" value="5" />
-        <param name="scale_linear" value="1.0" />
+        <param name="scale_linear" value="1.5" />
         <param name="scale_angular" value="6.14" />
         <remap from="cmd_vel" to="cmd_vel/teleop" />
     </node>

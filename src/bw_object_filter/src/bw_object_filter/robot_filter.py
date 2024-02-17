@@ -59,7 +59,6 @@ class RobotFilter:
         self.process_noise = get_param("~process_noise", 1e-4)
         self.motion_speed_threshold = get_param("~motion_speed_threshold", 0.25)
         self.robot_min_radius = get_param("~robot_min_radius", 0.1)
-        self.robot_max_radius = get_param("~robot_max_radius", 0.4)
         field_buffer = get_param("~field_buffer", 0.1)
         self.field_buffer = XYZ(field_buffer, field_buffer, field_buffer)
 
@@ -76,9 +75,12 @@ class RobotFilter:
         self.robot_configs = {config.name: config for config in self.robots.robots}
         self.apriltag_rotate_tf = Transform3D.from_position_and_rpy(Vector3(), RPY((0.0, 0.0, np.pi / 2)))
         self.robot_filters = {
-            robot.name: DriveKalmanModel(self.update_delay, self.process_noise, self.friction_factor, robot.radius)
+            robot.name: DriveKalmanModel(self.update_delay, self.process_noise, self.friction_factor)
             for robot in self.robots.robots
         }
+        self.robot_sizes = {robot.name: robot.radius for robot in self.robots.robots}
+        self.robot_max_sizes = {robot.name: robot.radius for robot in self.robots.robots}
+
         self.prev_opponent_pose = {
             robot.name: Pose2DStamped.empty() for robot in self.robots.robots if robot.team != RobotTeam.OUR_TEAM
         }
@@ -204,7 +206,7 @@ class RobotFilter:
             # )
             # self.update_cmd_vel(velocity, robot_config)
             self.update_cmd_vel(Twist(), robot_config)
-            robot_filter.object_radius = self.get_object_radius(camera_measurement)
+            self.robot_sizes[robot_name] = self.get_object_radius(robot_name, camera_measurement)
 
         pose = PoseWithCovariance()
         pose.pose = map_measurement
@@ -216,7 +218,7 @@ class RobotFilter:
             rospy.logwarn(f"Failed to update from robot measurement. Resetting filter. {e}")
             robot_filter.reset()
 
-    def get_object_radius(self, object_estimate: EstimatedObject) -> float:
+    def get_object_radius(self, robot_name: str, object_estimate: EstimatedObject) -> float:
         measured_radius = (
             max(
                 object_estimate.size.x,
@@ -230,7 +232,7 @@ class RobotFilter:
                 measured_radius,
                 self.robot_min_radius,
             ),
-            self.robot_max_radius,
+            self.robot_max_sizes[robot_name],
         )
 
     def get_delta_measurements(self, stamp: float, robot_name: str, pose: Pose) -> Tuple[Pose, Twist]:
@@ -391,7 +393,7 @@ class RobotFilter:
         for robot_name, bot_filter in self.robot_filters.items():
             robot_frame_id = self.get_robot_frame_id(robot_name)
             pose, twist = bot_filter.get_state()
-            diameter = bot_filter.object_radius * 2
+            diameter = self.robot_sizes[robot_name] * 2
             state_msg = Odometry()
             state_msg.header.frame_id = self.map_frame
             state_msg.header.stamp = rospy.Time.now()
