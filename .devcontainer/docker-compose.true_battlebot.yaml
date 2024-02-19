@@ -30,6 +30,8 @@ services:
             - /media/storage/true-battlebot-media:/media/storage:rw
             - /tmp/.X11-unix:/tmp/.X11-unix
             - /home/${USER}/.Xauthority:/home/${ORGANIZATION}/.Xauthority:rw
+            - /home/$USER/.gitconfig:/home/${ORGANIZATION}/.gitconfig:rw
+            - /home/$USER/.ssh:/home/${ORGANIZATION}/.ssh:rw
             # Allow container to control docker
             - /home/${USER}/.docker:/home/${ORGANIZATION}/.docker:rw # docker looks here inside a container
             - /var/run/docker.sock:/var/run/docker.sock
