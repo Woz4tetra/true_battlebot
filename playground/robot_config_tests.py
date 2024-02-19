@@ -1,4 +1,4 @@
-from bw_tools.configs.robot_config import RobotFleetConfig
+from bw_tools.configs.robots import RobotFleetConfig
 
 config = {
     "robots": [

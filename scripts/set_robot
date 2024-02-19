@@ -2,15 +2,20 @@
 # PYTHON_ARGCOMPLETE_OK
 import argparse
 import os
+import re
 from dataclasses import dataclass
 
 import argcomplete
-from bw_tools.configs.field_type import FIELD_CONFIG, FieldType
+import yaml
+
+PROJECT_NAME = os.environ["PROJECT_NAME"]
+ROS_WS_ROOT = os.environ["ROS_WS_ROOT"]
+ROBOT_FILE = os.path.join(ROS_WS_ROOT, "robot")
+PROJECT_DIR = os.path.abspath(os.path.join(__file__, os.pardir, os.pardir))
 
 
 def get_robots() -> list[str]:
-    project_dir = os.path.abspath(os.path.join(__file__, os.pardir, os.pardir))
-    launch_dir = os.path.join(project_dir, os.environ["PROJECT_NAME"], "src", "bw_bringup", "launch")
+    launch_dir = os.path.join(PROJECT_DIR, PROJECT_NAME, "src", "bw_bringup", "launch")
     robots = []
 
     for launch in os.listdir(launch_dir):
@@ -25,16 +30,17 @@ def get_robots() -> list[str]:
 
 
 def get_maps() -> list[str]:
+    maps_config = os.path.join(PROJECT_DIR, PROJECT_NAME, "src", "bw_bringup", "config", "maps.yaml")
+    with open(maps_config, "r") as file:
+        maps_config = yaml.safe_load(file)
     maps = []
-    for field_type, field_config in FIELD_CONFIG.items():
-        maps.append(field_type.value)
+    for subconfig in maps_config["maps"]:
+        maps.append(subconfig["name"])
     if "" not in maps:
         maps.append("")
     return maps
 
 
-ROS_WS_ROOT = os.environ["ROS_WS_ROOT"]
-ROBOT_FILE = os.path.join(ROS_WS_ROOT, "robot")
 ALL_ROBOTS = get_robots()
 ALL_MAPS = get_maps()
 
@@ -52,9 +58,10 @@ def load_file() -> Environment:
         lines = file.readlines()
     env = {}
     for line in lines:
-        parsed = line.strip().split("=")
-        if len(parsed) == 2:
-            key, value = parsed
+        match = re.search(r"export (.*)=(.*)", line)
+        if match:
+            key = match.group(1)
+            value = match.group(2)
             env[key] = value
     return Environment(**env)
 
@@ -79,7 +86,7 @@ def main() -> None:
     map_name = args.map_name
     if not map_name:
         map_name = env.MAP_NAME
-    if map_name not in [ft.value for ft in FieldType]:
+    if map_name not in ALL_MAPS:
         print(f"Error: Map {map_name} not found")
         exit(1)
 
@@ -89,8 +96,8 @@ def main() -> None:
     env = Environment(robot, map_name)
     with open(ROBOT_FILE, "w") as file:
         file.write(
-            f"""ROBOT={robot}
-MAP_NAME={map_name}
+            f"""export ROBOT={robot}
+export MAP_NAME={map_name}
 echo Robot name: {robot}
 echo Map name: {map_name}
 """

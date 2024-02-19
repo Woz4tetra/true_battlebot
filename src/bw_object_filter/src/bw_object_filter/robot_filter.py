@@ -6,7 +6,7 @@ import rospy
 import tf2_ros
 from apriltag_ros.msg import AprilTagDetectionArray
 from bw_interfaces.msg import EstimatedObject, EstimatedObjectArray
-from bw_tools.configs.robot_config import RobotConfig, RobotFleetConfig, RobotTeam
+from bw_tools.configs.robots import RobotConfig, RobotFleetConfig, RobotTeam
 from bw_tools.structs.header import Header
 from bw_tools.structs.labels import Label
 from bw_tools.structs.pose2d import Pose2D
@@ -40,7 +40,7 @@ class RobotFilter:
     def __init__(self) -> None:
         robot_config = get_param("/robots", None)
         if robot_config is None:
-            raise ValueError("Must specify robot_config in the parameter server")
+            raise ValueError("Must specify robots in the parameter server")
         rospy.logdebug(f"Robot config: {robot_config}")
 
         self.update_rate = get_param("~update_rate", 50.0)

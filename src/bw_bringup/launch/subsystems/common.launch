@@ -4,6 +4,7 @@
     <arg name="auto_initialize" default="false" />
 
     <rosparam command="load" file="$(find bw_bringup)/config/robots.yaml" ns="robots" />
+    <rosparam command="load" file="$(find bw_bringup)/config/maps.yaml" ns="maps" />
 
     <include file="$(find bw_object_estimation)/launch/object_estimation.launch" />
     <include file="$(find bw_tags)/launch/tag_visualization.launch" />

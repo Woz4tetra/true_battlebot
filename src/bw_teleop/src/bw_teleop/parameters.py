@@ -1,4 +1,4 @@
-from bw_tools.configs.robot_config import RobotConfig, RobotFleetConfig
+from bw_tools.configs.robots import RobotConfig, RobotFleetConfig
 from bw_tools.typing import get_param
 
 
