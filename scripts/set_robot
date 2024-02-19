@@ -1,49 +1,89 @@
-#!/bin/bash
-
-set -e
-
-touch "${ROS_WS_ROOT}"/robot
-source "${ROS_WS_ROOT}"/robot
-
-if [ -z "${ROBOT}" ] || [ -n "${1}" ]
-    then export ROBOT="${1}"
-fi
-
-if [ -z "${MAP_NAME}" ] || [ -n "${2}" ]
-    then export MAP_NAME="${2}"
-fi
-
-if [ -z "${ROBOT}" ]
-    then echo "Error: Provide robot name"
-    exit 1
-fi
-
-if [ -z "${MAP_NAME}" ]
-    then echo "Error: Provide map name"
-    exit 1
-fi
-
-export FOUND_LAUNCHES=$(ls -1 /opt/"${ORGANIZATION}"/"${PROJECT_NAME}"/src/bw_bringup/launch)
-MATCH_FOUND=$(python <<EOF
+#!/usr/bin/env python
+# PYTHON_ARGCOMPLETE_OK
+import argparse
 import os
-found_launches = os.environ["FOUND_LAUNCHES"]
-robot = os.environ["ROBOT"]
-expected_path = robot + ".launch"
-for launch in found_launches.splitlines():
-    if expected_path == launch:
-        print("yes")
-        break
-EOF
-)
-if [ -z "${MATCH_FOUND}" ]; then
-    echo "Robot ${ROBOT} not found"
-    exit 1
-fi
+from dataclasses import dataclass
 
-cat <<EOT > "${ROS_WS_ROOT}"/robot
-export ROBOT=${ROBOT}
-export MAP_NAME=${MAP_NAME}
-EOT
+import argcomplete
+from bw_tools.configs.field_type import FIELD_CONFIG, FieldType
 
-echo "Robot name: ${ROBOT}"
-echo "Map name: ${MAP_NAME}"
+
+def get_robots() -> list[str]:
+    project_dir = os.path.abspath(os.path.join(__file__, os.pardir, os.pardir))
+    launch_dir = os.path.join(project_dir, os.environ["PROJECT_NAME"], "src", "bw_bringup", "launch")
+    robots = []
+
+    for launch in os.listdir(launch_dir):
+        if launch.endswith(".launch"):
+            if launch == "bw_bringup.launch":
+                continue
+            robot_name = os.path.splitext(launch)[0]
+            robots.append(robot_name)
+    if "" not in robots:
+        robots.append("")
+    return robots
+
+
+def get_maps() -> list[str]:
+    maps = []
+    for field_type, field_config in FIELD_CONFIG.items():
+        maps.append(field_type.value)
+    if "" not in maps:
+        maps.append("")
+    return maps
+
+
+ROS_WS_ROOT = os.environ["ROS_WS_ROOT"]
+ROBOT_FILE = os.path.join(ROS_WS_ROOT, "robot")
+ALL_ROBOTS = get_robots()
+ALL_MAPS = get_maps()
+
+
+@dataclass
+class Environment:
+    ROBOT: str
+    MAP_NAME: str
+
+
+def load_file() -> Environment:
+    if not os.path.exists(ROBOT_FILE):
+        return Environment("", "")
+    with open(ROBOT_FILE, "r") as file:
+        lines = file.readlines()
+    env = {}
+    for line in lines:
+        key, value = line.strip().split("=")
+        env[key] = value
+    return Environment(**env)
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="set_robot")
+    parser.add_argument("robot", type=str, choices=ALL_ROBOTS, help="robot name")
+    parser.add_argument("map_name", type=str, nargs="?", default="", choices=ALL_MAPS, help="map name")
+    argcomplete.autocomplete(parser)
+    args = parser.parse_args()
+
+    robot = args.robot
+    if robot not in ALL_ROBOTS:
+        print(f"Error: Robot {robot} not found")
+        exit(1)
+    map_name = args.map_name
+    if len(map_name) == 0:
+        env = load_file()
+        map_name = env.MAP_NAME
+    if map_name not in [ft.value for ft in FieldType]:
+        print(f"Error: Map {map_name} not found")
+        exit(1)
+
+    print(f"Robot name: {robot}")
+    print(f"Map name: {map_name}")
+
+    env = Environment(robot, map_name)
+    with open(ROBOT_FILE, "w") as file:
+        file.write(f"ROBOT={robot}\n")
+        file.write(f"MAP_NAME={map_name}\n")
+
+
+if __name__ == "__main__":
+    main()

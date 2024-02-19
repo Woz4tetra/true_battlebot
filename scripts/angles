@@ -1,10 +1,12 @@
 #!/usr/bin/env python
+# PYTHON_ARGCOMPLETE_OK
 import argparse
 import math
 from collections import namedtuple
 from enum import Enum
 from typing import Dict, Literal, Protocol, Tuple, Union, cast
 
+import argcomplete
 import numpy as np
 import yaml
 
@@ -253,18 +255,18 @@ class FormatOption(Enum):
 class ToEulerCommandLineArgs(Protocol):
     command: Literal["euler"]
     values: str
-    input_format: FormatOption
-    output_format: FormatOption
-    units: EulerUnit
+    input_format: str
+    output_format: str
+    units: str
     precision: int
 
 
 class ToQuatCommandLineArgs(Protocol):
     command: Literal["quat"]
     values: str
-    input_format: FormatOption
-    output_format: FormatOption
-    units: EulerUnit
+    input_format: str
+    output_format: str
+    units: str
     precision: int
 
 
@@ -272,32 +274,34 @@ CommandLineArgs = Union[ToEulerCommandLineArgs, ToQuatCommandLineArgs]
 
 
 def parse_args() -> CommandLineArgs:
+    options = [fo.value for fo in FormatOption]
+    units = [eu.value for eu in EulerUnit]
     parser = argparse.ArgumentParser(description="quat_euler_tool")
     sub_parsers = parser.add_subparsers(dest="command")
-    to_euler_parser = sub_parsers.add_parser("toeuler", help="Convert quaternion to euler")
-    to_euler_parser.add_argument("values", type=str, nargs="+", help="Quaternion values")
+    to_euler_parser = sub_parsers.add_parser("euler", help="Convert quaternion to euler: r p y")
+    to_euler_parser.add_argument("values", type=str, nargs="+", help="Quaternion values: x y z w")
     to_euler_parser.add_argument(
         "-i",
         "--input-format",
-        type=FormatOption,
-        choices=list(FormatOption),
-        default=FormatOption.NUMPY,
+        type=str,
+        choices=options,
+        default=FormatOption.NUMPY.value,
         help="Input format",
     )
     to_euler_parser.add_argument(
         "-o",
         "--output-format",
-        type=FormatOption,
-        choices=list(FormatOption),
-        default=FormatOption.NUMPY,
+        type=str,
+        choices=options,
+        default=FormatOption.NUMPY.value,
         help="Output format",
     )
     to_euler_parser.add_argument(
         "-u",
         "--units",
-        type=EulerUnit,
-        choices=list(EulerUnit),
-        default=EulerUnit.DEGREES,
+        type=str,
+        choices=units,
+        default=EulerUnit.DEGREES.value,
         help="Output units",
     )
     to_euler_parser.add_argument(
@@ -308,30 +312,30 @@ def parse_args() -> CommandLineArgs:
         help="Number of decimal places to round to",
     )
 
-    to_quat_parser = sub_parsers.add_parser("toquat", help="Convert euler to quaternion")
+    to_quat_parser = sub_parsers.add_parser("quat", help="Convert euler to quaternion")
     to_quat_parser.add_argument("values", type=str, nargs="+", help="Euler values")
     to_quat_parser.add_argument(
         "-i",
         "--input-format",
-        type=FormatOption,
-        choices=list(FormatOption),
-        default=FormatOption.NUMPY,
+        type=str,
+        choices=options,
+        default=FormatOption.NUMPY.value,
         help="Input format",
     )
     to_quat_parser.add_argument(
         "-o",
         "--output-format",
-        type=FormatOption,
-        choices=list(FormatOption),
-        default=FormatOption.NUMPY,
+        type=str,
+        choices=options,
+        default=FormatOption.NUMPY.value,
         help="Output format",
     )
     to_quat_parser.add_argument(
         "-u",
         "--units",
-        type=EulerUnit,
-        choices=list(EulerUnit),
-        default=EulerUnit.DEGREES,
+        type=str,
+        choices=units,
+        default=EulerUnit.DEGREES.value,
         help="Input units",
     )
     to_quat_parser.add_argument(
@@ -342,6 +346,7 @@ def parse_args() -> CommandLineArgs:
         help="Number of decimal places to round to",
     )
 
+    argcomplete.autocomplete(parser)
     return cast(CommandLineArgs, parser.parse_args())
 
 
@@ -349,19 +354,20 @@ def load_quaternion(args: ToEulerCommandLineArgs) -> Quaternion:
     if args.values is None:
         raise ValueError("No values provided")
 
-    if args.input_format == FormatOption.NUMPY or args.input_format == FormatOption.LAUNCH:
+    input_format = FormatOption(args.input_format)
+    if input_format == FormatOption.NUMPY or input_format == FormatOption.LAUNCH:
         values = Quaternion(*tuple(map(float, args.values)))
-    elif args.input_format == FormatOption.LIST:
+    elif input_format == FormatOption.LIST:
         agg_values = []
         for value in args.values:
             agg_values.extend(value.split(","))
         values = Quaternion(*tuple(map(float, agg_values)))
-    elif args.input_format == FormatOption.YAML:
+    elif input_format == FormatOption.YAML:
         yaml_str = " ".join(args.values)
         data = yaml.safe_load(yaml_str)
         values = Quaternion(x=data["qx"], y=data["qy"], z=data["qz"], w=data["qw"])
     else:
-        raise ValueError(f"Unsupported input format: {args.input_format}")
+        raise ValueError(f"Unsupported input format: {input_format}")
     return values
 
 
@@ -369,50 +375,54 @@ def load_euler(args: ToQuatCommandLineArgs) -> Euler:
     if args.values is None:
         raise ValueError("No values provided")
 
-    if args.input_format == FormatOption.NUMPY or args.input_format == FormatOption.LAUNCH:
+    input_format = FormatOption(args.input_format)
+    units = EulerUnit(args.units)
+    if input_format == FormatOption.NUMPY or input_format == FormatOption.LAUNCH:
         values = Euler(*tuple(map(float, args.values)))
-    elif args.input_format == FormatOption.LIST:
+    elif input_format == FormatOption.LIST:
         agg_values = []
         for value in args.values:
             agg_values.extend(value.split(","))
         values = Euler(*tuple(map(float, agg_values)))
-    elif args.input_format == FormatOption.YAML:
+    elif input_format == FormatOption.YAML:
         yaml_str = " ".join(args.values)
         data = yaml.safe_load(yaml_str)
         values = Euler(roll=float(data["roll"]), pitch=float(data["pitch"]), yaw=float(data["yaw"]))
     else:
-        raise ValueError(f"Unsupported input format: {args.input_format}")
-    if args.units == EulerUnit.DEGREES:
+        raise ValueError(f"Unsupported input format: {input_format}")
+    if units == EulerUnit.DEGREES:
         values = Euler(*tuple(math.radians(v) for v in values))
-    elif args.units == EulerUnit.RADIANS:
+    elif units == EulerUnit.RADIANS:
         pass
     else:
-        raise ValueError(f"Unsupported units: {args.units}")
+        raise ValueError(f"Unsupported units: {units}")
     return values
 
 
 def convert_quat_to_euler_app(args: ToEulerCommandLineArgs) -> None:
     values = load_quaternion(args)
     angles = euler_from_matrix(quaternion_matrix(values))
-    if args.units == EulerUnit.DEGREES:
+    units = EulerUnit(args.units)
+    output_format = FormatOption(args.output_format)
+    if units == EulerUnit.DEGREES:
         angles = Euler(*tuple(math.degrees(v) for v in angles))
-    elif args.units == EulerUnit.RADIANS:
+    elif units == EulerUnit.RADIANS:
         pass
     else:
-        raise ValueError(f"Unsupported units: {args.units}")
+        raise ValueError(f"Unsupported units: {units}")
 
     angles = Euler(*tuple(round(v, args.precision) for v in angles))
 
-    if args.output_format == FormatOption.NUMPY:
+    if output_format == FormatOption.NUMPY:
         print(angles.roll, angles.pitch, angles.yaw)
-    elif args.output_format == FormatOption.LAUNCH:
+    elif output_format == FormatOption.LAUNCH:
         format_str = "{:" + str(args.precision + 4) + "." + str(args.precision) + "f}"
         for angle in angles:
             print(format_str.format(angle), end=" ")
         print()
-    elif args.output_format == FormatOption.LIST:
+    elif output_format == FormatOption.LIST:
         print(list(angles))
-    elif args.output_format == FormatOption.YAML:
+    elif output_format == FormatOption.YAML:
         print(
             yaml.dump(
                 {
@@ -425,7 +435,7 @@ def convert_quat_to_euler_app(args: ToEulerCommandLineArgs) -> None:
             )
         )
     else:
-        raise ValueError(f"Unsupported output format: {args.output_format}")
+        raise ValueError(f"Unsupported output format: {output_format}")
 
 
 def convert_euler_to_quat_app(args: ToQuatCommandLineArgs) -> None:
@@ -433,17 +443,18 @@ def convert_euler_to_quat_app(args: ToQuatCommandLineArgs) -> None:
     quat = quaternion_from_matrix(euler_matrix(values))
 
     quat = Quaternion(*tuple(round(v, args.precision) for v in quat))
+    output_format = FormatOption(args.output_format)
 
-    if args.output_format == FormatOption.NUMPY:
+    if output_format == FormatOption.NUMPY:
         print(quat.x, quat.y, quat.z, quat.w)
-    elif args.output_format == FormatOption.LAUNCH:
+    elif output_format == FormatOption.LAUNCH:
         format_str = "{:" + str(args.precision + 4) + "." + str(args.precision) + "f}"
         for value in quat:
             print(format_str.format(value), end=" ")
         print()
-    elif args.output_format == FormatOption.LIST:
+    elif output_format == FormatOption.LIST:
         print(list(quat))
-    elif args.output_format == FormatOption.YAML:
+    elif output_format == FormatOption.YAML:
         print(
             yaml.dump(
                 {
@@ -457,14 +468,14 @@ def convert_euler_to_quat_app(args: ToQuatCommandLineArgs) -> None:
             )
         )
     else:
-        raise ValueError(f"Unsupported output format: {args.output_format}")
+        raise ValueError(f"Unsupported output format: {output_format}")
 
 
 def main() -> None:
     args = parse_args()
     apps = {
-        "toeuler": convert_quat_to_euler_app,
-        "toquat": convert_euler_to_quat_app,
+        "euler": convert_quat_to_euler_app,
+        "quat": convert_euler_to_quat_app,
     }
     try:
         apps[args.command](args)

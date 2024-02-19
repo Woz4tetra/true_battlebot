@@ -9,3 +9,4 @@ svgwrite
 pyserial
 PySoundFile
 sounddevice
+argcomplete
