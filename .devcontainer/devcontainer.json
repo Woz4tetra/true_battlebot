@@ -5,7 +5,6 @@
     "initializeCommand": ".devcontainer/setup_container.sh",
     "workspaceFolder": "/opt/bwbots/true_battlebot",
     "shutdownAction": "stopCompose",
-    "postCreateCommand": ".devcontainer/post_create.sh",
     "customizations": {
         "vscode": {
             "extensions": [
