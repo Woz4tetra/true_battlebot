@@ -1,4 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
-    <include file="$(find bw_bringup)/launch/$(optenv ROBOT).launch" />
+    <include file="$(find bw_bringup)/launch/$(env ROBOT).launch" />
 </launch>

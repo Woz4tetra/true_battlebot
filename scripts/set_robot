@@ -52,25 +52,32 @@ def load_file() -> Environment:
         lines = file.readlines()
     env = {}
     for line in lines:
-        key, value = line.strip().split("=")
-        env[key] = value
+        parsed = line.strip().split("=")
+        if len(parsed) == 2:
+            key, value = parsed
+            env[key] = value
     return Environment(**env)
 
 
 def main() -> None:
+    env = load_file()
     parser = argparse.ArgumentParser(description="set_robot")
-    parser.add_argument("robot", type=str, choices=ALL_ROBOTS, help="robot name")
+    parser.add_argument("robot", type=str, nargs="?", choices=ALL_ROBOTS, help="robot name")
     parser.add_argument("map_name", type=str, nargs="?", default="", choices=ALL_MAPS, help="map name")
     argcomplete.autocomplete(parser)
     args = parser.parse_args()
 
     robot = args.robot
+    if not robot:
+        print(f"Robot name: {env.ROBOT}")
+        print(f"Map name: {env.MAP_NAME}")
+        exit(0)
+
     if robot not in ALL_ROBOTS:
         print(f"Error: Robot {robot} not found")
         exit(1)
     map_name = args.map_name
-    if len(map_name) == 0:
-        env = load_file()
+    if not map_name:
         map_name = env.MAP_NAME
     if map_name not in [ft.value for ft in FieldType]:
         print(f"Error: Map {map_name} not found")
@@ -81,8 +88,13 @@ def main() -> None:
 
     env = Environment(robot, map_name)
     with open(ROBOT_FILE, "w") as file:
-        file.write(f"ROBOT={robot}\n")
-        file.write(f"MAP_NAME={map_name}\n")
+        file.write(
+            f"""ROBOT={robot}
+MAP_NAME={map_name}
+echo Robot name: {robot}
+echo Map name: {map_name}
+"""
+        )
 
 
 if __name__ == "__main__":

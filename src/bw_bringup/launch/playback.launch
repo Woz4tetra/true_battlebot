@@ -10,6 +10,6 @@
         <arg name="metadata" value="$(arg model)_metadata.json" />
     </include>
     <include file="$(find bw_bringup)/launch/subsystems/zed.launch">
-        <arg name="svo_file" value="/media/storage/svo/zed_2023-09-30T13-38-21_repaired.svo" />
+        <arg name="svo_file" value="/media/storage/svo/mini_bot_2024-02-17T15-39-21.svo" />
     </include>
 </launch>
