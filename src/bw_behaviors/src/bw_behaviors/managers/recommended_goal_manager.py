@@ -20,9 +20,7 @@ class RecommendedGoalManager:
         if len(self.received_goal.header.frame_id) == 0:
             return 0.0
         else:
-            distance = self.received_goal.pose.magnitude(self.prev_goal.pose)
-            rospy.loginfo(f"Distance to new goal: {distance}")
-            return distance
+            return self.received_goal.pose.magnitude(self.prev_goal.pose)
 
     def get_goal(self) -> Optional[Pose2DStamped]:
         if len(self.received_goal.header.frame_id) == 0:
