@@ -24,3 +24,4 @@
 
 1. Run the training. Edit and run this file as appropriate. `train.py`
 1. Run the training script. `./train.sh`
+1. Check http://localhost:6006 for tensorboard

@@ -110,6 +110,13 @@ class RobotFilter:
                     if self.robot_configs[name].team == RobotTeam.REFEREE
                 }
             ),
+            Label.FRIENDLY_ROBOT: RobotMeasurementSorter(
+                {
+                    name: filter
+                    for name, filter in self.robot_filters.items()
+                    if self.robot_configs[name].team == RobotTeam.OUR_TEAM
+                }
+            ),
         }
 
         self.tf_buffer = tf2_ros.Buffer()
