@@ -181,10 +181,10 @@ class RobotFilter:
                 continue
             measurements[label].append(robot)
         for label, sorter in self.measurement_sorters.items():
-            self.apply_update_with_sorter(sorter, measurements[label])
+            self.apply_update_with_sorter(label, sorter, measurements[label])
 
     def apply_update_with_sorter(
-        self, measurement_sorter: RobotMeasurementSorter, robots: List[EstimatedObject]
+        self, label: Label, measurement_sorter: RobotMeasurementSorter, robots: List[EstimatedObject]
     ) -> None:
         map_measurements: List[Pose] = []
         for measurement in robots:
@@ -193,10 +193,10 @@ class RobotFilter:
                 rospy.logwarn(f"Could not transform pose for measurement {measurement}")
                 continue
             if not self.is_in_field_bounds(map_pose.position):
-                rospy.logdebug(f"Robot {measurement.label} is out of bounds. Skipping.")
+                rospy.logdebug(f"{measurement.label} is out of bounds. Skipping.")
                 continue
-            if self.is_pose_near_tag(map_pose):
-                rospy.logdebug(f"Robot {measurement.label} is near a tag. Skipping.")
+            if label == Label.ROBOT and self.is_pose_near_tag(map_pose):
+                rospy.logdebug(f"{measurement.label} is near a tag. Skipping.")
                 continue
             map_measurements.append(map_pose)
 
