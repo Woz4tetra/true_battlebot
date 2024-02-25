@@ -59,6 +59,7 @@ class RobotFilter:
         self.process_noise = get_param("~process_noise", 1e-4)
         self.motion_speed_threshold = get_param("~motion_speed_threshold", 0.25)
         self.robot_min_radius = get_param("~robot_min_radius", 0.1)
+        self.ignore_measurement_near_tag_threshold = get_param("~ignore_measurement_near_tag_threshold", 0.05)
         field_buffer = get_param("~field_buffer", 0.1)
         self.field_buffer = XYZ(field_buffer, field_buffer, field_buffer)
 
@@ -86,6 +87,9 @@ class RobotFilter:
         }
         self.prev_motion_opponent_pose = {
             robot.name: Pose2D(0.0, 0.0, 0.0) for robot in self.robots.robots if robot.team != RobotTeam.OUR_TEAM
+        }
+        self.prev_tag_pose = {
+            robot.name: PoseWithCovariance() for robot in self.robots.robots if robot.team == RobotTeam.OUR_TEAM
         }
 
         self.tag_heurstics = ApriltagHeuristics(self.apriltag_base_covariance_scalar)
@@ -183,6 +187,9 @@ class RobotFilter:
                 continue
             if not self.is_in_field_bounds(map_pose.position):
                 rospy.logdebug(f"Robot {measurement.label} is out of bounds. Skipping.")
+                continue
+            if self.is_pose_near_tag(map_pose):
+                rospy.logdebug(f"Robot {measurement.label} is near a tag. Skipping.")
                 continue
             map_measurements.append(map_pose)
 
@@ -284,8 +291,10 @@ class RobotFilter:
                 rospy.logwarn(f"Tag id {tag_id} is not a robot")
                 continue
             robot_filter = self.robot_filters[robot_name]
+            tag_pose = detection.pose.pose
+            self.prev_tag_pose[robot_name] = tag_pose
             try:
-                robot_filter.update_pose(detection.pose.pose)
+                robot_filter.update_pose(tag_pose)
             except np.linalg.LinAlgError as e:
                 rospy.logwarn(f"Failed to update from tag. Resetting filter. {e}")
                 robot_filter.reset()
@@ -348,6 +357,20 @@ class RobotFilter:
             return False
         xyz = XYZ.from_msg(Vector3(position.x, position.y, position.z))
         return self.field_bounds[0] < xyz < self.field_bounds[1]
+
+    def is_pose_near_tag(self, pose: Pose) -> bool:
+        for tag_pose in self.prev_tag_pose.values():
+            delta = np.array(
+                [
+                    [tag_pose.pose.position.x - pose.position.x],
+                    [tag_pose.pose.position.y - pose.position.y],
+                    [tag_pose.pose.position.z - pose.position.z],
+                ]
+            )
+            distance = np.linalg.norm(delta)
+            if distance < self.ignore_measurement_near_tag_threshold:
+                return True
+        return False
 
     def transform_to_map(self, header: RosHeader, pose: Pose) -> Optional[Pose]:
         pose_stamped = PoseStamped(header=header, pose=pose)
