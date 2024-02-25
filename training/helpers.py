@@ -6,7 +6,7 @@ from typing import List, Tuple
 import cv2
 import detectron2.data.datasets
 import numpy as np
-from coco_dataset import CocoDataset, CocoMetaDataset, DatasetAnnotation, DatasetImage
+from coco_dataset import CocoMetaDataset, DatasetAnnotation, DatasetImage
 from detectron2.data import DatasetCatalog, transforms
 from matplotlib import pyplot as plt
 
@@ -111,7 +111,7 @@ def augment_dataset_image(
             id=-1,
             image_id=-1,
             category_id=annotation.category_id,
-            segmentation=polygons_transformed.tolist(),
+            segmentation=[polygons_transformed.flatten().tolist()],
             area=annotation.area,
             bbox=bbox,
             iscrowd=annotation.iscrowd,

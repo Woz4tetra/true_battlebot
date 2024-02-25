@@ -7,6 +7,7 @@ import numpy as np
 import rospy
 from bw_interfaces.msg import Contour, SegmentationInstance, SegmentationInstanceArray, UVKeypoint
 from bw_tools.structs.labels import Label
+from bw_tools.typing import get_param
 from cv_bridge import CvBridge, CvBridgeError
 from sensor_msgs.msg import Image
 
@@ -15,9 +16,11 @@ class SegmentationRelay:
     def __init__(self) -> None:
         rospy.init_node("segmentation_relay")
 
+        self.separately_friendlies = get_param("separately_friendlies", False)
+
         self.simulated_to_real_labels: Dict[str, Label] = {
-            "Mini bot": Label.ROBOT,
-            "Main bot": Label.ROBOT,
+            "Mini bot": Label.FRIENDLY_ROBOT if self.separately_friendlies else Label.ROBOT,
+            "Main bot": Label.FRIENDLY_ROBOT if self.separately_friendlies else Label.ROBOT,
             "Enemy bot": Label.ROBOT,
             "Field": Label.FIELD,
             "Referee": Label.REFEREE,
