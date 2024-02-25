@@ -6,7 +6,11 @@ from training_manager import TrainingManager
 training_dir = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 # training_dir = "2023-11-20-13-20-28"
 
-manager = TrainingManager()
+dataset_name = "battlebots"
+dataset_dir = "/media/storage/training/labeled/2024-02-24/battlebots"
+output_dir = "/media/storage/training/models"
+
+manager = TrainingManager(dataset_name, dataset_dir, output_dir)
 train_output = manager.get_training_dir(training_dir)
 manager.train(train_output)
 manager.inference(train_output)

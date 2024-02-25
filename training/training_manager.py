@@ -32,15 +32,16 @@ from torch.jit._serialization import save as save_model
 
 
 class TrainingManager:
-    def __init__(self) -> None:
-        self.dataset_name = "nhrl_dataset"
-        self.dataset_dir = "/media/storage/training/labeled/nhrl_dataset"
-        self.output_dir = "/media/storage/training/models"
+    def __init__(self, dataset_name: str, dataset_dir: str, output_dir: str) -> None:
+        self.dataset_name = dataset_name
+        self.dataset_dir = dataset_dir
+        self.output_dir = output_dir
         self.annotations_file_name = "_annotations.coco.json"
         self.expected_number_of_categories = 3
 
         self.color_mapping = {
             "robot": Color(r=1.0, g=0.0, b=0.0, a=0.5),
+            "friendly_robot": Color(r=1.0, g=1.0, b=0.0, a=0.5),
             "referee": Color(r=0.0, g=1.0, b=0.0, a=0.5),
             "field": Color(r=0.0, g=0.0, b=1.0, a=0.5),
         }

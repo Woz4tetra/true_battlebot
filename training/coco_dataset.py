@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime
 from dataclasses import asdict, dataclass, field
+from functools import cached_property
 from typing import Dict, List
 
 from dacite import from_dict
@@ -12,6 +13,12 @@ class DatasetCategory:
     id: int
     name: str
     supercategory: str
+
+    def __hash__(self):
+        return self.id
+
+    def __eq__(self, __value: object) -> bool:
+        return isinstance(__value, DatasetCategory) and self.id == __value.id
 
 
 @dataclass
@@ -29,6 +36,12 @@ class DatasetLicense:
     id: int
     name: str
     url: str
+
+    def __hash__(self) -> int:
+        return self.id
+
+    def __eq__(self, __value: object) -> bool:
+        return isinstance(__value, DatasetLicense) and self.id == __value.id
 
 
 @dataclass
@@ -72,6 +85,10 @@ class CocoMetaDataset:
                 self.image_id_to_annotations[annotation.image_id] = []
             self.image_id_to_annotations[annotation.image_id].append(annotation.id)
 
+    @cached_property
+    def categories(self) -> Dict[int, DatasetCategory]:
+        return {category.id: category for category in self.dataset.categories}
+
     def get_annotations(self, image_id: int) -> List[DatasetAnnotation]:
         annotation_ids = self.image_id_to_annotations[image_id]
         return [self.dataset.annotations[annotation_id] for annotation_id in annotation_ids]
@@ -84,6 +101,8 @@ class CocoMetaDataset:
         image.date_captured = image.date_captured[:-2] + ":" + image.date_captured[-2:]
 
         for annotation in annotations:
+            if annotation.category_id not in self.categories.keys():
+                raise ValueError(f"Category {annotation.category_id} not found")
             annotation.id = self._next_annotation_id()
             annotation.image_id = image.id
             self.dataset.annotations.append(annotation)
@@ -107,6 +126,19 @@ class CocoMetaDataset:
                 annotations=[annotation for annotation in self.dataset.annotations if annotation.image_id in image_ids],
             )
         )
+
+    def merge(self, other: CocoMetaDataset) -> None:
+        for category in other.dataset.categories:
+            if category not in self.dataset.categories:
+                self.dataset.categories.append(category)
+        for index, category in enumerate(self.dataset.categories):
+            category.id = index
+        for license in other.dataset.licenses:
+            if license not in self.dataset.licenses:
+                self.dataset.licenses.append(license)
+        for image in other.dataset.images:
+            annotations = other.get_annotations(image.id)
+            self.add_annotation(image, annotations)
 
     @classmethod
     def from_json(cls, d: Dict) -> CocoMetaDataset:

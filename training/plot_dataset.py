@@ -6,12 +6,14 @@ from matplotlib import pyplot as plt
 
 
 def main():
-    images_path = "/media/storage/training/labeled/nhrl_dataset_augmented"
+    images_path = "/media/storage/training/labeled/2024-02-24/battlebots_all"
     annotations_name = "_annotations.coco.json"
     annotations_path = os.path.join(images_path, annotations_name)
 
     metadataset = load_dataset(annotations_path)
-    for dataset_image in metadataset.dataset.images[-10:]:
+    # images = metadataset.dataset.images[-10:]
+    images = metadataset.dataset.images[:10]
+    for dataset_image in images:
         print(dataset_image)
         annotations = metadataset.get_annotations(dataset_image.id)
 
