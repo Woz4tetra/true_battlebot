@@ -16,7 +16,7 @@ class SegmentationRelay:
     def __init__(self) -> None:
         rospy.init_node("segmentation_relay")
 
-        self.separately_friendlies = get_param("separately_friendlies", False)
+        self.separately_friendlies = get_param("separately_friendlies", True)
 
         self.simulated_to_real_labels: Dict[str, Label] = {
             "Mini bot": Label.FRIENDLY_ROBOT if self.separately_friendlies else Label.ROBOT,

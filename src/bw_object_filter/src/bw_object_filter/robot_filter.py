@@ -91,6 +91,7 @@ class RobotFilter:
         self.prev_tag_pose = {
             robot.name: PoseWithCovariance() for robot in self.robots.robots if robot.team == RobotTeam.OUR_TEAM
         }
+        self.prev_twist_measurements = {robot.name: Twist() for robot in self.robots.robots}
 
         self.tag_heurstics = ApriltagHeuristics(self.apriltag_base_covariance_scalar)
         self.our_robot_heuristics = RobotHeuristics(self.our_base_covariance)
@@ -215,12 +216,10 @@ class RobotFilter:
             covariance = self.our_robot_heuristics.compute_covariance(camera_measurement)
         else:
             covariance = self.their_robot_heuristics.compute_covariance(camera_measurement)
-            # map_pose, velocity = self.get_delta_measurements(
-            #     camera_measurement.header.stamp.to_sec(), robot_name, map_pose
-            # )
-            # self.update_cmd_vel(velocity, robot_config)
-            self.update_cmd_vel(Twist(), robot_config)
             self.robot_sizes[robot_name] = self.get_object_radius(robot_name, camera_measurement)
+
+        twist_meas = self.prev_twist_measurements[robot_name]
+        self.update_cmd_vel(twist_meas, robot_config)
 
         pose = PoseWithCovariance()
         pose.pose = map_measurement
@@ -322,6 +321,7 @@ class RobotFilter:
 
     def cmd_vel_callback(self, msg: Twist, robot_config: RobotConfig) -> None:
         self.update_cmd_vel(msg, robot_config)
+        self.prev_twist_measurements[robot_config.name] = msg
         self.prev_cmd_time = rospy.Time.now()
 
     def update_cmd_vel(self, msg: Twist, robot_config: RobotConfig):
