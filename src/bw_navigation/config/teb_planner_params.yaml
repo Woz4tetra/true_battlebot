@@ -6,13 +6,13 @@
 ## Robot Configuration Parameters ##
 
 # Maximum translational acceleration of the robot in meters/sec^2
-acc_lim_x: 0.5 # 0.5
+acc_lim_x: 0.75 # 0.5
 
 # Maximum angular acceleration of the robot in radians/sec^2
-acc_lim_theta: 3.0 # 12.0
+acc_lim_theta: 3.5 # 12.0
 
 # Maximum translational velocity of the robot in meters/sec
-max_vel_x: 2.0 # max speed 2.0 m/s
+max_vel_x: 2.5 # max speed 2.0 m/s
 
 # Maximum absolute translational velocity of the robot while driving
 # backwards in meters/sec. See optimization parameter
@@ -21,7 +21,7 @@ max_vel_x_backwards: 0.75 # 0.2
 
 # Maximum angular velocity of the robot in radians/secThe following
 # parameters are relevant only for carlike robots:
-max_vel_theta: 4.5 # 6.0
+max_vel_theta: 5.0 # 6.0
 
 ## The following parameters are relevant only for holonomic robots:
 
@@ -213,7 +213,7 @@ obstacle_poses_affected: 30 # 30
 # Buffer zone around obstacles with non-zero penalty costs (should be
 # larger than min_obstacle_dist in order to take effect). Also refer to
 # the weight weight_inflation.
-inflation_dist: 0.03 # 0.6
+inflation_dist: 0.02 # 0.6
 
 # If this parameter is set to true, the motion of obstacles with non-
 # zero velocity (provided via user-supplied obstacles on topic
@@ -311,10 +311,10 @@ weight_kinematics_turning_radius: 1.0 # 1.0
 weight_optimaltime: 1.0 # 1.0
 
 # Optimization weight for keeping a minimum distance from obstacles
-weight_obstacle: 25.0 # 50.0
+weight_obstacle: 10.0 # 50.0
 
 # Optimization weight for keeping a minimum distance from dynamic obstacles
-weight_dynamic_obstacle: 25.0 # 50.0
+weight_dynamic_obstacle: 10.0 # 50.0
 
 # Optimization weight for minimizing the distance to via-points (resp.
 # reference path). New in version 0.4

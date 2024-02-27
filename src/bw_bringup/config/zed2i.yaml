@@ -1,10 +1,10 @@
 # Parameters for Stereolabs ZED2i camera
 general:
     camera_model: "zed2i"
-    grab_resolution: HD720 # AUTO HD2K HD1080 HD720 VGA
+    grab_resolution: HD1080 # AUTO HD2K HD1080 HD720 VGA
     pub_resolution: NATIVE
     pub_frame_rate: 30.0
-    grab_frame_rate: 60
+    grab_frame_rate: 30
 
 depth:
     min_depth: 0.7 # Min: 0.2, Max: 3.0 - Default 0.7 - Note: reducing this value will require more computational power and GPU memory

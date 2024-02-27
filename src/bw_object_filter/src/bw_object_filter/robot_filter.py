@@ -6,7 +6,7 @@ import rospy
 import tf2_ros
 from apriltag_ros.msg import AprilTagDetectionArray
 from bw_interfaces.msg import EstimatedObject, EstimatedObjectArray
-from bw_tools.configs.robot_config import RobotConfig, RobotFleetConfig, RobotTeam
+from bw_tools.configs.robots import RobotConfig, RobotFleetConfig, RobotTeam
 from bw_tools.structs.header import Header
 from bw_tools.structs.labels import Label
 from bw_tools.structs.pose2d import Pose2D
@@ -40,7 +40,7 @@ class RobotFilter:
     def __init__(self) -> None:
         robot_config = get_param("/robots", None)
         if robot_config is None:
-            raise ValueError("Must specify robot_config in the parameter server")
+            raise ValueError("Must specify robots in the parameter server")
         rospy.logdebug(f"Robot config: {robot_config}")
 
         self.update_rate = get_param("~update_rate", 50.0)
@@ -59,7 +59,7 @@ class RobotFilter:
         self.process_noise = get_param("~process_noise", 1e-4)
         self.motion_speed_threshold = get_param("~motion_speed_threshold", 0.25)
         self.robot_min_radius = get_param("~robot_min_radius", 0.1)
-        self.robot_max_radius = get_param("~robot_max_radius", 0.4)
+        self.ignore_measurement_near_tag_threshold = get_param("~ignore_measurement_near_tag_threshold", 0.05)
         field_buffer = get_param("~field_buffer", 0.1)
         self.field_buffer = XYZ(field_buffer, field_buffer, field_buffer)
 
@@ -76,15 +76,22 @@ class RobotFilter:
         self.robot_configs = {config.name: config for config in self.robots.robots}
         self.apriltag_rotate_tf = Transform3D.from_position_and_rpy(Vector3(), RPY((0.0, 0.0, np.pi / 2)))
         self.robot_filters = {
-            robot.name: DriveKalmanModel(self.update_delay, self.process_noise, self.friction_factor, robot.radius)
+            robot.name: DriveKalmanModel(self.update_delay, self.process_noise, self.friction_factor)
             for robot in self.robots.robots
         }
+        self.robot_sizes = {robot.name: robot.radius for robot in self.robots.robots}
+        self.robot_max_sizes = {robot.name: robot.radius for robot in self.robots.robots}
+
         self.prev_opponent_pose = {
             robot.name: Pose2DStamped.empty() for robot in self.robots.robots if robot.team != RobotTeam.OUR_TEAM
         }
         self.prev_motion_opponent_pose = {
             robot.name: Pose2D(0.0, 0.0, 0.0) for robot in self.robots.robots if robot.team != RobotTeam.OUR_TEAM
         }
+        self.prev_tag_pose = {
+            robot.name: PoseWithCovariance() for robot in self.robots.robots if robot.team == RobotTeam.OUR_TEAM
+        }
+        self.prev_twist_measurements = {robot.name: Twist() for robot in self.robots.robots}
 
         self.tag_heurstics = ApriltagHeuristics(self.apriltag_base_covariance_scalar)
         self.our_robot_heuristics = RobotHeuristics(self.our_base_covariance)
@@ -106,6 +113,13 @@ class RobotFilter:
                     name: filter
                     for name, filter in self.robot_filters.items()
                     if self.robot_configs[name].team == RobotTeam.REFEREE
+                }
+            ),
+            Label.FRIENDLY_ROBOT: RobotMeasurementSorter(
+                {
+                    name: filter
+                    for name, filter in self.robot_filters.items()
+                    if self.robot_configs[name].team == RobotTeam.OUR_TEAM
                 }
             ),
         }
@@ -168,10 +182,10 @@ class RobotFilter:
                 continue
             measurements[label].append(robot)
         for label, sorter in self.measurement_sorters.items():
-            self.apply_update_with_sorter(sorter, measurements[label])
+            self.apply_update_with_sorter(label, sorter, measurements[label])
 
     def apply_update_with_sorter(
-        self, measurement_sorter: RobotMeasurementSorter, robots: List[EstimatedObject]
+        self, label: Label, measurement_sorter: RobotMeasurementSorter, robots: List[EstimatedObject]
     ) -> None:
         map_measurements: List[Pose] = []
         for measurement in robots:
@@ -180,7 +194,10 @@ class RobotFilter:
                 rospy.logwarn(f"Could not transform pose for measurement {measurement}")
                 continue
             if not self.is_in_field_bounds(map_pose.position):
-                rospy.logdebug(f"Robot {measurement.label} is out of bounds. Skipping.")
+                rospy.logdebug(f"{measurement.label} is out of bounds. Skipping.")
+                continue
+            if label == Label.ROBOT and self.is_pose_near_tag(map_pose):
+                rospy.logdebug(f"{measurement.label} is near a tag. Skipping.")
                 continue
             map_measurements.append(map_pose)
 
@@ -199,12 +216,10 @@ class RobotFilter:
             covariance = self.our_robot_heuristics.compute_covariance(camera_measurement)
         else:
             covariance = self.their_robot_heuristics.compute_covariance(camera_measurement)
-            # map_pose, velocity = self.get_delta_measurements(
-            #     camera_measurement.header.stamp.to_sec(), robot_name, map_pose
-            # )
-            # self.update_cmd_vel(velocity, robot_config)
-            self.update_cmd_vel(Twist(), robot_config)
-            robot_filter.object_radius = self.get_object_radius(camera_measurement)
+            self.robot_sizes[robot_name] = self.get_object_radius(robot_name, camera_measurement)
+
+        twist_meas = self.prev_twist_measurements[robot_name]
+        self.update_cmd_vel(twist_meas, robot_config)
 
         pose = PoseWithCovariance()
         pose.pose = map_measurement
@@ -216,7 +231,7 @@ class RobotFilter:
             rospy.logwarn(f"Failed to update from robot measurement. Resetting filter. {e}")
             robot_filter.reset()
 
-    def get_object_radius(self, object_estimate: EstimatedObject) -> float:
+    def get_object_radius(self, robot_name: str, object_estimate: EstimatedObject) -> float:
         measured_radius = (
             max(
                 object_estimate.size.x,
@@ -230,7 +245,7 @@ class RobotFilter:
                 measured_radius,
                 self.robot_min_radius,
             ),
-            self.robot_max_radius,
+            self.robot_max_sizes[robot_name],
         )
 
     def get_delta_measurements(self, stamp: float, robot_name: str, pose: Pose) -> Tuple[Pose, Twist]:
@@ -282,8 +297,10 @@ class RobotFilter:
                 rospy.logwarn(f"Tag id {tag_id} is not a robot")
                 continue
             robot_filter = self.robot_filters[robot_name]
+            tag_pose = detection.pose.pose
+            self.prev_tag_pose[robot_name] = tag_pose
             try:
-                robot_filter.update_pose(detection.pose.pose)
+                robot_filter.update_pose(tag_pose)
             except np.linalg.LinAlgError as e:
                 rospy.logwarn(f"Failed to update from tag. Resetting filter. {e}")
                 robot_filter.reset()
@@ -304,6 +321,7 @@ class RobotFilter:
 
     def cmd_vel_callback(self, msg: Twist, robot_config: RobotConfig) -> None:
         self.update_cmd_vel(msg, robot_config)
+        self.prev_twist_measurements[robot_config.name] = msg
         self.prev_cmd_time = rospy.Time.now()
 
     def update_cmd_vel(self, msg: Twist, robot_config: RobotConfig):
@@ -346,6 +364,20 @@ class RobotFilter:
             return False
         xyz = XYZ.from_msg(Vector3(position.x, position.y, position.z))
         return self.field_bounds[0] < xyz < self.field_bounds[1]
+
+    def is_pose_near_tag(self, pose: Pose) -> bool:
+        for tag_pose in self.prev_tag_pose.values():
+            delta = np.array(
+                [
+                    [tag_pose.pose.position.x - pose.position.x],
+                    [tag_pose.pose.position.y - pose.position.y],
+                    [tag_pose.pose.position.z - pose.position.z],
+                ]
+            )
+            distance = np.linalg.norm(delta)
+            if distance < self.ignore_measurement_near_tag_threshold:
+                return True
+        return False
 
     def transform_to_map(self, header: RosHeader, pose: Pose) -> Optional[Pose]:
         pose_stamped = PoseStamped(header=header, pose=pose)
@@ -391,7 +423,7 @@ class RobotFilter:
         for robot_name, bot_filter in self.robot_filters.items():
             robot_frame_id = self.get_robot_frame_id(robot_name)
             pose, twist = bot_filter.get_state()
-            diameter = bot_filter.object_radius * 2
+            diameter = self.robot_sizes[robot_name] * 2
             state_msg = Odometry()
             state_msg.header.frame_id = self.map_frame
             state_msg.header.stamp = rospy.Time.now()

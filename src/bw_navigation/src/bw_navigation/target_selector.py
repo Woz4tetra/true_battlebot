@@ -5,7 +5,7 @@ from typing import Optional, Tuple, cast
 import numpy as np
 import rospy
 from bw_interfaces.msg import EstimatedObject, EstimatedObjectArray
-from bw_tools.configs.robot_config import RobotFleetConfig, RobotTeam
+from bw_tools.configs.robots import RobotFleetConfig, RobotTeam
 from bw_tools.structs.pose2d import Pose2D
 from bw_tools.typing import get_param
 from costmap_converter.msg import ObstacleArrayMsg, ObstacleMsg
@@ -14,14 +14,19 @@ from sensor_msgs import point_cloud2
 from sensor_msgs.msg import PointCloud2, PointField
 from std_msgs.msg import Header
 
-from bw_navigation.selector_algorithms import CrashSelector, PushFromBehindSelector, SacrificialSelector
+from bw_navigation.selector_algorithms import (
+    CrashAvoidFrontSelector,
+    CrashSelector,
+    PushFromBehindSelector,
+    SacrificialSelector,
+)
 from bw_navigation.selector_algorithms.base_selector import BaseSelector
 from bw_navigation.selector_algorithms.match_state import MatchState
 
 CLOUD_FIELDS = [
-    PointField("x", 0, PointField.FLOAT32, 1),
-    PointField("y", 4, PointField.FLOAT32, 1),
-    PointField("z", 8, PointField.FLOAT32, 1),
+    PointField("x", 0, PointField.FLOAT32, 1),  # type: ignore
+    PointField("y", 4, PointField.FLOAT32, 1),  # type: ignore
+    PointField("z", 8, PointField.FLOAT32, 1),  # type: ignore
 ]
 
 
@@ -39,6 +44,7 @@ class TargetSelector:
             "sacrificial_selector": SacrificialSelector,
             "push_from_behind_selector": PushFromBehindSelector,
             "crash_selector": CrashSelector,
+            "crash_avoid_front_selector": CrashAvoidFrontSelector,
         }[self.algorithm_name]()
 
         all_robots = RobotFleetConfig.from_dict(robot_config)

@@ -7,7 +7,7 @@ import rospy
 import tf2_ros
 from bw_interfaces.msg import CageCorner as RosCageCorner
 from bw_interfaces.msg import EstimatedObject, SegmentationInstance, SegmentationInstanceArray
-from bw_tools.configs.field_type import FIELD_CONFIG, FieldType
+from bw_tools.configs.maps import FieldType, Maps
 from bw_tools.structs.cage_corner import CageCorner
 from bw_tools.structs.labels import Label
 from bw_tools.structs.rpy import RPY
@@ -33,16 +33,25 @@ from bw_object_filter.field_math.project_segmentation import project_segmentatio
 
 class FieldFilter:
     def __init__(self) -> None:
+        maps_config = get_param("/maps", None)
+        if maps_config is None:
+            raise ValueError("Must specify maps in the parameter server")
+        rospy.logdebug(f"Maps config: {maps_config}")
+
+        self.maps = Maps.from_dict(maps_config)
+
         self.angle_delta_threshold = math.radians(get_param("angle_delta_threshold_degrees", 3.0))
         self.base_frame = get_param("~base_frame", "camera")
         self.map_frame = get_param("~map_frame", "map")
         self.relative_map_frame = get_param("~relative_map_frame", "map_relative")
         auto_initialize = get_param("~auto_initialize", False)
         self.always_use_default_dims = get_param("~always_use_default_dims", False)
-        self.expected_size = FIELD_CONFIG[FieldType(get_param("~field_type", "nhrl_small"))].size
+        self.map_name = FieldType(get_param("~map", "nhrl_small"))
+        self.expected_size = self.maps.get(self.map_name).size
         field_dims_buffer = get_param("~field_dims_buffer", 0.25)
         buffer_extents = XYZ(field_dims_buffer, field_dims_buffer, field_dims_buffer)
         self.extents_range = (self.expected_size - buffer_extents, self.expected_size + buffer_extents)
+        rospy.loginfo(f"Map name: {self.map_name}")
         rospy.loginfo(f"Extents range: {self.extents_range}")
 
         self.unbounded_dims = self.expected_size + XYZ(0.5, 0.5, 0.0)
@@ -149,7 +158,7 @@ class FieldFilter:
         if passes:
             rospy.loginfo("Field passes validation.")
         else:
-            rospy.logwarn("Field does not pass validation. Using default values.")
+            rospy.logwarn(f"Field does not pass validation. Using default values: {self.unbounded_dims}")
             field_centered_pose = lens_plane_pose.pose
             extents = self.unbounded_dims
 
@@ -382,6 +391,6 @@ class FieldFilter:
 
 
 if __name__ == "__main__":
-    rospy.init_node("field_filter")
+    rospy.init_node("field_filter", log_level=rospy.DEBUG)
     field_filter = FieldFilter()
     field_filter.run()

@@ -1,49 +1,108 @@
-#!/bin/bash
-
-set -e
-
-touch "${ROS_WS_ROOT}"/robot
-source "${ROS_WS_ROOT}"/robot
-
-if [ -z "${ROBOT}" ] || [ -n "${1}" ]
-    then export ROBOT="${1}"
-fi
-
-if [ -z "${MAP_NAME}" ] || [ -n "${2}" ]
-    then export MAP_NAME="${2}"
-fi
-
-if [ -z "${ROBOT}" ]
-    then echo "Error: Provide robot name"
-    exit 1
-fi
-
-if [ -z "${MAP_NAME}" ]
-    then echo "Error: Provide map name"
-    exit 1
-fi
-
-export FOUND_LAUNCHES=$(ls -1 /opt/"${ORGANIZATION}"/"${PROJECT_NAME}"/src/bw_bringup/launch)
-MATCH_FOUND=$(python <<EOF
+#!/usr/bin/env python
+# PYTHON_ARGCOMPLETE_OK
+import argparse
 import os
-found_launches = os.environ["FOUND_LAUNCHES"]
-robot = os.environ["ROBOT"]
-expected_path = robot + ".launch"
-for launch in found_launches.splitlines():
-    if expected_path == launch:
-        print("yes")
-        break
-EOF
-)
-if [ -z "${MATCH_FOUND}" ]; then
-    echo "Robot ${ROBOT} not found"
-    exit 1
-fi
+import re
+from dataclasses import dataclass
 
-cat <<EOT > "${ROS_WS_ROOT}"/robot
-export ROBOT=${ROBOT}
-export MAP_NAME=${MAP_NAME}
-EOT
+import argcomplete
+import yaml
 
-echo "Robot name: ${ROBOT}"
-echo "Map name: ${MAP_NAME}"
+PROJECT_NAME = os.environ["PROJECT_NAME"]
+ROS_WS_ROOT = os.environ["ROS_WS_ROOT"]
+ROBOT_FILE = os.path.join(ROS_WS_ROOT, "robot")
+PROJECT_DIR = os.path.abspath(os.path.join(__file__, os.pardir, os.pardir))
+
+
+def get_robots() -> list[str]:
+    launch_dir = os.path.join(PROJECT_DIR, PROJECT_NAME, "src", "bw_bringup", "launch")
+    robots = []
+
+    for launch in os.listdir(launch_dir):
+        if launch.endswith(".launch"):
+            if launch == "bw_bringup.launch":
+                continue
+            robot_name = os.path.splitext(launch)[0]
+            robots.append(robot_name)
+    if "" not in robots:
+        robots.append("")
+    return robots
+
+
+def get_maps() -> list[str]:
+    maps_config = os.path.join(PROJECT_DIR, PROJECT_NAME, "src", "bw_bringup", "config", "maps.yaml")
+    with open(maps_config, "r") as file:
+        maps_config = yaml.safe_load(file)
+    maps = []
+    for subconfig in maps_config["maps"]:
+        maps.append(subconfig["name"])
+    if "" not in maps:
+        maps.append("")
+    return maps
+
+
+ALL_ROBOTS = get_robots()
+ALL_MAPS = get_maps()
+
+
+@dataclass
+class Environment:
+    ROBOT: str
+    MAP_NAME: str
+
+
+def load_file() -> Environment:
+    if not os.path.exists(ROBOT_FILE):
+        return Environment("", "")
+    with open(ROBOT_FILE, "r") as file:
+        lines = file.readlines()
+    env = {}
+    for line in lines:
+        match = re.search(r"export (.*)=(.*)", line)
+        if match:
+            key = match.group(1)
+            value = match.group(2)
+            env[key] = value
+    return Environment(**env)
+
+
+def main() -> None:
+    env = load_file()
+    parser = argparse.ArgumentParser(description="set_robot")
+    parser.add_argument("robot", type=str, nargs="?", choices=ALL_ROBOTS, help="robot name")
+    parser.add_argument("map_name", type=str, nargs="?", default="", choices=ALL_MAPS, help="map name")
+    argcomplete.autocomplete(parser)
+    args = parser.parse_args()
+
+    robot = args.robot
+    if not robot:
+        print(f"Robot name: {env.ROBOT}")
+        print(f"Map name: {env.MAP_NAME}")
+        exit(0)
+
+    if robot not in ALL_ROBOTS:
+        print(f"Error: Robot {robot} not found")
+        exit(1)
+    map_name = args.map_name
+    if not map_name:
+        map_name = env.MAP_NAME
+    if map_name not in ALL_MAPS:
+        print(f"Error: Map {map_name} not found")
+        exit(1)
+
+    print(f"Robot name: {robot}")
+    print(f"Map name: {map_name}")
+
+    env = Environment(robot, map_name)
+    with open(ROBOT_FILE, "w") as file:
+        file.write(
+            f"""export ROBOT={robot}
+export MAP_NAME={map_name}
+echo Robot name: {robot}
+echo Map name: {map_name}
+"""
+        )
+
+
+if __name__ == "__main__":
+    main()

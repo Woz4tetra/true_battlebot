@@ -94,3 +94,5 @@ export ROSCONSOLE_FORMAT='[${node}] [${severity}] [${time}]: ${message}'
 if [ -n "${REMOTE_MACHINE}" ]; then
     source /opt/"${ORGANIZATION}"/scripts/set_client "${REMOTE_MACHINE}"
 fi
+
+eval "$(activate-global-python-argcomplete --dest=-)"

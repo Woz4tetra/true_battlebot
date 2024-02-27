@@ -13,7 +13,6 @@ cd ${BASE_DIR}/../resources
 IMAGE_VERSION=$(${BASE_DIR}/../get_image_tag)
 ORGANIZATION=$(${BASE_DIR}/../get_organization)
 PROJECT_NAME=$(${BASE_DIR}/../get_project_name)
-BUILD_FLAGS=-DCATKIN_BLACKLIST_PACKAGES=\'\'
 
 docker run \
     --user ${ORGANIZATION} \
@@ -22,9 +21,10 @@ docker run \
     --net="host" \
     --privileged \
     --stop-signal=SIGINT \
+    --env "TERM=xterm-256color" \
     -v=${PROJECT_NAME}_build:/home/${ORGANIZATION}/ros_ws:rw \
     -v=${PROJECT_DIR}:/opt/${ORGANIZATION}/${PROJECT_NAME}:rw \
     -v=${PROJECT_DIR}/scripts:/opt/${ORGANIZATION}/scripts:rw \
     --rm \
     ${IMAGE_VERSION} \
-    /opt/${ORGANIZATION}/scripts/lib/build_ros_ws.sh "${BUILD_FLAGS}" "${ROBOT_NAME}" "${MAP_NAME}"
+    /opt/${ORGANIZATION}/scripts/build_ros_ws "${ROBOT_NAME}" "${MAP_NAME}"

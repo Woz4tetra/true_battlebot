@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
 from enum import Enum, auto
-from typing import List
 
 from dacite import from_dict
 
@@ -43,7 +42,7 @@ class RobotConfig:
 
 @dataclass
 class RobotFleetConfig:
-    robots: List[RobotConfig] = field(default_factory=lambda: [])
+    robots: list[RobotConfig] = field(default_factory=lambda: [])
 
     @classmethod
     def from_dict(cls, data: dict) -> RobotFleetConfig:

@@ -29,11 +29,14 @@
 			ns="global_costmap" />
 	</node>
 
-	<node name="field_map_converter" pkg="bw_navigation" type="map_converter.py" output="screen" />
+	<node name="field_map_converter" pkg="bw_navigation" type="map_converter.py" output="screen">
+		<param name="resolution" value="0.025"/>
+	</node>
 	<node name="target_selector" pkg="bw_navigation" type="target_selector.py" output="screen">
 		<remap from="obstacles" to="/move_base_flex/TebLocalPlannerROS/obstacles" />
 		<!-- <param name="algorithm" value="sacrificial_selector" /> -->
 		<!-- <param name="algorithm" value="push_from_behind_selector" /> -->
+		<!-- <param name="algorithm" value="crash_avoid_front_selector" /> -->
 		<param name="algorithm" value="crash_selector" />
 	</node>
 </launch>

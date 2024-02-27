@@ -25,11 +25,12 @@ services:
             - ${PROJECT_NAME}_build:/home/${ORGANIZATION}/ros_ws:rw
             - ${PROJECT_DIR}:/opt/${ORGANIZATION}/${PROJECT_NAME}:rw
             - ${PROJECT_DIR}/scripts:/opt/${ORGANIZATION}/scripts:rw
-            # TODO: mount in training data
             - /media/storage/torch-cache:/home/bwbots/.torch:rw
             - /media/storage/true-battlebot-media:/media/storage:rw
             - /tmp/.X11-unix:/tmp/.X11-unix
             - /home/${USER}/.Xauthority:/home/${ORGANIZATION}/.Xauthority:rw
+            - /home/${USER}/.gitconfig:/home/${ORGANIZATION}/.gitconfig:rw
+            - /home/${USER}/.ssh:/home/${ORGANIZATION}/.ssh:rw
             # Allow container to control docker
             - /home/${USER}/.docker:/home/${ORGANIZATION}/.docker:rw # docker looks here inside a container
             - /var/run/docker.sock:/var/run/docker.sock

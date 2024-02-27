@@ -6,8 +6,8 @@ from helpers import load_dataset, write_dataset
 
 
 def main():
-    source_path = "/media/storage/training/labeled/nhrl_dataset_augmented"
-    dest_path = "/media/storage/training/labeled/nhrl_dataset"
+    source_path = "/media/storage/training/labeled/2024-02-24/battlebots_augmented"
+    dest_path = "/media/storage/training/labeled/2024-02-24/battlebots"
     annotations_name = "_annotations.coco.json"
     source_annotations_path = os.path.join(source_path, annotations_name)
 
@@ -15,6 +15,7 @@ def main():
     val_percent = 0.15
     metadataset = load_dataset(source_annotations_path)
     num_images = len(metadataset.dataset.images)
+    print(f"Loaded {num_images} images")
     random.shuffle(metadataset.dataset.images)
 
     num_train = int(train_percent * num_images)

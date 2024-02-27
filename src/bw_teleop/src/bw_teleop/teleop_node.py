@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import rospy
 from bw_interfaces.msg import EstimatedObjectArray
-from bw_tools.configs.robot_config import RobotConfig, RobotFleetConfig, RobotTeam
+from bw_tools.configs.robots import RobotConfig, RobotFleetConfig, RobotTeam
 from bw_tools.typing import get_param
 from geometry_msgs.msg import Quaternion, Twist
 from tf_conversions import transformations

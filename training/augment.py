@@ -7,8 +7,8 @@ from helpers import augment_dataset_image, copy_dataset, load_dataset, write_aug
 
 
 def main():
-    images_path = "/media/storage/training/labeled/nhrl_dataset_all"
-    augmented_path = "/media/storage/training/labeled/nhrl_dataset_augmented"
+    images_path = "/media/storage/training/labeled/2024-02-24/battlebots_all"
+    augmented_path = "/media/storage/training/labeled/2024-02-24/battlebots_augmented"
     annotations_name = "_annotations.coco.json"
     annotations_path = os.path.join(images_path, annotations_name)
     augmented_annotations_path = os.path.join(augmented_path, annotations_name)

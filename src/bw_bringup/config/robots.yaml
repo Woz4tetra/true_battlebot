@@ -11,10 +11,11 @@ robots:
           name: main_bot,
           up_id: 42,
           down_id: 99,
-          radius: 0.18,
+          radius: 0.1, # for path planning
+          # radius: 0.18,
           bridge_id: 2,
           base_width: 0.2,
       }
-    - { name: referee }
-    - { name: opponent_1 }
+    # - { name: referee, radius: 0.1 }
+    - { name: opponent_1, radius: 0.1 }
     # - { name: opponent_2 }

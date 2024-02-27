@@ -4,6 +4,7 @@ docker-compose.gpu.yaml
 *.pkl
 *.torchscript
 *.wav
+build/
 
 # ZED files
 *neural_depth*.model*
