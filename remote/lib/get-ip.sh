@@ -10,6 +10,10 @@ case $DEVICE in
     echo -n "192.168.1.81"
     ;;
 
+  dadbot-kgb)
+    echo -n "192.168.39.182"
+    ;;
+
   *)
     echo -n ""
     >&2 echo "error invalid device name: ${DEVICE}"

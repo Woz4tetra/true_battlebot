@@ -10,6 +10,10 @@ case $DEVICE in
     echo -n "bwbots"
     ;;
 
+  dadbot-kgb)
+    echo -n "bwbots"
+    ;;
+
   *)
     echo -n ""
     >&2 echo "error invalid device name: ${DEVICE}"
