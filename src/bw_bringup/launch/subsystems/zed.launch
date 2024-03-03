@@ -37,11 +37,11 @@
     </node>
 
     <group ns="$(arg camera_name)">
-        <!-- <node name="zed_plane_connector" pkg="bw_object_filter" type="zed_plane_connector.py"
+        <node name="zed_plane_connector" pkg="bw_object_filter" type="zed_plane_connector.py"
             output="screen" respawn="true">
             <remap from="plane" to="zed_plane_response" />
             <remap from="pose" to="plane_response" />
-        </node> -->
+        </node>
 
 
         <node pkg="nodelet" type="nodelet" args="manager" name="zed_image_proc"
