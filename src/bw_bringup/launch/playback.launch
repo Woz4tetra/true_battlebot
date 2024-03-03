@@ -3,7 +3,7 @@
     <arg name="robot" default="$(env ROBOT)" />
     <!-- <arg name="model" default="nhrl_dataset_mask_rcnn_R_50_FPN_3x_2023-11-20" /> -->
     <arg name="model" default="battlebots_mask_rcnn_R_50_FPN_3x_2024-02-25" />
-    <arg name="svo_name" default="mini_bot_2024-03-02T09-46-00.svo" />
+    <arg name="svo_name" default="mini_bot_2024-03-02T17-59-26.svo" />
 
     <include file="$(find bw_bringup)/launch/subsystems/common.launch">
         <arg name="auto_initialize" value="true" />
