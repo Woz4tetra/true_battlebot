@@ -33,8 +33,8 @@ imu_sensor::ImuSensor *imu_sensor_inst;
 persistent_config::PersistentConfig *persistent_config_inst;
 status_neopixel::StatusNeopixel *neopixel_status;
 
-const int COMMAND_TIMEOUT = 250; // Stop motors if no command is received for this many milliseconds
-uint32_t last_command = 0;       // The last time a packet was received (milliseconds)
+const int COMMAND_TIMEOUT = 1000; // Stop motors if no command is received for this many milliseconds
+uint32_t last_command = 0;        // The last time a packet was received (milliseconds)
 
 const int IMU_SEND_INTERVAL = 100;
 uint32_t last_imu_send = 0;
@@ -160,12 +160,6 @@ void loop()
 
             imu_sensor_inst->update();
             controller->update();
-
-            if (now - last_imu_send > IMU_SEND_INTERVAL)
-            {
-                udp_interface->send_imu();
-                last_imu_send = now;
-            }
 
             break;
         default:

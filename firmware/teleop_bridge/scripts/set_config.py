@@ -51,8 +51,8 @@ def main() -> None:
     with open(args.config, "r") as f:
         config = Config.from_dict(json.load(f))
 
-    password = ""
-    while not password:
+    password = None
+    while password is None:
         password = getpass.getpass(f"Enter password for {config.ssid}: ")
         config.password = password
     data = config.to_serial_bytes()
