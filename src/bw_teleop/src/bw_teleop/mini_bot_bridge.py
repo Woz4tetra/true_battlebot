@@ -25,7 +25,7 @@ class MiniBotBridge:
         self.robot_frame_prefix = get_param("~robot_frame_prefix", "base_link")
 
         self.poll_rate = get_param("~poll_rate", 1000.0)
-        self.send_rate = get_param("~send_rate", 60.0)
+        self.send_rate = get_param("~send_rate", 10.0)
         self.base_radius = self.mini_bot_config.base_width / 2
         self.command_timeout = rospy.Duration.from_sec(get_param("~command_timeout", 0.5))
         self.ping_timeout = get_param("~ping_timeout", 0.5)

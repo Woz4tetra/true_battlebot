@@ -41,7 +41,14 @@ void UdpBridge::init_callback()
 {
     char *ssid = device_config_->wifi_info;
     char *password = ssid + SSID_LENGTH;
-    WiFi.begin(ssid, password);
+    if (strlen(password) == 0)
+    {
+        WiFi.begin(ssid);
+    }
+    else
+    {
+        WiFi.begin(ssid, password);
+    }
     state_ = CONNECTING;
 }
 

@@ -51,7 +51,7 @@ private:
     void plane_request_callback(const geometry_msgs::PointStampedConstPtr &request);
 
     bool is_label_included(std::string label);
-    bool plane_fitting(const std::vector<Vector3VP> &points_input, double *center, double *normal);
+    bool plane_fitting(const std::vector<Vector3VP> &points_input, double *center, double *coefs);
 
 public:
     FieldEstimation(ros::NodeHandle *nodehandle);

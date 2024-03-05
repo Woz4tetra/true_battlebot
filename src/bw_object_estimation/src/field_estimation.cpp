@@ -137,9 +137,10 @@ bool FieldEstimation::find_plane(std_msgs::Header header, cv::Mat depth_image, c
     ROS_INFO("coeffs: %f, %f, %f, %f", coefs[0], coefs[1], coefs[2], coefs[3]);
 
     Eigen::Vector3d normal(coefs[0], coefs[1], coefs[2]);
-    Eigen::Vector3d up(1, 0, 0);                          // define up direction
-    Eigen::Vector3d axis = normal.cross(up);              // get axis of rotation
-    double angle = acos(normal.dot(up));                  // get angle of rotation
+    Eigen::Vector3d up(0, 0, 1);             // define up direction
+    Eigen::Vector3d axis = normal.cross(up); // get axis of rotation
+    double angle = normal.dot(up);           // get angle of rotation
+    ROS_INFO("axis: %f, %f, %f. angle: %f", axis[0], axis[1], axis[2], angle);
     Eigen::Quaterniond q(Eigen::AngleAxisd(angle, axis)); // create quaternion
 
     normal.normalize();
@@ -161,37 +162,82 @@ bool FieldEstimation::find_plane(std_msgs::Header header, cv::Mat depth_image, c
     return true;
 }
 
-bool FieldEstimation::plane_fitting(const std::vector<Vector3VP> &points_input, double *center, double *normal)
+bool FieldEstimation::plane_fitting(const std::vector<Vector3VP> &points_input, double *center, double *coefs)
 {
-    int Num = points_input.size();
-    std::vector<std::shared_ptr<GRANSAC::AbstractParameter>> CandPoints;
-    CandPoints.resize(Num);
-#pragma omp parallel for
-    for (int i = 0; i < Num; ++i)
+    double min_x = 100000.0;
+    double max_x = 0.0;
+    double max_y = 0.0;
+    size_t pt1_idx = 0, pt2_idx = 0, pt3_idx = 0;
+    for (size_t index = 0; index < points_input.size(); index++)
     {
-        Vector3VP p = points_input[i];
-        std::shared_ptr<GRANSAC::AbstractParameter> CandPt = std::make_shared<Point3D>(p[0], p[1], p[2]);
-        CandPoints[i] = CandPt;
+        Vector3VP point = points_input[index];
+        if (point[0] < min_x)
+        {
+            min_x = point[0];
+            pt1_idx = index;
+        }
+        if (point[0] > max_x)
+        {
+            max_x = point[0];
+            pt2_idx = index;
+        }
+        if (point[1] > max_y)
+        {
+            max_y = point[1];
+            pt3_idx = index;
+        }
     }
+    Vector3VP pt1 = points_input[pt1_idx];
+    Vector3VP pt2 = points_input[pt2_idx];
+    Vector3VP pt3 = points_input[pt3_idx];
+    double a1 = pt2[0] - pt1[0];
+    double b1 = pt2[1] - pt1[1];
+    double c1 = pt2[2] - pt1[2];
+    double a2 = pt3[0] - pt1[0];
+    double b2 = pt3[1] - pt1[1];
+    double c2 = pt3[2] - pt1[2];
+    double a = b1 * c2 - b2 * c1;
+    double b = a2 * c1 - a1 * c2;
+    double c = a1 * b2 - b1 * a2;
+    double d = (-a * pt1[0] - b * pt1[1] - c * pt2[0]);
 
-    int64_t start = cv::getTickCount();
-    _estimator->Estimate(CandPoints);
-    int64_t end = cv::getTickCount();
-    std::cout << "RANSAC took: " << GRANSAC::VPFloat(end - start) / GRANSAC::VPFloat(cv::getTickFrequency()) * 1000.0 << " ms." << std::endl;
+    center[0] = (pt1[0] + pt2[0] + pt3[0]) / 3;
+    center[1] = (pt1[1] + pt2[1] + pt3[1]) / 3;
+    center[2] = (pt1[2] + pt2[2] + pt3[2]) / 3;
+    coefs[0] = a;
+    coefs[1] = b;
+    coefs[2] = c;
+    coefs[3] = d;
 
-    auto BestPlane = _estimator->GetBestModel();
-    if (BestPlane == nullptr)
-    {
-        return false;
-    }
-    for (int i = 0; i < 3; i++)
-    {
-        center[i] = BestPlane->m_PointCenter[i];
-    }
-    for (int i = 0; i < 4; i++)
-    {
-        normal[i] = BestPlane->m_PlaneCoefs[i];
-    }
+    //     int Num = points_input.size();
+    //     std::vector<std::shared_ptr<GRANSAC::AbstractParameter>> CandPoints;
+    //     CandPoints.resize(Num);
+    // #pragma omp parallel for
+    //     for (int i = 0; i < Num; ++i)
+    //     {
+    //         Vector3VP p = points_input[i];
+    //         std::shared_ptr<GRANSAC::AbstractParameter> CandPt = std::make_shared<Point3D>(p[0], p[1], p[2]);
+    //         CandPoints[i] = CandPt;
+    //     }
+
+    //     int64_t start = cv::getTickCount();
+    //     _estimator->Estimate(CandPoints);
+    //     int64_t end = cv::getTickCount();
+    //     std::cout << "RANSAC took: " << GRANSAC::VPFloat(end - start) / GRANSAC::VPFloat(cv::getTickFrequency()) * 1000.0 << " ms." << std::endl;
+
+    //     auto BestPlane = _estimator->GetBestModel();
+    //     if (BestPlane == nullptr)
+    //     {
+    //         return false;
+    //     }
+    //     for (int i = 0; i < 3; i++)
+    //     {
+    //         center[i] = BestPlane->m_PointCenter[i];
+    //     }
+    //     for (int i = 0; i < 4; i++)
+    //     {
+    //         normal[i] = BestPlane->m_PlaneCoefs[i];
+    //     }
 
     return true;
 }

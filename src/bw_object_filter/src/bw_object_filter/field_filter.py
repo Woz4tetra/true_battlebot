@@ -88,7 +88,7 @@ class FieldFilter:
         self.recommended_point_sub = rospy.Subscriber(
             "estimation/recommended_field_point", PointStamped, self.recommended_point_callback
         )
-        self.camera_tilt_sub = rospy.Subscriber("imu", Imu, self.imu_callback, queue_size=1)
+        # self.camera_tilt_sub = rospy.Subscriber("imu", Imu, self.imu_callback, queue_size=1)
         self.manual_request_sub = rospy.Subscriber(
             "manual_plane_request", Empty, self.manual_request_callback, queue_size=1
         )
