@@ -46,7 +46,7 @@ nodenv install -s ${NODE_VERSION} || true
 nodenv global ${NODE_VERSION}
 
 npm_path=$(which npm)
-if [[ -z ${npm_path} ]]; then
+if [ -z ${npm_path} ]; then
 	echo "npm binary not found, installation failed"
 	exit
 fi
