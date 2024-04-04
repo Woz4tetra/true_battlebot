@@ -1,7 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using Unity.Robotics.ROSTCPConnector;
-using Unity.VisualScripting;
+using MathExtensions;
 using RosMessageTypes.Std;
 
 public abstract class BaseRectangleSensor : MonoBehaviour
@@ -104,7 +104,8 @@ public abstract class BaseRectangleSensor : MonoBehaviour
             Vector3 tagNormal = tag.transform.rotation * -Vector3.up;
             Vector3 cameraNormal = cameraView.transform.rotation * Vector3.forward;
             float tagAngle = Vector3.Angle(tagNormal, cameraNormal);
-            if (tagAngle > viewAngleThreshold) {
+            if (tagAngle > viewAngleThreshold)
+            {
                 return false;
             }
             Vector3 directionVector = tagRenderer.bounds.center - cameraView.transform.position;

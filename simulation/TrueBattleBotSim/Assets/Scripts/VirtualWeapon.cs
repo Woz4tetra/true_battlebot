@@ -1,7 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
-using System.Numerics;
-using Unity.VisualScripting;
 using UnityEngine;
 
 public class VirtualWeapon : MonoBehaviour
@@ -12,42 +8,50 @@ public class VirtualWeapon : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        
+
     }
 
     // Update is called once per frame
     void Update()
     {
-        
+
     }
 
-    void OnTriggerEnter(Collider other) {
-        if (other.gameObject.tag == gameObject.tag) {
+    void OnTriggerEnter(Collider other)
+    {
+        if (other.gameObject.tag == gameObject.tag)
+        {
             ApplyForceToOther(gameObject);
             ApplyForceToOther(other.gameObject);
         }
-        else if (isLayerInMask(other.gameObject.layer)) {
+        else if (isLayerInMask(other.gameObject.layer))
+        {
             ApplyForceToOther(other.gameObject);
         }
     }
 
-    private void ApplyForceToOther(GameObject other) {
+    private void ApplyForceToOther(GameObject other)
+    {
 
         UnityEngine.Vector3 direction = other.transform.up.normalized;
         UnityEngine.Vector3 force = UnityEngine.Quaternion.Euler(-45, 0, 0) * direction * forceMagnitude;
         Rigidbody body = GetComponentInTree<Rigidbody>(gameObject);
-        if (body != null) {
+        if (body != null)
+        {
             body.AddForce(force, ForceMode.Impulse);
         }
-        else {
+        else
+        {
             ArticulationBody artBody = GetComponentInTree<ArticulationBody>(other);
-            if (artBody != null) {
+            if (artBody != null)
+            {
                 artBody.AddForce(force, ForceMode.Impulse);
             }
         }
     }
 
-    private T GetComponentInTree<T>(GameObject obj) {
+    private T GetComponentInTree<T>(GameObject obj)
+    {
         Transform tf = obj.transform;
         T component = obj.GetComponent<T>();
         while (component is not null)  // ???somehow this only works in reverse???
@@ -63,7 +67,8 @@ public class VirtualWeapon : MonoBehaviour
         return component;
     }
 
-    private bool isLayerInMask(int layer) {
+    private bool isLayerInMask(int layer)
+    {
         return targetMask == (targetMask | (1 << layer));
     }
 }

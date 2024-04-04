@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using RosMessageTypes.Geometry;
 using Unity.Robotics.ROSTCPConnector.ROSGeometry;
-using Unity.VisualScripting;
+using MathExtensions;
 using RosMessageTypes.BwInterfaces;
 using RosMessageTypes.Std;
 using UnityEngine;
@@ -50,8 +50,10 @@ public class FieldSensor : BaseRectangleSensor
                 header = header,
                 state = new OdometryMsg
                 {
-                    pose = new PoseWithCovarianceMsg {
-                        pose = new PoseMsg {
+                    pose = new PoseWithCovarianceMsg
+                    {
+                        pose = new PoseMsg
+                        {
                             position = targetPose.GetT().To<FLU>(),
                             orientation = targetPose.GetR().To<FLU>()
                         }

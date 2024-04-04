@@ -13,8 +13,9 @@ public class SettingsPane : MonoBehaviour
     [SerializeField] GameObject enterSettingsPanel;
     [SerializeField] CameraController cameraController;
     Resolution[] resolutions;
-    int textureValue = 0;
-    int antialiasingValue = 0;
+    bool isShown = false;
+    int commonWidth = 1920;
+    int commonHeight = 1080;
 
     public enum TextureQualityPreset
     {
@@ -33,8 +34,6 @@ public class SettingsPane : MonoBehaviour
 
         public static PreferenceKey QualitySettingPreference { get { return new PreferenceKey("QualitySettingPreference"); } }
         public static PreferenceKey ResolutionPreference { get { return new PreferenceKey("ResolutionPreference"); } }
-        public static PreferenceKey TextureQualityPreference { get { return new PreferenceKey("TextureQualityPreference"); } }
-        public static PreferenceKey AntiAliasingPreference { get { return new PreferenceKey("AntiAliasingPreference"); } }
         public static PreferenceKey FullscreenPreference { get { return new PreferenceKey("FullscreenPreference"); } }
 
         public override string ToString()
@@ -43,21 +42,37 @@ public class SettingsPane : MonoBehaviour
         }
     }
 
-    // Start is called before the first frame update
     void Start()
     {
         resolutionDropdown.ClearOptions();
         List<string> options = new List<string>();
         resolutions = Screen.resolutions;
-        int currentResolutionIndex = 0;
+        int currentResolutionIndex = -1;
 
         for (int i = 0; i < resolutions.Length; i++)
         {
             string option = resolutions[i].width + " x " + resolutions[i].height;
             options.Add(option);
-            if (resolutions[i].width == Screen.currentResolution.width
-                    && resolutions[i].height == Screen.currentResolution.height)
-                currentResolutionIndex = i;
+            if (currentResolutionIndex == -1)
+            {
+                if (resolutions[i].width == commonWidth && resolutions[i].height == commonHeight)
+                {
+                    currentResolutionIndex = i;
+                    Debug.Log(
+                        $"Common resolution found: ({commonWidth} x {commonHeight}). " +
+                        $"Labeling as index {currentResolutionIndex}"
+                    );
+                }
+                else if (resolutions[i].width == Screen.currentResolution.width
+                        && resolutions[i].height == Screen.currentResolution.height)
+                {
+                    currentResolutionIndex = i;
+                    Debug.Log(
+                        $"Current resolution found: ({commonWidth} x {commonHeight}). " +
+                        $"Labeling as index {currentResolutionIndex}"
+                    );
+                }
+            }
         }
 
         resolutionDropdown.AddOptions(options);
@@ -66,52 +81,64 @@ public class SettingsPane : MonoBehaviour
         ShowHideSettingsPanel(settingsPanel.activeSelf);
     }
 
-    public void SetFullscreen(bool isFullscreen)
+    public void SetFullscreenCallback(bool isFullscreen)
     {
-        Screen.fullScreen = isFullscreen;
+        SetFullscreen(isFullscreen);
+    }
+    public void SetResolutionCallback(int resolutionIndex)
+    {
+        SetResolution(resolutionIndex);
+    }
+    public void SetQualityCallback(int qualityIndex)
+    {
+        SetQuality(qualityIndex);
     }
 
-    public void SetResolution(int resolutionIndex)
+
+    private void SetFullscreen(bool isFullscreen)
     {
+        Screen.fullScreen = isFullscreen;
+        PlayerPrefs.SetInt(PreferenceKey.FullscreenPreference.Value, Convert.ToInt32(isFullscreen));
+        PlayerPrefs.Save();
+    }
+
+    private void SetResolution(int resolutionIndex)
+    {
+        Debug.Log($"Setting resolution to {resolutionIndex}");
         Resolution resolution = resolutions[resolutionIndex];
         Screen.SetResolution(resolution.width, resolution.height, Screen.fullScreen);
-        ScalePanelToResolution();
+        Debug.Log($"Screen resolution is {resolution.width} x {resolution.height}");
+        PlayerPrefs.SetInt(PreferenceKey.ResolutionPreference.Value, resolutionDropdown.value);
+        PlayerPrefs.Save();
     }
 
     private void SetTextureQuality(int textureIndex)
     {
+        Debug.Log($"Set texture quality to {textureIndex}");
         QualitySettings.globalTextureMipmapLimit = textureIndex;
     }
     private void SetAntiAliasing(int aaIndex)
     {
+        Debug.Log($"Set anti aliasing to {aaIndex}");
         QualitySettings.antiAliasing = aaIndex;
     }
 
     public void ShowHideSettingsPanel(bool show)
     {
+        isShown = show;
         settingsPanel.SetActive(show);
         enterSettingsPanel.gameObject.SetActive(!show);
         cameraController.EnableControls(!show);
     }
 
-
-    private void ScalePanelToResolution()
+    private void SetQuality(int qualityIndex)
     {
-        float targetWidth = Screen.width;
-        float targetHeight = Screen.height;
-        float sourceWidth = 1920;
-        float sourceHeight = 1080;
-        float scale = Mathf.Min(targetHeight / sourceHeight, targetWidth / sourceWidth);
-
-        settingsPanel.transform.localScale = new Vector3(scale, scale, scale);
-        enterSettingsPanel.transform.localScale = new Vector3(scale, scale, scale);
-    }
-
-
-    public void SetQuality(int qualityIndex)
-    {
+        Debug.Log($"Set quality to {qualityIndex}");
         QualitySettings.SetQualityLevel(qualityIndex);
         TextureQualityPreset quality = (TextureQualityPreset)qualityIndex;
+        int textureValue = 0;
+        int antialiasingValue = 0;
+
         switch (quality)
         {
             case TextureQualityPreset.VERY_LOW:
@@ -140,52 +167,49 @@ public class SettingsPane : MonoBehaviour
                 break;
         }
 
-        qualityDropdown.value = (int)qualityIndex;
+        qualityDropdown.value = qualityIndex;
         SetTextureQuality(textureValue);
         SetAntiAliasing(antialiasingValue);
+
+        PlayerPrefs.SetInt(PreferenceKey.QualitySettingPreference.Value, qualityDropdown.value);
+        PlayerPrefs.Save();
     }
 
     public void ExitGame()
     {
         Application.Quit();
     }
-    public void SaveSettings()
-    {
-        PlayerPrefs.SetInt(PreferenceKey.QualitySettingPreference.Value, qualityDropdown.value);
-        PlayerPrefs.SetInt(PreferenceKey.ResolutionPreference.Value, resolutionDropdown.value);
-        PlayerPrefs.SetInt(PreferenceKey.TextureQualityPreference.Value, textureValue);
-        PlayerPrefs.SetInt(PreferenceKey.AntiAliasingPreference.Value, antialiasingValue);
-        PlayerPrefs.SetInt(PreferenceKey.FullscreenPreference.Value, Convert.ToInt32(Screen.fullScreen));
-    }
 
     private int LoadPreference(PreferenceKey key, int defaultValue)
     {
         if (PlayerPrefs.HasKey(key.Value))
         {
-            return PlayerPrefs.GetInt(key.Value);
+            int value = PlayerPrefs.GetInt(key.Value);
+            Debug.Log($"Player preference found for {key.Value}: {value}");
+            return value;
         }
+        Debug.Log($"No player preference found for {key.Value}. Using default: {defaultValue}");
         return defaultValue;
     }
 
     public void LoadSettings(int currentResolutionIndex)
     {
+        Debug.Log($"Loading settings. Default resolution index is {currentResolutionIndex}");
         qualityDropdown.value = LoadPreference(PreferenceKey.QualitySettingPreference, 3);
         resolutionDropdown.value = LoadPreference(PreferenceKey.ResolutionPreference, currentResolutionIndex);
-        textureValue = LoadPreference(PreferenceKey.TextureQualityPreference, 0);
-        antialiasingValue = LoadPreference(PreferenceKey.AntiAliasingPreference, 1);
-        bool fullScreen = Convert.ToBoolean(LoadPreference(PreferenceKey.FullscreenPreference, 1));
+        bool fullScreen = Convert.ToBoolean(LoadPreference(PreferenceKey.FullscreenPreference, 0));
         toggleFullscreen.isOn = fullScreen;
 
         SetQuality(qualityDropdown.value);
+        SetFullscreen(fullScreen);
         SetResolution(resolutionDropdown.value);
-        SetTextureQuality(textureValue);
-        SetAntiAliasing(antialiasingValue);
-        Screen.fullScreen = fullScreen;
     }
 
-    // Update is called once per frame
     void Update()
     {
-
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            ShowHideSettingsPanel(!isShown);
+        }
     }
 }
