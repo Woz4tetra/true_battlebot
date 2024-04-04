@@ -15,6 +15,7 @@ public class CameraController : MonoBehaviour
     private Vector2 prevClickPosition = Vector2.zero;
 
     private bool prevButtonState = false;
+    private bool enableControls = true;
 
     void initializePolarCoordinates()
     {
@@ -49,6 +50,11 @@ public class CameraController : MonoBehaviour
         return Input.GetButton("Fire2");
     }
 
+    public void EnableControls(bool enable)
+    {
+        enableControls = enable;
+    }
+
     private Vector2 GetMovementVector()
     {
         bool buttonState = GetMouseDown();
@@ -78,6 +84,10 @@ public class CameraController : MonoBehaviour
 
     void Update()
     {
+        if (!enableControls)
+        {
+            return;
+        }
         Vector2 movement = GetMovementVector();
         if (movement.magnitude > 0.01f)
         {
