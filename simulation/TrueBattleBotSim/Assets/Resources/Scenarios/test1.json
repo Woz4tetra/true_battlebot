@@ -9,20 +9,26 @@
         {
             "type": "auto_bot",
             "name": "mini_bot",
-            "model": "mini_box_bot",
-            "objective": "Objectives/auto_far_side.json"
+            "model": "Mini bot",
+            "objective": "auto_far_side.json"
         },
         {
             "type": "npc_bot",
             "name": "main_bot",
-            "model": "big_box_bot_blue",
-            "objective": "Objectives/keyboard_far_side.json"
+            "model": "Main bot",
+            "objective": "keyboard_far_side.json"
         },
         {
             "type": "npc_bot",
             "name": "opponent_1",
-            "model": "big_box_bot_orange",
-            "objective": "Objectives/test_path_1.json"
+            "model": "Enemy bot 1",
+            "objective": "test_path_1.json"
+        },
+        {
+            "type": "npc_bot",
+            "name": "referee",
+            "model": "Referee",
+            "objective": "idle_ref_corner.json"
         }
     ]
 }
