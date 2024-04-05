@@ -10,6 +10,7 @@ public class SettingsPane : MonoBehaviour
     [SerializeField] TMP_Dropdown qualityDropdown;
     [SerializeField] Toggle toggleFullscreen;
     [SerializeField] GameObject settingsPanel;
+    [SerializeField] GameObject settingsBackground;
     [SerializeField] GameObject enterSettingsPanel;
     [SerializeField] CameraController cameraController;
     Resolution[] resolutions;
@@ -127,6 +128,7 @@ public class SettingsPane : MonoBehaviour
     {
         isShown = show;
         settingsPanel.SetActive(show);
+        settingsBackground.SetActive(show);
         enterSettingsPanel.gameObject.SetActive(!show);
         cameraController.EnableControls(!show);
     }

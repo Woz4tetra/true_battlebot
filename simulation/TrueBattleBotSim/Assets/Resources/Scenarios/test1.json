@@ -1,0 +1,28 @@
+{
+    "cage": {
+        "dims": {
+            "x": 2.35,
+            "y": 2.35
+        }
+    },
+    "robots": [
+        {
+            "type": "auto_bot",
+            "name": "mini_bot",
+            "model": "mini_box_bot",
+            "objective": "Objectives/auto_far_side.json"
+        },
+        {
+            "type": "npc_bot",
+            "name": "main_bot",
+            "model": "big_box_bot_blue",
+            "objective": "Objectives/keyboard_far_side.json"
+        },
+        {
+            "type": "npc_bot",
+            "name": "opponent_1",
+            "model": "big_box_bot_orange",
+            "objective": "Objectives/test_path_1.json"
+        }
+    ]
+}
