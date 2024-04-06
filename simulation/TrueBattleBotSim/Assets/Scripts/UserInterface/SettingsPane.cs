@@ -8,6 +8,7 @@ public class SettingsPane : MonoBehaviour
 {
     [SerializeField] TMP_Dropdown resolutionDropdown;
     [SerializeField] TMP_Dropdown qualityDropdown;
+    [SerializeField] TMP_Dropdown scenarioDropdown;
     [SerializeField] Toggle toggleFullscreen;
     [SerializeField] GameObject settingsPanel;
     [SerializeField] GameObject settingsBackground;

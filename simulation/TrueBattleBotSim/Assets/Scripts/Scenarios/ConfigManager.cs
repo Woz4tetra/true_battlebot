@@ -1,6 +1,4 @@
 using System.IO;
-using System.Text;
-using UnityEditor.VersionControl;
 using UnityEngine;
 
 public class ConfigManager
