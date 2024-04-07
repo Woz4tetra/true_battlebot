@@ -9,17 +9,33 @@ public class SceneManager : MonoBehaviour
     [SerializeField] GameObject scaleableField;
     [SerializeField] string baseDirectory = "Config";
     [SerializeField] string scenariosDirectory = "Scenarios";
-    [SerializeField] string objectiveDirectory = "Objectives";
-
+    PauseManager pauseManager;
     ScenarioConfig scenario;
+    string currentScenarioName = "";
+    GameObject[] robot_list;
     Dictionary<string, GameObject> robot_prefabs = new Dictionary<string, GameObject>();
     Dictionary<string, GameObject> active_robots = new Dictionary<string, GameObject>();
     Dictionary<string, ObjectiveConfig> objectives = new Dictionary<string, ObjectiveConfig>();
 
     void Start()
     {
+        pauseManager = transform.Find("PauseManager").GetComponent<PauseManager>();
+        if (pauseManager == null)
+        {
+            Debug.LogError("PauseManager not found");
+        }
         Debug.Log($"Current directory: {Application.dataPath}");
         Debug.Log($"Scenarios: {GetScenarioNames()}");
+        GameObject[] robot_list = Resources.LoadAll<GameObject>("Prefabs/Robots");
+        if (robot_list.Length == 0)
+        {
+            Debug.LogError("No robot prefabs found");
+        }
+        foreach (GameObject robot in robot_list)
+        {
+            Debug.Log($"Loaded robot prefab: {robot.name}");
+            robot_prefabs[robot.name] = robot;
+        }
     }
 
     public string[] GetScenarioNames()
@@ -31,27 +47,19 @@ public class SceneManager : MonoBehaviour
 
     public void LoadScenario(string scenarioName)
     {
+        Debug.Log($"Loading scenario: {scenarioName}");
+        currentScenarioName = scenarioName;
         foreach (GameObject robot in active_robots.Values)
         {
-            Destroy(robot);
+            robot.SetActive(false);
         }
-        active_robots.Clear();
         if (scenarioName.Length == 0)
         {
+            Debug.Log("No scenario selected");
             return;
         }
 
         scenario = ConfigManager.LoadScenario(scenarioName);
-        GameObject[] robot_list = Resources.LoadAll<GameObject>("Prefabs/Robots");
-        if (robot_list.Length == 0)
-        {
-            Debug.LogError("No robot prefabs found");
-        }
-        foreach (GameObject robot in robot_list)
-        {
-            Debug.Log($"Loaded robot prefab: {robot.name}");
-            robot_prefabs[robot.name] = robot;
-        }
 
         scaleableField.transform.localScale = new Vector3(scenario.cage.dims.x, 1, scenario.cage.dims.y);
 
@@ -61,9 +69,31 @@ public class SceneManager : MonoBehaviour
             objectives[robot_config.name] = objective_config;
             Bounds robot_bounds = GetMaxBounds(robot_prefabs[robot_config.model]);
             Matrix4x4 robot_pose = GetPoseFromConfig(objective_config.init, scenario.cage.dims, robot_bounds);
-            GameObject robot = Instantiate(robot_prefabs[robot_config.model], robot_pose.GetT(), robot_pose.GetR());
-            active_robots[robot_config.name] = robot;
+            GameObject robot;
+            if (active_robots.ContainsKey(robot_config.name))
+            {
+                robot = active_robots[robot_config.name];
+                robot.transform.position = robot_pose.GetT();
+                robot.transform.rotation = robot_pose.GetR();
+            }
+            else
+            {
+                robot = Instantiate(robot_prefabs[robot_config.model], robot_pose.GetT(), robot_pose.GetR());
+                active_robots[robot_config.name] = robot;
+            }
+            robot.SetActive(true);
         }
+    }
+
+    public void ReloadScenario()
+    {
+        Debug.Log($"Reloading scenario: {currentScenarioName}");
+        LoadScenario(currentScenarioName);
+    }
+
+    public PauseManager GetPauseManager()
+    {
+        return pauseManager;
     }
 
     Bounds GetMaxBounds(GameObject obj)

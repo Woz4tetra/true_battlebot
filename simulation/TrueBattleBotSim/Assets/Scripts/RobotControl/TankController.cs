@@ -25,7 +25,7 @@ class TankController : MonoBehaviour, ControllerInterface
         frame = GetComponent<TransformFrame>();
     }
 
-    public void Update()
+    public void FixedUpdate()
     {
         updateCommand();
     }

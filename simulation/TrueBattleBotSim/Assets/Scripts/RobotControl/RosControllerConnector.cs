@@ -9,14 +9,17 @@ class RosControllerConnector : MonoBehaviour
     [SerializeField] private string baseTopic = "";
     private ROSConnection ros;
     private ControllerInterface controller;
+    private string cmdVelTopic;
+    RosTopicState groundTruthTopic;
     public void Start()
     {
         ros = ROSConnection.GetOrCreateInstance();
-        ros.Subscribe<TwistMsg>(baseTopic + "/cmd_vel/relative", cmdVelCallback);
-        ros.RegisterPublisher<OdometryMsg>(baseTopic + "/ground_truth");
-
+        cmdVelTopic = baseTopic + "/cmd_vel/relative";
+        ros.Subscribe<TwistMsg>(cmdVelTopic, cmdVelCallback);
+        groundTruthTopic = ros.RegisterPublisher<OdometryMsg>(baseTopic + "/ground_truth");
         controller = GetComponent<ControllerInterface>();
     }
+
     public void Update()
     {
         updateOdometry();
@@ -24,11 +27,19 @@ class RosControllerConnector : MonoBehaviour
 
     private void updateOdometry()
     {
-        ros.Publish(baseTopic + "/ground_truth", controller.getGroundTruth());
+        groundTruthTopic.Publish(controller.getGroundTruth());
     }
 
     private void cmdVelCallback(TwistMsg twist)
     {
         controller.setCommand(twist);
+    }
+
+    public void OnDestroy()
+    {
+        if (ros != null)
+        {
+            ros.Unsubscribe(cmdVelTopic);
+        }
     }
 }

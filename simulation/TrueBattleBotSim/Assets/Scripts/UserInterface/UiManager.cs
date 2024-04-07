@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
-public class SettingsPane : MonoBehaviour
+public class UiManager : MonoBehaviour
 {
     [SerializeField] TMP_Dropdown resolutionDropdown;
     [SerializeField] TMP_Dropdown qualityDropdown;
@@ -21,6 +21,7 @@ public class SettingsPane : MonoBehaviour
     Dictionary<string, int> scenarioIndex = new Dictionary<string, int>();
 
     bool isShown = false;
+    bool wasPausedWhenSettingsOpened = false;
     int commonWidth = 1920;
     int commonHeight = 1080;
 
@@ -97,6 +98,10 @@ public class SettingsPane : MonoBehaviour
         resolutionDropdown.AddOptions(options);
         resolutionDropdown.RefreshShownValue();
         LoadSettings(currentResolutionIndex);
+        if (settingsPanel.activeSelf)
+        {
+            wasPausedWhenSettingsOpened = true;
+        }
         ShowHideSettingsPanel(settingsPanel.activeSelf);
     }
 
@@ -161,6 +166,25 @@ public class SettingsPane : MonoBehaviour
         settingsBackground.SetActive(show);
         enterSettingsPanel.gameObject.SetActive(!show);
         cameraController.EnableControls(!show);
+        if (show)
+        {
+            wasPausedWhenSettingsOpened = IsPaused();
+            SetPause(true);
+        }
+        else
+        {
+            SetPause(wasPausedWhenSettingsOpened);
+        }
+    }
+
+    public void SetPause(bool paused)
+    {
+        sceneManager.GetPauseManager().SetPause(paused);
+    }
+
+    public bool IsPaused()
+    {
+        return sceneManager.GetPauseManager().IsPaused();
     }
 
     private void SetQuality(int qualityIndex)
@@ -244,11 +268,6 @@ public class SettingsPane : MonoBehaviour
         bool fullScreen = Convert.ToBoolean(LoadPreferenceInt(PreferenceKey.FullscreenPreference, 0));
         toggleFullscreen.isOn = fullScreen;
         scenarioDropdown.value = scenarioIndex[LoadPreferenceString(PreferenceKey.Scenario, "")];
-
-        SetQuality(qualityDropdown.value);
-        SetFullscreen(fullScreen);
-        SetResolution(resolutionDropdown.value);
-        SetScenario(scenarioDropdown.value);
     }
 
     void Update()
