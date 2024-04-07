@@ -12,6 +12,7 @@ public class SceneManager : MonoBehaviour
     [SerializeField] string baseDirectory = "Config";
     [SerializeField] string scenariosDirectory = "Scenarios";
     [SerializeField] GameObject flatScreenTV;
+    [SerializeField] float maxCageSize = 5.0f;
     PauseManager pauseManager;
     ScenarioConfig scenario;
     string currentScenarioName = "";
@@ -63,6 +64,9 @@ public class SceneManager : MonoBehaviour
         }
 
         scenario = ConfigManager.LoadScenario(scenarioName);
+
+        scenario.cage.dims.x = Mathf.Min(scenario.cage.dims.x, maxCageSize);
+        scenario.cage.dims.y = Mathf.Min(scenario.cage.dims.y, maxCageSize);
 
         scaleableField.transform.localScale = new Vector3(scenario.cage.dims.x, 1, scenario.cage.dims.y);
         SetObjectPose(slowCam, scenario.cage.slow_cam);
