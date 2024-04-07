@@ -392,6 +392,7 @@ MonoBehaviour:
   baseDirectory: Config
   scenariosDirectory: Scenarios
   flatScreenTV: {fileID: 554668906}
+  maxCageSize: 5
 --- !u!4 &82517898
 Transform:
   m_ObjectHideFlags: 0
@@ -2500,6 +2501,7 @@ GameObject:
   - component: {fileID: 554668910}
   - component: {fileID: 554668909}
   - component: {fileID: 554668908}
+  - component: {fileID: 554668911}
   m_Layer: 0
   m_Name: Flat Screen TV
   m_TagString: Untagged
@@ -2573,6 +2575,20 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 12
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &554668911
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 554668906}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f36cb0e08ed4fc31ca6ae98329d522c5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  toggleKey: 111
+  targetObject: {fileID: 280662735}
 --- !u!1 &651231758
 GameObject:
   m_ObjectHideFlags: 0
@@ -4355,7 +4371,7 @@ MonoBehaviour:
   baseTopic: camera_1
   imageWidth: 240
   imageHeight: 135
-  publishRate: 30
+  publishRate: 15
   segmentationTopic: 
   publishSegmentationLabels: 0
   uberReplacementShader: {fileID: 4800000, guid: b1b5f33c8b6ddb6f38ade45484478858, type: 3}
@@ -12105,9 +12121,9 @@ MonoBehaviour:
     info_topic: depth/camera_info
     renderTexture: {fileID: 8400000, guid: 4e0006a7e8dfa867db572ed8b3405c1b, type: 2}
   baseTopic: camera_0
-  imageWidth: 960
-  imageHeight: 540
-  publishRate: 5
+  imageWidth: 480
+  imageHeight: 270
+  publishRate: 10
   segmentationTopic: simulated_segmentation
   publishSegmentationLabels: 1
   uberReplacementShader: {fileID: 4800000, guid: b1b5f33c8b6ddb6f38ade45484478858, type: 3}
