@@ -13,8 +13,10 @@ public class UiManager : MonoBehaviour
     [SerializeField] GameObject settingsPanel;
     [SerializeField] GameObject settingsBackground;
     [SerializeField] GameObject enterSettingsPanel;
+    [SerializeField] GameObject displayReadout;
     [SerializeField] CameraController cameraController;
     [SerializeField] SceneManager sceneManager;
+    DisplayReadoutManager displayReadoutManager;
 
     Resolution[] resolutions;
     List<string> scenarios = new List<string>();
@@ -102,6 +104,9 @@ public class UiManager : MonoBehaviour
         {
             wasPausedWhenSettingsOpened = true;
         }
+
+        displayReadoutManager = displayReadout.GetComponent<DisplayReadoutManager>();
+
         ShowHideSettingsPanel(settingsPanel.activeSelf);
     }
 
@@ -165,6 +170,7 @@ public class UiManager : MonoBehaviour
         settingsPanel.SetActive(show);
         settingsBackground.SetActive(show);
         enterSettingsPanel.gameObject.SetActive(!show);
+        displayReadoutManager.SetEnableClicks(!show);
         cameraController.EnableControls(!show);
         if (show)
         {
@@ -267,7 +273,16 @@ public class UiManager : MonoBehaviour
         resolutionDropdown.value = LoadPreferenceInt(PreferenceKey.ResolutionPreference, currentResolutionIndex);
         bool fullScreen = Convert.ToBoolean(LoadPreferenceInt(PreferenceKey.FullscreenPreference, 0));
         toggleFullscreen.isOn = fullScreen;
-        scenarioDropdown.value = scenarioIndex[LoadPreferenceString(PreferenceKey.Scenario, "")];
+        string scenario_key = LoadPreferenceString(PreferenceKey.Scenario, "");
+        if (scenarioIndex.ContainsKey(scenario_key))
+        {
+            scenarioDropdown.value = scenarioIndex[scenario_key];
+        }
+        else
+        {
+            Debug.LogWarning($"Scenario {scenario_key} not found in scenario index");
+            scenarioDropdown.value = 0;
+        }
     }
 
     void Update()

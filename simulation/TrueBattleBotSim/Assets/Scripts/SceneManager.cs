@@ -7,8 +7,11 @@ using UnityEngine;
 public class SceneManager : MonoBehaviour
 {
     [SerializeField] GameObject scaleableField;
+    [SerializeField] GameObject slowCam;
+    [SerializeField] GameObject trackingCam;
     [SerializeField] string baseDirectory = "Config";
     [SerializeField] string scenariosDirectory = "Scenarios";
+    [SerializeField] GameObject flatScreenTV;
     PauseManager pauseManager;
     ScenarioConfig scenario;
     string currentScenarioName = "";
@@ -26,7 +29,7 @@ public class SceneManager : MonoBehaviour
         }
         Debug.Log($"Current directory: {Application.dataPath}");
         Debug.Log($"Scenarios: {GetScenarioNames()}");
-        GameObject[] robot_list = Resources.LoadAll<GameObject>("Prefabs/Robots");
+        robot_list = Resources.LoadAll<GameObject>("Prefabs/Robots");
         if (robot_list.Length == 0)
         {
             Debug.LogError("No robot prefabs found");
@@ -62,6 +65,15 @@ public class SceneManager : MonoBehaviour
         scenario = ConfigManager.LoadScenario(scenarioName);
 
         scaleableField.transform.localScale = new Vector3(scenario.cage.dims.x, 1, scenario.cage.dims.y);
+        SetObjectPose(slowCam, scenario.cage.slow_cam);
+        SetObjectPose(trackingCam, scenario.cage.tracking_cam);
+        Bounds field_bounds = GetMaxBounds(scaleableField);
+        Debug.Log($"Field bounds: {field_bounds.size}");
+        flatScreenTV.transform.position = new Vector3(
+            flatScreenTV.transform.position.x,
+            flatScreenTV.transform.position.y,
+            -scenario.cage.dims.y / 2 * 1.12f
+        );
 
         foreach (RobotConfig robot_config in scenario.robots)
         {
@@ -128,6 +140,12 @@ public class SceneManager : MonoBehaviour
             Quaternion.Euler(0, init_config.theta, 0),
             Vector3.one
         );
+    }
+
+    void SetObjectPose(GameObject obj, PoseConfig pose)
+    {
+        obj.transform.position = new Vector3(pose.position.x, pose.position.y, pose.position.z);
+        obj.transform.rotation = Quaternion.Euler(pose.rotation.x, pose.rotation.y, pose.rotation.z);
     }
 
     // Update is called once per frame

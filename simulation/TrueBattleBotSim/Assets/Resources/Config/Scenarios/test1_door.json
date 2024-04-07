@@ -1,0 +1,58 @@
+{
+    "cage": {
+        "dims": {
+            "x": 2.35,
+            "y": 2.35
+        },
+        "slow_cam": {
+            "position": {
+                "x": -1.4405,
+                "y": 1.1219,
+                "z": -1.0059
+            },
+            "rotation": {
+                "x": 41.035,
+                "y": 51.168,
+                "z": -3.358
+            }
+        },
+        "tracking_cam": {
+            "position": {
+                "x": -1.4694,
+                "y": 1.053,
+                "z": -1.0923
+            },
+            "rotation": {
+                "x": 41.373,
+                "y": 51.882,
+                "z": -2.464
+            }
+        }
+    },
+    "robots": [
+        {
+            "type": "auto_bot",
+            "name": "mini_bot",
+            "model": "Mini bot",
+            "objective": "auto_door_side"
+        },
+        {
+            "type": "npc_bot",
+            "name": "main_bot",
+            "model": "Main bot",
+            "objective": "keyboard_door_side"
+        },
+        {
+            "type": "npc_bot",
+            "name": "opponent_1",
+            "model": "Enemy bot 1",
+            "objective": "test_path_2"
+        },
+        {
+            "type": "npc_bot",
+            "name": "referee",
+            "model": "Referee",
+            "objective": "idle_ref_corner"
+        }
+    ]
+}

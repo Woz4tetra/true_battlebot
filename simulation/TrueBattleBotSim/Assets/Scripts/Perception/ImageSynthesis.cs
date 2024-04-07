@@ -22,16 +22,8 @@ using System.Collections.Generic;
 [RequireComponent(typeof(Camera))]
 public class ImageSynthesis : MonoBehaviour
 {
-
-    // pass configurations
-    private CapturePass[] capturePasses = new CapturePass[] {
-        new CapturePass() { name = "image", image_topic = "rgb/image_rect_color", info_topic = "rgb/camera_info", publish = true  },
-        // new CapturePass() { name = "id", publish = true, supportsAntialiasing = false, mode = ReplacelementModes.ObjectId },
-        new CapturePass() { name = "layer", image_topic = "layer/image_raw", info_topic = "layer/camera_info", publish = true, supportsAntialiasing = false, mode = ReplacelementModes.CatergoryId },
-        new CapturePass() { name = "depth", image_topic = "depth/depth_registered", info_topic = "depth/camera_info", publish = true, mode = ReplacelementModes.DepthMultichannel, encoding = Encodings.MONO16 },
-        // new CapturePass() { name = "normals", publish = true, mode = ReplacelementModes.Normals },
-        // new CapturePass() { name = "flow", publish = true, supportsAntialiasing = false, needsRescale = true, mode = ReplacelementModes.Flow }, // (see issue with Motion Vectors in @KNOWN ISSUES)
-    };
+    [SerializeField] CapturePassConfig[] captureConfig;
+    private CapturePass[] capturePasses;
 
     enum ReplacelementModes
     {
@@ -49,31 +41,20 @@ public class ImageSynthesis : MonoBehaviour
         MONO16 = 1,
     }
 
-    struct CapturePass
+    class CapturePass
     {
         // configuration
         public string name;
-        public string image_topic;
-        public string info_topic;
-        public bool supportsAntialiasing;
-        public bool needsRescale;
-        public ReplacelementModes mode;
-        public bool publish;
-        public Encodings encoding;
-        public CapturePass(string name_)
-        {
-            name = name_;
-            supportsAntialiasing = true;
-            needsRescale = false;
-            camera = null;
-            mode = ReplacelementModes.None;
-            publish = false;
-            encoding = Encodings.RGB8;
-            image_topic = "camera/" + name + "/image_raw";
-            info_topic = "camera/" + name + "/camera_info";
-        }
+        public string imageTopic;
+        public string infoTopic;
+        public bool supportsAntialiasing = true;
+        public bool needsRescale = false;
+        public ReplacelementModes mode = ReplacelementModes.None;
+        public bool publish = true;
+        public Encodings encoding = Encodings.RGB8;
 
-        // impl
+
+        public RenderTexture renderTexture;
         public Camera camera;
     };
 
@@ -88,6 +69,7 @@ public class ImageSynthesis : MonoBehaviour
     private TransformFrame frame;
 
     [SerializeField] private string segmentationTopic = "simulated_segmentation";
+    [SerializeField] private bool publishSegmentationLabels = true;
     private SegmentationInstanceArrayMsg segmentationMsg = new SegmentationInstanceArrayMsg();
 
     [SerializeField] private Shader uberReplacementShader;
@@ -105,15 +87,63 @@ public class ImageSynthesis : MonoBehaviour
         Camera mainCamera = GetComponent<Camera>();
         frame = GetComponent<TransformFrame>();
         ros = ROSConnection.GetOrCreateInstance();
-        foreach (var pass in capturePasses)
+        List<CapturePass> passes = new List<CapturePass>();
+        foreach (CapturePassConfig config in captureConfig)
+        {
+            CapturePass pass = new CapturePass()
+            {
+                name = config.name,
+                imageTopic = config.image_topic,
+                infoTopic = config.info_topic,
+                renderTexture = config.renderTexture
+            };
+            bool is_set = true;
+            switch (config.name)
+            {
+                case "image":
+                    break;
+                case "layer":
+                    pass.supportsAntialiasing = false;
+                    pass.mode = ReplacelementModes.CatergoryId;
+                    break;
+                case "depth":
+                    pass.mode = ReplacelementModes.DepthMultichannel;
+                    pass.encoding = Encodings.MONO16;
+                    break;
+                case "id":
+                    pass.supportsAntialiasing = false;
+                    pass.mode = ReplacelementModes.ObjectId;
+                    break;
+                case "normals":
+                    pass.mode = ReplacelementModes.Normals;
+                    break;
+                case "flow":
+                    pass.supportsAntialiasing = false;
+                    pass.needsRescale = true;
+                    pass.mode = ReplacelementModes.Flow;
+                    break;
+                default:
+                    Debug.LogError("Unknown capture pass key: " + config.name);
+                    is_set = false;
+                    break;
+            }
+            if (is_set)
+            {
+                passes.Add(pass);
+            }
+        }
+        foreach (var pass in passes)
         {
             if (pass.publish)
             {
-                ros.RegisterPublisher<ImageMsg>(GetImageTopic(pass.image_topic));
-                ros.RegisterPublisher<CameraInfoMsg>(GetImageTopic(pass.info_topic));
+                ros.RegisterPublisher<ImageMsg>(GetImageTopic(pass.imageTopic));
+                ros.RegisterPublisher<CameraInfoMsg>(GetImageTopic(pass.infoTopic));
             }
         }
-        ros.RegisterPublisher<SegmentationInstanceArrayMsg>(baseTopic + "/" + segmentationTopic);
+        if (publishSegmentationLabels)
+        {
+            ros.RegisterPublisher<SegmentationInstanceArrayMsg>(baseTopic + "/" + segmentationTopic);
+        }
 
         // default fallbacks, if shaders are unspecified
         if (!uberReplacementShader)
@@ -122,6 +152,7 @@ public class ImageSynthesis : MonoBehaviour
         if (!opticalFlowShader)
             opticalFlowShader = Shader.Find("Hidden/OpticalFlow");
 
+        capturePasses = passes.ToArray();
         // use real camera to capture final image
         capturePasses[0].camera = mainCamera;
         for (int q = 1; q < capturePasses.Length; q++)
@@ -131,7 +162,8 @@ public class ImageSynthesis : MonoBehaviour
         Renderer[] renderers = FindObjectsOfType<Renderer>();
         OnSceneChange(renderers);
 
-        if (publishRate > 0) {
+        if (publishRate > 0)
+        {
             InvokeRepeating("PublishTimerCallback", publishStartDelay, 1.0f / publishRate);
         }
     }
@@ -243,7 +275,7 @@ public class ImageSynthesis : MonoBehaviour
     {
         Camera mainCamera = GetComponent<Camera>();
         int targetDisplay = 1;
-        foreach (var pass in capturePasses)
+        foreach (CapturePass pass in capturePasses)
         {
             if (pass.camera == mainCamera || pass.camera == null)
                 continue;
@@ -309,7 +341,8 @@ public class ImageSynthesis : MonoBehaviour
         }
         if (cameraInfoMsg != null)
         {
-            segmentationMsg = new SegmentationInstanceArrayMsg {
+            segmentationMsg = new SegmentationInstanceArrayMsg
+            {
                 header = cameraInfoMsg.header,
                 height = cameraInfoMsg.height,
                 width = cameraInfoMsg.width,
@@ -329,7 +362,10 @@ public class ImageSynthesis : MonoBehaviour
 
     private void PublishLabels()
     {
-        ros.Publish(baseTopic + "/" + segmentationTopic, segmentationMsg);
+        if (publishSegmentationLabels)
+        {
+            ros.Publish(baseTopic + "/" + segmentationTopic, segmentationMsg);
+        }
     }
 
     private void PublishRenders()
@@ -347,14 +383,15 @@ public class ImageSynthesis : MonoBehaviour
             seq = seq,
         };
         seq++;
-        foreach (var pass in capturePasses)
+        foreach (CapturePass pass in capturePasses)
         {
-            if (pass.publish)
+            if (!pass.publish)
             {
-                PublishImage(pass, header, GetImageTopic(pass.image_topic), (int)resizeWidth, (int)resizeHeight);
-                cameraInfoMsg.header = header;
-                ros.Publish(GetImageTopic(pass.info_topic), cameraInfoMsg);
+                continue;
             }
+            PublishImage(pass, header, GetImageTopic(pass.imageTopic), (int)resizeWidth, (int)resizeHeight);
+            cameraInfoMsg.header = header;
+            ros.Publish(GetImageTopic(pass.infoTopic), cameraInfoMsg);
         }
     }
 
@@ -415,6 +452,11 @@ public class ImageSynthesis : MonoBehaviour
             RenderTexture.active = finalRT;
             Graphics.Blit(renderRT, finalRT);
             RenderTexture.ReleaseTemporary(renderRT);
+        }
+
+        if (pass.renderTexture != null)
+        {
+            Graphics.Blit(renderRT, pass.renderTexture);
         }
 
         // flip vertically

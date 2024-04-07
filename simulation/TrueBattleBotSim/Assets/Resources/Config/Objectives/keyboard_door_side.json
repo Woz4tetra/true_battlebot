@@ -2,7 +2,7 @@
     "type": "keyboard",
     "init": {
         "type": "relative",
-        "x": -0.8,
+        "x": -0.5,
         "y": 0.8,
         "theta": 135.0
     },
