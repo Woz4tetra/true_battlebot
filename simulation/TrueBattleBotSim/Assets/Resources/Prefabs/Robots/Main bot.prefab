@@ -1428,6 +1428,7 @@ GameObject:
   - component: {fileID: 2680927647865782379}
   - component: {fileID: 7233088425791581032}
   - component: {fileID: 4961401948073181952}
+  - component: {fileID: -188034460991270968}
   m_Layer: 6
   m_Name: Main bot
   m_TagString: Untagged
@@ -1624,6 +1625,19 @@ MonoBehaviour:
     i_max: 0
     epsilon: 0.000000001
     tolerance: 0
+--- !u!114 &-188034460991270968
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8665221425793992962}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ec8c3997db37ec7b580879b7ecbf01f6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  collisionInfoTopic: simulation/collision_info
 --- !u!1 &8666698505361864287
 GameObject:
   m_ObjectHideFlags: 0

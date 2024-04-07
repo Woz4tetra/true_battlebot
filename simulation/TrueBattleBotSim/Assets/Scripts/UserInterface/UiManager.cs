@@ -3,6 +3,8 @@ using System;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using Unity.Robotics.ROSTCPConnector;
+using RosMessageTypes.Std;
 
 public class UiManager : MonoBehaviour
 {
@@ -16,6 +18,8 @@ public class UiManager : MonoBehaviour
     [SerializeField] GameObject displayReadout;
     [SerializeField] CameraController cameraController;
     [SerializeField] SceneManager sceneManager;
+    [SerializeField] private string remoteScenarioSelectionTopic = "simulation/scenario_selection";
+
     DisplayReadoutManager displayReadoutManager;
 
     Resolution[] resolutions;
@@ -26,6 +30,8 @@ public class UiManager : MonoBehaviour
     bool wasPausedWhenSettingsOpened = false;
     int commonWidth = 1920;
     int commonHeight = 1080;
+
+    ROSConnection ros;
 
     public enum TextureQualityPreset
     {
@@ -55,6 +61,9 @@ public class UiManager : MonoBehaviour
 
     void Start()
     {
+        ros = ROSConnection.GetOrCreateInstance();
+        ros.Subscribe<StringMsg>(remoteScenarioSelectionTopic, RemoteScenarioSelectionCallback);
+
         resolutionDropdown.ClearOptions();
         List<string> options = new List<string>();
         resolutions = Screen.resolutions;
@@ -282,6 +291,21 @@ public class UiManager : MonoBehaviour
         {
             Debug.LogWarning($"Scenario {scenario_key} not found in scenario index");
             scenarioDropdown.value = 0;
+        }
+    }
+
+    void RemoteScenarioSelectionCallback(StringMsg msg)
+    {
+        Debug.Log($"Received remote scenario selection: {msg.data}");
+        if (scenarioIndex.ContainsKey(msg.data))
+        {
+            scenarioDropdown.value = scenarioIndex[msg.data];
+            scenarioDropdown.RefreshShownValue();
+            SetScenario(scenarioDropdown.value);
+        }
+        else
+        {
+            Debug.LogWarning($"Scenario {msg.data} not found in scenario index");
         }
     }
 

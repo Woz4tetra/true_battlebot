@@ -1061,6 +1061,7 @@ GameObject:
   - component: {fileID: 8236370563291413020}
   - component: {fileID: 8101931954466844019}
   - component: {fileID: 3203567528015581201}
+  - component: {fileID: 6664735693175083280}
   m_Layer: 3
   m_Name: Mini bot
   m_TagString: Untagged
@@ -1256,6 +1257,19 @@ MonoBehaviour:
     i_max: 0
     epsilon: 0.000000001
     tolerance: 0
+--- !u!114 &6664735693175083280
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5297902834132667624}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ec8c3997db37ec7b580879b7ecbf01f6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  collisionInfoTopic: simulation/collision_info
 --- !u!1 &5425920597850681281
 GameObject:
   m_ObjectHideFlags: 0

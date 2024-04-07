@@ -47,9 +47,9 @@ public class FieldSensor : BaseRectangleSensor
             };
             EstimatedObjectMsg msg = new EstimatedObjectMsg
             {
-                header = header,
                 state = new OdometryMsg
                 {
+                    header = header,
                     pose = new PoseWithCovarianceMsg
                     {
                         pose = new PoseMsg

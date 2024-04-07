@@ -118,7 +118,7 @@ public abstract class BaseRectangleSensor : MonoBehaviour
             }
             if (Physics.Raycast(measurementRay, out hit, maxDistance, layerMask))
             {
-                bool isUnObstructed = IsChild(GetTopLevelObject(hit.transform.gameObject), tag.gameObject);
+                bool isUnObstructed = IsChild(ObjectUtils.GetTopLevelObject(hit.transform.gameObject), tag.gameObject);
                 if (debugRayCast)
                 {
                     Debug.DrawRay(measurementStart, directionVector.normalized * hit.distance, isUnObstructed ? Color.green : Color.yellow);
@@ -131,20 +131,6 @@ public abstract class BaseRectangleSensor : MonoBehaviour
         {
             return false;
         }
-    }
-
-    private GameObject GetTopLevelObject(GameObject obj)
-    {
-        Transform tf = obj.transform;
-        while (true)
-        {
-            if (tf.parent == null)
-            {
-                break;
-            }
-            tf = tf.parent;
-        }
-        return tf.gameObject;
     }
 
     private bool IsChild(GameObject parent, GameObject check)
