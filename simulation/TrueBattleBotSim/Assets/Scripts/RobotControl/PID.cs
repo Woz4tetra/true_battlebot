@@ -20,13 +20,13 @@ public class PID
         this.tolerance = tolerance;
     }
 
-    public void reset()
+    public void Reset()
     {
         i_accum = 0.0f;
         prev_error = 0.0f;
     }
 
-    public float update(float setpoint, float measurement, float dt)
+    public float Update(float setpoint, float measurement, float dt)
     {
         float error = setpoint - measurement;
         if (Mathf.Abs(error) < tolerance)
@@ -77,7 +77,7 @@ public class PID
         prev_error = error;
         return kd * derivative;
     }
-    
+
     private float CalculateF(float setpoint)
     {
         if (Mathf.Abs(kf) < epsilon)

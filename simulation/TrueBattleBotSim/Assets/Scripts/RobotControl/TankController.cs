@@ -95,8 +95,8 @@ class TankController : MonoBehaviour, ControllerInterface
     {
         TwistMsg groundTruth = GetGroundTruthVelocity();
 
-        float linear_out = linearPid.update((float)inputTwist.linear.x, (float)groundTruth.linear.x, Time.deltaTime);
-        float angular_out = angularPid.update((float)inputTwist.angular.z, (float)groundTruth.angular.z, Time.deltaTime);
+        float linear_out = linearPid.Update((float)inputTwist.linear.x, (float)groundTruth.linear.x, Time.deltaTime);
+        float angular_out = angularPid.Update((float)inputTwist.angular.z, (float)groundTruth.angular.z, Time.deltaTime);
 
         return new TwistMsg
         {

@@ -1,10 +1,14 @@
+using System;
 using System.Collections.Generic;
+using MathExtensions;
 using RosMessageTypes.Geometry;
+using RosMessageTypes.Nav;
 using UnityEngine;
 
 class WaypointFollower : MonoBehaviour
 {
-
+    [SerializeField] PID linearPID = new PID(0.1f, 0.0f, 0.0f);
+    [SerializeField] PID angularPID = new PID(0.1f, 0.0f, 0.0f);
     private ControllerInterface controller;
     List<SequenceElementConfig> sequence = new List<SequenceElementConfig>();
     float sequence_time = 0.0f;
@@ -37,21 +41,38 @@ class WaypointFollower : MonoBehaviour
             return new TwistMsg();
         }
 
-        int i = 0;
-        while (i < sequence.Count - 1 && sequence[i + 1].timestamp < current_time)
+        int index = 0;
+        while (index < sequence.Count - 1 && sequence[index + 1].timestamp < current_time)
         {
-            i++;
+            index++;
         }
 
-        return ComputeVelocity(sequence[i]);
+        return ComputeVelocity(sequence, index);
     }
 
-    TwistMsg ComputeVelocity(SequenceElementConfig goal)
+    TwistMsg ComputeVelocity(List<SequenceElementConfig> sequence, int index)
     {
+        OdometryMsg odom = controller.getGroundTruth();
+        PointMsg position = odom.pose.pose.position;
+        QuaternionMsg orientation = odom.pose.pose.orientation;
+        Matrix4x4 currentPose = Matrix4x4.TRS(
+            new Vector3((float)position.x, (float)position.y, (float)position.z),
+            new Quaternion((float)orientation.x, (float)orientation.y, (float)orientation.z, (float)orientation.w),
+            Vector3.one);
+        SequenceElementConfig currentElement = sequence[index];
+        Matrix4x4 goalPose = Matrix4x4.TRS(
+            new Vector3(currentElement.x, currentElement.y, 0.0f),
+            Quaternion.Euler(0, 0, currentElement.theta),
+            Vector3.one);
+        Matrix4x4 relativePose = currentPose.inverse * goalPose;
+        Vector3 relativePosition = relativePose.GetT();
+        float relativeAngle = Mathf.Atan2(relativePosition.y, relativePosition.x);
+        float linearVelocity = linearPID.Update(relativePosition.x, 0.0f, Time.deltaTime);
+        float angularVelocity = angularPID.Update(relativeAngle, 0.0f, Time.deltaTime);
         return new TwistMsg
         {
-            linear = new Vector3Msg { x = 1.0f },
-            angular = new Vector3Msg { z = 0.0f }
+            linear = new Vector3Msg { x = linearVelocity },
+            angular = new Vector3Msg { z = angularVelocity }
         };
     }
 
