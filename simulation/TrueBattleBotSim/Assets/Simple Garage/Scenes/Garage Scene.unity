@@ -387,6 +387,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   scaleableField: {fileID: 1187586678}
+  baseDirectory: Config
+  scenariosDirectory: Scenarios
+  objectiveDirectory: Objectives
 --- !u!4 &82517898
 Transform:
   m_ObjectHideFlags: 0
@@ -1713,7 +1716,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &434559309
 RectTransform:
   m_ObjectHideFlags: 0
@@ -1946,7 +1949,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 1866627176}
         m_TargetAssemblyTypeName: SettingsPane, Assembly-CSharp
-        m_MethodName: SetQualityCallback
+        m_MethodName: SetScenarioCallback
         m_Mode: 0
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -7055,11 +7058,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   resolutionDropdown: {fileID: 1562506108}
   qualityDropdown: {fileID: 1863601980}
+  scenarioDropdown: {fileID: 484681864}
   toggleFullscreen: {fileID: 19060356}
   settingsPanel: {fileID: 905931947}
   settingsBackground: {fileID: 434559308}
   enterSettingsPanel: {fileID: 500309490}
   cameraController: {fileID: 963194229}
+  sceneManager: {fileID: 82517897}
 --- !u!1 &1875482142
 GameObject:
   m_ObjectHideFlags: 0

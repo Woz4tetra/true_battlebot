@@ -5,8 +5,7 @@ public class ConfigManager
 {
     public static ScenarioConfig LoadScenario(string scenarioName)
     {
-        string path = $"Scenarios/{scenarioName}";
-        path = path.Replace(".json", "");
+        string path = $"Config/Scenarios/{scenarioName}";
         TextAsset asset = Resources.Load<TextAsset>(path);
         if (asset == null)
         {
@@ -18,8 +17,7 @@ public class ConfigManager
 
     public static ObjectiveConfig LoadObjective(string objectiveName)
     {
-        string path = $"Objectives/{objectiveName}";
-        path = path.Replace(".json", "");
+        string path = $"Config/Objectives/{objectiveName}";
         TextAsset asset = Resources.Load<TextAsset>(path);
         if (asset == null)
         {

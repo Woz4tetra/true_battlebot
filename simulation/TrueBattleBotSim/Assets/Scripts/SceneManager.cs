@@ -1,12 +1,15 @@
-using System;
-using System.Collections;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using MathExtensions;
 using UnityEngine;
 
 public class SceneManager : MonoBehaviour
 {
     [SerializeField] GameObject scaleableField;
+    [SerializeField] string baseDirectory = "Config";
+    [SerializeField] string scenariosDirectory = "Scenarios";
+    [SerializeField] string objectiveDirectory = "Objectives";
 
     ScenarioConfig scenario;
     Dictionary<string, GameObject> robot_prefabs = new Dictionary<string, GameObject>();
@@ -15,7 +18,30 @@ public class SceneManager : MonoBehaviour
 
     void Start()
     {
-        scenario = ConfigManager.LoadScenario("test1.json");
+        Debug.Log($"Current directory: {Application.dataPath}");
+        Debug.Log($"Scenarios: {GetScenarioNames()}");
+    }
+
+    public string[] GetScenarioNames()
+    {
+        TextAsset fileNamesAsset = Resources.Load<TextAsset>("FileNames");
+        FileNameInfo fileInfoLoaded = JsonUtility.FromJson<FileNameInfo>(fileNamesAsset.text);
+        return fileInfoLoaded.GetFiles(Path.Combine(baseDirectory, scenariosDirectory));
+    }
+
+    public void LoadScenario(string scenarioName)
+    {
+        foreach (GameObject robot in active_robots.Values)
+        {
+            Destroy(robot);
+        }
+        active_robots.Clear();
+        if (scenarioName.Length == 0)
+        {
+            return;
+        }
+
+        scenario = ConfigManager.LoadScenario(scenarioName);
         GameObject[] robot_list = Resources.LoadAll<GameObject>("Prefabs/Robots");
         if (robot_list.Length == 0)
         {

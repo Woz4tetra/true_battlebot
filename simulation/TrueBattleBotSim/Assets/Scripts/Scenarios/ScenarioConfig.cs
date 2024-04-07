@@ -17,4 +17,13 @@ public class ScenarioConfig
     {
         return JsonUtility.FromJson<ScenarioConfig>(json);
     }
+
+    public static ScenarioConfig FromJsonFile(string path)
+    {
+        if (!System.IO.File.Exists(path))
+        {
+            throw new System.IO.FileNotFoundException("File not found: " + path);
+        }
+        return FromJson(System.IO.File.ReadAllText(path));
+    }
 }

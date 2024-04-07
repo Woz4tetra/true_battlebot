@@ -14,7 +14,12 @@ public class SettingsPane : MonoBehaviour
     [SerializeField] GameObject settingsBackground;
     [SerializeField] GameObject enterSettingsPanel;
     [SerializeField] CameraController cameraController;
+    [SerializeField] SceneManager sceneManager;
+
     Resolution[] resolutions;
+    List<string> scenarios = new List<string>();
+    Dictionary<string, int> scenarioIndex = new Dictionary<string, int>();
+
     bool isShown = false;
     int commonWidth = 1920;
     int commonHeight = 1080;
@@ -37,6 +42,7 @@ public class SettingsPane : MonoBehaviour
         public static PreferenceKey QualitySettingPreference { get { return new PreferenceKey("QualitySettingPreference"); } }
         public static PreferenceKey ResolutionPreference { get { return new PreferenceKey("ResolutionPreference"); } }
         public static PreferenceKey FullscreenPreference { get { return new PreferenceKey("FullscreenPreference"); } }
+        public static PreferenceKey Scenario { get { return new PreferenceKey("Scenario"); } }
 
         public override string ToString()
         {
@@ -77,6 +83,17 @@ public class SettingsPane : MonoBehaviour
             }
         }
 
+        scenarios = new List<string>(sceneManager.GetScenarioNames());
+        scenarios.Insert(0, "");
+        for (int i = 0; i < scenarios.Count; i++)
+        {
+            scenarioIndex[scenarios[i]] = i;
+        }
+        scenarioDropdown.ClearOptions();
+        scenarioDropdown.AddOptions(scenarios);
+        scenarioDropdown.value = 0;
+        scenarioDropdown.RefreshShownValue();
+
         resolutionDropdown.AddOptions(options);
         resolutionDropdown.RefreshShownValue();
         LoadSettings(currentResolutionIndex);
@@ -95,7 +112,10 @@ public class SettingsPane : MonoBehaviour
     {
         SetQuality(qualityIndex);
     }
-
+    public void SetScenarioCallback(int scenarioIndex)
+    {
+        SetScenario(scenarioIndex);
+    }
 
     private void SetFullscreen(bool isFullscreen)
     {
@@ -112,6 +132,15 @@ public class SettingsPane : MonoBehaviour
         Debug.Log($"Screen resolution is {resolution.width} x {resolution.height}");
         PlayerPrefs.SetInt(PreferenceKey.ResolutionPreference.Value, resolutionDropdown.value);
         PlayerPrefs.Save();
+    }
+
+    private void SetScenario(int scenarioIndex)
+    {
+        string scenarioName = scenarios[scenarioIndex];
+        Debug.Log($"Setting scenario to {scenarioIndex} -> {scenarioName}");
+        PlayerPrefs.SetString(PreferenceKey.Scenario.Value, scenarioName);
+        PlayerPrefs.Save();
+        sceneManager.LoadScenario(scenarioName);
     }
 
     private void SetTextureQuality(int textureIndex)
@@ -183,7 +212,7 @@ public class SettingsPane : MonoBehaviour
         Application.Quit();
     }
 
-    private int LoadPreference(PreferenceKey key, int defaultValue)
+    private int LoadPreferenceInt(PreferenceKey key, int defaultValue)
     {
         if (PlayerPrefs.HasKey(key.Value))
         {
@@ -195,17 +224,31 @@ public class SettingsPane : MonoBehaviour
         return defaultValue;
     }
 
+    private string LoadPreferenceString(PreferenceKey key, string defaultValue)
+    {
+        if (PlayerPrefs.HasKey(key.Value))
+        {
+            string value = PlayerPrefs.GetString(key.Value);
+            Debug.Log($"Player preference found for {key.Value}: {value}");
+            return value;
+        }
+        Debug.Log($"No player preference found for {key.Value}. Using default: {defaultValue}");
+        return defaultValue;
+    }
+
     public void LoadSettings(int currentResolutionIndex)
     {
         Debug.Log($"Loading settings. Default resolution index is {currentResolutionIndex}");
-        qualityDropdown.value = LoadPreference(PreferenceKey.QualitySettingPreference, 3);
-        resolutionDropdown.value = LoadPreference(PreferenceKey.ResolutionPreference, currentResolutionIndex);
-        bool fullScreen = Convert.ToBoolean(LoadPreference(PreferenceKey.FullscreenPreference, 0));
+        qualityDropdown.value = LoadPreferenceInt(PreferenceKey.QualitySettingPreference, 3);
+        resolutionDropdown.value = LoadPreferenceInt(PreferenceKey.ResolutionPreference, currentResolutionIndex);
+        bool fullScreen = Convert.ToBoolean(LoadPreferenceInt(PreferenceKey.FullscreenPreference, 0));
         toggleFullscreen.isOn = fullScreen;
+        scenarioDropdown.value = scenarioIndex[LoadPreferenceString(PreferenceKey.Scenario, "")];
 
         SetQuality(qualityDropdown.value);
         SetFullscreen(fullScreen);
         SetResolution(resolutionDropdown.value);
+        SetScenario(scenarioDropdown.value);
     }
 
     void Update()

@@ -10,25 +10,25 @@
             "type": "auto_bot",
             "name": "mini_bot",
             "model": "Mini bot",
-            "objective": "auto_far_side.json"
+            "objective": "auto_far_side"
         },
         {
             "type": "npc_bot",
             "name": "main_bot",
             "model": "Main bot",
-            "objective": "keyboard_far_side.json"
+            "objective": "keyboard_far_side"
         },
         {
             "type": "npc_bot",
             "name": "opponent_1",
             "model": "Enemy bot 1",
-            "objective": "test_path_1.json"
+            "objective": "test_path_1"
         },
         {
             "type": "npc_bot",
             "name": "referee",
             "model": "Referee",
-            "objective": "idle_ref_corner.json"
+            "objective": "idle_ref_corner"
         }
     ]
 }
