@@ -32,7 +32,7 @@ class TankController : MonoBehaviour, ControllerInterface
 
     private void updateCommand()
     {
-        TwistMsg twist = computeControl(setpoint);
+        TwistMsg twist = ComputeControl(setpoint);
         float linearVelocity = (float)twist.linear.x;  // m/s
         float angularVelocity = (float)twist.angular.z;  // rad/s
         float leftWheelSpeed = linearVelocity - angularVelocity * baseWidth / 2.0f;
@@ -91,7 +91,7 @@ class TankController : MonoBehaviour, ControllerInterface
         };
     }
 
-    private TwistMsg computeControl(TwistMsg inputTwist)
+    private TwistMsg ComputeControl(TwistMsg inputTwist)
     {
         TwistMsg groundTruth = GetGroundTruthVelocity();
 
@@ -105,8 +105,14 @@ class TankController : MonoBehaviour, ControllerInterface
         };
     }
 
-    public void setCommand(TwistMsg twist)
+    public void SetCommand(TwistMsg twist)
     {
         setpoint = twist;
+    }
+
+    public void Reset()
+    {
+        linearPid.Reset();
+        angularPid.Reset();
     }
 }

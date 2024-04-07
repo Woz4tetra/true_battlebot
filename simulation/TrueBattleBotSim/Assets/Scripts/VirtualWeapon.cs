@@ -21,11 +21,13 @@ public class VirtualWeapon : MonoBehaviour
     {
         if (other.gameObject.tag == gameObject.tag)
         {
+            Debug.Log($"Collided with {other.gameObject.name}");
             ApplyForceToOther(gameObject);
             ApplyForceToOther(other.gameObject);
         }
         else if (isLayerInMask(other.gameObject.layer))
         {
+            Debug.Log($"Collided with {other.gameObject.name} in layer");
             ApplyForceToOther(other.gameObject);
         }
     }
@@ -33,12 +35,13 @@ public class VirtualWeapon : MonoBehaviour
     private void ApplyForceToOther(GameObject other)
     {
 
-        UnityEngine.Vector3 direction = other.transform.up.normalized;
-        UnityEngine.Vector3 force = UnityEngine.Quaternion.Euler(-45, 0, 0) * direction * forceMagnitude;
+        Vector3 direction = other.transform.up.normalized;
+        Vector3 force = Quaternion.Euler(-45, 0, 0) * direction * forceMagnitude;
         Rigidbody body = GetComponentInTree<Rigidbody>(gameObject);
         if (body != null)
         {
             body.AddForce(force, ForceMode.Impulse);
+            return;
         }
         else
         {
@@ -46,16 +49,29 @@ public class VirtualWeapon : MonoBehaviour
             if (artBody != null)
             {
                 artBody.AddForce(force, ForceMode.Impulse);
+                return;
             }
         }
+        Debug.Log($"No rigidbody or articulation body found in tree for {other.name}");
     }
 
     private T GetComponentInTree<T>(GameObject obj)
     {
         Transform tf = obj.transform;
         T component = obj.GetComponent<T>();
-        while (component is not null)  // ???somehow this only works in reverse???
+        while (true)
         {
+            bool should_break = component is not null;
+
+            if (Application.isEditor)
+            {
+                // ???somehow this only works in reverse for editor only???
+                should_break = !should_break;
+            }
+            if (should_break)
+            {
+                break;
+            }
             if (tf.parent is null)
             {
                 break;

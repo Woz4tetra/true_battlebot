@@ -14,6 +14,14 @@ class KeyboardInput : MonoBehaviour
     {
         updateCommand();
     }
+    void OnEnable()
+    {
+        if (controller == null)
+        {
+            return;
+        }
+        controller.Reset();
+    }
 
     private void updateCommand()
     {
@@ -44,6 +52,6 @@ class KeyboardInput : MonoBehaviour
             linear = new Vector3Msg { x = linear },
             angular = new Vector3Msg { z = angular }
         };
-        controller.setCommand(command);
+        controller.SetCommand(command);
     }
 }

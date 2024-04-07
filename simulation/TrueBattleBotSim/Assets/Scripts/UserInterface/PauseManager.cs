@@ -2,11 +2,19 @@ using UnityEngine;
 
 public class PauseManager : MonoBehaviour
 {
-    bool isPaused = false;
+    [SerializeField] bool isPaused = true;
 
     public bool IsPaused()
     {
         return isPaused;
+    }
+
+    void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.Space))
+        {
+            SetPause(!isPaused);
+        }
     }
 
     public void SetPause(bool paused)
@@ -14,6 +22,5 @@ public class PauseManager : MonoBehaviour
         Debug.Log($"Set pause to {paused}");
         isPaused = paused;
         Time.timeScale = paused ? 0 : 1;
-
     }
 }

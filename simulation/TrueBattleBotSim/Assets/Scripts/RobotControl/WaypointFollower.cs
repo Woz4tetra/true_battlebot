@@ -16,16 +16,28 @@ class WaypointFollower : MonoBehaviour
     public void Start()
     {
         controller = GetComponent<ControllerInterface>();
-        sequence_time = Time.time;
+        Reset();
     }
     public void FixedUpdate()
     {
         updateCommand();
     }
 
+    void Reset()
+    {
+        sequence_time = Time.time;
+        linearPID.Reset();
+        angularPID.Reset();
+        if (controller != null)
+        {
+            controller.Reset();
+        }
+    }
+
     public void SetSequence(List<SequenceElementConfig> sequence)
     {
         this.sequence = sequence;
+        Reset();
     }
 
     private TwistMsg GetCommand()
@@ -78,6 +90,6 @@ class WaypointFollower : MonoBehaviour
 
     private void updateCommand()
     {
-        controller.setCommand(GetCommand());
+        controller.SetCommand(GetCommand());
     }
 }

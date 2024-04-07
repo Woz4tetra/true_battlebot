@@ -2,7 +2,7 @@
     "type": "auto",
     "init": {
         "type": "relative",
-        "x": -0.8,
+        "x": -0.85,
         "y": 0.5,
         "theta": 135.0
     },

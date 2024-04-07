@@ -32,7 +32,7 @@ class RosControllerConnector : MonoBehaviour
 
     private void cmdVelCallback(TwistMsg twist)
     {
-        controller.setCommand(twist);
+        controller.SetCommand(twist);
     }
 
     public void OnDestroy()

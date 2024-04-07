@@ -21,6 +21,7 @@ public class SceneManager : MonoBehaviour
     Dictionary<string, GameObject> robot_prefabs = new Dictionary<string, GameObject>();
     Dictionary<string, GameObject> active_robots = new Dictionary<string, GameObject>();
     Dictionary<string, ObjectiveConfig> objectives = new Dictionary<string, ObjectiveConfig>();
+    bool keyboard_been_set = false;
 
     void Start()
     {
@@ -80,6 +81,7 @@ public class SceneManager : MonoBehaviour
             -scenario.cage.dims.y / 2 * 1.12f
         );
 
+        keyboard_been_set = false;
         foreach (RobotConfig robot_config in scenario.robots)
         {
             if (robot_config.objective.Length == 0)
@@ -120,42 +122,55 @@ public class SceneManager : MonoBehaviour
 
     void ActivateRobotType(GameObject robot, ObjectiveConfig objective_config)
     {
-        bool keyboard_been_set = false;
+        KeyboardInput keyboard_input = robot.GetComponent<KeyboardInput>();
+        RosControllerConnector controller = robot.GetComponent<RosControllerConnector>();
+        WaypointFollower follower = robot.GetComponent<WaypointFollower>();
         try
         {
-            KeyboardInput keyboard_input = robot.GetComponent<KeyboardInput>();
-            RosControllerConnector controller = robot.GetComponent<RosControllerConnector>();
-            WaypointFollower follower = robot.GetComponent<WaypointFollower>();
             keyboard_input.enabled = false;
-            controller.enabled = false;
-            follower.enabled = false;
-            switch (objective_config.type)
-            {
-                case "keyboard":
-                    if (keyboard_been_set)
-                    {
-                        Debug.LogWarning("Multiple keyboard objectives detected");
-                    }
-                    keyboard_input.enabled = true;
-                    keyboard_been_set = true;
-                    break;
-                case "idle":
-                    break;
-                case "auto":
-                    controller.enabled = true;
-                    break;
-                case "follow":
-                    follower.enabled = true;
-                    follower.SetSequence(GetScaledSequence(objective_config.sequence));
-                    break;
-                default:
-                    Debug.LogError("Invalid objective type: " + objective_config.type);
-                    break;
-            }
         }
         catch (NullReferenceException e)
         {
-            Debug.LogError("Robot prefab missing component: " + e.Message);
+            Debug.LogError($"Robot {robot.name} prefab missing keyboard input: {e.Message}");
+        }
+        try
+        {
+            controller.enabled = false;
+        }
+        catch (NullReferenceException e)
+        {
+            Debug.LogError($"Robot {robot.name} prefab missing controller input: {e.Message}");
+        }
+        try
+        {
+            follower.enabled = false;
+        }
+        catch (NullReferenceException e)
+        {
+            Debug.LogError($"Robot {robot.name} prefab missing follower input: {e.Message}");
+        }
+        switch (objective_config.type)
+        {
+            case "keyboard":
+                if (keyboard_been_set)
+                {
+                    Debug.LogWarning("Multiple keyboard objectives detected");
+                }
+                keyboard_input.enabled = true;
+                keyboard_been_set = true;
+                break;
+            case "idle":
+                break;
+            case "auto":
+                controller.enabled = true;
+                break;
+            case "follow":
+                follower.enabled = true;
+                follower.SetSequence(GetScaledSequence(objective_config.sequence));
+                break;
+            default:
+                Debug.LogError("Invalid objective type: " + objective_config.type);
+                break;
         }
     }
 

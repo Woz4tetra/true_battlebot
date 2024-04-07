@@ -2,6 +2,7 @@ using RosMessageTypes.Nav;
 using RosMessageTypes.Geometry;
 interface ControllerInterface
 {
-    void setCommand(TwistMsg twist);
+    void SetCommand(TwistMsg twist);
     OdometryMsg getGroundTruth();
+    void Reset();
 }

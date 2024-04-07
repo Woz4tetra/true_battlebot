@@ -15,20 +15,22 @@ public class PlayPauseButton : MonoBehaviour
         icon = transform.Find("Image").GetComponent<Image>();
         button = GetComponent<Button>();
         button.onClick.AddListener(OnClick);
-        bool paused = pauseManager.IsPaused();
-        SetPause(paused);
     }
 
     private void SetPause(bool pausedState)
     {
         icon.sprite = pausedState ? playIcon : pauseIcon;
-        Debug.Log($"Setting pause icon to {icon.sprite}");
+    }
+
+    void Update()
+    {
+        SetPause(pauseManager.IsPaused());
     }
 
     public void OnClick()
     {
         bool pauseState = !pauseManager.IsPaused();
-        SetPause(pauseState);
+        Debug.Log($"Setting pause icon to {pauseState}");
         pauseManager.SetPause(pauseState);
     }
 }
