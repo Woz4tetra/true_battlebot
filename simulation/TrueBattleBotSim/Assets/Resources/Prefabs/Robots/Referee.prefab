@@ -558,6 +558,8 @@ GameObject:
   - component: {fileID: 3731194471367992449}
   - component: {fileID: 5327583946794781856}
   - component: {fileID: 1657287089805924398}
+  - component: {fileID: 1784630105066365863}
+  - component: {fileID: 1980326178352277631}
   m_Layer: 11
   m_Name: Referee
   m_TagString: Untagged
@@ -709,6 +711,31 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   frameId: referee
+--- !u!114 &1784630105066365863
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3156601889152518240}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ec44692c016b38f2fa5a1ac478811855, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  baseTopic: r
+--- !u!114 &1980326178352277631
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3156601889152518240}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ab4142c1343d6636daaa5ac45ebdb10a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &3733546209730497114
 GameObject:
   m_ObjectHideFlags: 0

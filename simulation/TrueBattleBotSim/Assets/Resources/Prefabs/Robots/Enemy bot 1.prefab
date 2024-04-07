@@ -437,6 +437,8 @@ GameObject:
   - component: {fileID: 4856793381326976959}
   - component: {fileID: 4552428008010768382}
   - component: {fileID: 6584569995386714844}
+  - component: {fileID: 5074468244932256766}
+  - component: {fileID: 8876345614706646212}
   m_Layer: 7
   m_Name: Enemy bot 1
   m_TagString: Untagged
@@ -588,6 +590,31 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   frameId: opponent_1_base_link
+--- !u!114 &5074468244932256766
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4530086308281346396}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ec44692c016b38f2fa5a1ac478811855, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  baseTopic: ma
+--- !u!114 &8876345614706646212
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4530086308281346396}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ab4142c1343d6636daaa5ac45ebdb10a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &4624306383354775017
 GameObject:
   m_ObjectHideFlags: 0

@@ -3,6 +3,7 @@ using System;
 [Serializable]
 public class SequenceElementConfig
 {
+    public float timestamp = 0.0f;
     public float x = 0.0f;
     public float y = 0.0f;
     public float theta = 0.0f;

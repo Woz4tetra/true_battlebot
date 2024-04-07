@@ -1426,6 +1426,8 @@ GameObject:
   - component: {fileID: 2785612423679602612}
   - component: {fileID: 7527659255882723722}
   - component: {fileID: 2680927647865782379}
+  - component: {fileID: 7233088425791581032}
+  - component: {fileID: 4961401948073181952}
   m_Layer: 6
   m_Name: Main bot
   m_TagString: Untagged
@@ -1579,6 +1581,31 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   frameId: main_bot
+--- !u!114 &7233088425791581032
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8665221425793992962}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ec44692c016b38f2fa5a1ac478811855, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  baseTopic: min_bot
+--- !u!114 &4961401948073181952
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8665221425793992962}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ab4142c1343d6636daaa5ac45ebdb10a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &8666698505361864287
 GameObject:
   m_ObjectHideFlags: 0

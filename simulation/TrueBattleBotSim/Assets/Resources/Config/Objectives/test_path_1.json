@@ -1,5 +1,5 @@
 {
-    "type": "idle",
+    "type": "follow",
     "init": {
         "type": "relative",
         "x": -0.8,

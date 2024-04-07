@@ -10,7 +10,7 @@ class KeyboardInput : MonoBehaviour
     {
         controller = GetComponent<ControllerInterface>();
     }
-    public void Update()
+    public void FixedUpdate()
     {
         updateCommand();
     }

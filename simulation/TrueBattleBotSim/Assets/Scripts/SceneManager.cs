@@ -120,17 +120,33 @@ public class SceneManager : MonoBehaviour
 
     void ActivateRobotType(GameObject robot, ObjectiveConfig objective_config)
     {
+        bool keyboard_been_set = false;
         try
         {
-            robot.GetComponent<KeyboardInput>().enabled = false;
+            KeyboardInput keyboard_input = robot.GetComponent<KeyboardInput>();
+            RosControllerConnector controller = robot.GetComponent<RosControllerConnector>();
+            WaypointFollower follower = robot.GetComponent<WaypointFollower>();
+            keyboard_input.enabled = false;
+            controller.enabled = false;
+            follower.enabled = false;
             switch (objective_config.type)
             {
                 case "keyboard":
-                    robot.GetComponent<KeyboardInput>().enabled = true;
+                    if (keyboard_been_set)
+                    {
+                        Debug.LogWarning("Multiple keyboard objectives detected");
+                    }
+                    keyboard_input.enabled = true;
+                    keyboard_been_set = true;
                     break;
                 case "idle":
                     break;
                 case "auto":
+                    controller.enabled = true;
+                    break;
+                case "follow":
+                    follower.enabled = true;
+                    follower.SetSequence(GetScaledSequence(objective_config.sequence));
                     break;
                 default:
                     Debug.LogError("Invalid objective type: " + objective_config.type);
@@ -141,6 +157,25 @@ public class SceneManager : MonoBehaviour
         {
             Debug.LogError("Robot prefab missing component: " + e.Message);
         }
+    }
+
+    List<SequenceElementConfig> GetScaledSequence(List<SequenceElementConfig> sequence)
+    {
+        List<SequenceElementConfig> scaled_sequence = new List<SequenceElementConfig>();
+        foreach (SequenceElementConfig element in sequence)
+        {
+            scaled_sequence.Add(new SequenceElementConfig
+            {
+                timestamp = element.timestamp,
+                x = element.x * scenario.cage.dims.x,
+                y = element.y * scenario.cage.dims.y,
+                theta = element.theta,
+                vx = element.vx,
+                vy = element.vy,
+                vtheta = element.vtheta
+            });
+        }
+        return scaled_sequence;
     }
 
     Bounds GetMaxBounds(GameObject obj)
