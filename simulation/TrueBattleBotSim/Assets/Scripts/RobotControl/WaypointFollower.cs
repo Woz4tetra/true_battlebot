@@ -12,6 +12,7 @@ class WaypointFollower : MonoBehaviour
     private ControllerInterface controller;
     List<SequenceElementConfig> sequence = new List<SequenceElementConfig>();
     float sequence_time = 0.0f;
+    float prevRelativeAngle = 0.0f;
 
     public void Start()
     {
@@ -28,6 +29,7 @@ class WaypointFollower : MonoBehaviour
         sequence_time = Time.time;
         linearPID.Reset();
         angularPID.Reset();
+        prevRelativeAngle = 0.0f;
         if (controller != null)
         {
             controller.Reset();
@@ -79,6 +81,17 @@ class WaypointFollower : MonoBehaviour
         Matrix4x4 relativePose = currentPose.inverse * goalPose;
         Vector3 relativePosition = relativePose.GetT();
         float relativeAngle = Mathf.Atan2(relativePosition.y, relativePosition.x);
+        float deltaAngle = relativeAngle - prevRelativeAngle;
+        if (deltaAngle > Mathf.PI)
+        {
+            relativeAngle -= 2 * Mathf.PI;
+        }
+        else if (deltaAngle < -Mathf.PI)
+        {
+            relativeAngle += 2 * Mathf.PI;
+        }
+        prevRelativeAngle = relativeAngle;
+        relativeAngle = Mathf.Clamp(relativeAngle, -Mathf.PI, Mathf.PI);
         float linearVelocity = linearPID.Update(relativePosition.x, 0.0f, Time.deltaTime);
         float angularVelocity = angularPID.Update(relativeAngle, 0.0f, Time.deltaTime);
         return new TwistMsg
