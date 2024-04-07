@@ -3,8 +3,8 @@ using System;
 [Serializable]
 public class RobotConfig
 {
-    public string type;
-    public string name;
-    public string model;
-    public string objective;
+    public string label = "Mini bot";
+    public string name = "mini_bot";
+    public string model = "Mini bot";
+    public string objective = "";
 }

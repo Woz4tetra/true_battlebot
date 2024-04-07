@@ -5,8 +5,8 @@ using UnityEngine;
 [Serializable]
 public class ScenarioConfig
 {
-    public CageConfig cage;
-    public List<RobotConfig> robots;
+    public CageConfig cage = new CageConfig();
+    public List<RobotConfig> robots = new List<RobotConfig>();
 
     public string ToJson()
     {

@@ -3,8 +3,8 @@ using System;
 [Serializable]
 public class ScenarioInitConfig
 {
-    public string type;
-    public float x;
-    public float y;
-    public float theta;
+    public string type = "absolute";
+    public float x = 0.0f;
+    public float y = 0.0f;
+    public float theta = 0.0f;
 }

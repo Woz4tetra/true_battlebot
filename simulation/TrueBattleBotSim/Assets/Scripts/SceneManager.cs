@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -81,6 +82,10 @@ public class SceneManager : MonoBehaviour
 
         foreach (RobotConfig robot_config in scenario.robots)
         {
+            if (robot_config.objective.Length == 0)
+            {
+                robot_config.objective = "idle";
+            }
             ObjectiveConfig objective_config = ConfigManager.LoadObjective(robot_config.objective);
             objectives[robot_config.name] = objective_config;
             Bounds robot_bounds = GetMaxBounds(robot_prefabs[robot_config.model]);
@@ -97,6 +102,7 @@ public class SceneManager : MonoBehaviour
                 robot = Instantiate(robot_prefabs[robot_config.model], robot_pose.GetT(), robot_pose.GetR());
                 active_robots[robot_config.name] = robot;
             }
+            ActivateRobotType(robot, objective_config);
             robot.SetActive(true);
         }
     }
@@ -110,6 +116,31 @@ public class SceneManager : MonoBehaviour
     public PauseManager GetPauseManager()
     {
         return pauseManager;
+    }
+
+    void ActivateRobotType(GameObject robot, ObjectiveConfig objective_config)
+    {
+        try
+        {
+            robot.GetComponent<KeyboardInput>().enabled = false;
+            switch (objective_config.type)
+            {
+                case "keyboard":
+                    robot.GetComponent<KeyboardInput>().enabled = true;
+                    break;
+                case "idle":
+                    break;
+                case "auto":
+                    break;
+                default:
+                    Debug.LogError("Invalid objective type: " + objective_config.type);
+                    break;
+            }
+        }
+        catch (NullReferenceException e)
+        {
+            Debug.LogError("Robot prefab missing component: " + e.Message);
+        }
     }
 
     Bounds GetMaxBounds(GameObject obj)

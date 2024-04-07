@@ -31,25 +31,25 @@
     },
     "robots": [
         {
-            "type": "auto_bot",
+            "label": "Mini bot",
             "name": "mini_bot",
             "model": "Mini bot",
             "objective": "auto_door_side"
         },
         {
-            "type": "npc_bot",
+            "label": "Main bot",
             "name": "main_bot",
             "model": "Main bot",
             "objective": "keyboard_door_side"
         },
         {
-            "type": "npc_bot",
+            "label": "Enemy bot",
             "name": "opponent_1",
             "model": "Enemy bot 1",
             "objective": "test_path_2"
         },
         {
-            "type": "npc_bot",
+            "label": "Referee",
             "name": "referee",
             "model": "Referee",
             "objective": "idle_ref_corner"

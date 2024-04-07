@@ -5,9 +5,9 @@ using UnityEngine;
 [Serializable]
 public class ObjectiveConfig
 {
-    public string type;
-    public ScenarioInitConfig init;
-    public List<SequenceElementConfig> sequence;
+    public string type = "idle";
+    public ScenarioInitConfig init = new ScenarioInitConfig();
+    public List<SequenceElementConfig> sequence = new List<SequenceElementConfig>();
 
     public string ToJson()
     {
@@ -16,14 +16,23 @@ public class ObjectiveConfig
 
     public static ObjectiveConfig FromJson(string json)
     {
-        return JsonUtility.FromJson<ObjectiveConfig>(json);
+        try
+        {
+            return JsonUtility.FromJson<ObjectiveConfig>(json);
+        }
+        catch (ArgumentException e)
+        {
+            Debug.LogError("Error parsing JSON: " + e.Message);
+            return new ObjectiveConfig();
+        }
     }
 
     public static ObjectiveConfig FromJsonFile(string path)
     {
         if (!System.IO.File.Exists(path))
         {
-            throw new System.IO.FileNotFoundException("File not found: " + path);
+            Debug.LogError("File not found: " + path);
+            return new ObjectiveConfig();
         }
         return FromJson(System.IO.File.ReadAllText(path));
     }
