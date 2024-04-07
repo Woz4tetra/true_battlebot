@@ -1,3 +1,4 @@
+using RosMessageTypes.BwInterfaces;
 using System.Collections.Generic;
 using System;
 using UnityEngine;
@@ -18,7 +19,8 @@ public class UiManager : MonoBehaviour
     [SerializeField] GameObject displayReadout;
     [SerializeField] CameraController cameraController;
     [SerializeField] SceneManager sceneManager;
-    [SerializeField] private string remoteScenarioSelectionTopic = "simulation/scenario_selection";
+    [SerializeField] string remoteScenarioSelectionTopic = "simulation/scenario_selection";
+    [SerializeField] string scenarioListTopic = "simulation/scenarios";
 
     DisplayReadoutManager displayReadoutManager;
 
@@ -63,6 +65,7 @@ public class UiManager : MonoBehaviour
     {
         ros = ROSConnection.GetOrCreateInstance();
         ros.Subscribe<StringMsg>(remoteScenarioSelectionTopic, RemoteScenarioSelectionCallback);
+        ros.RegisterPublisher<LabelsMsg>(scenarioListTopic);
 
         resolutionDropdown.ClearOptions();
         List<string> options = new List<string>();
@@ -117,6 +120,7 @@ public class UiManager : MonoBehaviour
         displayReadoutManager = displayReadout.GetComponent<DisplayReadoutManager>();
 
         ShowHideSettingsPanel(settingsPanel.activeSelf);
+        StartCoroutine(PublishScenarioListCallback());
     }
 
     public void SetFullscreenCallback(bool isFullscreen)
@@ -306,6 +310,15 @@ public class UiManager : MonoBehaviour
         else
         {
             Debug.LogWarning($"Scenario {msg.data} not found in scenario index");
+        }
+    }
+
+    IEnumerator<object> PublishScenarioListCallback()
+    {
+        while (true)
+        {
+            ros.Publish(scenarioListTopic, new LabelsMsg { labels = scenarios.ToArray() });
+            yield return new WaitForSecondsRealtime(1);
         }
     }
 

@@ -227,7 +227,7 @@ public class ImageSynthesis : MonoBehaviour
         }
     }
 
-    private void PublishTimerCallback()
+    void PublishTimerCallback()
     {
         PublishRenders();
         PublishLabels();
