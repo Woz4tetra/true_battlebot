@@ -306,6 +306,8 @@ public class UiManager : MonoBehaviour
             scenarioDropdown.value = scenarioIndex[msg.data];
             scenarioDropdown.RefreshShownValue();
             SetScenario(scenarioDropdown.value);
+            ShowHideSettingsPanel(false);
+            sceneManager.GetPauseManager().SetPause(false);
         }
         else
         {
