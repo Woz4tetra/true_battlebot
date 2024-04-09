@@ -17,13 +17,10 @@ from visualization_msgs.msg import Marker, MarkerArray
 class TagMarkerPublisher:
     def __init__(self):
         self.name = "tag_marker_publisher"
-        rospy.init_node(
-            self.name
-            # disable_signals=True
-            # log_level=rospy.DEBUG
-        )
-        # rospy.on_shutdown(self.shutdown_hook)
+        rospy.init_node(self.name)
+
         self.marker_publish_rate = get_param("~marker_publish_rate", 0.0)
+        self.topics = get_param("~topics", [])
         self.debug = get_param("~debug", False)
         self.base_frame = get_param("~base_frame", "")
         self.stale_detection_seconds = rospy.Duration.from_sec(get_param("~stale_detection_seconds", 1.0))
@@ -33,7 +30,10 @@ class TagMarkerPublisher:
 
         self.marker_colors = {None: (1.0, 1.0, 1.0, 1.0)}
 
-        self.tag_sub = rospy.Subscriber("tag_detections", AprilTagDetectionArray, self.tag_callback, queue_size=10)
+        self.tag_subs = {}
+        for topic in self.topics:
+            tag_sub = rospy.Subscriber(topic, AprilTagDetectionArray, self.tag_callback, queue_size=10)
+            self.tag_subs[topic] = tag_sub
         self.marker_pub = rospy.Publisher("tag_markers", MarkerArray, queue_size=10)
         if self.debug:
             self.rotated_debug_pub = rospy.Publisher("rotated_debug", PoseArray, queue_size=10)

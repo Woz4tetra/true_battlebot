@@ -45,7 +45,7 @@
         {
             "label": "Enemy bot",
             "name": "opponent_1",
-            "model": "Enemy bot 1",
+            "model": "MRS BUFF B-03 Bizarro",
             "objective": "test_path_2"
         },
         {

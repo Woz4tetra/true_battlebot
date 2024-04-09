@@ -588,6 +588,22 @@ PrefabInstance:
       propertyPath: m_ParentAnchorRotation.z
       value: -0.7071068
       objectReference: {fileID: 0}
+    - target: {fileID: 2619986641933692516, guid: 735b6db80e72ba312bc276069f48e6e4, type: 3}
+      propertyPath: m_ParentAnchorPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2888654050034391413, guid: 735b6db80e72ba312bc276069f48e6e4, type: 3}
+      propertyPath: m_RootOrder
+      value: 7
+      objectReference: {fileID: 0}
+    - target: {fileID: 2888654050034391413, guid: 735b6db80e72ba312bc276069f48e6e4, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2888654050034391413, guid: 735b6db80e72ba312bc276069f48e6e4, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 4830255815474340672, guid: 735b6db80e72ba312bc276069f48e6e4, type: 3}
       propertyPath: m_ParentAnchorPosition.x
       value: 0.000000014901161
@@ -648,6 +664,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 6865211837418444423, guid: 735b6db80e72ba312bc276069f48e6e4, type: 3}
+      propertyPath: m_ParentAnchorPosition.x
+      value: -0.21360004
+      objectReference: {fileID: 0}
     - target: {fileID: 8665221425793992962, guid: 735b6db80e72ba312bc276069f48e6e4, type: 3}
       propertyPath: m_Name
       value: Main bot
@@ -655,6 +675,10 @@ PrefabInstance:
     - target: {fileID: 8665221425793992962, guid: 735b6db80e72ba312bc276069f48e6e4, type: 3}
       propertyPath: m_IsActive
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 9076103002110277033, guid: 735b6db80e72ba312bc276069f48e6e4, type: 3}
+      propertyPath: m_ParentAnchorPosition.x
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 9083135169485418807, guid: 735b6db80e72ba312bc276069f48e6e4, type: 3}
       propertyPath: m_ParentAnchorPosition.x
@@ -869,6 +893,14 @@ PrefabInstance:
       propertyPath: m_ParentAnchorRotation.z
       value: -0.7071068
       objectReference: {fileID: 0}
+    - target: {fileID: 7471258206782046175, guid: 43c5d878dce791721aabc45a33c28bbf, type: 3}
+      propertyPath: m_RootOrder
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 7471258206782046175, guid: 43c5d878dce791721aabc45a33c28bbf, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -885,6 +917,14 @@ PrefabInstance:
     - target: {fileID: 1278621001008975804, guid: c4c8ea109926e35e0bec215c2ba4efed, type: 3}
       propertyPath: m_Name
       value: MR STABS A-02
+      objectReference: {fileID: 0}
+    - target: {fileID: 2702549395465088280, guid: c4c8ea109926e35e0bec215c2ba4efed, type: 3}
+      propertyPath: m_RootOrder
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 2702549395465088280, guid: c4c8ea109926e35e0bec215c2ba4efed, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7991536449222479842, guid: c4c8ea109926e35e0bec215c2ba4efed, type: 3}
       propertyPath: m_RootOrder
@@ -1197,6 +1237,14 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2002369437097360648, guid: 7b17e69e71099e8d789d76050cc1b9e0, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3354075140893667301, guid: 7b17e69e71099e8d789d76050cc1b9e0, type: 3}
+      propertyPath: m_RootOrder
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 3354075140893667301, guid: 7b17e69e71099e8d789d76050cc1b9e0, type: 3}
       propertyPath: m_LocalPosition.z
       value: 1
       objectReference: {fileID: 0}
