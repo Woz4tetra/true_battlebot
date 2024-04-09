@@ -2,8 +2,9 @@ using UnityEngine;
 
 public class VirtualWeapon : MonoBehaviour
 {
-    [SerializeField] LayerMask targetMask = 0;
     [SerializeField] float forceMagnitude = 10;
+    [SerializeField] float reactionForceScale = 0.25f;
+    [SerializeField] string[] filterTags = new string[] { };
 
     // Start is called before the first frame update
     void Start()
@@ -19,24 +20,26 @@ public class VirtualWeapon : MonoBehaviour
 
     void OnTriggerEnter(Collider other)
     {
+        Debug.Log($"Weapon collided with {other.gameObject.tag} {other.gameObject.name}");
         if (other.gameObject.tag == gameObject.tag)
         {
-            Debug.Log($"Weapon collided with {other.gameObject.name}");
+            Debug.Log($"Weapon collided with another weapon {other.gameObject.name}");
             ApplyForceToOther(gameObject);
             ApplyForceToOther(other.gameObject);
         }
-        else if (isLayerInMask(other.gameObject.layer))
+        else if (isTagInFilter(other.gameObject.tag))
         {
-            Debug.Log($"Weapon collided with {other.gameObject.name} in layer");
+            Debug.Log($"Weapon collided with a target {other.gameObject.name}");
+            ApplyForceToOther(gameObject, -reactionForceScale);
             ApplyForceToOther(other.gameObject);
         }
     }
 
-    private void ApplyForceToOther(GameObject other)
+    private void ApplyForceToOther(GameObject other, float scale = 1.0f)
     {
 
         Vector3 direction = other.transform.up.normalized;
-        Vector3 force = Quaternion.Euler(-45, 0, 0) * direction * forceMagnitude;
+        Vector3 force = direction * forceMagnitude * scale;
         Rigidbody body = ObjectUtils.GetComponentInTree<Rigidbody>(gameObject);
         if (body != null)
         {
@@ -55,8 +58,15 @@ public class VirtualWeapon : MonoBehaviour
         Debug.Log($"No rigidbody or articulation body found in tree for {other.name}");
     }
 
-    private bool isLayerInMask(int layer)
+    private bool isTagInFilter(string tag)
     {
-        return targetMask == (targetMask | (1 << layer));
+        foreach (string filterTag in filterTags)
+        {
+            if (tag == filterTag)
+            {
+                return true;
+            }
+        }
+        return false;
     }
 }

@@ -78,7 +78,7 @@ class TankController : MonoBehaviour, ControllerInterface
                 pose = new PoseMsg
                 {
                     position = transform.position.To<FLU>(),
-                    orientation = transform.rotation.To<FLU>()
+                    orientation = (Quaternion.Euler(0, 90, 0) * transform.rotation).To<FLU>()
                 }
             },
             twist = new TwistWithCovarianceMsg
@@ -91,7 +91,7 @@ class TankController : MonoBehaviour, ControllerInterface
     private Vector3 GetRelativeVelocity()
     {
         // Get the velocity of the body in world space
-        Vector3 worldVelocity = body.velocity;
+        Vector3 worldVelocity = Quaternion.Euler(0, -90, 0) * body.velocity;
 
         // Convert the velocity to the body's local space
         Vector3 localVelocity = body.transform.InverseTransformDirection(worldVelocity);
@@ -103,7 +103,6 @@ class TankController : MonoBehaviour, ControllerInterface
     {
         Vector3 localVelocity = GetRelativeVelocity();
         Vector3 angularVelocity = -1 * body.angularVelocity;
-
 
         return new TwistMsg
         {

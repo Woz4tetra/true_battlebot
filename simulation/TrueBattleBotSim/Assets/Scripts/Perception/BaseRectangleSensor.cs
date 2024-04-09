@@ -98,7 +98,7 @@ public abstract class BaseRectangleSensor : MonoBehaviour
         Renderer tagRenderer = tag.GetRenderer();
         Plane[] planes = GeometryUtility.CalculateFrustumPlanes(cameraView);
 
-        if (GeometryUtility.TestPlanesAABB(planes, tagRenderer.bounds))
+        if (tagRenderer != null && GeometryUtility.TestPlanesAABB(planes, tagRenderer.bounds))
         {
             RaycastHit hit;
             Vector3 tagNormal = tag.transform.rotation * -Vector3.up;

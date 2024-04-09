@@ -223,7 +223,7 @@ public class SceneManager : MonoBehaviour
         height *= 1.1f;
         return Matrix4x4.TRS(
             new Vector3(init_config.x * scale.x, height, init_config.y * scale.y),
-            Quaternion.Euler(0, init_config.theta, 0),
+            Quaternion.Euler(0, -(init_config.theta + 180.0f), 0),
             Vector3.one
         );
     }

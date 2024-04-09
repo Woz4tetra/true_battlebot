@@ -5,6 +5,10 @@ TagManager:
   serializedVersion: 2
   tags:
   - Weapon
+  - Main bot
+  - Mini bot
+  - Enemy bot
+  - Referee
   layers:
   - Default
   - TransparentFX
@@ -19,7 +23,7 @@ TagManager:
   - Apriltag
   - Referee
   - Display Readout
-  - Floor
+  - Robot
   - 
   - 
   - 
