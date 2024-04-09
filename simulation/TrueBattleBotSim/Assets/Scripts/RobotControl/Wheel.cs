@@ -10,9 +10,6 @@ class Wheel : MonoBehaviour
     void Start()
     {
         body = GetComponent<ArticulationBody>();
-        body.automaticInertiaTensor = false;
-        body.inertiaTensor = new Vector3(1e-4f, 1e-4f, 1e-4f);
-        body.inertiaTensorRotation = Quaternion.identity;
     }
 
     public void setVelocity(float groundVelocity)

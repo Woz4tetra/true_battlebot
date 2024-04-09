@@ -33,13 +33,13 @@
         {
             "type": "auto_bot",
             "name": "mini_bot",
-            "model": "Mini bot",
+            "model": "MR STABS A-02",
             "objective": "auto_far_side"
         },
         {
             "type": "npc_bot",
             "name": "main_bot",
-            "model": "Main bot",
+            "model": "MRS BUFF B-03",
             "objective": "keyboard_far_side"
         },
         {

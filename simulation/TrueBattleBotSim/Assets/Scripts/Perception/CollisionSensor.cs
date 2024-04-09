@@ -20,6 +20,7 @@ public class CollisionSensor : MonoBehaviour
     }
     void OnTriggerEnter(Collider other)
     {
+        if (ros == null) return;
         GameObject topLevelObject = ObjectUtils.GetTopLevelObject(other.gameObject);
         CollisionInfoMsg msg = new CollisionInfoMsg
         {

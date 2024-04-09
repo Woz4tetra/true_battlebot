@@ -5798,6 +5798,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2b68e00b0b969deaeb98cc5fa332c4b3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  isPaused: 1
 --- !u!4 &1281008684
 Transform:
   m_ObjectHideFlags: 0
@@ -7996,6 +7997,8 @@ MonoBehaviour:
   displayReadout: {fileID: 280662735}
   cameraController: {fileID: 963194229}
   sceneManager: {fileID: 82517897}
+  remoteScenarioSelectionTopic: simulation/scenario_selection
+  scenarioListTopic: simulation/scenarios
 --- !u!1 &1875482142
 GameObject:
   m_ObjectHideFlags: 0
@@ -10965,7 +10968,7 @@ Camera:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5601284786778337271}
-  m_Enabled: 1
+  m_Enabled: 0
   serializedVersion: 2
   m_ClearFlags: 1
   m_BackGroundColor: {r: 0.19215687, g: 0.3019608, b: 0.4745098, a: 0}
@@ -12102,7 +12105,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5601284786778337271}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7853e997fd087d9d5bded08f4baf3ea9, type: 3}
   m_Name: 
@@ -12380,7 +12383,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7529733373018255378}
   - component: {fileID: 3793239624679024245}
-  m_Layer: 0
+  m_Layer: 13
   m_Name: Field Collision
   m_TagString: Untagged
   m_Icon: {fileID: 0}

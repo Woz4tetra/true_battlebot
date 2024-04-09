@@ -32,7 +32,7 @@ public class SceneManager : MonoBehaviour
         }
         Debug.Log($"Current directory: {Application.dataPath}");
         Debug.Log($"Scenarios: {GetScenarioNames()}");
-        robot_list = Resources.LoadAll<GameObject>("Prefabs/Robots");
+        robot_list = Resources.LoadAll<GameObject>("Robots");
         if (robot_list.Length == 0)
         {
             Debug.LogError("No robot prefabs found");
@@ -219,7 +219,8 @@ public class SceneManager : MonoBehaviour
                 Debug.LogError("Invalid pose type: " + init_config.type);
                 break;
         }
-        float height = Mathf.Max(robot_bounds.center.x, Mathf.Max(robot_bounds.center.y, robot_bounds.center.z));
+        float height = Mathf.Min(robot_bounds.extents.x, Mathf.Min(robot_bounds.extents.y, robot_bounds.extents.z));
+        height *= 1.1f;
         return Matrix4x4.TRS(
             new Vector3(init_config.x * scale.x, height, init_config.y * scale.y),
             Quaternion.Euler(0, init_config.theta, 0),

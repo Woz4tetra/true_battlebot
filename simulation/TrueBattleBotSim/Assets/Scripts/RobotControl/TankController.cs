@@ -12,8 +12,13 @@ class TankController : MonoBehaviour, ControllerInterface
     [SerializeField] private Wheel leftWheel;
     [SerializeField] private Wheel rightWheel;
 
+    [SerializeField] private Wheel[] followLeftWheels;
+    [SerializeField] private Wheel[] followRightWheels;
     [SerializeField] private PID linearPid;
     [SerializeField] private PID angularPid;
+    [SerializeField] private bool enablePid;
+    [SerializeField] private bool reverseLeft;
+    [SerializeField] private bool reverseRight;
 
     private ArticulationBody body;
     private TwistMsg setpoint = new TwistMsg();
@@ -37,8 +42,24 @@ class TankController : MonoBehaviour, ControllerInterface
         float angularVelocity = (float)twist.angular.z;  // rad/s
         float leftWheelSpeed = linearVelocity - angularVelocity * baseWidth / 2.0f;
         float rightWheelSpeed = linearVelocity + angularVelocity * baseWidth / 2.0f;
+        if (reverseLeft)
+        {
+            leftWheelSpeed *= -1;
+        }
+        if (reverseRight)
+        {
+            rightWheelSpeed *= -1;
+        }
         leftWheel.setVelocity(leftWheelSpeed);
         rightWheel.setVelocity(rightWheelSpeed);
+        foreach (Wheel wheel in followLeftWheels)
+        {
+            wheel.setVelocity(leftWheelSpeed);
+        }
+        foreach (Wheel wheel in followRightWheels)
+        {
+            wheel.setVelocity(rightWheelSpeed);
+        }
     }
 
     public OdometryMsg getGroundTruth()
@@ -95,8 +116,18 @@ class TankController : MonoBehaviour, ControllerInterface
     {
         TwistMsg groundTruth = GetGroundTruthVelocity();
 
-        float linear_out = linearPid.Update((float)inputTwist.linear.x, (float)groundTruth.linear.x, Time.deltaTime);
-        float angular_out = angularPid.Update((float)inputTwist.angular.z, (float)groundTruth.angular.z, Time.deltaTime);
+        float linear_out;
+        float angular_out;
+        if (enablePid)
+        {
+            linear_out = linearPid.Update((float)inputTwist.linear.x, (float)groundTruth.linear.x, Time.deltaTime);
+            angular_out = angularPid.Update((float)inputTwist.angular.z, (float)groundTruth.angular.z, Time.deltaTime);
+        }
+        else
+        {
+            linear_out = (float)inputTwist.linear.x;
+            angular_out = (float)inputTwist.angular.z;
+        }
 
         return new TwistMsg
         {

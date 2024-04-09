@@ -33,13 +33,13 @@
         {
             "label": "Mini bot",
             "name": "mini_bot",
-            "model": "Mini bot",
+            "model": "MR STABS A-02",
             "objective": "auto_door_side"
         },
         {
             "label": "Main bot",
             "name": "main_bot",
-            "model": "Main bot",
+            "model": "MRS BUFF B-03",
             "objective": "keyboard_door_side"
         },
         {
