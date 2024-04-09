@@ -10223,6 +10223,10 @@ PrefabInstance:
       propertyPath: m_Layer
       value: 13
       objectReference: {fileID: 0}
+    - target: {fileID: 3922047741240939078, guid: 3dd570d25a0cda29eb60e9eced4bfe29, type: 3}
+      propertyPath: m_TagString
+      value: Mini bot
+      objectReference: {fileID: 0}
     - target: {fileID: 4243009246791888955, guid: 3dd570d25a0cda29eb60e9eced4bfe29, type: 3}
       propertyPath: m_RootOrder
       value: -1
@@ -10383,6 +10387,10 @@ PrefabInstance:
     - target: {fileID: 3922047741240939078, guid: 3dd570d25a0cda29eb60e9eced4bfe29, type: 3}
       propertyPath: m_Layer
       value: 13
+      objectReference: {fileID: 0}
+    - target: {fileID: 3922047741240939078, guid: 3dd570d25a0cda29eb60e9eced4bfe29, type: 3}
+      propertyPath: m_TagString
+      value: Mini bot
       objectReference: {fileID: 0}
     - target: {fileID: 4243009246791888955, guid: 3dd570d25a0cda29eb60e9eced4bfe29, type: 3}
       propertyPath: m_RootOrder

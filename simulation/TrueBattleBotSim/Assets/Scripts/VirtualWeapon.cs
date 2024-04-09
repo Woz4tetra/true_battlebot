@@ -43,6 +43,7 @@ public class VirtualWeapon : MonoBehaviour
         Rigidbody body = ObjectUtils.GetComponentInTree<Rigidbody>(gameObject);
         if (body != null)
         {
+            force *= body.mass;
             body.AddForce(force, ForceMode.Impulse);
             return;
         }
@@ -51,6 +52,7 @@ public class VirtualWeapon : MonoBehaviour
             ArticulationBody artBody = ObjectUtils.GetComponentInTree<ArticulationBody>(other);
             if (artBody != null)
             {
+                force *= artBody.mass;
                 artBody.AddForce(force, ForceMode.Impulse);
                 return;
             }

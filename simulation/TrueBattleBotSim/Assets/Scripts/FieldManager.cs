@@ -5,7 +5,7 @@ using System.Linq;
 using MathExtensions;
 using UnityEngine;
 
-public class SceneManager : MonoBehaviour
+public class FieldManager : MonoBehaviour
 {
     [SerializeField] GameObject scaleableField;
     [SerializeField] GameObject slowCam;
