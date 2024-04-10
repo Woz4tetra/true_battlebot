@@ -238,6 +238,10 @@ public class ImageSynthesis : MonoBehaviour
 
     void PublishTimerCallback()
     {
+        if (!gameObject.activeSelf)
+        {
+            return;
+        }
         PublishRenders();
         PublishLabels();
     }

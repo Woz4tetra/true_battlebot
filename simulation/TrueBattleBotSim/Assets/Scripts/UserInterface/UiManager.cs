@@ -13,10 +13,12 @@ public class UiManager : MonoBehaviour
     [SerializeField] TMP_Dropdown qualityDropdown;
     [SerializeField] TMP_Dropdown scenarioDropdown;
     [SerializeField] Toggle toggleFullscreen;
+    [SerializeField] Toggle enableSimulatedCamerasToggle;
     [SerializeField] GameObject settingsPanel;
     [SerializeField] GameObject settingsBackground;
     [SerializeField] GameObject enterSettingsPanel;
     [SerializeField] GameObject displayReadout;
+    [SerializeField] GameObject simulatedCameras;
     [SerializeField] CameraController cameraController;
     [SerializeField] FieldManager sceneManager;
     [SerializeField] string remoteScenarioSelectionTopic = "simulation/scenario_selection";
@@ -53,7 +55,8 @@ public class UiManager : MonoBehaviour
         public static PreferenceKey QualitySettingPreference { get { return new PreferenceKey("QualitySettingPreference"); } }
         public static PreferenceKey ResolutionPreference { get { return new PreferenceKey("ResolutionPreference"); } }
         public static PreferenceKey FullscreenPreference { get { return new PreferenceKey("FullscreenPreference"); } }
-        public static PreferenceKey Scenario { get { return new PreferenceKey("Scenario"); } }
+        public static PreferenceKey ScenarioPreference { get { return new PreferenceKey("ScenarioPreference"); } }
+        public static PreferenceKey SimulatedCameraPreference { get { return new PreferenceKey("SimulatedCameraPreference"); } }
 
         public override string ToString()
         {
@@ -140,6 +143,11 @@ public class UiManager : MonoBehaviour
         SetScenario(scenarioIndex);
     }
 
+    public void SetEnableSimulatedCamerasCallback(bool enableCameras)
+    {
+        SetEnableSimulatedCameras(enableCameras);
+    }
+
     private void SetFullscreen(bool isFullscreen)
     {
         Screen.fullScreen = isFullscreen;
@@ -161,9 +169,17 @@ public class UiManager : MonoBehaviour
     {
         string scenarioName = scenarios[scenarioIndex];
         Debug.Log($"Setting scenario to {scenarioIndex} -> {scenarioName}");
-        PlayerPrefs.SetString(PreferenceKey.Scenario.Value, scenarioName);
+        PlayerPrefs.SetString(PreferenceKey.ScenarioPreference.Value, scenarioName);
         PlayerPrefs.Save();
         sceneManager.LoadScenario(scenarioName);
+    }
+
+    private void SetEnableSimulatedCameras(bool enableCameras)
+    {
+        simulatedCameras.SetActive(enableCameras);
+        Debug.Log($"Set enable simulated cameras to {enableCameras}");
+        PlayerPrefs.SetInt(PreferenceKey.SimulatedCameraPreference.Value, Convert.ToInt32(enableCameras));
+        PlayerPrefs.Save();
     }
 
     private void SetTextureQuality(int textureIndex)
@@ -284,9 +300,8 @@ public class UiManager : MonoBehaviour
         Debug.Log($"Loading settings. Default resolution index is {currentResolutionIndex}");
         qualityDropdown.value = LoadPreferenceInt(PreferenceKey.QualitySettingPreference, 3);
         resolutionDropdown.value = LoadPreferenceInt(PreferenceKey.ResolutionPreference, currentResolutionIndex);
-        bool fullScreen = Convert.ToBoolean(LoadPreferenceInt(PreferenceKey.FullscreenPreference, 0));
-        toggleFullscreen.isOn = fullScreen;
-        string scenario_key = LoadPreferenceString(PreferenceKey.Scenario, "");
+        toggleFullscreen.isOn = Convert.ToBoolean(LoadPreferenceInt(PreferenceKey.FullscreenPreference, 0));
+        string scenario_key = LoadPreferenceString(PreferenceKey.ScenarioPreference, "");
         if (scenarioIndex.ContainsKey(scenario_key))
         {
             scenarioDropdown.value = scenarioIndex[scenario_key];
@@ -296,6 +311,7 @@ public class UiManager : MonoBehaviour
             Debug.LogWarning($"Scenario {scenario_key} not found in scenario index");
             scenarioDropdown.value = 0;
         }
+        enableSimulatedCamerasToggle.isOn = Convert.ToBoolean(LoadPreferenceInt(PreferenceKey.SimulatedCameraPreference, 0));
     }
 
     void RemoteScenarioSelectionCallback(StringMsg msg)
