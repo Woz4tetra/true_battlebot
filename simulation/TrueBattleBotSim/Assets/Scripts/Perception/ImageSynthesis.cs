@@ -6,6 +6,8 @@ using Unity.Robotics.ROSTCPConnector;
 using Unity.Robotics.ROSTCPConnector.MessageGeneration;
 using RosMessageTypes.BwInterfaces;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
+using System.Threading;
 
 // @TODO:
 // . support custom color wheels in optical flow via lookup textures
@@ -71,6 +73,7 @@ public class ImageSynthesis : MonoBehaviour
         public Camera camera;
         public RosTopicState imageTopicState;
         public RosTopicState infoTopicState;
+        public ConcurrentQueue<ImageMsg> outputQueue { get; } = new ConcurrentQueue<ImageMsg>();
     };
 
     private ROSConnection ros;
@@ -81,11 +84,11 @@ public class ImageSynthesis : MonoBehaviour
 
     private SegmentationInstanceArrayMsg segmentationMsg = new SegmentationInstanceArrayMsg();
 
+
     // cached materials
     private Material opticalFlowMaterial;
 
     private Renderer[] prevRenderers = new Renderer[0];
-
     void Start()
     {
         Camera mainCamera = GetComponent<Camera>();
@@ -377,6 +380,12 @@ public class ImageSynthesis : MonoBehaviour
         }
     }
 
+    private void ProcessRenders(CapturePass pass)
+    {
+        ImageMsg imageMsg = RenderRosImage(pass);
+        pass.outputQueue.Enqueue(imageMsg);
+    }
+
     private void PublishRenders()
     {
         Camera mainCamera = GetComponent<Camera>();
@@ -392,14 +401,16 @@ public class ImageSynthesis : MonoBehaviour
             seq = seq,
         };
         seq++;
-        for (int index = 0; index < capturePasses.Length; index++)
+        foreach (CapturePass pass in capturePasses)
         {
-            CapturePass pass = capturePasses[index];
             pass.outputWidth = resizeWidth;
             pass.outputHeight = resizeHeight;
-            ImageMsg imageMsg = RenderRosImage(pass);
-            PublishImage(pass, imageMsg, cameraInfoMsg.header);
+            ProcessRenders(pass);
+            // ThreadPool.QueueUserWorkItem(state => ProcessRenders(pass));
         }
+        foreach (CapturePass pass in capturePasses)
+            while (pass.outputQueue.TryDequeue(out ImageMsg imageMsg))
+                PublishImage(pass, imageMsg, cameraInfoMsg.header);
     }
 
     private ImageMsg RenderRosImage(CapturePass pass)
