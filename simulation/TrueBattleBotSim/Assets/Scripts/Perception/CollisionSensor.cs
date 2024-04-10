@@ -13,6 +13,10 @@ public class CollisionSensor : MonoBehaviour
     {
         ros = ROSConnection.GetOrCreateInstance();
         topicState = ros.GetOrCreateTopic(collisionInfoTopic, MessageRegistry.GetRosMessageName<CollisionInfoMsg>());
+        if (!topicState.IsPublisher)
+        {
+            ros.RegisterPublisher<CollisionInfoMsg>(topicState.Topic);
+        }
     }
 
     void OnTriggerEnter(Collider other)

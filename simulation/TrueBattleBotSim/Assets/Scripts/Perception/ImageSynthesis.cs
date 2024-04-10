@@ -6,8 +6,6 @@ using Unity.Robotics.ROSTCPConnector;
 using Unity.Robotics.ROSTCPConnector.MessageGeneration;
 using RosMessageTypes.BwInterfaces;
 using System.Collections.Generic;
-using Unity.Jobs;
-using Unity.Collections;
 
 // @TODO:
 // . support custom color wheels in optical flow via lookup textures
@@ -75,27 +73,6 @@ public class ImageSynthesis : MonoBehaviour
         public RosTopicState infoTopicState;
     };
 
-
-    struct RenderJob : IJob
-    {
-        [WriteOnly] public Camera camera;
-        [WriteOnly] public Encoding encoding;
-
-        [WriteOnly] public bool supportsAntialiasing;
-        [WriteOnly] public bool needsRescale;
-        [WriteOnly] public uint outputWidth;
-        [WriteOnly] public uint outputHeight;
-        [WriteOnly] public int cameraWidth;
-        [WriteOnly] public int cameraHeight;
-        public RenderTexture renderTexture;
-        public ImageMsg imageMsg;
-
-        public void Execute()
-        {
-
-        }
-    }
-
     private ROSConnection ros;
 
     private CameraInfoMsg cameraInfoMsg;
@@ -162,10 +139,18 @@ public class ImageSynthesis : MonoBehaviour
                 passes.Add(pass);
             }
         }
-        foreach (var pass in passes)
+        foreach (CapturePass pass in passes)
         {
             pass.imageTopicState = ros.GetOrCreateTopic(GetImageTopic(pass.imageTopic), MessageRegistry.GetRosMessageName<ImageMsg>());
             pass.infoTopicState = ros.GetOrCreateTopic(GetImageTopic(pass.infoTopic), MessageRegistry.GetRosMessageName<CameraInfoMsg>());
+            if (!pass.imageTopicState.IsPublisher)
+            {
+                ros.RegisterPublisher<ImageMsg>(pass.imageTopicState.Topic);
+            }
+            if (!pass.infoTopicState.IsPublisher)
+            {
+                ros.RegisterPublisher<CameraInfoMsg>(pass.infoTopicState.Topic);
+            }
         }
         if (publishSegmentationLabels)
             ros.RegisterPublisher<SegmentationInstanceArrayMsg>(baseTopic + "/" + segmentationTopic);
@@ -407,30 +392,17 @@ public class ImageSynthesis : MonoBehaviour
             seq = seq,
         };
         seq++;
-        RenderJob[] jobs = new RenderJob[capturePasses.Length];
-        JobHandle[] handles = new JobHandle[capturePasses.Length];
         for (int index = 0; index < capturePasses.Length; index++)
         {
             CapturePass pass = capturePasses[index];
             pass.outputWidth = resizeWidth;
             pass.outputHeight = resizeHeight;
-            RenderJob job = GetImageRenderJob(pass);
-            jobs[index] = job;
-            handles[index] = job.Schedule();
-        }
-        foreach (JobHandle handle in handles)
-        {
-            handle.Complete();
-        }
-        for (int index = 0; index < capturePasses.Length; index++)
-        {
-            CapturePass pass = capturePasses[index];
-            RenderJob job = jobs[index];
-            PublishImage(pass, job, cameraInfoMsg.header);
+            ImageMsg imageMsg = RenderRosImage(pass);
+            PublishImage(pass, imageMsg, cameraInfoMsg.header);
         }
     }
 
-    private RenderJob GetImageRenderJob(CapturePass pass)
+    private ImageMsg RenderRosImage(CapturePass pass)
     {
         Camera mainCamera = GetComponent<Camera>();
         Camera camera = pass.camera;
@@ -532,7 +504,7 @@ public class ImageSynthesis : MonoBehaviour
         }
 
         // create ROS Image message
-        imageMsg = new ImageMsg(
+        ImageMsg imageMsg = new ImageMsg(
             new HeaderMsg(),
             (uint)texture.height,
             (uint)texture.width,
@@ -549,24 +521,12 @@ public class ImageSynthesis : MonoBehaviour
         Destroy(texture);
         RenderTexture.ReleaseTemporary(finalRT);
 
-        RenderJob job = new RenderJob
-        {
-            camera = pass.camera,
-            encoding = pass.encoding,
-            supportsAntialiasing = pass.supportsAntialiasing,
-            needsRescale = pass.needsRescale,
-            outputWidth = pass.outputWidth,
-            outputHeight = pass.outputHeight,
-            cameraWidth = mainCamera.pixelWidth,
-            cameraHeight = mainCamera.pixelHeight,
-            renderTexture = pass.renderTexture,
-        };
-        return job;
+        return imageMsg;
     }
-    private void PublishImage(CapturePass pass, RenderJob job, HeaderMsg header)
+    private void PublishImage(CapturePass pass, ImageMsg imageMsg, HeaderMsg header)
     {
-        job.imageMsg.header = header;
-        pass.imageTopicState.Publish(job.imageMsg);
+        imageMsg.header = header;
+        pass.imageTopicState.Publish(imageMsg);
         pass.infoTopicState.Publish(cameraInfoMsg);
     }
 
