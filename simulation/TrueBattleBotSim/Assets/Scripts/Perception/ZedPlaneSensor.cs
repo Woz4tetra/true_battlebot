@@ -21,6 +21,11 @@ public class ZedPlaneSensor : BaseRectangleSensor
     private void PlaneRequestCallback(PointStampedMsg pointMsg)
     {
         PoseStampedMsg[] msgs = ConvertTargetsToPoses(prevTargets);
+        if (msgs.Length == 0)
+        {
+            Debug.LogWarning("No ZED plane targets found");
+            return;
+        }
         foreach (PoseStampedMsg msg in msgs)
         {
             ros.Publish(plane_response_topic, msg);

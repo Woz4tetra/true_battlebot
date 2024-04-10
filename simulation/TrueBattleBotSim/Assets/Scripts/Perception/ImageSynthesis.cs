@@ -238,7 +238,7 @@ public class ImageSynthesis : MonoBehaviour
 
     void PublishTimerCallback()
     {
-        if (!gameObject.activeSelf)
+        if (!gameObject.activeInHierarchy)
         {
             return;
         }
@@ -386,8 +386,7 @@ public class ImageSynthesis : MonoBehaviour
         Camera mainCamera = GetComponent<Camera>();
 
         cameraInfoMsg = CameraInfoGenerator.ConstructCameraInfoMessage(mainCamera, new HeaderMsg { frame_id = frame.GetFrameId() });
-        (uint resizeWidth, uint resizeHeight) = FixedAspectResize(cameraInfoMsg.width, cameraInfoMsg.height, imageWidth, imageHeight);
-        resizeCameraInfo(cameraInfoMsg, resizeWidth, resizeHeight);
+        resizeCameraInfo(cameraInfoMsg, imageWidth, imageHeight);
 
         cameraInfoMsg.header = new HeaderMsg
         {
@@ -398,8 +397,8 @@ public class ImageSynthesis : MonoBehaviour
         seq++;
         foreach (CapturePass pass in capturePasses)
         {
-            pass.outputWidth = resizeWidth;
-            pass.outputHeight = resizeHeight;
+            pass.outputWidth = imageWidth;
+            pass.outputHeight = imageHeight;
             ImageMsg imageMsg = RenderRosImage(pass);
             PublishImage(pass, imageMsg, cameraInfoMsg.header);
         }

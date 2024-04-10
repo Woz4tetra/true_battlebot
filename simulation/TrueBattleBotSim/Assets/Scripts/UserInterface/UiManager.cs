@@ -14,11 +14,13 @@ public class UiManager : MonoBehaviour
     [SerializeField] TMP_Dropdown scenarioDropdown;
     [SerializeField] Toggle toggleFullscreen;
     [SerializeField] Toggle enableSimulatedCamerasToggle;
+    [SerializeField] TMP_Text fpsReadout;
     [SerializeField] GameObject settingsPanel;
     [SerializeField] GameObject settingsBackground;
     [SerializeField] GameObject enterSettingsPanel;
     [SerializeField] GameObject displayReadout;
     [SerializeField] GameObject simulatedCameras;
+    [SerializeField] FPSCounter fpsCounter;
     [SerializeField] CameraController cameraController;
     [SerializeField] FieldManager sceneManager;
     [SerializeField] string remoteScenarioSelectionTopic = "simulation/scenario_selection";
@@ -79,25 +81,26 @@ public class UiManager : MonoBehaviour
         {
             string option = resolutions[i].width + " x " + resolutions[i].height;
             options.Add(option);
-            if (currentResolutionIndex == -1)
+            if (currentResolutionIndex != -1)
             {
-                if (resolutions[i].width == commonWidth && resolutions[i].height == commonHeight)
-                {
-                    currentResolutionIndex = i;
-                    Debug.Log(
-                        $"Common resolution found: ({commonWidth} x {commonHeight}). " +
-                        $"Labeling as index {currentResolutionIndex}"
-                    );
-                }
-                else if (resolutions[i].width == Screen.currentResolution.width
-                        && resolutions[i].height == Screen.currentResolution.height)
-                {
-                    currentResolutionIndex = i;
-                    Debug.Log(
-                        $"Current resolution found: ({commonWidth} x {commonHeight}). " +
-                        $"Labeling as index {currentResolutionIndex}"
-                    );
-                }
+                continue;
+            }
+            if (resolutions[i].width == commonWidth && resolutions[i].height == commonHeight)
+            {
+                currentResolutionIndex = i;
+                Debug.Log(
+                    $"Common resolution found: ({commonWidth} x {commonHeight}). " +
+                    $"Labeling as index {currentResolutionIndex}"
+                );
+            }
+            else if (resolutions[i].width == Screen.currentResolution.width
+                    && resolutions[i].height == Screen.currentResolution.height)
+            {
+                currentResolutionIndex = i;
+                Debug.Log(
+                    $"Current resolution found: ({commonWidth} x {commonHeight}). " +
+                    $"Labeling as index {currentResolutionIndex}"
+                );
             }
         }
 
@@ -124,6 +127,7 @@ public class UiManager : MonoBehaviour
 
         ShowHideSettingsPanel(settingsPanel.activeSelf);
         StartCoroutine(PublishScenarioListCallback());
+        StartCoroutine(UpdateFpsCounter());
     }
 
     public void SetFullscreenCallback(bool isFullscreen)
@@ -337,6 +341,15 @@ public class UiManager : MonoBehaviour
         {
             ros.Publish(scenarioListTopic, new LabelsMsg { labels = scenarios.ToArray() });
             yield return new WaitForSecondsRealtime(1);
+        }
+    }
+
+    IEnumerator<object> UpdateFpsCounter()
+    {
+        while (true)
+        {
+            fpsReadout.text = $"FPS: {fpsCounter.GetFps():  0.00}";
+            yield return new WaitForSecondsRealtime(0.1f);
         }
     }
 

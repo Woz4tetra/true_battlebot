@@ -1,27 +1,41 @@
 using UnityEngine;
 
-public class RectangleTarget : MonoBehaviour {
+public class RectangleTarget : MonoBehaviour
+{
     [SerializeField] private int tagId = 0;
     [SerializeField] private string tagName = "";
     [SerializeField] Renderer tagRenderer;
 
-    public int GetTagId() {
+    void Start()
+    {
+        if (tagRenderer == null)
+        {
+            tagRenderer = GetComponent<Renderer>();
+        }
+    }
+
+    public int GetTagId()
+    {
         return tagId;
     }
 
-    public string GetTagName() {
+    public string GetTagName()
+    {
         return tagName;
     }
 
-    public Vector3 GetDimensions() {
+    public Vector3 GetDimensions()
+    {
         return tagRenderer.bounds.size;
     }
 
-    public Renderer GetRenderer() {
+    public Renderer GetRenderer()
+    {
         return tagRenderer;
     }
 
-    public int GetLayer() {
+    public int GetLayer()
+    {
         return tagRenderer.gameObject.layer;
     }
 }
