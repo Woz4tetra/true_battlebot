@@ -6,6 +6,8 @@ using Unity.Robotics.ROSTCPConnector;
 using Unity.Robotics.ROSTCPConnector.MessageGeneration;
 using RosMessageTypes.BwInterfaces;
 using System.Collections.Generic;
+using Unity.Jobs;
+using Unity.Collections;
 
 // @TODO:
 // . support custom color wheels in optical flow via lookup textures
@@ -20,9 +22,21 @@ using System.Collections.Generic;
 //      2) rendering several cameras with different aspect ratios - vectors do stretch to the sides of the screen
 
 [RequireComponent(typeof(Camera))]
+[RequireComponent(typeof(TransformFrame))]
 public class ImageSynthesis : MonoBehaviour
 {
+    [SerializeField] private string baseTopic = "camera";
+    [SerializeField] private uint imageWidth = 1920;
+    [SerializeField] private uint imageHeight = 1080;
+    [SerializeField] private float publishRate = 10.0f;
+    [SerializeField] private string segmentationTopic = "simulated_segmentation";
+    [SerializeField] private bool publishSegmentationLabels = true;
     [SerializeField] CapturePassConfig[] captureConfig;
+    [SerializeField] private Shader uberReplacementShader;
+    [SerializeField] private Shader opticalFlowShader;
+
+    [SerializeField] private float opticalFlowSensitivity = 1.0f;
+
     private CapturePass[] capturePasses;
 
     enum ReplacelementModes
@@ -35,7 +49,7 @@ public class ImageSynthesis : MonoBehaviour
         Normals = 4,
         Flow = 5,
     };
-    enum Encodings
+    enum Encoding
     {
         RGB8 = 0,
         MONO16 = 1,
@@ -50,32 +64,45 @@ public class ImageSynthesis : MonoBehaviour
         public bool supportsAntialiasing = true;
         public bool needsRescale = false;
         public ReplacelementModes mode = ReplacelementModes.None;
-        public bool publish = true;
-        public Encodings encoding = Encodings.RGB8;
+        public Encoding encoding = Encoding.RGB8;
 
+        public uint outputWidth;
+        public uint outputHeight;
 
         public RenderTexture renderTexture;
         public Camera camera;
+        public RosTopicState imageTopicState;
+        public RosTopicState infoTopicState;
     };
 
+
+    struct RenderJob : IJob
+    {
+        [WriteOnly] public Camera camera;
+        [WriteOnly] public Encoding encoding;
+
+        [WriteOnly] public bool supportsAntialiasing;
+        [WriteOnly] public bool needsRescale;
+        [WriteOnly] public uint outputWidth;
+        [WriteOnly] public uint outputHeight;
+        [WriteOnly] public int cameraWidth;
+        [WriteOnly] public int cameraHeight;
+        public RenderTexture renderTexture;
+        public ImageMsg imageMsg;
+
+        public void Execute()
+        {
+
+        }
+    }
+
     private ROSConnection ros;
-    [SerializeField] private string baseTopic = "camera";
-    [SerializeField] private uint imageWidth = 1920;
-    [SerializeField] private uint imageHeight = 1080;
-    [SerializeField] private float publishRate = 10.0f;
-    private float publishStartDelay = 1.0f;
+
     private CameraInfoMsg cameraInfoMsg;
     private uint seq = 0;
     private TransformFrame frame;
 
-    [SerializeField] private string segmentationTopic = "simulated_segmentation";
-    [SerializeField] private bool publishSegmentationLabels = true;
     private SegmentationInstanceArrayMsg segmentationMsg = new SegmentationInstanceArrayMsg();
-
-    [SerializeField] private Shader uberReplacementShader;
-    [SerializeField] private Shader opticalFlowShader;
-
-    [SerializeField] private float opticalFlowSensitivity = 1.0f;
 
     // cached materials
     private Material opticalFlowMaterial;
@@ -86,8 +113,11 @@ public class ImageSynthesis : MonoBehaviour
     {
         Camera mainCamera = GetComponent<Camera>();
         frame = GetComponent<TransformFrame>();
+        Renderer[] renderers = FindObjectsOfType<Renderer>();
+
         ros = ROSConnection.GetOrCreateInstance();
         List<CapturePass> passes = new List<CapturePass>();
+
         foreach (CapturePassConfig config in captureConfig)
         {
             CapturePass pass = new CapturePass()
@@ -108,7 +138,7 @@ public class ImageSynthesis : MonoBehaviour
                     break;
                 case "depth":
                     pass.mode = ReplacelementModes.DepthMultichannel;
-                    pass.encoding = Encodings.MONO16;
+                    pass.encoding = Encoding.MONO16;
                     break;
                 case "id":
                     pass.supportsAntialiasing = false;
@@ -134,16 +164,11 @@ public class ImageSynthesis : MonoBehaviour
         }
         foreach (var pass in passes)
         {
-            if (pass.publish)
-            {
-                ros.RegisterPublisher<ImageMsg>(GetImageTopic(pass.imageTopic));
-                ros.RegisterPublisher<CameraInfoMsg>(GetImageTopic(pass.infoTopic));
-            }
+            pass.imageTopicState = ros.GetOrCreateTopic(GetImageTopic(pass.imageTopic), MessageRegistry.GetRosMessageName<ImageMsg>());
+            pass.infoTopicState = ros.GetOrCreateTopic(GetImageTopic(pass.infoTopic), MessageRegistry.GetRosMessageName<CameraInfoMsg>());
         }
         if (publishSegmentationLabels)
-        {
             ros.RegisterPublisher<SegmentationInstanceArrayMsg>(baseTopic + "/" + segmentationTopic);
-        }
 
         // default fallbacks, if shaders are unspecified
         if (!uberReplacementShader)
@@ -159,12 +184,11 @@ public class ImageSynthesis : MonoBehaviour
             capturePasses[q].camera = CreateHiddenCamera(capturePasses[q].name);
 
         OnCameraChange();
-        Renderer[] renderers = FindObjectsOfType<Renderer>();
         OnSceneChange(renderers);
 
         if (publishRate > 0)
         {
-            InvokeRepeating("PublishTimerCallback", publishStartDelay, 1.0f / publishRate);
+            InvokeRepeating("PublishTimerCallback", 1.0f, 1.0f / publishRate);
         }
     }
 
@@ -376,45 +400,66 @@ public class ImageSynthesis : MonoBehaviour
         (uint resizeWidth, uint resizeHeight) = FixedAspectResize(cameraInfoMsg.width, cameraInfoMsg.height, imageWidth, imageHeight);
         resizeCameraInfo(cameraInfoMsg, resizeWidth, resizeHeight);
 
-        HeaderMsg header = new HeaderMsg
+        cameraInfoMsg.header = new HeaderMsg
         {
             frame_id = frame.GetFrameId(),
             stamp = RosUtil.GetTimeMsg(),
             seq = seq,
         };
         seq++;
-        foreach (CapturePass pass in capturePasses)
+        RenderJob[] jobs = new RenderJob[capturePasses.Length];
+        JobHandle[] handles = new JobHandle[capturePasses.Length];
+        for (int index = 0; index < capturePasses.Length; index++)
         {
-            if (!pass.publish)
-            {
-                continue;
-            }
-            PublishImage(pass, header, GetImageTopic(pass.imageTopic), (int)resizeWidth, (int)resizeHeight);
-            cameraInfoMsg.header = header;
-            ros.Publish(GetImageTopic(pass.infoTopic), cameraInfoMsg);
+            CapturePass pass = capturePasses[index];
+            pass.outputWidth = resizeWidth;
+            pass.outputHeight = resizeHeight;
+            RenderJob job = GetImageRenderJob(pass);
+            jobs[index] = job;
+            handles[index] = job.Schedule();
+        }
+        foreach (JobHandle handle in handles)
+        {
+            handle.Complete();
+        }
+        for (int index = 0; index < capturePasses.Length; index++)
+        {
+            CapturePass pass = capturePasses[index];
+            RenderJob job = jobs[index];
+            PublishImage(pass, job, cameraInfoMsg.header);
         }
     }
 
-    private void PublishImage(CapturePass pass, HeaderMsg header, string topic, int width, int height)
+    private RenderJob GetImageRenderJob(CapturePass pass)
     {
         Camera mainCamera = GetComponent<Camera>();
-        Camera cam = pass.camera;
+        Camera camera = pass.camera;
+        int width = (int)pass.outputWidth;
+        int height = (int)pass.outputHeight;
+        int cameraWidth = mainCamera.pixelWidth;
+        int cameraHeight = mainCamera.pixelHeight;
+        Encoding encoding = pass.encoding;
+        RenderTexture renderTexture = pass.renderTexture;
+        bool supportsAntialiasing = pass.supportsAntialiasing;
+        bool needsRescale = pass.needsRescale;
+
+
         var readWrite = RenderTextureReadWrite.Default;
         TextureFormat textureFormat;
         int depth;
         int rosImageChannels;
         string encodingString;
         RenderTextureFormat format;
-        switch (pass.encoding)
+        switch (encoding)
         {
-            case Encodings.RGB8:
+            case Encoding.RGB8:
                 textureFormat = TextureFormat.RGB24;
                 rosImageChannels = 3;
                 encodingString = "rgb8";
                 format = RenderTextureFormat.Default;
                 depth = 24;
                 break;
-            case Encodings.MONO16:
+            case Encoding.MONO16:
                 textureFormat = TextureFormat.R16;
                 rosImageChannels = 2;
                 encodingString = "16UC1";
@@ -429,24 +474,24 @@ public class ImageSynthesis : MonoBehaviour
                 depth = 24;
                 break;
         }
-        var antiAliasing = pass.supportsAntialiasing ? Mathf.Max(1, QualitySettings.antiAliasing) : 1;
+        var antiAliasing = supportsAntialiasing ? Mathf.Max(1, QualitySettings.antiAliasing) : 1;
 
         var finalRT =
             RenderTexture.GetTemporary(width, height, depth, format, readWrite, antiAliasing);
-        var renderRT = (!pass.needsRescale) ? finalRT :
-            RenderTexture.GetTemporary(mainCamera.pixelWidth, mainCamera.pixelHeight, depth, format, readWrite, antiAliasing);
+        var renderRT = (!needsRescale) ? finalRT :
+            RenderTexture.GetTemporary(cameraWidth, cameraHeight, depth, format, readWrite, antiAliasing);
         var texture = new Texture2D(width, height, textureFormat, false);
 
         var prevActiveRT = RenderTexture.active;
-        var prevCameraRT = cam.targetTexture;
+        var prevCameraRT = camera.targetTexture;
 
         // render to offscreen texture (readonly from CPU side)
         RenderTexture.active = renderRT;
-        cam.targetTexture = renderRT;
+        camera.targetTexture = renderRT;
 
-        cam.Render();
+        camera.Render();
 
-        if (pass.needsRescale)
+        if (needsRescale)
         {
             // blit to rescale (see issue with Motion Vectors in @KNOWN ISSUES)
             RenderTexture.active = finalRT;
@@ -454,9 +499,9 @@ public class ImageSynthesis : MonoBehaviour
             RenderTexture.ReleaseTemporary(renderRT);
         }
 
-        if (pass.renderTexture != null)
+        if (renderTexture != null)
         {
-            Graphics.Blit(renderRT, pass.renderTexture);
+            Graphics.Blit(renderRT, renderTexture);
         }
 
         // flip vertically
@@ -469,16 +514,14 @@ public class ImageSynthesis : MonoBehaviour
         texture.ReadPixels(new Rect(0, 0, texture.width, texture.height), 0, 0);
         texture.Apply();
 
-
         // extract bytes
         byte[] bytes = texture.GetRawTextureData();
 
-
-        switch (pass.encoding)
+        switch (encoding)
         {
-            case Encodings.RGB8:
+            case Encoding.RGB8:
                 break;
-            case Encodings.MONO16:
+            case Encoding.MONO16:
                 for (int i = 0; i < bytes.Length; i += 2)
                 {
                     (bytes[i], bytes[i + 1]) = convertBytesToMillimeters(bytes[i], bytes[i + 1]);
@@ -488,9 +531,9 @@ public class ImageSynthesis : MonoBehaviour
                 break;
         }
 
-        // publish image
-        ImageMsg imageMsg = new ImageMsg(
-            header,
+        // create ROS Image message
+        imageMsg = new ImageMsg(
+            new HeaderMsg(),
             (uint)texture.height,
             (uint)texture.width,
             encodingString,
@@ -498,17 +541,36 @@ public class ImageSynthesis : MonoBehaviour
             (uint)(texture.width * rosImageChannels),
             bytes
         );
-        ros.Publish(topic, imageMsg);
 
         // restore state and cleanup
-        cam.targetTexture = prevCameraRT;
+        camera.targetTexture = prevCameraRT;
         RenderTexture.active = prevActiveRT;
 
         Destroy(texture);
         RenderTexture.ReleaseTemporary(finalRT);
+
+        RenderJob job = new RenderJob
+        {
+            camera = pass.camera,
+            encoding = pass.encoding,
+            supportsAntialiasing = pass.supportsAntialiasing,
+            needsRescale = pass.needsRescale,
+            outputWidth = pass.outputWidth,
+            outputHeight = pass.outputHeight,
+            cameraWidth = mainCamera.pixelWidth,
+            cameraHeight = mainCamera.pixelHeight,
+            renderTexture = pass.renderTexture,
+        };
+        return job;
+    }
+    private void PublishImage(CapturePass pass, RenderJob job, HeaderMsg header)
+    {
+        job.imageMsg.header = header;
+        pass.imageTopicState.Publish(job.imageMsg);
+        pass.infoTopicState.Publish(cameraInfoMsg);
     }
 
-    (byte, byte) convertBytesToMillimeters(byte lowerByte, byte higherByte)
+    static (byte, byte) convertBytesToMillimeters(byte lowerByte, byte higherByte)
     {
         uint unscaledRawDepth = (uint)(lowerByte | (higherByte << 8));
         if (unscaledRawDepth == 0)
