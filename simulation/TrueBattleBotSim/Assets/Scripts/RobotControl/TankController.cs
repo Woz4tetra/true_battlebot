@@ -3,6 +3,7 @@ using RosMessageTypes.Geometry;
 using RosMessageTypes.Nav;
 using RosMessageTypes.Std;
 using Unity.Robotics.ROSTCPConnector.ROSGeometry;
+using MathExtensions;
 
 class TankController : MonoBehaviour, ControllerInterface
 {
@@ -19,6 +20,7 @@ class TankController : MonoBehaviour, ControllerInterface
     [SerializeField] private bool enablePid;
     [SerializeField] private bool reverseLeft;
     [SerializeField] private bool reverseRight;
+    [SerializeField] private GameObject referenceObject;
 
     private ArticulationBody body;
     private TwistMsg setpoint = new TwistMsg();
@@ -26,6 +28,10 @@ class TankController : MonoBehaviour, ControllerInterface
 
     public void Start()
     {
+        if (referenceObject == null)
+        {
+            referenceObject = GameObject.Find("Coordinate Frame");
+        }
         body = GetComponent<ArticulationBody>();
         frame = GetComponent<TransformFrame>();
     }
@@ -62,8 +68,13 @@ class TankController : MonoBehaviour, ControllerInterface
         }
     }
 
-    public OdometryMsg getGroundTruth()
+    public OdometryMsg GetGroundTruth()
     {
+        Matrix4x4 pose = Matrix4x4.TRS(body.transform.position, body.transform.rotation, Vector3.one);
+        if (referenceObject != null)
+        {
+            pose = referenceObject.transform.localToWorldMatrix * pose;
+        }
         return new OdometryMsg
         {
             header = new HeaderMsg
@@ -77,8 +88,8 @@ class TankController : MonoBehaviour, ControllerInterface
             {
                 pose = new PoseMsg
                 {
-                    position = transform.position.To<FLU>(),
-                    orientation = (Quaternion.Euler(0, 90, 0) * transform.rotation).To<FLU>()
+                    position = pose.GetT().To<FLU>(),
+                    orientation = (pose.GetR() * Quaternion.Euler(0, 90, 0)).To<FLU>()
                 }
             },
             twist = new TwistWithCovarianceMsg

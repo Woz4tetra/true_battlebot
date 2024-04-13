@@ -2209,6 +2209,7 @@ MonoBehaviour:
   enablePid: 1
   reverseLeft: 1
   reverseRight: 0
+  referenceObject: {fileID: 0}
 --- !u!114 &2799112299750927351
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2252,16 +2253,16 @@ MonoBehaviour:
     kp: 2
     ki: 0
     kd: 0
-    kf: 0
+    kf: 1
     i_zone: 0
     i_max: 0
     epsilon: 0.000000001
     tolerance: 0
   angularPID:
-    kp: 1
-    ki: 0
-    kd: 0
-    kf: 0
+    kp: 10
+    ki: 0.1
+    kd: 1
+    kf: 1
     i_zone: 0
     i_max: 0
     epsilon: 0.000000001

@@ -4,7 +4,7 @@
         "type": "relative",
         "x": 0.8,
         "y": 0.8,
-        "theta": 0.0
+        "theta": 180.0
     },
     "sequence": []
 }

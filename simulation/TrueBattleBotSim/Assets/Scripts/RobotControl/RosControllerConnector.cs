@@ -27,7 +27,7 @@ class RosControllerConnector : MonoBehaviour
 
     private void updateOdometry()
     {
-        groundTruthTopic.Publish(controller.getGroundTruth());
+        groundTruthTopic.Publish(controller.GetGroundTruth());
     }
 
     private void cmdVelCallback(TwistMsg twist)

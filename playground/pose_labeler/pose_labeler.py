@@ -149,22 +149,32 @@ class AppState:
 
 
 def recorded_poses_to_json(recording: RecordedPoses, field_size: XY) -> dict[RobotLabel, dict]:
+    timestamps = []
+    for frame_data in recording.poses:
+        for label, clicked in frame_data.items():
+            if clicked.pose is not None:
+                timestamps.append(clicked.pose.header.stamp)
+    start_timestamp = min(timestamps)
+
     def make_path(poses: list[Pose2DStamped], size: XY) -> dict:
+        max_x = size.x / 2
+        max_y = size.y / 2
         init_pose = poses[0].pose
         return {
             "type": "follow",
+            "timestamp": start_timestamp,
             "init": {
                 "type": "relative",
-                "x": init_pose.x / size.x,
-                "y": init_pose.y / size.y,
-                "theta": init_pose.theta,
+                "x": init_pose.x / max_x,
+                "y": init_pose.y / max_y,
+                "theta": np.rad2deg(init_pose.theta),
             },
             "sequence": [
                 {
-                    "timestamp": pose.header.stamp,
-                    "x": pose.pose.x / size.x,
-                    "y": pose.pose.y / size.y,
-                    "theta": pose.pose.theta,
+                    "timestamp": pose.header.stamp - start_timestamp,
+                    "x": pose.pose.x / max_x,
+                    "y": pose.pose.y / max_y,
+                    "theta": np.rad2deg(pose.pose.theta),
                 }
                 for pose in poses
             ],
@@ -189,6 +199,26 @@ def write_json_file(base_path: str, recording: RecordedPoses, field_size: XY) ->
         print("Writing to", path)
         with open(path, "w") as f:
             json.dump(data, f, indent=4)
+
+
+def read_json_files(base_path: str) -> RecordedPoses:
+    recordings = []
+    for label in RobotLabel:
+        path = base_path + f"_{label.value}.json"
+        try:
+            with open(path, "r") as f:
+                data = json.load(f)
+                recordings.append((label, data))
+        except FileNotFoundError:
+            print("File not found", path)
+    poses = [{} for _ in range(1000)]
+    for label, data in recordings:
+        for pose_data in data["sequence"]:
+            pose = Pose2DStamped(
+                Header(pose_data["timestamp"], "", 0), Pose2D(pose_data["x"], pose_data["y"], pose_data["theta"])
+            )
+            poses[int(pose_data["timestamp"])][label] = ClickedState(pose=pose)
+    return RecordedPoses(poses)
 
 
 def get_shown_image(state: AppState) -> np.ndarray:
@@ -300,21 +330,12 @@ def load_data(path) -> tuple[EstimatedObject, CameraInfo, PoseStamped, list[np.n
                 images.append(image)
                 timestamps.append(msg.header.stamp.to_sec())
             pbar.update(1)
-            if len(images) > 100:
-                break
     bag.close()
-    relative_timestamps = [t - timestamps[0] for t in timestamps]
     assert optical_camera_to_map_pose is not None
-    return field, camera_info, optical_camera_to_map_pose, images, relative_timestamps
+    return field, camera_info, optical_camera_to_map_pose, images, timestamps
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser(description="Label poses in a rosbag")
-    parser.add_argument("bagfile", type=str, help="Path to the rosbag file")
-    args = parser.parse_args()
-    bag_path = args.bagfile
-    out_path = bag_path.replace(".bag", "_poses")
-
+def init_app(bag_path: str) -> AppState:
     field, camera_info, optical_camera_to_map_pose, images, timestamps = load_data(bag_path)
 
     warped_height = 1200
@@ -324,13 +345,6 @@ def main() -> None:
     center_pixel = np.array([projections.warped_width / 2, projections.warped_height / 2])
     print(projections.project_pixel_to_map(center_pixel))
 
-    label_mapping = {
-        "1": RobotLabel.MAIN_BOT,
-        "2": RobotLabel.MINI_BOT,
-        "3": RobotLabel.OPPONENT_1,
-        "4": RobotLabel.OPPONENT_2,
-        "5": RobotLabel.REFEREE,
-    }
     # fill colors based on matplotlib color map
     color_map = colormaps.get_cmap("Spectral")
     label_colors = {
@@ -350,10 +364,33 @@ def main() -> None:
     cv2.createTrackbar(trackbar_name, window_name, 0, len(images) - 1, lambda val: trackbar_callback(val, state))
     cv2.setMouseCallback(window_name, mouse_callback, (state, clicked))
 
-    def save_json():
-        write_json_file(out_path, state.recording, XY(field.size.x, field.size.y))
+    return state
 
-    cv2.imshow(window_name, get_shown_image(state))
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Label poses in a rosbag")
+    parser.add_argument("bagfile", type=str, help="Path to the rosbag file")
+    args = parser.parse_args()
+    bag_path = args.bagfile
+    out_path = bag_path.replace(".bag", "_poses")
+
+    label_mapping = {
+        "1": RobotLabel.MAIN_BOT,
+        "2": RobotLabel.MINI_BOT,
+        "3": RobotLabel.OPPONENT_1,
+        "4": RobotLabel.OPPONENT_2,
+        "5": RobotLabel.REFEREE,
+    }
+    state = init_app(bag_path)
+    field_size = state.projections.field_size
+
+    def save_json():
+        write_json_file(out_path, state.recording, XY(field_size.x, field_size.y))
+
+    def draw():
+        cv2.imshow(state.window_name, get_shown_image(state))
+
+    cv2.imshow(state.window_name, get_shown_image(state))
     while True:
         keycode = cv2.waitKey()
         key = chr(keycode & 0xFF)
@@ -362,16 +399,24 @@ def main() -> None:
             break
         elif key == "a":
             state.current_index = max(0, state.current_index - 1)
-            cv2.imshow(window_name, get_shown_image(state))
-            cv2.setTrackbarPos(trackbar_name, window_name, state.current_index)
+            draw()
+            cv2.setTrackbarPos(state.trackbar_name, state.window_name, state.current_index)
         elif key == "d":
-            state.current_index = min(len(images) - 1, state.current_index + 1)
-            cv2.imshow(window_name, get_shown_image(state))
-            cv2.setTrackbarPos(trackbar_name, window_name, state.current_index)
+            state.current_index = min(len(state.images) - 1, state.current_index + 1)
+            draw()
+            cv2.setTrackbarPos(state.trackbar_name, state.window_name, state.current_index)
         elif key == "l":
             # copy last frame's poses
             state.recording.poses[state.current_index] = copy.deepcopy(state.recording.poses[state.prev_labeled_index])
-            cv2.imshow(window_name, get_shown_image(state))
+            for sample in state.recording.poses[state.current_index].values():
+                if sample.pose is None:
+                    continue
+                sample.pose.header.stamp = state.current_timestamp
+            draw()
+        elif key == "c":
+            # clear current selected label's pose
+            state.recording.poses[state.current_index][state.selected_label] = ClickedState()
+            draw()
         elif key in string.digits:
             state.selected_label = label_mapping.get(key, RobotLabel.MAIN_BOT)
             print("Selected", state.selected_label.value)

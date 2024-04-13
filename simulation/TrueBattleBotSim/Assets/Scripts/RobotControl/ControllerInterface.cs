@@ -3,6 +3,6 @@ using RosMessageTypes.Geometry;
 interface ControllerInterface
 {
     void SetCommand(TwistMsg twist);
-    OdometryMsg getGroundTruth();
+    OdometryMsg GetGroundTruth();
     void Reset();
 }

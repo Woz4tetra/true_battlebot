@@ -13,9 +13,19 @@ class WaypointFollower : MonoBehaviour
     List<SequenceElementConfig> sequence = new List<SequenceElementConfig>();
     float sequence_time = 0.0f;
     float prevRelativeAngle = 0.0f;
+    ArrowIndicator arrow;
 
     public void Start()
     {
+        ArrowIndicator[] arrows = Resources.LoadAll<ArrowIndicator>("Indicators");
+        if (arrows.Length == 0)
+        {
+            Debug.LogError("No arrow prefabs found");
+        }
+        else
+        {
+            arrow = Instantiate(arrows[0]);
+        }
         controller = GetComponent<ControllerInterface>();
         Reset();
     }
@@ -61,37 +71,28 @@ class WaypointFollower : MonoBehaviour
             index++;
         }
 
-        return ComputeVelocity(sequence, index);
+        SequenceElementConfig currentElement = sequence[index];
+        arrow.Set2D(currentElement.x, 0.1f, currentElement.y, currentElement.theta);
+        return ComputeVelocity(currentElement);
     }
 
-    TwistMsg ComputeVelocity(List<SequenceElementConfig> sequence, int index)
+    TwistMsg ComputeVelocity(SequenceElementConfig currentElement)
     {
-        OdometryMsg odom = controller.getGroundTruth();
+        OdometryMsg odom = controller.GetGroundTruth();
         PointMsg position = odom.pose.pose.position;
         QuaternionMsg orientation = odom.pose.pose.orientation;
         Matrix4x4 currentPose = Matrix4x4.TRS(
             new Vector3((float)position.x, (float)position.y, (float)position.z),
             new Quaternion((float)orientation.x, (float)orientation.y, (float)orientation.z, (float)orientation.w),
             Vector3.one);
-        SequenceElementConfig currentElement = sequence[index];
         Matrix4x4 goalPose = Matrix4x4.TRS(
             new Vector3(currentElement.x, currentElement.y, 0.0f),
-            Quaternion.Euler(0, 0, currentElement.theta),
+            Quaternion.Euler(0, 0, currentElement.theta + 90.0f),
             Vector3.one);
         Matrix4x4 relativePose = currentPose.inverse * goalPose;
         Vector3 relativePosition = relativePose.GetT();
-        float relativeAngle = Mathf.Atan2(relativePosition.y, relativePosition.x);
-        float deltaAngle = relativeAngle - prevRelativeAngle;
-        if (deltaAngle > Mathf.PI)
-        {
-            relativeAngle -= 2 * Mathf.PI;
-        }
-        else if (deltaAngle < -Mathf.PI)
-        {
-            relativeAngle += 2 * Mathf.PI;
-        }
-        prevRelativeAngle = relativeAngle;
-        relativeAngle = Mathf.Clamp(relativeAngle, -Mathf.PI, Mathf.PI);
+        float relativeAngle = relativePose.GetR().eulerAngles.z * Mathf.Deg2Rad;
+        relativeAngle = (relativeAngle % (2 * Mathf.PI)) - Mathf.PI;
         float linearVelocity = linearPID.Update(relativePosition.x, 0.0f, Time.deltaTime);
         float angularVelocity = angularPID.Update(relativeAngle, 0.0f, Time.deltaTime);
         return new TwistMsg

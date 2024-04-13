@@ -1,5 +1,6 @@
 using UnityEngine;
 using RosMessageTypes.Geometry;
+using RosMessageTypes.Nav;
 class KeyboardInput : MonoBehaviour
 {
     [SerializeField] private float linearScale = 1.0f;

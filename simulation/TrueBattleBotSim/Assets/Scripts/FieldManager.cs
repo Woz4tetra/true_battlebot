@@ -14,6 +14,7 @@ public class FieldManager : MonoBehaviour
     [SerializeField] string scenariosDirectory = "Scenarios";
     [SerializeField] GameObject flatScreenTV;
     [SerializeField] float maxCageSize = 5.0f;
+    [SerializeField] float heightFudgeFactor = 1.1f;
     PauseManager pauseManager;
     ScenarioConfig scenario;
     string currentScenarioName = "";
@@ -166,7 +167,7 @@ public class FieldManager : MonoBehaviour
                 break;
             case "follow":
                 follower.enabled = true;
-                follower.SetSequence(GetScaledSequence(objective_config.sequence));
+                follower.SetSequence(GetScaledSequence(objective_config.init, objective_config.sequence));
                 break;
             default:
                 Debug.LogError("Invalid objective type: " + objective_config.type);
@@ -174,7 +175,7 @@ public class FieldManager : MonoBehaviour
         }
     }
 
-    List<SequenceElementConfig> GetScaledSequence(List<SequenceElementConfig> sequence)
+    List<SequenceElementConfig> GetScaledSequence(ScenarioInitConfig init_config, List<SequenceElementConfig> sequence)
     {
         List<SequenceElementConfig> scaled_sequence = new List<SequenceElementConfig>();
         foreach (SequenceElementConfig element in sequence)
@@ -182,9 +183,9 @@ public class FieldManager : MonoBehaviour
             scaled_sequence.Add(new SequenceElementConfig
             {
                 timestamp = element.timestamp,
-                x = element.x * scenario.cage.dims.x,
-                y = element.y * scenario.cage.dims.y,
-                theta = element.theta,
+                x = element.x * scenario.cage.dims.x / 2 * (1.0f - init_config.x_buffer),
+                y = element.y * scenario.cage.dims.y / 2 * (1.0f - init_config.y_buffer),
+                theta = -element.theta,
                 vx = element.vx,
                 vy = element.vy,
                 vtheta = element.vtheta
@@ -220,10 +221,13 @@ public class FieldManager : MonoBehaviour
                 break;
         }
         float height = Mathf.Min(robot_bounds.extents.x, Mathf.Min(robot_bounds.extents.y, robot_bounds.extents.z));
-        height *= 1.1f;
+        height *= heightFudgeFactor;
         return Matrix4x4.TRS(
-            new Vector3(init_config.x * scale.x, height, init_config.y * scale.y),
-            Quaternion.Euler(0, -(init_config.theta + 180.0f), 0),
+            new Vector3(
+                init_config.x * scale.x * (1.0f - init_config.x_buffer),
+                height,
+                init_config.y * scale.y * (1.0f - init_config.y_buffer)),
+            Quaternion.Euler(0, -1 * init_config.theta, 0),
             Vector3.one
         );
     }
