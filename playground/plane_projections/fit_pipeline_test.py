@@ -1,22 +1,20 @@
 import pickle
 
 import numpy as np
-import tf2_geometry_msgs
-from bw_interfaces.msg import Contour, SegmentationInstance, UVKeypoint
-from bw_object_filter.field_math.find_minimum_rectangle import (
+from bw_interfaces.msg import SegmentationInstance
+from bw_tools.projection_math.find_minimum_rectangle import (
     find_minimum_rectangle,
     get_rectangle_angle,
     get_rectangle_extents,
 )
-from bw_object_filter.field_math.points_transform import points_transform
-from bw_object_filter.field_math.project_segmentation import project_segmentation, raycast_segmentation
+from bw_tools.projection_math.points_transform import points_transform
+from bw_tools.projection_math.project_segmentation import project_segmentation, raycast_segmentation
 from bw_tools.structs.rpy import RPY
 from bw_tools.structs.transform3d import Transform3D
-from geometry_msgs.msg import Point, Pose, PoseStamped, Quaternion, Vector3
+from geometry_msgs.msg import Vector3
 from image_geometry import PinholeCameraModel
 from matplotlib import pyplot as plt
 from matplotlib.patches import FancyArrowPatch
-from mpl_toolkits.mplot3d import proj3d
 from mpl_toolkits.mplot3d.proj3d import proj_transform
 from zed_interfaces.msg import PlaneStamped
 
