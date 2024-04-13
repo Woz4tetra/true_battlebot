@@ -201,26 +201,6 @@ def write_json_file(base_path: str, recording: RecordedPoses, field_size: XY) ->
             json.dump(data, f, indent=4)
 
 
-def read_json_files(base_path: str) -> RecordedPoses:
-    recordings = []
-    for label in RobotLabel:
-        path = base_path + f"_{label.value}.json"
-        try:
-            with open(path, "r") as f:
-                data = json.load(f)
-                recordings.append((label, data))
-        except FileNotFoundError:
-            print("File not found", path)
-    poses = [{} for _ in range(1000)]
-    for label, data in recordings:
-        for pose_data in data["sequence"]:
-            pose = Pose2DStamped(
-                Header(pose_data["timestamp"], "", 0), Pose2D(pose_data["x"], pose_data["y"], pose_data["theta"])
-            )
-            poses[int(pose_data["timestamp"])][label] = ClickedState(pose=pose)
-    return RecordedPoses(poses)
-
-
 def get_shown_image(state: AppState) -> np.ndarray:
     image = state.current_frame
     projections = state.projections
@@ -307,11 +287,10 @@ def mouse_callback(event: int, x: int, y: int, flags: int, param: tuple[AppState
         cv2.imshow(state.window_name, get_shown_image(state))
 
 
-def load_data(path) -> tuple[EstimatedObject, CameraInfo, PoseStamped, list[np.ndarray], list[float]]:
+def load_data(bag_path: str, temp_dir: str) -> tuple[EstimatedObject, CameraInfo, PoseStamped, list[float]]:
     bridge = CvBridge()
-    bag = rosbag.Bag(path)
+    bag = rosbag.Bag(bag_path)
 
-    images = []
     timestamps = []
     field = EstimatedObject()
     camera_info = CameraInfo()
@@ -327,16 +306,16 @@ def load_data(path) -> tuple[EstimatedObject, CameraInfo, PoseStamped, list[np.n
                 optical_camera_to_map_pose = msg
             elif "/camera_0/debug_image" in topic:
                 image = bridge.imgmsg_to_cv2(msg, "bgr8")
-                images.append(image)
+                cv2.imwrite(os.path.join(temp_dir, f"{msg.header.stamp.to_sec()}.png"), image)
                 timestamps.append(msg.header.stamp.to_sec())
             pbar.update(1)
     bag.close()
     assert optical_camera_to_map_pose is not None
-    return field, camera_info, optical_camera_to_map_pose, images, timestamps
+    return field, camera_info, optical_camera_to_map_pose, timestamps
 
 
 def init_app(bag_path: str) -> AppState:
-    field, camera_info, optical_camera_to_map_pose, images, timestamps = load_data(bag_path)
+    field, camera_info, optical_camera_to_map_pose, timestamps = load_data(bag_path)
 
     warped_height = 1200
     projections = Projections(
