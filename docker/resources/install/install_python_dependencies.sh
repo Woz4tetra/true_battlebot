@@ -18,7 +18,7 @@ sudo mkdir -p /usr/lib/python${PYTHON_INSTALL_VERSION}/site-packages
 sudo chown -R 1000:1000 /usr/lib/python${PYTHON_INSTALL_VERSION}/site-packages
 
 sudo apt-get update
-sudo apt-get install -y llvm-10*
+sudo apt-get install -y llvm-15*
 sudo ln -s /usr/lib/llvm-10/bin/llvm-config /usr/bin
 
 sudo python -m pip install --no-cache-dir --upgrade pip setuptools
