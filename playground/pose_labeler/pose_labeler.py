@@ -2,6 +2,7 @@ import argparse
 import copy
 import json
 import os
+import pickle
 import string
 from dataclasses import dataclass
 from enum import Enum
@@ -124,7 +125,6 @@ class RecordedPoses:
 
 @dataclass
 class AppState:
-    images: list[np.ndarray]
     timestamps: list[float]
     projections: Projections
     current_index: int
@@ -133,11 +133,9 @@ class AppState:
     selected_label: RobotLabel
     label_colors: dict[RobotLabel, np.ndarray]
     recording: RecordedPoses
+    temp_dir: str
+    archive_path: str
     prev_labeled_index: int = 0
-
-    @property
-    def current_frame(self) -> np.ndarray:
-        return self.images[self.current_index]
 
     @property
     def current_color(self) -> tuple:
@@ -148,13 +146,36 @@ class AppState:
         return self.timestamps[self.current_index]
 
 
+def write_app_state(state: AppState, path: str) -> None:
+    with open(path, "wb") as file:
+        pickle.dump(state, file)
+
+
+def read_app_state(path: str) -> AppState:
+    with open(path, "rb") as file:
+        return pickle.load(file)
+
+
+def get_filenames(temp_dir: str) -> list[str]:
+    return os.listdir(temp_dir)
+
+
+def load_image(temp_dir: str, index: int) -> np.ndarray:
+    filenames = get_filenames(temp_dir)
+    filenames.sort(key=lambda f: float(f.replace(".png", "")))
+    return cv2.imread(os.path.join(temp_dir, filenames[index]))
+
+
 def recorded_poses_to_json(recording: RecordedPoses, field_size: XY) -> dict[RobotLabel, dict]:
     timestamps = []
     for frame_data in recording.poses:
         for label, clicked in frame_data.items():
             if clicked.pose is not None:
                 timestamps.append(clicked.pose.header.stamp)
-    start_timestamp = min(timestamps)
+    if len(timestamps) == 0:
+        start_timestamp = 0.0
+    else:
+        start_timestamp = min(timestamps)
 
     def make_path(poses: list[Pose2DStamped], size: XY) -> dict:
         max_x = size.x / 2
@@ -202,7 +223,7 @@ def write_json_file(base_path: str, recording: RecordedPoses, field_size: XY) ->
 
 
 def get_shown_image(state: AppState) -> np.ndarray:
-    image = state.current_frame
+    image = load_image(state.temp_dir, state.current_index)
     projections = state.projections
     return draw_recording(
         cv2.warpPerspective(
@@ -218,7 +239,8 @@ def get_shown_image(state: AppState) -> np.ndarray:
 
 
 def trackbar_callback(val: int, state: AppState) -> None:
-    state.current_index = min(len(state.images) - 1, max(0, val))
+    image = load_image(state.temp_dir, val)
+    state.current_index = min(len(image) - 1, max(0, val))
     image = get_shown_image(state)
     cv2.imshow(state.window_name, image)
 
@@ -306,7 +328,9 @@ def load_data(bag_path: str, temp_dir: str) -> tuple[EstimatedObject, CameraInfo
                 optical_camera_to_map_pose = msg
             elif "/camera_0/debug_image" in topic:
                 image = bridge.imgmsg_to_cv2(msg, "bgr8")
-                cv2.imwrite(os.path.join(temp_dir, f"{msg.header.stamp.to_sec()}.png"), image)
+                image_path = os.path.join(temp_dir, f"{msg.header.stamp.to_sec()}.png")
+                if not os.path.isfile(image_path):
+                    cv2.imwrite(image_path, image)
                 timestamps.append(msg.header.stamp.to_sec())
             pbar.update(1)
     bag.close()
@@ -314,8 +338,33 @@ def load_data(bag_path: str, temp_dir: str) -> tuple[EstimatedObject, CameraInfo
     return field, camera_info, optical_camera_to_map_pose, timestamps
 
 
+def make_ui_window(state: AppState, clicked: ClickedState):
+    cv2.namedWindow(state.window_name, cv2.WINDOW_AUTOSIZE)
+    cv2.createTrackbar(
+        state.trackbar_name, state.window_name, 0, len(state.timestamps) - 1, lambda val: trackbar_callback(val, state)
+    )
+    cv2.setMouseCallback(state.window_name, mouse_callback, (state, clicked))
+
+
 def init_app(bag_path: str) -> AppState:
-    field, camera_info, optical_camera_to_map_pose, timestamps = load_data(bag_path)
+    window_name = "Field"
+    trackbar_name = "Frame"
+
+    clicked = ClickedState()
+
+    temp_dir = os.path.join("/tmp", os.path.basename(bag_path.replace(".bag", "_temp")))
+    state_path = os.path.join("tmp", bag_path.replace(".bag", ".pkl"))
+    if os.path.isfile(state_path):
+        print("Loading state from", state_path)
+        state = read_app_state(state_path)
+        state.window_name = window_name
+        state.trackbar_name = trackbar_name
+        make_ui_window(state, clicked)
+        cv2.setTrackbarPos(state.trackbar_name, state.window_name, state.current_index)
+        return state
+
+    os.makedirs(temp_dir, exist_ok=True)
+    field, camera_info, optical_camera_to_map_pose, timestamps = load_data(bag_path, temp_dir)
 
     warped_height = 1200
     projections = Projections(
@@ -330,19 +379,24 @@ def init_app(bag_path: str) -> AppState:
         label: color * 255 for label, color in zip(RobotLabel, color_map(np.linspace(0, 1, len(RobotLabel))))
     }
 
-    recording = RecordedPoses([{} for _ in range(len(images))])
+    recording = RecordedPoses([{} for _ in range(len(get_filenames(temp_dir)))])
 
-    window_name = "Field"
-    trackbar_name = "Frame"
     state = AppState(
-        images, timestamps, projections, 0, window_name, trackbar_name, RobotLabel.MAIN_BOT, label_colors, recording
+        timestamps,
+        projections,
+        0,
+        window_name,
+        trackbar_name,
+        RobotLabel.MAIN_BOT,
+        label_colors,
+        recording,
+        temp_dir,
+        state_path,
     )
-    clicked = ClickedState()
+    write_app_state(state, state_path)
+    print("State saved to", state_path)
 
-    cv2.namedWindow(window_name, cv2.WINDOW_AUTOSIZE)
-    cv2.createTrackbar(trackbar_name, window_name, 0, len(images) - 1, lambda val: trackbar_callback(val, state))
-    cv2.setMouseCallback(window_name, mouse_callback, (state, clicked))
-
+    make_ui_window(state, clicked)
     return state
 
 
@@ -365,6 +419,7 @@ def main() -> None:
 
     def save_json():
         write_json_file(out_path, state.recording, XY(field_size.x, field_size.y))
+        write_app_state(state, state.archive_path)
 
     def draw():
         cv2.imshow(state.window_name, get_shown_image(state))
@@ -381,7 +436,7 @@ def main() -> None:
             draw()
             cv2.setTrackbarPos(state.trackbar_name, state.window_name, state.current_index)
         elif key == "d":
-            state.current_index = min(len(state.images) - 1, state.current_index + 1)
+            state.current_index = min(len(state.timestamps) - 1, state.current_index + 1)
             draw()
             cv2.setTrackbarPos(state.trackbar_name, state.window_name, state.current_index)
         elif key == "l":
