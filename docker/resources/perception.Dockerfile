@@ -1,4 +1,3 @@
-FROM ros:noetic-ros-core-focal as ros_base
 FROM nvidia/cuda:12.1.1-devel-ubuntu22.04
 
 ARG PROJECT_NAME
@@ -93,14 +92,6 @@ COPY --chown=1000:1000 \
     ./install/install_torchscript.sh \
     /opt/${ORGANIZATION}/install/
 RUN bash /opt/${ORGANIZATION}/install/install_torchscript.sh
-
-# ---
-# ROS base image
-# ---
-
-COPY --from=ros_base / /tmp/ros_base
-COPY --chown=1000:1000 ./install/copy_over_multistage.sh /opt/tj2/install/
-RUN bash /opt/tj2/install/copy_over_multistage.sh
 
 # ---
 # ROS base workspace
