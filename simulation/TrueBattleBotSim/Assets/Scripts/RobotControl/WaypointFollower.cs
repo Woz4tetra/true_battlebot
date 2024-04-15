@@ -12,7 +12,6 @@ class WaypointFollower : MonoBehaviour
     private ControllerInterface controller;
     List<SequenceElementConfig> sequence = new List<SequenceElementConfig>();
     float sequence_time = 0.0f;
-    float prevRelativeAngle = 0.0f;
     ArrowIndicator arrow;
 
     public void Start()
@@ -39,7 +38,6 @@ class WaypointFollower : MonoBehaviour
         sequence_time = Time.time;
         linearPID.Reset();
         angularPID.Reset();
-        prevRelativeAngle = 0.0f;
         if (controller != null)
         {
             controller.Reset();
@@ -71,9 +69,35 @@ class WaypointFollower : MonoBehaviour
             index++;
         }
 
-        SequenceElementConfig currentElement = sequence[index];
-        arrow.Set2D(currentElement.x, 0.1f, currentElement.y, currentElement.theta);
-        return ComputeVelocity(currentElement);
+        SequenceElementConfig current = sequence[index];
+        int next_index = Math.Min(index + 1, sequence.Count - 1);
+        SequenceElementConfig next = sequence[next_index];
+        SequenceElementConfig interpolated;
+        if (next.timestamp == current.timestamp)
+        {
+            interpolated = current;
+        }
+        else
+        {
+            float interpolation_value = (current_time - current.timestamp) / (next.timestamp - current.timestamp);
+            interpolated = InterpolateSequenceElement(current, next, interpolation_value);
+        }
+        arrow.Set2D(interpolated.x, 0.1f, interpolated.y, interpolated.theta);
+        return ComputeVelocity(interpolated);
+    }
+
+    SequenceElementConfig InterpolateSequenceElement(SequenceElementConfig current, SequenceElementConfig next, float interp_value)
+    {
+        return new SequenceElementConfig
+        {
+            timestamp = interp_value,
+            x = Mathf.Lerp(current.x, next.x, interp_value),
+            y = Mathf.Lerp(current.y, next.y, interp_value),
+            theta = Mathf.Lerp(current.theta, next.theta, interp_value),
+            vx = Mathf.Lerp(current.vx, next.vx, interp_value),
+            vy = Mathf.Lerp(current.vy, next.vy, interp_value),
+            vtheta = Mathf.Lerp(current.vtheta, next.vtheta, interp_value)
+        };
     }
 
     TwistMsg ComputeVelocity(SequenceElementConfig currentElement)
