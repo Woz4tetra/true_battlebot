@@ -147,11 +147,13 @@ class AppState:
 
 
 def write_app_state(state: AppState, path: str) -> None:
+    print("Writing state to", path)
     with open(path, "wb") as file:
         pickle.dump(state, file)
 
 
 def read_app_state(path: str) -> AppState:
+    print("Reading state from", path)
     with open(path, "rb") as file:
         return pickle.load(file)
 
@@ -248,6 +250,18 @@ def trackbar_callback(val: int, state: AppState) -> None:
 def draw_recorded_pose(
     image: np.ndarray, clicked: ClickedState, label: RobotLabel, color: tuple[int, int, int]
 ) -> np.ndarray:
+    if clicked.end_pixel is not None:
+        text = label.value
+        for thickness, color in ((10, (255, 255, 255)), (5, color)):
+            image = cv2.putText(
+                img=image,
+                text=text,
+                org=tuple(clicked.end_pixel),
+                fontFace=cv2.FONT_HERSHEY_SIMPLEX,
+                fontScale=1,
+                color=color,
+                thickness=thickness,
+            )
     if clicked.start_pixel is not None and clicked.end_pixel is not None:
         image = cv2.arrowedLine(
             img=image,
@@ -256,18 +270,7 @@ def draw_recorded_pose(
             color=color,
             thickness=5,
         )
-    if clicked.start_pixel is not None:
-        text = label.value
-        for thickness, color in ((10, (255, 255, 255)), (5, color)):
-            image = cv2.putText(
-                img=image,
-                text=text,
-                org=tuple(clicked.start_pixel),
-                fontFace=cv2.FONT_HERSHEY_SIMPLEX,
-                fontScale=1,
-                color=color,
-                thickness=thickness,
-            )
+
     return image
 
 
@@ -301,7 +304,7 @@ def mouse_callback(event: int, x: int, y: int, flags: int, param: tuple[AppState
         end_2d = Pose2D(x=end_pose.x, y=end_pose.y, theta=0.0)
         heading = start_2d.heading(end_2d)
         pose_2d = Pose2D(x=start_pose.x, y=start_pose.y, theta=heading)
-        print(pose_2d)
+        print(state.current_index, state.current_timestamp, pose_2d)
         clicked.pose = Pose2DStamped(Header(state.current_timestamp, "", state.current_index), pose_2d)
         state.recording.set_state(state.current_index, state.selected_label, copy.deepcopy(clicked))
         state.prev_labeled_index = state.current_index
@@ -331,7 +334,7 @@ def load_data(bag_path: str, temp_dir: str) -> tuple[EstimatedObject, CameraInfo
                 image_path = os.path.join(temp_dir, f"{msg.header.stamp.to_sec()}.png")
                 if not os.path.isfile(image_path):
                     cv2.imwrite(image_path, image)
-                timestamps.append(msg.header.stamp.to_sec())
+                timestamps.append(timestamp.to_sec())
             pbar.update(1)
     bag.close()
     assert optical_camera_to_map_pose is not None
