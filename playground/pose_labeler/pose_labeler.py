@@ -247,6 +247,26 @@ def trackbar_callback(val: int, state: AppState) -> None:
     cv2.imshow(state.window_name, image)
 
 
+def apply_tracking_to_image(
+    sample: RecordedSample, prev_image: np.ndarray, next_image: np.ndarray, object_radius: int
+) -> RecordedSample:
+    for label, clicked in sample.items():
+        if clicked.start_pixel is None:
+            continue
+        tracker: cv2.Tracker = cv2.TrackerMIL_create()
+        bx, by = clicked.start_pixel
+        bounding_box = np.array(
+            [bx - object_radius, by - object_radius, 2 * object_radius, 2 * object_radius],
+            dtype=np.int32,
+        )
+        tracker.init(prev_image, bounding_box)
+        success, box = tracker.update(next_image)
+        if success:
+            x, y, w, h = box
+            new_pixel = np.array([x + w / 2, y + h / 2], dtype=np.int32)
+            clicked.start_pixel = new_pixel
+
+
 def draw_recorded_pose(
     image: np.ndarray, clicked: ClickedState, label: RobotLabel, color: tuple[int, int, int]
 ) -> np.ndarray:
@@ -329,7 +349,7 @@ def load_data(bag_path: str, temp_dir: str) -> tuple[EstimatedObject, CameraInfo
                 camera_info = msg
             elif "optical_camera_to_map_pose" in topic and not optical_camera_to_map_pose:
                 optical_camera_to_map_pose = msg
-            elif "/camera_0/debug_image" in topic:
+            elif "/camera_0/rgb/image_rect_color" in topic:
                 image = bridge.imgmsg_to_cv2(msg, "bgr8")
                 image_path = os.path.join(temp_dir, f"{msg.header.stamp.to_sec()}.png")
                 if not os.path.isfile(image_path):
@@ -444,11 +464,17 @@ def main() -> None:
             cv2.setTrackbarPos(state.trackbar_name, state.window_name, state.current_index)
         elif key == "l":
             # copy last frame's poses
-            state.recording.poses[state.current_index] = copy.deepcopy(state.recording.poses[state.prev_labeled_index])
-            for sample in state.recording.poses[state.current_index].values():
+            frame_samples = copy.deepcopy(state.recording.poses[state.prev_labeled_index])
+            for sample in frame_samples.values():
                 if sample.pose is None:
                     continue
                 sample.pose.header.stamp = state.current_timestamp
+            if 1 <= state.current_index < len(state.timestamps):
+                prev_image = load_image(state.temp_dir, state.current_index - 1)
+                next_image = load_image(state.temp_dir, state.current_index)
+
+                frame_samples = apply_tracking_to_image(frame_samples, prev_image, next_image, object_radius=25)
+            state.recording.poses[state.current_index] = frame_samples
             draw()
         elif key == "c":
             # clear current selected label's pose
