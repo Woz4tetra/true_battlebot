@@ -2069,6 +2069,7 @@ GameObject:
   - component: {fileID: 3714681312600055751}
   - component: {fileID: 3805980092164584029}
   - component: {fileID: 3764384888829003752}
+  - component: {fileID: 5055525332529619361}
   m_Layer: 13
   m_Name: MRS BUFF B-03
   m_TagString: Main bot
@@ -2249,24 +2250,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ab4142c1343d6636daaa5ac45ebdb10a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  linearPID:
-    kp: 2
-    ki: 0
-    kd: 0
-    kf: 1
-    i_zone: 0
-    i_max: 0
-    epsilon: 0.000000001
-    tolerance: 0
-  angularPID:
-    kp: 10
-    ki: 0.1
-    kd: 1
-    kf: 1
-    i_zone: 0
-    i_max: 0
-    epsilon: 0.000000001
-    tolerance: 0
 --- !u!114 &3714681312600055751
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2306,6 +2289,20 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   quality: 0.5
+--- !u!114 &5055525332529619361
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 885901064405613515}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3695846776a4ee2739ba112c8c2d4777, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  zeta: 4
+  b: 8
 --- !u!1 &903287245801918095
 GameObject:
   m_ObjectHideFlags: 0
@@ -20900,6 +20897,10 @@ PrefabInstance:
       propertyPath: m_Layer
       value: 13
       objectReference: {fileID: 0}
+    - target: {fileID: 3265985549162480872, guid: f981367d517eae126b9f354839beafa9, type: 3}
+      propertyPath: maxWheelSpeed
+      value: 8
+      objectReference: {fileID: 0}
     - target: {fileID: 3591701462781367809, guid: f981367d517eae126b9f354839beafa9, type: 3}
       propertyPath: m_ParentAnchorPosition.x
       value: 0.15400004
@@ -21073,6 +21074,10 @@ PrefabInstance:
       propertyPath: m_Layer
       value: 13
       objectReference: {fileID: 0}
+    - target: {fileID: 3265985549162480872, guid: f981367d517eae126b9f354839beafa9, type: 3}
+      propertyPath: maxWheelSpeed
+      value: 8
+      objectReference: {fileID: 0}
     - target: {fileID: 3591701462781367809, guid: f981367d517eae126b9f354839beafa9, type: 3}
       propertyPath: m_ParentAnchorPosition.x
       value: 0
@@ -21241,6 +21246,10 @@ PrefabInstance:
     - target: {fileID: 3112711424064963088, guid: f981367d517eae126b9f354839beafa9, type: 3}
       propertyPath: m_Layer
       value: 13
+      objectReference: {fileID: 0}
+    - target: {fileID: 3265985549162480872, guid: f981367d517eae126b9f354839beafa9, type: 3}
+      propertyPath: maxWheelSpeed
+      value: 8
       objectReference: {fileID: 0}
     - target: {fileID: 3591701462781367809, guid: f981367d517eae126b9f354839beafa9, type: 3}
       propertyPath: m_ParentAnchorPosition.x
@@ -21414,6 +21423,10 @@ PrefabInstance:
     - target: {fileID: 3112711424064963088, guid: f981367d517eae126b9f354839beafa9, type: 3}
       propertyPath: m_Layer
       value: 13
+      objectReference: {fileID: 0}
+    - target: {fileID: 3265985549162480872, guid: f981367d517eae126b9f354839beafa9, type: 3}
+      propertyPath: maxWheelSpeed
+      value: 8
       objectReference: {fileID: 0}
     - target: {fileID: 3591701462781367809, guid: f981367d517eae126b9f354839beafa9, type: 3}
       propertyPath: m_ParentAnchorPosition.x

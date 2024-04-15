@@ -259,6 +259,7 @@ GameObject:
   - component: {fileID: 5404818296711323578}
   - component: {fileID: 3923795459663842147}
   - component: {fileID: 7092116137789667424}
+  - component: {fileID: 9637584897078815}
   m_Layer: 13
   m_Name: Main bot
   m_TagString: Main bot
@@ -391,6 +392,7 @@ MonoBehaviour:
   enablePid: 0
   reverseLeft: 0
   reverseRight: 0
+  referenceObject: {fileID: 0}
 --- !u!114 &6668765750412150423
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -443,24 +445,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ab4142c1343d6636daaa5ac45ebdb10a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  linearPID:
-    kp: 2
-    ki: 0
-    kd: 0
-    kf: 0
-    i_zone: 0
-    i_max: 0
-    epsilon: 0.000000001
-    tolerance: 0
-  angularPID:
-    kp: 1
-    ki: 0
-    kd: 0
-    kf: 0
-    i_zone: 0
-    i_max: 0
-    epsilon: 0.000000001
-    tolerance: 0
 --- !u!114 &7092116137789667424
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -474,6 +458,20 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   collisionInfoTopic: simulation/collision_info
+--- !u!114 &9637584897078815
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2376752813649019072}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3695846776a4ee2739ba112c8c2d4777, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  zeta: 4
+  b: 8
 --- !u!1 &2839615957513088649
 GameObject:
   m_ObjectHideFlags: 0

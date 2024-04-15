@@ -185,7 +185,7 @@ public class FieldManager : MonoBehaviour
                 timestamp = element.timestamp,
                 x = element.x * scenario.cage.dims.x / 2 * (1.0f - init_config.x_buffer),
                 y = element.y * scenario.cage.dims.y / 2 * (1.0f - init_config.y_buffer),
-                theta = -element.theta,
+                theta = -element.theta + 90.0f,
                 vx = element.vx,
                 vy = element.vy,
                 vtheta = element.vtheta

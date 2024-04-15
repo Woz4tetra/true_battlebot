@@ -561,6 +561,7 @@ GameObject:
   - component: {fileID: 1784630105066365863}
   - component: {fileID: 1980326178352277631}
   - component: {fileID: -5626328565279493861}
+  - component: {fileID: 9162023875809221556}
   m_Layer: 13
   m_Name: Referee
   m_TagString: Referee
@@ -690,6 +691,7 @@ MonoBehaviour:
   enablePid: 0
   reverseLeft: 0
   reverseRight: 0
+  referenceObject: {fileID: 0}
 --- !u!114 &5327583946794781856
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -742,24 +744,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ab4142c1343d6636daaa5ac45ebdb10a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  linearPID:
-    kp: 2
-    ki: 0
-    kd: 0
-    kf: 0
-    i_zone: 0
-    i_max: 0
-    epsilon: 0.000000001
-    tolerance: 0
-  angularPID:
-    kp: 1
-    ki: 0
-    kd: 0
-    kf: 0
-    i_zone: 0
-    i_max: 0
-    epsilon: 0.000000001
-    tolerance: 0
 --- !u!114 &-5626328565279493861
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -773,6 +757,20 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   collisionInfoTopic: simulation/collision_info
+--- !u!114 &9162023875809221556
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3156601889152518240}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3695846776a4ee2739ba112c8c2d4777, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  zeta: 4
+  b: 8
 --- !u!1 &3733546209730497114
 GameObject:
   m_ObjectHideFlags: 0

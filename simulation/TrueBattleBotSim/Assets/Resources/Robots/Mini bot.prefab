@@ -1572,6 +1572,7 @@ GameObject:
   - component: {fileID: 8941960580590421335}
   - component: {fileID: 7189502044868278935}
   - component: {fileID: 2018815609580504363}
+  - component: {fileID: 3442637724803760314}
   m_Layer: 13
   m_Name: Mini bot
   m_TagString: Mini bot
@@ -1703,6 +1704,7 @@ MonoBehaviour:
   enablePid: 0
   reverseLeft: 0
   reverseRight: 0
+  referenceObject: {fileID: 0}
 --- !u!114 &5042502427844501302
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1755,24 +1757,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ab4142c1343d6636daaa5ac45ebdb10a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  linearPID:
-    kp: 2
-    ki: 0
-    kd: 0
-    kf: 0
-    i_zone: 0
-    i_max: 0
-    epsilon: 0.000000001
-    tolerance: 0
-  angularPID:
-    kp: 1
-    ki: 0
-    kd: 0
-    kf: 0
-    i_zone: 0
-    i_max: 0
-    epsilon: 0.000000001
-    tolerance: 0
 --- !u!114 &2018815609580504363
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1786,3 +1770,17 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   collisionInfoTopic: simulation/collision_info
+--- !u!114 &3442637724803760314
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9197786164009000317}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3695846776a4ee2739ba112c8c2d4777, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  zeta: 4
+  b: 8
