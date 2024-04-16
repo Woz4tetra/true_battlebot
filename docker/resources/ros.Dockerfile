@@ -1,18 +1,14 @@
-FROM nvidia/cuda:12.1.1-devel-ubuntu22.04
+FROM ros:noetic-ros-core-focal
 
 ARG PROJECT_NAME
 ARG ORGANIZATION
 
+ENV ROS_DISTRO=noetic
 ENV PROJECT_NAME=${PROJECT_NAME}
 ENV ORGANIZATION=${ORGANIZATION}
 ENV PYTHON_INSTALL_VERSION=3.11
-ENV UBUNTU_VERSION_MAJOR=22
+ENV UBUNTU_VERSION_MAJOR=20
 ENV UBUNTU_VERSION_MINOR=04
-ENV CUDA_VERSION_MAJOR=12
-ENV CUDA_VERSION_MINOR=1
-ENV CUDNN_VERSION_MAJOR=8
-ENV ZED_VERSION_MAJOR=4
-ENV ZED_VERSION_MINOR=1
 
 ENV DEBIAN_FRONTEND=noninteractive \
     SHELL=/bin/bash
@@ -41,16 +37,7 @@ USER ${USER}
 
 RUN sudo chown -R 1000:1000 /opt/${ORGANIZATION}/
 
-# ---
-# ZED SDK
-# ---
-
 ENV TZ=America/New_York
-
-COPY --chown=1000:1000 \
-    ./install/install_zed.sh \
-    /opt/${ORGANIZATION}/install/
-RUN bash /opt/${ORGANIZATION}/install/install_zed.sh
 
 # ---
 # Basic tools
@@ -71,6 +58,11 @@ COPY --chown=1000:1000 \
 RUN bash /opt/${ORGANIZATION}/install/install_python_dependencies.sh
 
 COPY --chown=1000:1000 \
+    ./install/install_platformio.sh \
+    /opt/${ORGANIZATION}/install/
+RUN bash /opt/${ORGANIZATION}/install/install_platformio.sh
+
+COPY --chown=1000:1000 \
     ./install/install_apriltag.sh \
     /opt/${ORGANIZATION}/install/
 RUN bash /opt/${ORGANIZATION}/install/install_apriltag.sh
@@ -78,36 +70,38 @@ RUN bash /opt/${ORGANIZATION}/install/install_apriltag.sh
 RUN sudo mkdir -p ${HOME}/.local && sudo chown -R 1000:1000 ${HOME}/.local
 
 # ---
-# Torch packages
+# ROS base workspace
 # ---
 
-COPY --chown=1000:1000 \
-    ./install/perception-requirements.txt \
-    ./install/install_python_perception.sh \
-    /opt/${ORGANIZATION}/install/
-RUN bash /opt/${ORGANIZATION}/install/install_python_perception.sh
+ENV PATH=${HOME}/.local/bin${PATH:+:${PATH}}
+
+# ---
+# ROS dependency workspace
+# ---
+
+ENV DEP_ROS_WS_ROOT=${HOME}/dep_ws
 
 COPY --chown=1000:1000 \
-    ./install/install_torchscript.sh \
+    ./install/install_ros_deps.sh \
+    ./install/patches/geometry2.patch \
+    ./install/patches/image-pipeline.patch \
+    ./install/${PROJECT_NAME}.rosinstall \
     /opt/${ORGANIZATION}/install/
-RUN bash /opt/${ORGANIZATION}/install/install_torchscript.sh
+RUN bash /opt/${ORGANIZATION}/install/install_ros_deps.sh /opt/${ORGANIZATION}/install/${PROJECT_NAME}.rosinstall
 
 # ---
 # Python extra packages
 # ---
 
 COPY --chown=1000:1000 \
-    ./install/perception-extra-requirements.txt \
-    ./install/install_perception_python_extras.sh \
+    ./install/ros-extra-requirements.txt \
+    ./install/install_ros_python_extras.sh \
     /opt/${ORGANIZATION}/install/
-RUN bash /opt/${ORGANIZATION}/install/install_perception_python_extras.sh
+RUN bash /opt/${ORGANIZATION}/install/install_ros_python_extras.sh
 
 # ---
 # Environment variables
 # ---
-
-ENV CMAKE_PREFIX_PATH=/usr/local/libtorch/share/cmake/Torch/${CMAKE_PREFIX_PATH:+:${CMAKE_PREFIX_PATH}}
-ENV CMAKE_LIBRARY_PATH=/usr/local/cuda/lib64/stubs/${CMAKE_LIBRARY_PATH:+:${CMAKE_LIBRARY_PATH}}
 
 ENV DEP_ROS_WS_ROOT=${HOME}/dep_ws
 ENV DEP_ROS_WS_SRC=${HOME}/dep_ws/src

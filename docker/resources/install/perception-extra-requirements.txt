@@ -1,0 +1,5 @@
+mypy
+types-requests
+pytest
+dacite
+argcomplete

@@ -1,6 +1,6 @@
 mypy
 types-requests
-py_trees==2.2.3
+py_trees
 pytest
 dacite
 pymongo
