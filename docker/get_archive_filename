@@ -1,8 +1,10 @@
 #!/bin/bash
 set -e
 
+PREFIX=$1
+
 BASE_DIR=$(realpath "$(dirname $0)")
-export IMAGE_TAG=woz4tetra/$(${BASE_DIR}/get_image_tag)
+export IMAGE_TAG=woz4tetra/$(${BASE_DIR}/get_image_tag ${PREFIX})
 
 python3 <<EOF
 import os

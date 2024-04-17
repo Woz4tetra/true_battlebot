@@ -1,8 +1,8 @@
 version: "3"
 
 volumes:
-    true_battlebot_build:
-        name: ${PROJECT_NAME}_build
+    true_battlebot_ros_build:
+        name: ${PROJECT_NAME}_ros_build
         external: true
 
 services:
@@ -23,7 +23,7 @@ services:
         # https://askubuntu.com/questions/1237400/how-to-fix-x-error-badaccess-baddrawable-badshmseg-while-running-graphical-ap
         ipc: host
         volumes:
-            - ${PROJECT_NAME}_build:/home/${ORGANIZATION}/ros_ws:rw
+            - ${PROJECT_NAME}_ros_build:/home/${ORGANIZATION}/ros_ws:rw
             - ${PROJECT_DIR}:/opt/${ORGANIZATION}/${PROJECT_NAME}:rw
             - ${PROJECT_DIR}/scripts:/opt/${ORGANIZATION}/scripts:rw
             - /media/storage/true-battlebot-media:/media/storage:rw

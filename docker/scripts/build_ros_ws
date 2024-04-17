@@ -22,7 +22,7 @@ docker run \
     --privileged \
     --stop-signal=SIGINT \
     --env "TERM=xterm-256color" \
-    -v=${PROJECT_NAME}_build:/home/${ORGANIZATION}/ros_ws:rw \
+    -v=${PROJECT_NAME}_ros_build:/home/${ORGANIZATION}/ros_ws:rw \
     -v=${PROJECT_DIR}:/opt/${ORGANIZATION}/${PROJECT_NAME}:rw \
     -v=${PROJECT_DIR}/scripts:/opt/${ORGANIZATION}/scripts:rw \
     --rm \

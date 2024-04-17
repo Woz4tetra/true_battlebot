@@ -7,8 +7,6 @@
 # NB: Running the ZED SDK installer will already setup those
 
 set -e
-download zed_installer.run https://download.stereolabs.com/zedsdk/3.5/jp44/jetsons -q
-bash ./zed_installer.run --tar -x './99-slabs.rules'  > /dev/null 2>&1
-sudo mv "./99-slabs.rules" "/etc/udev/rules.d/99-zed.rules"
+sudo mv "./99-zed.rules" "/etc/udev/rules.d/99-zed.rules"
 sudo chmod 777 "/etc/udev/rules.d/99-zed.rules"
 sudo udevadm control --reload-rules && sudo udevadm trigger

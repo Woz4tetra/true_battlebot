@@ -10,5 +10,5 @@ for name in "${CONTAINERS[@]}"; do
     docker stop "${name}" || true
     docker rm "${name}" || true
 done
-docker volume rm ${PROJECT_NAME}_build
+docker volume rm ${PROJECT_NAME}_ros_build
 ${BASE_DIR}/build_ros_ws "${ROBOT_NAME}" "${MAP_NAME}"
