@@ -13,7 +13,6 @@ services:
         network_mode: "host"
         privileged: true
         stop_signal: SIGINT
-        ports: ["9090:9090", "10000:10000"]
         environment:
             - DISPLAY=${DISPLAY}
             - XAUTHORITY=${XAUTHORITY}
@@ -24,6 +23,24 @@ services:
         ipc: host
         volumes:
             - ${PROJECT_NAME}_ros_build:/home/${ORGANIZATION}/ros_ws:rw
+            - ${PROJECT_DIR}:/opt/${ORGANIZATION}/${PROJECT_NAME}:rw
+            - ${PROJECT_DIR}/scripts:/opt/${ORGANIZATION}/scripts:rw
+            - /media/storage/true-battlebot-media:/media/storage:rw
+        command: ["/opt/${ORGANIZATION}/launch.sh"]
+    true_battlebot_perception:
+        image: ${PERCEPTION_IMAGE_VERSION}
+        container_name: ${PROJECT_NAME}_perception
+        restart: "no"
+        network_mode: "host"
+        privileged: true
+        stop_signal: SIGINT
+        environment:
+            - DISPLAY=${DISPLAY}
+            - XAUTHORITY=${XAUTHORITY}
+            - ROS_MASTER_INTERFACE=${ROS_MASTER_INTERFACE}
+            - IMAGE_VERSION=${PERCEPTION_IMAGE_VERSION}
+        ipc: host
+        volumes:
             - ${PROJECT_DIR}:/opt/${ORGANIZATION}/${PROJECT_NAME}:rw
             - ${PROJECT_DIR}/scripts:/opt/${ORGANIZATION}/scripts:rw
             - /media/storage/true-battlebot-media:/media/storage:rw

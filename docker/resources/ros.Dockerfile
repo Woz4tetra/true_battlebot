@@ -120,7 +120,8 @@ ENV PATH=/opt/${ORGANIZATION}/scripts${PATH:+:${PATH}} \
 # launch environment
 # ---
 
-COPY --chown=1000:1000 ./install/bashrc ${HOME}/.bashrc
+COPY --chown=1000:1000 ./install/bashrc/base_bashrc ${HOME}/.base_bashrc
+COPY --chown=1000:1000 ./install/bashrc/ros_bashrc ${HOME}/.bashrc
 
 COPY --chown=1000:1000 \
     ./launch/set_log_format.sh \

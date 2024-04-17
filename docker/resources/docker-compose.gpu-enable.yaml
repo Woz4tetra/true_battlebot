@@ -4,6 +4,7 @@ services:
         environment:
             - NVIDIA_VISIBLE_DEVICES=all
             - NVIDIA_DRIVER_CAPABILITIES=all
+            - HAS_GPU=enable
         deploy:
             resources:
                 reservations:

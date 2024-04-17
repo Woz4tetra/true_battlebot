@@ -9,13 +9,12 @@ import argcomplete
 import yaml
 
 PROJECT_NAME = os.environ["PROJECT_NAME"]
-ROS_WS_ROOT = os.environ["ROS_WS_ROOT"]
-ROBOT_FILE = os.path.join(ROS_WS_ROOT, "robot")
+ROBOT_FILE = "/media/storage/robot"
 PROJECT_DIR = os.path.abspath(os.path.join(__file__, os.pardir, os.pardir))
 
 
 def get_robots() -> list[str]:
-    launch_dir = os.path.join(PROJECT_DIR, PROJECT_NAME, "src", "bw_bringup", "launch")
+    launch_dir = os.path.join(PROJECT_DIR, PROJECT_NAME, "ros_ws", "bw_bringup", "launch")
     robots = []
 
     for launch in os.listdir(launch_dir):
@@ -30,7 +29,7 @@ def get_robots() -> list[str]:
 
 
 def get_maps() -> list[str]:
-    maps_config = os.path.join(PROJECT_DIR, PROJECT_NAME, "src", "bw_bringup", "config", "maps.yaml")
+    maps_config = os.path.join(PROJECT_DIR, PROJECT_NAME, "ros_ws", "bw_bringup", "config", "maps.yaml")
     with open(maps_config, "r") as file:
         maps_config = yaml.safe_load(file)
     maps = []
@@ -69,8 +68,8 @@ def load_file() -> Environment:
 def main() -> None:
     env = load_file()
     parser = argparse.ArgumentParser(description="set_robot")
-    parser.add_argument("robot", type=str, nargs="?", choices=ALL_ROBOTS, help="robot name")
-    parser.add_argument("map_name", type=str, nargs="?", default="", choices=ALL_MAPS, help="map name")
+    parser.add_argument("robot", type=str, choices=ALL_ROBOTS, help="robot name")
+    parser.add_argument("map_name", type=str, default="", choices=ALL_MAPS, help="map name")
     argcomplete.autocomplete(parser)
     args = parser.parse_args()
 

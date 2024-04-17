@@ -5,6 +5,7 @@ HOST_INTERFACE=$1
 export PROJECT_DIR=$(realpath "${BASE_DIR}/../../")
 export PROJECT_NAME=$(${BASE_DIR}/../get_project_name)
 export IMAGE_VERSION=$(${BASE_DIR}/../get_image_tag)
+export PERCEPTION_IMAGE_VERSION=$(${BASE_DIR}/../get_image_tag perception)
 export ORGANIZATION=$(${BASE_DIR}/../get_organization)
 export ROS_MASTER_INTERFACE=${HOST_INTERFACE}
 
