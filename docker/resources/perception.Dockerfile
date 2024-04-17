@@ -69,6 +69,7 @@ COPY --chown=1000:1000 \
     ./install/requirements.txt \
     /opt/${ORGANIZATION}/install/
 RUN bash /opt/${ORGANIZATION}/install/install_python_dependencies.sh
+RUN cd /usr/local/zed && python get_python_api.py
 
 COPY --chown=1000:1000 \
     ./install/install_apriltag.sh \
@@ -130,14 +131,8 @@ COPY --chown=1000:1000 ./install/bashrc/base_bashrc ${HOME}/.base_bashrc
 COPY --chown=1000:1000 ./install/bashrc/perception_bashrc ${HOME}/.bashrc
 
 COPY --chown=1000:1000 \
-    ./launch/set_log_format.sh \
-    ./launch/launch.sh \
-    ./launch/roscore.sh \
-    ./launch/rosconsole.config \
+    ./launch/perception.sh \
     /opt/${ORGANIZATION}/
-
-RUN mkdir -p ${HOME}/.ros && \
-    chown -R 1000:1000 ${HOME}/.ros
 
 WORKDIR ${HOME}
 

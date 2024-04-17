@@ -44,4 +44,4 @@ services:
             - ${PROJECT_DIR}:/opt/${ORGANIZATION}/${PROJECT_NAME}:rw
             - ${PROJECT_DIR}/scripts:/opt/${ORGANIZATION}/scripts:rw
             - /media/storage/true-battlebot-media:/media/storage:rw
-        command: ["/opt/${ORGANIZATION}/launch.sh"]
+        command: ["/opt/${ORGANIZATION}/perception.sh"]
