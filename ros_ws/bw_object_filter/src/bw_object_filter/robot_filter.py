@@ -6,7 +6,8 @@ import rospy
 import tf2_ros
 from apriltag_ros.msg import AprilTagDetectionArray
 from bw_interfaces.msg import EstimatedObject, EstimatedObjectArray
-from bw_tools.configs.robots import RobotConfig, RobotFleetConfig, RobotTeam
+from bw_shared.configs.robots import RobotConfig, RobotFleetConfig, RobotTeam
+from bw_tools.configs.rosparam_client import get_shared_config
 from bw_tools.get_param import get_param
 from bw_tools.structs.header import Header
 from bw_tools.structs.labels import Label
@@ -38,10 +39,7 @@ from bw_object_filter.robot_measurement_sorter import RobotMeasurementSorter
 
 class RobotFilter:
     def __init__(self) -> None:
-        robot_config = get_param("/robots", None)
-        if robot_config is None:
-            raise ValueError("Must specify robots in the parameter server")
-        rospy.logdebug(f"Robot config: {robot_config}")
+        shared_config = get_shared_config()
 
         self.update_rate = get_param("~update_rate", 50.0)
         self.update_delay = 1.0 / self.update_rate
@@ -63,7 +61,7 @@ class RobotFilter:
         field_buffer = get_param("~field_buffer", 0.1)
         self.field_buffer = XYZ(field_buffer, field_buffer, field_buffer)
 
-        self.robots = RobotFleetConfig.from_dict(robot_config)
+        self.robots = shared_config.robots
         self.check_unique(self.robots)
 
         self.prev_cmd_time = rospy.Time.now()

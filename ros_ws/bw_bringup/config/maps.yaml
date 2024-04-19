@@ -1,4 +1,0 @@
-maps:
-    - { name: nhrl_small, size: { x: 2.350, y: 2.350, z: 1.15 } }
-    - { name: nhrl_large, size: { x: 4.694, y: 4.694, z: 2.5 } }
-    - { name: meatball_testbox, size: { x: 1.35, y: 1.35, z: 1.0 } }

@@ -1,12 +1,10 @@
-from bw_tools.configs.robots import RobotConfig, RobotFleetConfig
-from bw_tools.get_param import get_param
+from bw_shared.configs.robots import RobotConfig
+from bw_tools.configs.rosparam_client import get_shared_config
 
 
 def load_rosparam_robot_config(robot_name: str) -> RobotConfig:
-    robot_config = get_param("/robots", None)
-    if robot_config is None:
-        raise ValueError("Must specify robot_config in the parameter server")
-    robots = RobotFleetConfig.from_dict(robot_config)
+    shared_config = get_shared_config()
+    robots = shared_config.robots
 
     robot_config = None
     for robot in robots.robots:

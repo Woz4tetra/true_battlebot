@@ -7,7 +7,8 @@ import rospy
 import tf2_ros
 from bw_interfaces.msg import CageCorner as RosCageCorner
 from bw_interfaces.msg import EstimatedObject, SegmentationInstance, SegmentationInstanceArray
-from bw_tools.configs.maps import FieldType, Maps
+from bw_tools.configs.maps import FieldType
+from bw_tools.configs.rosparam_client import get_shared_config
 from bw_tools.get_param import get_param
 from bw_tools.structs.cage_corner import CageCorner
 from bw_tools.structs.labels import Label
@@ -33,12 +34,7 @@ from bw_object_filter.field_math.project_segmentation import project_segmentatio
 
 class FieldFilter:
     def __init__(self) -> None:
-        maps_config = get_param("/maps", None)
-        if maps_config is None:
-            raise ValueError("Must specify maps in the parameter server")
-        rospy.logdebug(f"Maps config: {maps_config}")
-
-        self.maps = Maps.from_dict(maps_config)
+        shared_config = get_shared_config()
 
         self.angle_delta_threshold = math.radians(get_param("angle_delta_threshold_degrees", 3.0))
         self.base_frame = get_param("~base_frame", "camera")
@@ -47,7 +43,7 @@ class FieldFilter:
         auto_initialize = get_param("~auto_initialize", False)
         self.always_use_default_dims = get_param("~always_use_default_dims", False)
         self.map_name = FieldType(get_param("~map", "nhrl_small"))
-        self.expected_size = self.maps.get(self.map_name).size
+        self.expected_size = XYZ.from_size(shared_config.get_map(self.map_name).size)
         field_dims_buffer = get_param("~field_dims_buffer", 0.25)
         buffer_extents = XYZ(field_dims_buffer, field_dims_buffer, field_dims_buffer)
         self.extents_range = (self.expected_size - buffer_extents, self.expected_size + buffer_extents)

@@ -4,6 +4,7 @@ import math
 from dataclasses import dataclass
 from typing import Any, Sequence, Tuple, Union, overload
 
+from bw_shared.configs.size import Size
 from geometry_msgs.msg import Vector3
 
 
@@ -62,3 +63,10 @@ class XYZ(Sequence):
 
     def to_msg(self) -> Vector3:
         return Vector3(x=self.x, y=self.y, z=self.z)
+
+    @classmethod
+    def from_size(cls, size: Size) -> XYZ:
+        return XYZ(size.x, size.y, size.z)
+
+    def to_size(self) -> Size:
+        return Size(self.x, self.y, self.z)

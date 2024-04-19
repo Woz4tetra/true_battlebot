@@ -22,3 +22,6 @@ def get_image_version() -> str:
 
 def get_ros_ip() -> str:
     return os.environ.get("ROS_IP", "")
+
+def get_project_dir() -> str:
+    return os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))

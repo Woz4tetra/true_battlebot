@@ -4,20 +4,14 @@ from dataclasses import asdict, dataclass, field
 
 from dacite import from_dict
 
-from bw_tools.enum_auto_lower import EnumAutoLowerStr, auto
-from bw_tools.structs.xyz import XYZ
-
-
-class FieldType(EnumAutoLowerStr):
-    NHRL_SMALL = auto()
-    NHRL_LARGE = auto()
-    MEATBALL_TESTBOX = auto()
+from bw_shared.enums.field_type import FieldType
+from bw_shared.configs.size import Size
 
 
 @dataclass
 class FieldConfig:
     name: str
-    size: XYZ
+    size: Size
 
     def __post_init__(self):
         self.type = FieldType(self.name)

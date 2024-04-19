@@ -6,7 +6,7 @@ import re
 from dataclasses import dataclass
 
 import argcomplete
-import yaml
+import tomllib
 
 PROJECT_NAME = os.environ["PROJECT_NAME"]
 ROBOT_FILE = "/media/storage/robot"
@@ -29,9 +29,9 @@ def get_robots() -> list[str]:
 
 
 def get_maps() -> list[str]:
-    maps_config = os.path.join(PROJECT_DIR, PROJECT_NAME, "ros_ws", "bw_bringup", "config", "maps.yaml")
-    with open(maps_config, "r") as file:
-        maps_config = yaml.safe_load(file)
+    maps_config = os.path.join(PROJECT_DIR, PROJECT_NAME, "shared", "configs", "maps.toml")
+    with open(maps_config, "rb") as file:
+        maps_config = tomllib.load(file)
     maps = []
     for subconfig in maps_config["maps"]:
         maps.append(subconfig["name"])

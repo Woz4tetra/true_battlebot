@@ -1,4 +1,5 @@
 import os
+
 import tomllib
 from config.config import Config
 
