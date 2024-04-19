@@ -1,5 +1,3 @@
-from typing import Tuple
-
 import numpy as np
 from bw_tools.structs.xy import XY
 from scipy.spatial import ConvexHull

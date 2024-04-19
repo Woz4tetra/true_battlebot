@@ -1,5 +1,5 @@
 from bw_tools.configs.robots import RobotConfig, RobotFleetConfig
-from bw_tools.typing import get_param
+from bw_tools.get_param import get_param
 
 
 def load_rosparam_robot_config(robot_name: str) -> RobotConfig:

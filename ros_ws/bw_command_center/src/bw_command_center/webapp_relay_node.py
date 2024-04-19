@@ -6,8 +6,8 @@ import rospy
 from bw_interfaces.msg import CageCorner as RosCageCorner
 from bw_interfaces.msg import SystemSummary
 from bw_tools.environment import get_robot, get_system_info
+from bw_tools.get_param import get_param
 from bw_tools.structs.cage_corner import CageCorner
-from bw_tools.typing import get_param
 from std_srvs.srv import SetBool, SetBoolRequest, SetBoolResponse
 
 from bw_command_center.managers.record_bag_manager import RecordBagManager

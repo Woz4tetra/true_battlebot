@@ -1,12 +1,19 @@
-# type: ignore
 import csv
+from io import TextIOWrapper
 from optparse import Values
+from typing import Any, Iterable, Protocol
 
 from . import utils
 
 
+class Writer(Protocol):
+    def writerow(self, row: Iterable[Any]) -> Any: ...
+
+    def writerows(self, rows: Iterable[Iterable[Any]]) -> None: ...
+
+
 def bag_to_csv(options: Values):
-    writers = dict()
+    writers: dict[str, tuple[Writer, TextIOWrapper]] = dict()
     for topic, msg, timestamp in utils.enumerate_bag(options):
         if topic in writers:
             writer = writers[topic][0]
@@ -46,7 +53,7 @@ def message_to_csv(row, msg, flatten=False):
                 msg_str = msg_str.strip(")")
                 msg_str = msg_str.strip(" ")
             else:
-                msg_str = "\"" + msg_str + "\""
+                msg_str = '"' + msg_str + '"'
         row.append(msg_str)
 
 

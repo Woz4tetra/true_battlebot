@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -ex
 BASE_DIR=$(realpath "$(dirname $0)")
 
 if ! (devcontainer --version > /dev/null); then
@@ -8,7 +8,9 @@ if ! (devcontainer --version > /dev/null); then
 	nodenv rehash
 fi
 
-devcontainer up --workspace-folder ${BASE_DIR}/../..
+DEVCONTAINER_DIR=${BASE_DIR}/../../.devcontainer
+
+devcontainer up --workspace-folder ${DEVCONTAINER_DIR} --config ${DEVCONTAINER_DIR}/ros_ws/devcontainer.json
 
 # Run a shell in the container
 ${BASE_DIR}/enter_dev_container

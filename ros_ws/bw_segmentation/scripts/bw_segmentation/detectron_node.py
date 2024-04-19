@@ -11,7 +11,7 @@ import torch
 import torchvision
 from bw_interfaces.msg import Contour, SegmentationInstance, SegmentationInstanceArray, UVKeypoint
 from bw_tools.configs.model_metadata import ModelMetadata
-from bw_tools.typing import get_param
+from bw_tools.get_param import get_param
 from cv_bridge import CvBridge, CvBridgeError
 from detectron2.layers import paste_masks_in_image
 from detectron2.utils.visualizer import GenericMask

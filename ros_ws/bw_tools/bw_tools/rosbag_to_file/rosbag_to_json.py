@@ -1,4 +1,3 @@
-# type: ignore
 import json
 from optparse import Values
 

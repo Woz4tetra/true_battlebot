@@ -4,7 +4,7 @@ import tkinter as tk
 from typing import List, Type
 
 import rospy
-from bw_tools.typing import get_param
+from bw_tools.get_param import get_param
 
 from bw_command_center.command_ui.cage_corner_ui import CageCornerUI
 from bw_command_center.command_ui.mode_ui import ModeUI

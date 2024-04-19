@@ -3,7 +3,7 @@ import copy
 import actionlib
 import rospy
 from actionlib_msgs.msg import GoalStatus
-from bw_tools.typing import get_param
+from bw_tools.get_param import get_param
 from mbf_msgs.msg import RecoveryAction, RecoveryGoal
 from py_trees.common import Status
 

@@ -1,4 +1,3 @@
-# type: ignore
 import copy
 import os
 from dataclasses import dataclass

@@ -1,7 +1,5 @@
 import os
 
-from bw_interfaces.msg import SystemSummary
-
 
 def _get_env(name: str) -> str:
     value = os.environ.get(name, "")
@@ -22,9 +20,5 @@ def get_image_version() -> str:
     return _get_env("IMAGE_VERSION")
 
 
-def get_system_info() -> SystemSummary:
-    return SystemSummary(
-        robot=get_robot(),
-        map=get_map(),
-        version=get_image_version(),
-    )
+def get_ros_ip() -> str:
+    return os.environ.get("ROS_IP", "")

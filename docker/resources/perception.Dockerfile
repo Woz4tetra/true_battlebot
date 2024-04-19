@@ -69,7 +69,6 @@ COPY --chown=1000:1000 \
     ./install/requirements.txt \
     /opt/${ORGANIZATION}/install/
 RUN bash /opt/${ORGANIZATION}/install/install_python_dependencies.sh
-RUN cd /usr/local/zed && python get_python_api.py
 
 COPY --chown=1000:1000 \
     ./install/install_apriltag.sh \
@@ -97,6 +96,8 @@ RUN bash /opt/${ORGANIZATION}/install/install_torchscript.sh
 # Python extra packages
 # ---
 
+RUN cd /usr/local/zed && python get_python_api.py
+
 COPY --chown=1000:1000 \
     ./install/perception-extra-requirements.txt \
     ./install/install_perception_python_extras.sh \
@@ -117,7 +118,7 @@ ENV ROS_WS_ROOT=${HOME}/ros_ws
 ENV ROS_WS_SRC=${ROS_WS_ROOT}/src
 
 ENV PATH=/opt/${ORGANIZATION}/scripts${PATH:+:${PATH}} \
-    PYTHONPATH=/opt/${ORGANIZATION}/${PROJECT_NAME}/shared/bw_tools${PYTHONPATH:+:${PYTHONPATH}} \
+    PYTHONPATH=/opt/${ORGANIZATION}/${PROJECT_NAME}/shared${PYTHONPATH:+:${PYTHONPATH}} \
     PYTHONIOENCODING=utf-8 \
     PLATFORMIO_CORE_DIR=${ROS_WS_ROOT}/.platformio \
     HISTCONTROL=ignoreboth:erasedups

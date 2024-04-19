@@ -86,3 +86,5 @@ alias rm="rm -I"
 export OPENBLAS_NUM_THREADS=1
 
 eval "$(activate-global-python-argcomplete --dest=-)"
+
+source /media/storage/robot

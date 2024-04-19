@@ -1,6 +1,6 @@
 from typing import Optional
 
-import PyKDL
+import PyKDL  # type: ignore
 import rospy
 import tf2_geometry_msgs
 import tf2_ros

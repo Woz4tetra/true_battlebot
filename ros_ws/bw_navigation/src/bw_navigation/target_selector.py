@@ -6,8 +6,8 @@ import numpy as np
 import rospy
 from bw_interfaces.msg import EstimatedObject, EstimatedObjectArray
 from bw_tools.configs.robots import RobotFleetConfig, RobotTeam
+from bw_tools.get_param import get_param
 from bw_tools.structs.pose2d import Pose2D
-from bw_tools.typing import get_param
 from costmap_converter.msg import ObstacleArrayMsg, ObstacleMsg
 from geometry_msgs.msg import Point32, Polygon, PoseStamped
 from sensor_msgs import point_cloud2
@@ -19,8 +19,8 @@ from bw_navigation.selector_algorithms import (
     CrashSelector,
     PushFromBehindSelector,
     SacrificialSelector,
+    SelectorAlgorithm,
 )
-from bw_navigation.selector_algorithms.base_selector import BaseSelector
 from bw_navigation.selector_algorithms.match_state import MatchState
 
 CLOUD_FIELDS = [
@@ -28,6 +28,14 @@ CLOUD_FIELDS = [
     PointField("y", 4, PointField.FLOAT32, 1),  # type: ignore
     PointField("z", 8, PointField.FLOAT32, 1),  # type: ignore
 ]
+
+
+ALGORITHM_MAPPING: dict[str, type[SelectorAlgorithm]] = {
+    "sacrificial_selector": SacrificialSelector,
+    "push_from_behind_selector": PushFromBehindSelector,
+    "crash_selector": CrashSelector,
+    "crash_avoid_front_selector": CrashAvoidFrontSelector,
+}
 
 
 class TargetSelector:
@@ -40,12 +48,7 @@ class TargetSelector:
         self.controlled_bot_name = get_param("~controlled_bot_name", "mini_bot")
         self.algorithm_name = get_param("~algorithm", "sacrificial_selector")
 
-        self.selection_algorithm: BaseSelector = {
-            "sacrificial_selector": SacrificialSelector,
-            "push_from_behind_selector": PushFromBehindSelector,
-            "crash_selector": CrashSelector,
-            "crash_avoid_front_selector": CrashAvoidFrontSelector,
-        }[self.algorithm_name]()
+        self.selection_algorithm = ALGORITHM_MAPPING[self.algorithm_name]()
 
         all_robots = RobotFleetConfig.from_dict(robot_config)
         self.non_controlled_robots = [robot for robot in all_robots.robots if robot.name != self.controlled_bot_name]

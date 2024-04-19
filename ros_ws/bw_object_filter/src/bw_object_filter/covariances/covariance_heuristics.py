@@ -1,8 +1,6 @@
 from abc import abstractmethod
 from typing import Generic, List, TypeVar
 
-import numpy as np
-
 T = TypeVar("T")
 
 

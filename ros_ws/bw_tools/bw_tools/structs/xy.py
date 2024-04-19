@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
-from typing import Optional, Sequence, Tuple, Union, overload
+from typing import Any, Sequence, Tuple, Union, overload
 
 from geometry_msgs.msg import Vector3
 
@@ -27,8 +27,8 @@ class XY(Sequence):
     def __len__(self) -> int:
         return len(self.to_tuple())
 
-    def magnitude(self, other: Optional[XY] = None) -> float:
-        if other:
+    def magnitude(self, other: Any = None) -> float:
+        if other is not None:
             dx = self.x - other.x
             dy = self.y - other.y
         else:
@@ -36,21 +36,21 @@ class XY(Sequence):
             dy = self.y
         return math.sqrt(dx * dx + dy * dy)
 
-    def __sub__(self, other: XY) -> XY:
+    def __sub__(self, other: Any) -> XY:
         return XY(self.x - other.x, self.y - other.y)
 
-    def __add__(self, other: XY) -> XY:
+    def __add__(self, other: Any) -> XY:
         return XY(self.x + other.x, self.y + other.y)
 
-    def __radd__(self, other: XY) -> XY:
+    def __radd__(self, other: Any) -> XY:
         return self + other
 
-    def __eq__(self, __value: object) -> bool:
+    def __eq__(self, __value: Any) -> bool:
         if not isinstance(__value, XY):
             return False
         return self.x == __value.x and self.y == __value.y
 
-    def __lt__(self, other: XY) -> bool:
+    def __lt__(self, other: Any) -> bool:
         return self.x < other.x and self.y < other.y
 
     @classmethod

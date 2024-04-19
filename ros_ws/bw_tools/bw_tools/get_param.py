@@ -11,4 +11,3 @@ def get_param(path: str, default: T) -> T:
         return default
     else:
         return cast(T, value)
-

@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# run the whole script from the project directory
+BASE_DIR=$(realpath "$(dirname $0)")
+
+CHECK_DIRS=$(${BASE_DIR}/lib/get_ros_ws_check_dirs.sh $1)
+
+for dir in ${CHECK_DIRS}; do
+    printf "\n\nFormatting ${dir}\n"
+
+    # Run formatting on python files
+    ruff check "${dir}" --fix --select F841 --fixable F841  # Remove unused variables
+    ruff check "${dir}" --fix --select F401 --fixable F401  # Remove unused imports
+    ruff format "${dir}"
+    ruff check "${dir}" --fix
+done

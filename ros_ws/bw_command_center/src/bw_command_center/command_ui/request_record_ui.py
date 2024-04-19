@@ -4,7 +4,7 @@ from enum import Enum
 
 import rospy
 from bw_tools.environment import get_robot
-from bw_tools.typing import get_param
+from bw_tools.get_param import get_param
 
 from bw_command_center.command_ui.ui_base import UiBase
 from bw_command_center.managers.record_bag_manager import RecordBagManager

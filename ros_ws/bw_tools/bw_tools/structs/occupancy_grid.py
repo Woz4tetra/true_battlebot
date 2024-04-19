@@ -258,7 +258,7 @@ class OccupancyGrid:
         map_image = image.astype(np.uint8)
         map_image = np.bitwise_not(map_image)
         if map_image.size > 0:
-            map_image = cv2.cvtColor(map_image, cv2.COLOR_GRAY2BGR)
+            map_image = cv2.cvtColor(map_image, cv2.COLOR_GRAY2BGR).astype(np.uint8)
             map_image[np.where(self.image < 0)] = np.array(unknown_color, dtype=np.uint8)
         else:
             return np.array([], dtype=np.uint8)

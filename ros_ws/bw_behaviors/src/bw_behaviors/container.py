@@ -1,4 +1,4 @@
-from bw_tools.typing import get_param
+from bw_tools.get_param import get_param
 
 from bw_behaviors.managers.cmd_vel_manager import CmdVelManager
 from bw_behaviors.managers.corner_manager import CornerManager

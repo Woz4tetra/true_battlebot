@@ -8,13 +8,13 @@ import tf2_ros
 from bw_interfaces.msg import CageCorner as RosCageCorner
 from bw_interfaces.msg import EstimatedObject, SegmentationInstance, SegmentationInstanceArray
 from bw_tools.configs.maps import FieldType, Maps
+from bw_tools.get_param import get_param
 from bw_tools.structs.cage_corner import CageCorner
 from bw_tools.structs.labels import Label
 from bw_tools.structs.rpy import RPY
 from bw_tools.structs.transform3d import Transform3D
 from bw_tools.structs.xyz import XYZ
 from bw_tools.transforms import lookup_pose_in_frame
-from bw_tools.typing import get_param
 from geometry_msgs.msg import Point, PointStamped, Pose, PoseStamped, Quaternion, Vector3
 from image_geometry import PinholeCameraModel
 from sensor_msgs.msg import CameraInfo, Imu

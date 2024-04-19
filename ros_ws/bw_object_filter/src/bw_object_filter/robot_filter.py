@@ -7,6 +7,7 @@ import tf2_ros
 from apriltag_ros.msg import AprilTagDetectionArray
 from bw_interfaces.msg import EstimatedObject, EstimatedObjectArray
 from bw_tools.configs.robots import RobotConfig, RobotFleetConfig, RobotTeam
+from bw_tools.get_param import get_param
 from bw_tools.structs.header import Header
 from bw_tools.structs.labels import Label
 from bw_tools.structs.pose2d import Pose2D
@@ -16,7 +17,6 @@ from bw_tools.structs.transform3d import Transform3D
 from bw_tools.structs.twist2d import Twist2D
 from bw_tools.structs.xyz import XYZ
 from bw_tools.transforms import lookup_pose_in_frame
-from bw_tools.typing import get_param
 from geometry_msgs.msg import (
     Point,
     Pose,

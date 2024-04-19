@@ -3,3 +3,4 @@ types-requests
 pytest
 dacite
 argcomplete
+ruff

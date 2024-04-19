@@ -10,3 +10,4 @@ pyserial
 PySoundFile
 sounddevice
 argcomplete
+ruff

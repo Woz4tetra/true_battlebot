@@ -3,10 +3,10 @@ import time
 
 import rospy
 from bw_interfaces.msg import MotorVelocities
+from bw_tools.get_param import get_param
 from bw_tools.structs.teleop_bridge.imu_sensor import ImuSensor
 from bw_tools.structs.teleop_bridge.motor_command import MotorCommand
 from bw_tools.structs.teleop_bridge.ping_info import PingInfo
-from bw_tools.typing import get_param
 from geometry_msgs.msg import Twist
 from sensor_msgs.msg import Imu
 from std_msgs.msg import Float64

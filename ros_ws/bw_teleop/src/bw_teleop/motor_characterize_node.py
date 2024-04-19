@@ -7,9 +7,9 @@ from typing import Generator, List
 import numpy as np
 import rospy
 from bw_interfaces.msg import MotorCharacterizationSample
+from bw_tools.get_param import get_param
 from bw_tools.structs.teleop_bridge.motor_command import MotorCommand
 from bw_tools.structs.teleop_bridge.ping_info import PingInfo
-from bw_tools.typing import get_param
 from std_msgs.msg import Header
 
 from bw_teleop.bridge_interface import BridgeInterface

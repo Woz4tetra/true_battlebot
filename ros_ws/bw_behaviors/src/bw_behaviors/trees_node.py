@@ -2,7 +2,7 @@
 import py_trees
 import rospy
 from ansi2html import Ansi2HTMLConverter
-from bw_tools.typing import get_param
+from bw_tools.get_param import get_param
 from py_trees import display
 from py_trees.trees import BehaviourTree
 from py_trees.visitors import DisplaySnapshotVisitor
