@@ -31,7 +31,8 @@
                 "matangover.mypy",
                 "twxs.cmake",
                 "ms-vscode.cpptools-extension-pack",
-                "redhat.vscode-xml"
+                "redhat.vscode-xml",
+                "tamasfe.even-better-toml"
             ]
         }
     }

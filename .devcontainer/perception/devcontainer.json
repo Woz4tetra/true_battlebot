@@ -28,7 +28,8 @@
                 "timonwong.shellcheck",
                 "charliermarsh.ruff",
                 "matangover.mypy",
-                "redhat.vscode-xml"
+                "redhat.vscode-xml",
+                "tamasfe.even-better-toml"
             ]
         }
     }
