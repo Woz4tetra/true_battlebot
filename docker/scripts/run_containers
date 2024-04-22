@@ -31,5 +31,4 @@ docker-compose \
 -f docker-compose.roscore.yml \
 -f docker-compose.${PROJECT_NAME}.yml \
 -f docker-compose.gpu.yaml \
--f docker-compose.webapp.yml \
 up -d

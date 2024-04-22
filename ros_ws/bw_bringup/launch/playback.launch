@@ -12,7 +12,5 @@
         <arg name="model" value="$(find bw_data)/data/models/$(arg model).torchscript" />
         <arg name="metadata" value="$(find bw_data)/data/models/$(arg model)_metadata.json" />
     </include>
-    <include file="$(find bw_bringup)/launch/subsystems/zed.launch">
-        <arg name="svo_file" value="/media/storage/svo/$(arg svo_name)" />
-    </include>
+    <include file="$(find bw_bringup)/launch/subsystems/camera.launch"/>
 </launch>

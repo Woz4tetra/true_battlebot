@@ -135,6 +135,6 @@ COPY --chown=1000:1000 \
     ./launch/perception.sh \
     /opt/${ORGANIZATION}/
 
-WORKDIR ${HOME}
+WORKDIR /opt/${ORGANIZATION}/${PROJECT_NAME}
 
 ENTRYPOINT ["/usr/bin/dumb-init", "--"]

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+    <arg name="camera_name" default="camera_0" />
+    <arg name="tag_config_path" default="$(find bw_bringup)/config/tags.yaml" />
+
+    <node pkg="apriltag_ros" type="apriltag_ros_continuous_node" name="$(arg camera_name)_apriltag"
+        required="false" output="screen">
+        <rosparam command="load" file="$(arg tag_config_path)" ns="" />
+
+        <remap from="camera_info" to="$(arg camera_name)/rgb/camera_info" />
+        <remap from="image_rect" to="$(arg camera_name)/rgb/image_rect_color" />
+    </node>
+</launch>

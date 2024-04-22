@@ -9,7 +9,7 @@
         <arg name="model" value="$(find bw_data)/data/models/$(arg model).torchscript" />
         <arg name="metadata" value="$(find bw_data)/data/models/$(arg model)_metadata.json" />
     </include>
-    <include file="$(find bw_bringup)/launch/subsystems/zed.launch" />
+    <include file="$(find bw_bringup)/launch/subsystems/camera.launch" />
     <group ns="mini_bot">
         <include file="$(find bw_teleop)/launch/mini_bot_bridge.launch" />
         <include file="$(find bw_teleop)/launch/simple_teleop.launch" />

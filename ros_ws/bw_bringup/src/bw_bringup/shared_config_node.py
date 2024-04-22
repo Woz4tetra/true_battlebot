@@ -1,3 +1,4 @@
+#!/usr/bin/python
 import rospy
 from bw_shared.configs.shared_config import SharedConfig
 
