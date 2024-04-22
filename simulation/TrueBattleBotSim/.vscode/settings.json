@@ -55,10 +55,10 @@
     "dotnet.defaultSolution": "TrueBattleBotSim.sln",
     "python.autoComplete.extraPaths": [
         "/home/ben/ros_ws/devel/lib/python3.8/site-packages",
-        "/opt/ros/noetic/lib/python3/dist-packages"
+        "/home/ben/base_ws/lib/python3/dist-packages"
     ],
     "python.analysis.extraPaths": [
         "/home/ben/ros_ws/devel/lib/python3.8/site-packages",
-        "/opt/ros/noetic/lib/python3/dist-packages"
+        "/home/ben/base_ws/lib/python3/dist-packages"
     ]
 }

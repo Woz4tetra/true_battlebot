@@ -79,6 +79,13 @@ ENV PATH=${HOME}/.local/bin${PATH:+:${PATH}}
 # ROS dependency workspace
 # ---
 
+ENV BASE_ROS_WS_ROOT=${HOME}/base_ws
+
+COPY --chown=1000:1000 \
+    ./install/install_ros_deps.sh \
+    /opt/${ORGANIZATION}/install/
+RUN bash /opt/${ORGANIZATION}/install/install_ros_deps.sh
+
 COPY --chown=1000:1000 \
     ./install/${ROS_DISTRO}.rosinstall \
     ./install/install_ros.sh \
@@ -88,12 +95,12 @@ RUN bash /opt/${ORGANIZATION}/install/install_ros.sh
 ENV DEP_ROS_WS_ROOT=${HOME}/dep_ws
 
 COPY --chown=1000:1000 \
-    ./install/install_ros_deps.sh \
+    ./install/install_ros_packages.sh \
     ./install/patches/geometry2.patch \
     ./install/patches/image-pipeline.patch \
     ./install/${PROJECT_NAME}.rosinstall \
     /opt/${ORGANIZATION}/install/
-RUN bash /opt/${ORGANIZATION}/install/install_ros_deps.sh /opt/${ORGANIZATION}/install/${PROJECT_NAME}.rosinstall
+RUN bash /opt/${ORGANIZATION}/install/install_ros_packages.sh /opt/${ORGANIZATION}/install/${PROJECT_NAME}.rosinstall
 
 # ---
 # Python extra packages

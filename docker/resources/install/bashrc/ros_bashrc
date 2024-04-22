@@ -1,7 +1,7 @@
 #!/bin/bash
 source "${HOME}"/.base_bashrc
 
-source /opt/ros/"${ROS_DISTRO}"/setup.bash
+source "${BASE_ROS_WS_ROOT}"/install/setup.bash
 source "${DEP_ROS_WS_ROOT}"/devel/setup.bash
 source "${ROS_WS_ROOT}"/devel/setup.bash
 export ROSCONSOLE_FORMAT='[${node}] [${severity}] [${time}]: ${message}'
