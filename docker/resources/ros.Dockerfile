@@ -1,4 +1,4 @@
-FROM ros:noetic-ros-core-focal
+FROM ubuntu:20.04
 
 ARG PROJECT_NAME
 ARG ORGANIZATION
@@ -6,7 +6,7 @@ ARG ORGANIZATION
 ENV ROS_DISTRO=noetic
 ENV PROJECT_NAME=${PROJECT_NAME}
 ENV ORGANIZATION=${ORGANIZATION}
-ENV PYTHON_INSTALL_VERSION=3.8
+ENV PYTHON_INSTALL_VERSION=3.11
 ENV UBUNTU_VERSION_MAJOR=20
 ENV UBUNTU_VERSION_MINOR=04
 
@@ -78,6 +78,12 @@ ENV PATH=${HOME}/.local/bin${PATH:+:${PATH}}
 # ---
 # ROS dependency workspace
 # ---
+
+COPY --chown=1000:1000 \
+    ./install/${ROS_DISTRO}.rosinstall \
+    ./install/install_ros.sh \
+    /opt/${ORGANIZATION}/install/
+RUN bash /opt/${ORGANIZATION}/install/install_ros.sh
 
 ENV DEP_ROS_WS_ROOT=${HOME}/dep_ws
 
