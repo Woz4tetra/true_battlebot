@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 
-import tomllib
+import toml
 
 from bw_shared.configs.maps import FieldConfig, Maps
 from bw_shared.configs.robots import RobotFleetConfig
@@ -42,5 +42,5 @@ class SharedConfig:
 
     @classmethod
     def _read_toml(cls, path: str) -> dict:
-        with open(path, "rb") as file:
-            return tomllib.load(file)
+        with open(path, "r") as file:
+            return toml.load(file)

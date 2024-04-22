@@ -6,7 +6,7 @@ ARG ORGANIZATION
 ENV ROS_DISTRO=noetic
 ENV PROJECT_NAME=${PROJECT_NAME}
 ENV ORGANIZATION=${ORGANIZATION}
-ENV PYTHON_INSTALL_VERSION=3.11
+ENV PYTHON_INSTALL_VERSION=3.9
 ENV UBUNTU_VERSION_MAJOR=20
 ENV UBUNTU_VERSION_MINOR=04
 
@@ -133,8 +133,9 @@ ENV PATH=/opt/${ORGANIZATION}/scripts${PATH:+:${PATH}} \
 # launch environment
 # ---
 
-COPY --chown=1000:1000 ./install/bashrc/base_bashrc ${HOME}/.base_bashrc
-COPY --chown=1000:1000 ./install/bashrc/ros_bashrc ${HOME}/.bashrc
+COPY --chown=1000:1000 ./install/bashrc/base_bashrc ${HOME}/.bashrc
+COPY --chown=1000:1000 ./install/bashrc/ros_bashrc ${HOME}/bashrc_overlay
+RUN cat ${HOME}/bashrc_overlay >> ${HOME}/.bashrc && rm ${HOME}/bashrc_overlay
 
 COPY --chown=1000:1000 \
     ./launch/set_log_format.sh \

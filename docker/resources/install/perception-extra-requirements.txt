@@ -4,3 +4,5 @@ pytest
 dacite
 argcomplete
 ruff
+roslibpy
+toml

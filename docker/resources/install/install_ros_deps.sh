@@ -32,15 +32,10 @@ sudo apt-get install -y \
     libsuitesparse-dev \
     python3-termcolor \
     libceres-dev \
-    libgeos-dev
+    libgeos-dev \
+    python3-catkin
 
 sudo -H python -m pip install -U rosdep rosinstall_generator vcstool
-
-sudo rosdep init
-rosdep update
-
-sudo mkdir -p ${BASE_ROS_WS_ROOT}/src
-sudo chown -R ${USER}:${USER} ${BASE_ROS_WS_ROOT}
 
 # tbb
 cd /tmp

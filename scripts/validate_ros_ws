@@ -7,6 +7,7 @@ CHECK_DIRS=$(${BASE_DIR}/lib/get_ros_ws_check_dirs.sh $1)
 
 for dir in ${CHECK_DIRS}; do
     printf "\n\nValidating ${dir}\n"
+    cd "${dir}"
 
     # Run formatting on python files
     ruff check "${dir}"

@@ -4,7 +4,12 @@ set -e
 
 BASE_DIR=$(realpath "$(dirname "${0}")")
 
+sudo rosdep init
+rosdep update
+
+mkdir -p ${BASE_ROS_WS_ROOT}/src
 cd ${BASE_ROS_WS_ROOT}
+
 vcs import --input ${BASE_DIR}/${ROS_DISTRO}.rosinstall ./src
 
 cd ${BASE_ROS_WS_ROOT}

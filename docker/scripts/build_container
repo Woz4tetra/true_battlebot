@@ -32,7 +32,7 @@ if [[ ! -z ${CONTAINERS} ]]; then
     echo "${CONTAINERS}"
 fi
 
-IMAGES=$(docker image list --format "{{.Repository}}" | grep -E "vsc-true_battlebot|devcontainer|dev_container")
+IMAGES=$(docker image list --format "{{.Repository}}" | grep -E "true_battlebot")
 # don't use "" around IMAGES var to take advantage of globbing
 docker rmi ${IMAGES} &> /dev/null
 echo -e '\033[1mRemoved Images:\033[0m'

@@ -11,4 +11,4 @@ PySoundFile
 sounddevice
 argcomplete
 ruff
-netifaces
+toml
