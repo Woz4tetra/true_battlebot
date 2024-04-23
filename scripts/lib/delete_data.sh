@@ -12,4 +12,4 @@ if [ -z "${RM_PATTERN}" ]; then
 fi
 
 rm -r ${ROS_WS_SRC}/${PROJECT_NAME}/bw_data/data/"${RM_PATTERN}"
-rm -r ${PROJECT_DIR}/${PROJECT_NAME}/src/bw_data/data/"${RM_PATTERN}"
+rm -r ${PROJECT_DIR}/${PROJECT_NAME}/ros_ws/bw_data/data/"${RM_PATTERN}"

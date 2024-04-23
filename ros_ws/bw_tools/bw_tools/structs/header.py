@@ -3,9 +3,8 @@ from dataclasses import dataclass
 from typing import Optional
 
 import rospy
-from std_msgs.msg import Header as RosHeader
-
 from bw_shared.context_sequence_counter import ContextSequenceCounter
+from std_msgs.msg import Header as RosHeader
 
 
 @dataclass(eq=True)
