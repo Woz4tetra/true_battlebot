@@ -4,12 +4,12 @@ from dataclasses import asdict, dataclass, field
 
 from dacite import from_dict
 
-from bw_shared.enums.field_type import FieldType
 from bw_shared.configs.size import Size
+from bw_shared.enums.field_type import FieldType
 
 
 @dataclass
-class FieldConfig:
+class MapConfig:
     name: str
     size: Size
 
@@ -19,7 +19,7 @@ class FieldConfig:
 
 @dataclass
 class Maps:
-    maps: list[FieldConfig] = field(default_factory=lambda: [])
+    maps: list[MapConfig] = field(default_factory=lambda: [])
 
     def __post_init__(self):
         self.maps_map = {field.type: field for field in self.maps}
@@ -31,5 +31,5 @@ class Maps:
     def to_dict(self) -> dict:
         return asdict(self)
 
-    def get(self, key: FieldType) -> FieldConfig:
+    def get(self, key: FieldType) -> MapConfig:
         return self.maps_map[key]

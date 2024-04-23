@@ -3,4 +3,4 @@ from dataclasses import dataclass
 
 @dataclass
 class ZedConfig:
-    type: str
+    type: str = "ZedCamera"

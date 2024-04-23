@@ -6,3 +6,4 @@ argcomplete
 ruff
 roslibpy
 toml
+python-json-logger

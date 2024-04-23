@@ -8,6 +8,7 @@ import cv2
 import numpy as np
 import torch
 import torchvision
+from config.segmentation_config.instance_segmentation_config import InstanceSegmentationConfig
 from detectron2.layers import paste_masks_in_image
 from detectron2.utils.visualizer import GenericMask
 from perception_tools.config.model_metadata import ModelMetadata
@@ -20,15 +21,15 @@ BoundingBox = tuple[int, int, int, int]
 
 
 class InstanceSegmentation:
-    def __init__(self) -> None:
-        self.model_path = "model.torchscript"
-        self.metadata_path = "model_metadata.json"
-        self.threshold = 0.8
-        self.nms_threshold = 0.4
-        self.mask_conversion_threshold = 0.5
-        self.decimate = 1.0
-        self.image_delay_threshold = 0.2
-        self.debug = False
+    def __init__(self, config: InstanceSegmentationConfig) -> None:
+        self.model_path = config.model_path
+        self.metadata_path = config.metadata_path
+        self.threshold = config.threshold
+        self.nms_threshold = config.nms_threshold
+        self.mask_conversion_threshold = config.mask_conversion_threshold
+        self.decimate = config.decimate
+        self.image_delay_threshold = config.image_delay_threshold
+        self.debug = config.debug
 
         with open(self.metadata_path, "r") as file:
             self.metadata = ModelMetadata.from_dict(json.load(file))
@@ -41,7 +42,7 @@ class InstanceSegmentation:
         self.model = self.load_model(self.model_path)
         self.warmup()
 
-        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger = logging.getLogger("perception")
 
     def load_model(self, model_path: str) -> Callable:
         self.logger.info(f"Loading model from {model_path}")

@@ -38,6 +38,9 @@
         "editor.defaultFormatter": "charliermarsh.ruff",
         "editor.formatOnSave": true
     },
+    "ruff.lint.args": ["--config=pyproject.toml"],
+    "ruff.organizeImports": true,
+    "ruff.fixAll": true,
     "editor.rulers": [120],
     "python.autoComplete.extraPaths": [
         "/home/bwbots/ros_ws/devel/lib/python3/dist-packages",

@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+from perception_tools.messages.std_msgs.header import Header
+
 
 @dataclass
 class RegionOfInterest:
@@ -12,6 +14,7 @@ class RegionOfInterest:
 
 @dataclass
 class CameraInfo:
+    header: Header
     height: int
     width: int
     distortion_model: str

@@ -324,7 +324,6 @@ class RobotFilter:
 
     def update_cmd_vel(self, msg: Twist, robot_config: RobotConfig):
         if not self.field_received():
-            rospy.logdebug("Field not received. Skipping twist callback.")
             return
         measurement = TwistWithCovariance(twist=msg)
         if robot_config.team == RobotTeam.OUR_TEAM:

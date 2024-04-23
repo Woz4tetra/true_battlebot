@@ -5,7 +5,7 @@ from dataclasses import dataclass
 
 import toml
 
-from bw_shared.configs.maps import FieldConfig, Maps
+from bw_shared.configs.maps import MapConfig, Maps
 from bw_shared.configs.robots import RobotFleetConfig
 from bw_shared.enums.field_type import FieldType
 from bw_shared.environment import get_project_dir
@@ -37,7 +37,7 @@ class SharedConfig:
     def to_dict(self) -> dict:
         return dict(maps=self.maps.to_dict(), robots=self.robots.to_dict())
 
-    def get_map(self, key: FieldType) -> FieldConfig:
+    def get_map(self, key: FieldType) -> MapConfig:
         return self.maps.get(key)
 
     @classmethod
