@@ -12,16 +12,13 @@ from bw_tools.system_info import get_system_info
 from std_srvs.srv import SetBool, SetBoolRequest, SetBoolResponse
 
 from bw_command_center.managers.record_bag_manager import RecordBagManager
-from bw_command_center.managers.svo_service_manager import SvoServiceManager
 
 
 class WebappRelay:
     def __init__(self) -> None:
-        cameras = get_param("~cameras", ["camera_0"])
         exclude_regex = get_param("~exclude_regex", "")
 
         self.system_summary_pub = rospy.Publisher("system_summary", SystemSummary, queue_size=1, latch=True)
-        self.svo_service_managers = [SvoServiceManager(camera, "/media/storage/svo") for camera in cameras]
         self.bag_manager = RecordBagManager(
             "/media/storage/bags", self.start_callback, self.stop_callback, exclude_regex=exclude_regex
         )
@@ -41,15 +38,11 @@ class WebappRelay:
             now = datetime.datetime.now()
             datestr = now.strftime("%Y-%m-%dT%H-%M-%S")
             name = f"{get_robot()}_{datestr}"
-            for manager in self.svo_service_managers:
-                manager.start(name)
             self.bag_manager.start(name)
             self.await_recording_state(True)
             return SetBoolResponse(success=True)
         elif not req.data and self.is_recording:
             rospy.loginfo("Stop recording")
-            for manager in self.svo_service_managers:
-                manager.stop()
             self.bag_manager.stop()
             self.await_recording_state(False)
             return SetBoolResponse(success=True)

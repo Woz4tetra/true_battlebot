@@ -1,6 +1,6 @@
 import os
-import queue
 from datetime import datetime
+from queue import Queue
 from threading import Thread
 from typing import Union
 
@@ -19,8 +19,8 @@ class MicrophoneRecorder:
         device_info: dict = query_devices(self.device_id, "input")  # type: ignore
         self.sample_rate = int(device_info["default_samplerate"])
         self.channels = 1
-        self.split_queue = queue.Queue()
-        self.audio_queue = queue.Queue()
+        self.split_queue: Queue[str] = Queue()
+        self.audio_queue: Queue[str] = Queue()
         self.record_thread = Thread(target=self.record_task, daemon=False)
         self.should_record = False
 

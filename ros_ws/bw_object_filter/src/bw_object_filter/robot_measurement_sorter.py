@@ -13,7 +13,7 @@ class RobotMeasurementSorter:
     def __init__(self, filters: Mapping[str, FilterModel]) -> None:
         self.filters = filters
         self.filter_names = [robot_name for robot_name in self.filters.keys()]
-        self.cached_permutations = {}
+        self.cached_permutations: dict[tuple[int, int], np.ndarray] = {}
 
     def get_distance(self, measurement: Pose, filter_model: FilterModel) -> float:
         pose = Pose2D.from_msg(measurement)

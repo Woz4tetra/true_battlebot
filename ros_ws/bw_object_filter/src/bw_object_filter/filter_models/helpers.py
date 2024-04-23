@@ -21,6 +21,9 @@ STATE_vx = 3
 STATE_vy = 4
 STATE_vt = 5
 
+StateArray = np.ndarray
+StateSquareMatrix = np.ndarray
+
 
 def get_index(row: int, col: int, row_length: int) -> int:
     return row * row_length + col

@@ -5,7 +5,8 @@ from typing import Optional, Tuple, cast
 import numpy as np
 import rospy
 from bw_interfaces.msg import EstimatedObject, EstimatedObjectArray
-from bw_tools.configs.robots import RobotFleetConfig, RobotTeam
+from bw_shared.configs.robots import RobotTeam
+from bw_tools.configs.rosparam_client import get_shared_config
 from bw_tools.get_param import get_param
 from bw_tools.structs.pose2d import Pose2D
 from costmap_converter.msg import ObstacleArrayMsg, ObstacleMsg
@@ -40,9 +41,8 @@ ALGORITHM_MAPPING: dict[str, type[SelectorAlgorithm]] = {
 
 class TargetSelector:
     def __init__(self) -> None:
-        robot_config = get_param("/robots", None)
-        if robot_config is None:
-            raise ValueError("Must specify robot_config in the parameter server")
+        shared_config = get_shared_config()
+
         self.robot_radius = get_param("~robot_radius", 0.2)
         self.guidance_bot_name = get_param("~guidance_bot_name", "main_bot")
         self.controlled_bot_name = get_param("~controlled_bot_name", "mini_bot")
@@ -50,7 +50,7 @@ class TargetSelector:
 
         self.selection_algorithm = ALGORITHM_MAPPING[self.algorithm_name]()
 
-        all_robots = RobotFleetConfig.from_dict(robot_config)
+        all_robots = shared_config.robots
         self.non_controlled_robots = [robot for robot in all_robots.robots if robot.name != self.controlled_bot_name]
         self.non_controlled_robot_names = [robot.name for robot in self.non_controlled_robots]
         self.their_robot_names = [robot.name for robot in all_robots.robots if robot.team == RobotTeam.THEIR_TEAM]

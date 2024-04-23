@@ -1,18 +1,16 @@
 #!/usr/bin/env python
 import rospy
 from bw_interfaces.msg import EstimatedObjectArray
-from bw_tools.configs.robots import RobotConfig, RobotFleetConfig, RobotTeam
-from bw_tools.get_param import get_param
+from bw_shared.configs.robots import RobotConfig, RobotTeam
+from bw_tools.configs.rosparam_client import get_shared_config
 from geometry_msgs.msg import Quaternion, Twist
 from tf_conversions import transformations
 
 
 class TeleopNode:
     def __init__(self) -> None:
-        robot_config = get_param("/robots", None)
-        if robot_config is None:
-            raise ValueError("Must specify robot_config in the parameter server")
-        self.robots = RobotFleetConfig.from_dict(robot_config)
+        shared_config = get_shared_config()
+        self.robots = shared_config.robots
 
         self.filter_state_array_sub = rospy.Subscriber(
             "filtered_states", EstimatedObjectArray, self.filtered_states_callback, queue_size=50

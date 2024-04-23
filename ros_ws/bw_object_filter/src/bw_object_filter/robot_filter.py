@@ -171,7 +171,7 @@ class RobotFilter:
         if not self.field_received():
             rospy.logdebug("Field not received. Skipping robot estimation callback.")
             return
-        measurements = {label: [] for label in self.measurement_sorters.keys()}
+        measurements: dict[Label, list[EstimatedObject]] = {label: [] for label in self.measurement_sorters.keys()}
         for robot in msg.robots:
             try:
                 label = Label(robot.label)

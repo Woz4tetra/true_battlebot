@@ -10,6 +10,8 @@ from .helpers import (
     NUM_STATES,
     NUM_STATES_1ST_ORDER,
     STATE_t,
+    StateArray,
+    StateSquareMatrix,
     flip_quat_upside_down,
     jit_predict,
     jit_update,
@@ -22,6 +24,12 @@ from .helpers import (
 
 
 class DriveKalmanModel(FilterModel):
+    state: StateArray
+    covariance: StateSquareMatrix
+    process_noise_q: StateSquareMatrix
+    is_initialized: bool
+    is_right_side_up: bool
+
     def __init__(self, dt: float, process_noise: float = 0.001, friction_factor: float = 0.2) -> None:
         self.dt = dt
         self.friction_factor = friction_factor
@@ -47,7 +55,7 @@ class DriveKalmanModel(FilterModel):
         with self.lock:
             self._clamp_divergent()
             self.state, self.covariance = jit_predict(
-                self.state, self.covariance, self.process_noise_Q, self.dt, self.friction_factor
+                self.state, self.covariance, self.process_noise_q, self.dt, self.friction_factor
             )
 
     def update_pose(self, msg: PoseWithCovariance) -> None:
@@ -88,6 +96,9 @@ class DriveKalmanModel(FilterModel):
                 measurement_to_twist(self.state, self.covariance),
             )
 
+    def get_covariance(self) -> StateSquareMatrix:
+        return self.covariance
+
     def _clamp_divergent(self) -> None:
         self.state = np.nan_to_num(self.state, copy=False, nan=0.0, posinf=0.0, neginf=0.0)
         self.covariance = np.nan_to_num(self.covariance, copy=False, nan=1e-3, posinf=1e-3, neginf=1e-3)
@@ -105,7 +116,7 @@ class DriveKalmanModel(FilterModel):
         with self.lock:
             self.state = np.zeros(NUM_STATES)
             self.covariance = np.eye(NUM_STATES)
-            self.process_noise_Q = np.eye(NUM_STATES) * self.process_noise
+            self.process_noise_q = np.eye(NUM_STATES) * self.process_noise
 
             self.is_initialized = False
             self.is_right_side_up = True

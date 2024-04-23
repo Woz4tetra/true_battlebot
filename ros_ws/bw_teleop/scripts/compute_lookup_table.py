@@ -74,31 +74,31 @@ def main() -> None:
 
     path = args.path
 
+    data = []
     with open(path) as file:
         reader = csv.reader(file)
         next(reader)
-        data = []
         for row in reader:
             data.append([float(x) for x in row])
-    data = np.array(data, dtype=float)
-    data = data[data[:, 0].argsort()]
-    velocities = data[:, 0]
-    frequencies = data[:, 1]
+    table = np.array(data, dtype=float)
+    table = table[table[:, 0].argsort()]
+    velocities = table[:, 0]
+    frequencies = table[:, 1]
 
     abs_frequencies = np.abs(frequencies)
     mid_index = np.argmin(np.abs(velocities))
     lower_cutoff = 0
-    upper_cutoff = len(data) - 1
+    upper_cutoff = len(table) - 1
     for i in range(mid_index, -1, -1):
         if abs_frequencies[i] > 0.01:
             lower_cutoff = i
             break
-    for i in range(mid_index, len(data)):
+    for i in range(mid_index, len(table)):
         if abs_frequencies[i] > 0.01:
             upper_cutoff = i
             break
 
-    fit_fn, coeffs = fit_data_segment(data)
+    fit_fn, coeffs = fit_data_segment(table)
 
     upper_vel = velocities[upper_cutoff]
     lower_vel = velocities[lower_cutoff]

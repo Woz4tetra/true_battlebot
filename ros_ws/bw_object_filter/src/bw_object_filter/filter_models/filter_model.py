@@ -1,8 +1,9 @@
 from abc import abstractmethod
 from typing import Tuple
 
-import numpy as np
 from geometry_msgs.msg import PoseWithCovariance, PoseWithCovarianceStamped, TwistWithCovariance
+
+from .helpers import StateSquareMatrix
 
 
 class FilterModel:
@@ -23,7 +24,7 @@ class FilterModel:
         pass
 
     @abstractmethod
-    def get_covariance(self) -> np.ndarray:
+    def get_covariance(self) -> StateSquareMatrix:
         pass
 
     @abstractmethod

@@ -7,7 +7,7 @@ import rospy
 import tf2_ros
 from bw_interfaces.msg import CageCorner as RosCageCorner
 from bw_interfaces.msg import EstimatedObject, SegmentationInstance, SegmentationInstanceArray
-from bw_tools.configs.maps import FieldType
+from bw_shared.configs.maps import FieldType
 from bw_tools.configs.rosparam_client import get_shared_config
 from bw_tools.get_param import get_param
 from bw_tools.structs.cage_corner import CageCorner
@@ -202,7 +202,7 @@ class FieldFilter:
         self.publish_debug_markers(flattened_points, min_rect, centroid)
         rospy.loginfo(f"Field angle: {angle}. Extents: {extents}")
 
-        return field_centered_plane.to_pose_msg(), XYZ.from_xy(extents, self.expected_size.z)
+        return field_centered_plane.to_pose_msg(), XYZ(extents.x, extents.y, self.expected_size.z)
 
     def rotate_field_orientation(
         self,

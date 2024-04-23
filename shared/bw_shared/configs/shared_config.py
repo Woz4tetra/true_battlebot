@@ -37,8 +37,8 @@ class SharedConfig:
     def to_dict(self) -> dict:
         return dict(maps=self.maps.to_dict(), robots=self.robots.to_dict())
 
-    def get_map(self, key: str) -> FieldConfig:
-        return self.maps.get(FieldType(key))
+    def get_map(self, key: FieldType) -> FieldConfig:
+        return self.maps.get(key)
 
     @classmethod
     def _read_toml(cls, path: str) -> dict:

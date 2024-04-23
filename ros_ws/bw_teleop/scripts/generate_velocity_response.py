@@ -89,7 +89,7 @@ def main() -> None:
                     if not msg.valid:
                         continue
                     samples.append(MotorCharacterizationSample.from_msg(msg))
-    data = {}
+    data: dict[int, dict[str, list[float]]] = {}
     for sample in samples:
         if sample.channel not in data:
             data[sample.channel] = {

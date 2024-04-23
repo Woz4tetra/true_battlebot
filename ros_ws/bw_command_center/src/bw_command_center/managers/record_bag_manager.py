@@ -2,7 +2,7 @@ import os
 import subprocess
 import time
 from threading import Thread
-from typing import Callable
+from typing import Callable, Optional
 
 import rospy
 from std_msgs.msg import String
@@ -25,14 +25,14 @@ class RecordBagManager:
         self.record_node_name = ""
         self.recording_instance = 0
         self.exclude_regex = exclude_regex
-        self.process = None
+        self.process: Optional[subprocess.Popen] = None
         self.path = ""
         self.bag_started_sub = rospy.Subscriber(
             "begin_write",
             String,
             self.bag_started_callback,
         )
-        self.stop_thread = None
+        self.stop_thread: Optional[Thread] = None
         self.is_stop_task_active = False
 
     def start(self, filename: str) -> None:

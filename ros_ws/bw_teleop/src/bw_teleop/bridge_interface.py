@@ -9,6 +9,7 @@ from bw_tools.structs.teleop_bridge.header import Header
 from bw_tools.structs.teleop_bridge.motor_command import MotorCommand
 from bw_tools.structs.teleop_bridge.motor_description import MotorDescription
 from bw_tools.structs.teleop_bridge.packet import Packet
+from bw_tools.structs.teleop_bridge.packet_type import PacketType
 from bw_tools.structs.teleop_bridge.ping_info import PingInfo
 
 BUFFER_SIZE = 512
@@ -43,12 +44,12 @@ class BridgeInterface:
         self.port = port
         self.device_id = device_id
         self.broadcast_address = broadcast_address
-        self.packet_type_to_class = {}
-        self.packet_callbacks = {}
+        self.packet_type_to_class: dict[PacketType, Type] = {}
+        self.packet_callbacks: dict[Type, Callable] = {}
 
         self.destination = ""
-        self.blacklist_ips = set()
-        self.whitelist_ips = set()
+        self.blacklist_ips: set[str] = set()
+        self.whitelist_ips: set[str] = set()
 
         self.socket = socket.socket(type=socket.SOCK_DGRAM)
         self.socket.bind(("0.0.0.0", self.port))
@@ -63,14 +64,14 @@ class BridgeInterface:
 
     def send_packet(self, packet: bytes) -> None:
         if self.destination:
-            rospy.logdebug(f"Sending packet to {self.destination}:{self.port}. {len(packet)} bytes. {packet}")
+            rospy.logdebug(f"Sending packet to {self.destination}:{self.port}. {len(packet)} bytes. {packet!r}")
             try:
                 self.socket.sendto(packet, (self.destination, self.port))
             except BlockingIOError as e:
                 rospy.logwarn(f"Failed to send packet. {e}")
 
     def broadcast_packet(self, packet: bytes) -> None:
-        rospy.logdebug(f"Broadcasting packet. {len(packet)} bytes. {packet}")
+        rospy.logdebug(f"Broadcasting packet. {len(packet)} bytes. {packet!r}")
         try:
             self.socket.sendto(packet, (self.broadcast_address, self.port))
         except BlockingIOError as e:
@@ -138,7 +139,7 @@ class BridgeInterface:
         if not self.is_address_ok(address, port):
             return
 
-        rospy.logdebug(f"Received packet from {address}:{port}. {len(packet)} bytes. {packet}")
+        rospy.logdebug(f"Received packet from {address}:{port}. {len(packet)} bytes. {packet!r}")
 
         header = self.parse_header(packet)
         if not header:

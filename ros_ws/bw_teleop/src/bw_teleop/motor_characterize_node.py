@@ -40,7 +40,8 @@ class MotorCharacterizeNode:
         self._should_exit = False
         self.is_sample_valid = False
 
-        self.bridge = BridgeInterface(broadcast_address, port, device_id, {PingInfo: self.ping_callback})
+        self.bridge = BridgeInterface(broadcast_address, port, device_id)
+        self.bridge.register_callback(PingInfo, self.ping_callback)
         self.recording = MicrophoneRecorder(audio_directory, mic_id)
 
         self.ping_timer = rospy.Timer(rospy.Duration.from_sec(0.2), self.ping_timer_callback)
