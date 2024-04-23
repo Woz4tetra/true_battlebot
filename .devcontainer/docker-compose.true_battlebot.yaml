@@ -1,8 +1,8 @@
 version: "3"
 
 volumes:
-    true_battlebot_build:
-        name: ${PROJECT_NAME}_build
+    true_battlebot_ros_build:
+        name: ${PROJECT_NAME}_ros_build
         external: true
 
 services:
@@ -13,7 +13,6 @@ services:
         network_mode: "host"
         privileged: true
         stop_signal: SIGINT
-        ports: ["9090:9090", "10000:10000"]
         environment:
             - DISPLAY=${DISPLAY}
             - XAUTHORITY=${XAUTHORITY}
@@ -22,7 +21,31 @@ services:
         # https://askubuntu.com/questions/1237400/how-to-fix-x-error-badaccess-baddrawable-badshmseg-while-running-graphical-ap
         ipc: host
         volumes:
-            - ${PROJECT_NAME}_build:/home/${ORGANIZATION}/ros_ws:rw
+            - ${PROJECT_NAME}_ros_build:/home/${ORGANIZATION}/ros_ws:rw
+            - ${PROJECT_DIR}:/opt/${ORGANIZATION}/${PROJECT_NAME}:rw
+            - ${PROJECT_DIR}/scripts:/opt/${ORGANIZATION}/scripts:rw
+            - /media/storage/true-battlebot-media:/media/storage:rw
+            - /tmp/.X11-unix:/tmp/.X11-unix
+            - /home/${USER}/.Xauthority:/home/${ORGANIZATION}/.Xauthority:rw
+            - /home/${USER}/.gitconfig:/home/${ORGANIZATION}/.gitconfig:rw
+            - /home/${USER}/.ssh:/home/${ORGANIZATION}/.ssh:rw
+            - /dev:/dev:rw
+
+        command: bash /opt/${ORGANIZATION}/scripts/lib/watch_for_changes.sh
+
+    true_battlebot_perception_devcontainer:
+        image: ${PERCEPTION_IMAGE_VERSION}
+        container_name: ${PROJECT_NAME}_perception_devcontainer
+        restart: "no"
+        network_mode: "host"
+        privileged: true
+        stop_signal: SIGINT
+        environment:
+            - DISPLAY=${DISPLAY}
+            - XAUTHORITY=${XAUTHORITY}
+            - IMAGE_VERSION=${PERCEPTION_IMAGE_VERSION}
+        ipc: host
+        volumes:
             - ${PROJECT_DIR}:/opt/${ORGANIZATION}/${PROJECT_NAME}:rw
             - ${PROJECT_DIR}/scripts:/opt/${ORGANIZATION}/scripts:rw
             - /media/storage/torch-cache:/home/bwbots/.torch:rw
@@ -31,9 +54,6 @@ services:
             - /home/${USER}/.Xauthority:/home/${ORGANIZATION}/.Xauthority:rw
             - /home/${USER}/.gitconfig:/home/${ORGANIZATION}/.gitconfig:rw
             - /home/${USER}/.ssh:/home/${ORGANIZATION}/.ssh:rw
-            # Allow container to control docker
-            - /home/${USER}/.docker:/home/${ORGANIZATION}/.docker:rw # docker looks here inside a container
-            - /var/run/docker.sock:/var/run/docker.sock
             - /dev:/dev:rw
 
-        command: bash /opt/${ORGANIZATION}/scripts/lib/watch_for_changes.sh
+        command: sleep infinity

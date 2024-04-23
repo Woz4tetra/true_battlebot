@@ -19,7 +19,7 @@ docker run -it \
     --net="host" \
     --privileged \
     --stop-signal=SIGINT \
-    -v=${PROJECT_NAME}_build:/home/${ORGANIZATION}/ros_ws:rw \
+    -v=${PROJECT_NAME}_ros_build:/home/${ORGANIZATION}/ros_ws:rw \
     -v=${PROJECT_DIR}:/opt/${ORGANIZATION}/${PROJECT_NAME}:rw \
     -v=${PROJECT_DIR}/scripts:/opt/${ORGANIZATION}/scripts:rw \
     --rm \

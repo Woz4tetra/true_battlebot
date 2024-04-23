@@ -1,0 +1,18 @@
+<launch>
+    <arg name="map" default="$(env MAP_NAME)" />
+    <arg name="robot" default="$(env ROBOT)" />
+    <!-- <arg name="model" default="nhrl_dataset_mask_rcnn_R_50_FPN_3x_2023-11-20" /> -->
+    <arg name="model" default="battlebots_mask_rcnn_R_50_FPN_3x_2024-02-25" />
+
+    <include file="$(find bw_bringup)/launch/subsystems/common.launch" />
+    <include file="$(find bw_segmentation)/launch/segmentation.launch">
+        <arg name="model" value="$(find bw_data)/data/models/$(arg model).torchscript" />
+        <arg name="metadata" value="$(find bw_data)/data/models/$(arg model)_metadata.json" />
+    </include>
+    <include file="$(find bw_bringup)/launch/subsystems/camera.launch" />
+    <group ns="mini_bot">
+        <include file="$(find bw_teleop)/launch/mini_bot_bridge.launch" />
+        <include file="$(find bw_teleop)/launch/simple_teleop.launch" />
+        <include file="$(find bw_bringup)/launch/subsystems/twist_mux.launch" />
+    </group>
+</launch>

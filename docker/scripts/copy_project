@@ -9,10 +9,10 @@ IMAGE_VERSION=$(${BASE_DIR}/../get_image_tag)
 ORGANIZATION=$(${BASE_DIR}/../get_organization)
 PROJECT_NAME=$(${BASE_DIR}/../get_project_name)
 
-VALUE=$(docker volume ls -f name=${PROJECT_NAME}_build)
-if ! echo ${VALUE} | grep -q "${PROJECT_NAME}_build"; then
+VALUE=$(docker volume ls -f name=${PROJECT_NAME}_ros_build)
+if ! echo ${VALUE} | grep -q "${PROJECT_NAME}_ros_build"; then
     echo "Creating volume"
-    docker volume create ${PROJECT_NAME}_build
+    docker volume create ${PROJECT_NAME}_ros_build
 fi
 
 docker run \
@@ -22,7 +22,7 @@ docker run \
     --net="host" \
     --privileged \
     --stop-signal=SIGINT \
-    -v=${PROJECT_NAME}_build:/home/${ORGANIZATION}/ros_ws:rw \
+    -v=${PROJECT_NAME}_ros_build:/home/${ORGANIZATION}/ros_ws:rw \
     -v=${PROJECT_DIR}:/opt/${ORGANIZATION}/${PROJECT_NAME}:rw \
     -v=${PROJECT_DIR}/scripts:/opt/${ORGANIZATION}/scripts:rw \
     --rm \

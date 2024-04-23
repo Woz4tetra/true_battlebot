@@ -1,7 +1,7 @@
 [tool.black]
 line-length = 120
 skip-string-normalization = true
-target-version = ['py39']
+target-version = ['py311']
 
 [tool.ruff]
 exclude = [
@@ -10,17 +10,17 @@ exclude = [
     "build",
     "dist",
 ]
-ignore = [
+lint.ignore = [
     "E402", # Module level import not at top of file
     "Q003", # avoidable-escaped-quote
 ]
 fix = true
-unfixable = [
+lint.unfixable = [
     "F401", # unused imports
     "F841", # unused variables
 ]
 line-length = 120
-select = [
+lint.select = [
     "C9", # mccabe complexity
     "E", # pycodestyle error
     "F", # pyflakes
@@ -30,7 +30,10 @@ select = [
     "I", # isort
 ]
 
-[tool.ruff.flake8-quotes]
+[tool.ruff.lint.flake8-quotes]
 multiline-quotes = "double"
 avoid-escape = false
 inline-quotes = "double"
+
+[tool.ruff.lint.mccabe]
+max-complexity = 20

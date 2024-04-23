@@ -1,0 +1,14 @@
+mypy
+types-requests
+py_trees
+pytest
+dacite
+pymongo
+ansi2html
+svgwrite
+pyserial
+PySoundFile
+sounddevice
+argcomplete
+ruff
+toml

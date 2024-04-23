@@ -4,8 +4,6 @@ set -e
 
 BASE_DIR=$(realpath "$(dirname "${0}")")
 
-sudo -H python -m pip install -U rosdep rosinstall_generator vcstool
-
 sudo rosdep init
 rosdep update
 

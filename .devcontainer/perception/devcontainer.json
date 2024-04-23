@@ -1,0 +1,36 @@
+{
+    "name": "true_battlebot_perception_devcontainer",
+    "service": "true_battlebot_perception_devcontainer",
+    "dockerComposeFile": ["../docker-compose.true_battlebot.yaml"],
+    "initializeCommand": ".devcontainer/setup_container.sh",
+    "workspaceFolder": "/opt/bwbots/true_battlebot",
+    "shutdownAction": "none",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "editorconfig.editorconfig",
+                "ms-python.python",
+                "ms-python.vscode-pylance",
+                "ms-vscode.cpptools",
+                "jtr.vscode-position",
+                "github.copilot",
+                "github.copilot-chat",
+                "bierner.folder-source-actions",
+                "mhutchie.git-graph",
+                "eamodio.gitlens",
+                "visualstudioexptteam.vscodeintellicode",
+                "ms-vscode-remote.vscode-remote-extensionpack",
+                "ms-vsliveshare.vsliveshare",
+                "esbenp.prettier-vscode",
+                "styled-components.vscode-styled-components",
+                "redhat.vscode-yaml",
+                "ms-vscode-remote.remote-containers",
+                "timonwong.shellcheck",
+                "charliermarsh.ruff",
+                "matangover.mypy",
+                "redhat.vscode-xml",
+                "tamasfe.even-better-toml"
+            ]
+        }
+    }
+}

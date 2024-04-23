@@ -1,0 +1,20 @@
+[[maps]]
+name = "nhrl_small"
+[maps.size]
+x = 2.350
+y = 2.350
+z = 1.15
+
+[[maps]]
+name = "nhrl_large"
+[maps.size]
+x = 4.694
+y = 4.694
+z = 2.5
+
+[[maps]]
+name = "meatball_testbox"
+[maps.size]
+x = 1.35
+y = 1.35
+z = 1.0

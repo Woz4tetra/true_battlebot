@@ -112,7 +112,7 @@ MESSAGE_ENCLOSED_PATTERN = r"\"<-<(.*)>->\""
 def replace_multiline_chars(line: str) -> str:
     line = line.replace("\n", "\\n")
     line = line.replace("\r", "\\r")
-    line = line.replace("\"", "\\\"")
+    line = line.replace('"', '\\"')
     return line
 
 
@@ -130,14 +130,14 @@ class IncompleteLineTracker:
         if start_match is not None and stop_match is not None:
             return (
                 line[: start_match.start()]
-                + "\""
+                + '"'
                 + replace_multiline_chars(line[start_match.end() : stop_match.start()])
-                + "\""
+                + '"'
                 + line[stop_match.end() :]
             )
 
         if self.is_tracking and stop_match is not None:
-            line = replace_multiline_chars(line[: stop_match.start()]) + "\"" + line[stop_match.end() :]
+            line = replace_multiline_chars(line[: stop_match.start()]) + '"' + line[stop_match.end() :]
             return self.lines + line
 
         if start_match is None:
@@ -146,7 +146,7 @@ class IncompleteLineTracker:
             else:
                 raise ValueError
         else:
-            line = line[: start_match.start()] + "\"" + replace_multiline_chars(line[start_match.end() :])
+            line = line[: start_match.start()] + '"' + replace_multiline_chars(line[start_match.end() :])
             self.is_tracking = True
             self.lines = line
         return ""
@@ -182,28 +182,17 @@ def process_line(data: bytes, args: ParserInput, tracker: IncompleteLineTracker)
         sys.stdout.write(color_code + line)
 
 
-DEFAULT_DIR = "/media/storage/logs"
-
-
 def get_log_paths(search_dir: str) -> list[str]:
     return glob.glob(os.path.join(search_dir, "*.log"))
 
 
-def find_latest_log_file(search_dir: str, wait_for_new_file: bool) -> str:
-    list_of_files = get_log_paths(search_dir)
-    if len(list_of_files) == 0:
-        sys.stdout.write(COLORS.YELLOW + f"Waiting for log files to appear in {search_dir}\n")
-        while len(list_of_files) == 0:
-            list_of_files = get_log_paths(search_dir)
+def find_latest_log_file(search_dir: str) -> str:
+    latest_path = os.path.join(search_dir, "latest")
+    if not os.path.isfile(latest_path):
+        sys.stdout.write(f"Waiting for log files to appear in {search_dir}\n")
+        while not os.path.isfile(latest_path):
             time.sleep(1.0)
-    if wait_for_new_file:
-        now = time.time()
-        list_of_files = []
-        while len(list_of_files) == 0:
-            list_of_files = list(filter(lambda f: os.path.getctime(f) > now, get_log_paths(search_dir)))
-            time.sleep(1.0)
-    latest_file = max(list_of_files, key=os.path.getctime)
-    return os.path.join(search_dir, latest_file)
+    return latest_path
 
 
 def print_entire_file(filename: str, args: ParserInput) -> None:
@@ -220,6 +209,7 @@ FILTER_PATTERNS = ("message", "node", "logger", "file", "line", "function", "thr
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("filename", default=None, nargs="?", help="File to watch")
+    parser.add_argument("-d", "--dir", default="/media/storage/logs", nargs="?", help="Log directory")
     parser.add_argument("-l", "--level", default="INFO", help="Levels at or above this level will be shown")
     parser.add_argument(
         "-n",
@@ -230,12 +220,6 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("-a", "--all", action="store_true", help="Show all lines in the file and exit")
     parser.add_argument("-v", "--verbose", action="store_true", help="Show all info in each log line")
-    parser.add_argument(
-        "-w",
-        "--wait-file",
-        action="store_true",
-        help="Wait for a new file to appear. Ignored if filename is supplied.",
-    )
 
     for pattern in FILTER_PATTERNS:
         parser.add_argument(f"--{pattern}", type=str, help="Include by " + pattern)
@@ -302,10 +286,10 @@ def make_log_filters(args: argparse.Namespace) -> LogFilter:
 
 def main() -> None:
     args = parse_args()
-    wait_file = args.wait_file
     filename = args.filename
     print_all = args.all
     num_lines = args.num
+    log_dir = args.dir
     try:
         log_level = int(args.level)
     except ValueError:
@@ -322,7 +306,8 @@ def main() -> None:
     )
 
     if filename is None:
-        filename = find_latest_log_file(DEFAULT_DIR, wait_file)
+        filename = find_latest_log_file(log_dir)
+        print("Watching", filename)
 
     if print_all:
         print_entire_file(filename, inputs)

@@ -5,37 +5,21 @@ BASE_DIR=$(realpath "$(dirname $0)")
 cd ${BASE_DIR}/../resources
 
 IMAGE_VERSION=$(${BASE_DIR}/../get_image_tag)
+PERCEPTION_IMAGE_VERSION=$(${BASE_DIR}/../get_image_tag perception)
 PROJECT_NAME=$(${BASE_DIR}/../get_project_name)
 ORGANIZATION=$(${BASE_DIR}/../get_organization)
-PYTHON_INSTALL_VERSION=3.9
-UBUNTU_VERSION_MAJOR=20
-UBUNTU_VERSION_MINOR=04
-CUDA_VERSION_MAJOR=11.8
-CUDA_VERSION_MINOR=0
-CUDNN_VERSION_MAJOR=8
 docker build \
-    -f ./Dockerfile \
-    --build-arg ROS_DISTRO=noetic \
+    -f ./ros.Dockerfile \
     --build-arg PROJECT_NAME=${PROJECT_NAME} \
     --build-arg ORGANIZATION=${ORGANIZATION} \
-    --build-arg PYTHON_INSTALL_VERSION=${PYTHON_INSTALL_VERSION} \
-    --build-arg UBUNTU_VERSION_MAJOR=${UBUNTU_VERSION_MAJOR} \
-    --build-arg UBUNTU_VERSION_MINOR=${UBUNTU_VERSION_MINOR} \
-    --build-arg CUDA_VERSION_MAJOR=${CUDA_VERSION_MAJOR} \
-    --build-arg CUDA_VERSION_MINOR=${CUDA_VERSION_MINOR} \
-    --build-arg CUDNN_VERSION_MAJOR=${CUDNN_VERSION_MAJOR} \
     -t ${IMAGE_VERSION} .
 
-CONTAINERS=$(docker ps -a --format "{{.Names}}" | grep -e "${PROJECT_NAME}")
-if [[ ! -z ${CONTAINERS} ]]; then
-    docker stop ${CONTAINERS} &> /dev/null
-    docker rm ${CONTAINERS} &> /dev/null
-    echo -e '\033[1mRemoved Containers:\033[0m'
-    echo "${CONTAINERS}"
-fi
+docker build \
+    -f ./perception.Dockerfile \
+    --build-arg PROJECT_NAME=${PROJECT_NAME} \
+    --build-arg ORGANIZATION=${ORGANIZATION} \
+    -t ${PERCEPTION_IMAGE_VERSION} .
 
-IMAGES=$(docker image list --format "{{.Repository}}" | grep -E "vsc-dill|devcontainer|dev_container")
-# don't use "" around IMAGES var to take advantage of globbing
-docker rmi ${IMAGES} &> /dev/null
-echo -e '\033[1mRemoved Images:\033[0m'
-echo "${IMAGES}"
+echo -e '\033[1mBuilt Images:\033[0m'
+echo "${IMAGE_VERSION}"
+echo "${PERCEPTION_IMAGE_VERSION}"

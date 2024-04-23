@@ -1,0 +1,25 @@
+<launch>
+    <arg name="map" default="$(env MAP_NAME)" />
+    <arg name="robot" default="$(env ROBOT)" />
+    <arg name="auto_initialize" default="false" />
+
+    <node pkg="bw_bringup" type="shared_config_node.py" name="shared_config_node" output="screen" />
+
+    <include file="$(find bw_object_estimation)/launch/object_estimation.launch" />
+    <include file="$(find bw_tags)/launch/tag_visualization.launch" />
+    <include file="$(find bw_bringup)/launch/subsystems/foxglove_bridge.launch">
+        <arg name="port" value="8765" />
+        <arg name="asset_uri_allowlist" value="['package://(.*).(dae|stl|urdf|xacro)']" />
+    </include>
+    <include file="$(find bw_bringup)/launch/subsystems/rosbridge.launch" />
+    <include file="$(find bw_command_center)/launch/webapp_relay.launch" />
+    <include file="$(find bw_behaviors)/launch/bw_behaviors.launch" />
+    <include file="$(find bw_navigation)/launch/move_base_flex.launch" />
+    <include file="$(find bw_object_filter)/launch/object_filter.launch">
+        <arg name="auto_initialize" value="$(arg auto_initialize)" />
+        <arg name="filter_config" value="$(find bw_bringup)/config/robot_filter.yaml" />
+        <arg name="map" value="$(arg map)" />
+    </include>
+    <include file="$(find bw_teleop)/launch/bw_teleop.launch" />
+    <include file="$(find bw_system_health)/launch/system_health.launch" />
+</launch>

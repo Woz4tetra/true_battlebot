@@ -1,0 +1,5 @@
+[camera]
+type = "NoopCamera"
+
+[field_segmentation]
+type = "NoopSegmentation"

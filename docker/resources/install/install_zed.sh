@@ -12,12 +12,12 @@ sudo apt-get install --yes lsb-release wget less udev sudo build-essential cmake
 sudo mkdir -p /tmp
 sudo sudo chown -R 1000:1000 /tmp
 
-ZED_SDK_URL="https://stereolabs.sfo2.cdn.digitaloceanspaces.com/zedsdk/4.0/ZED_SDK_Ubuntu${UBUNTU_VERSION_MAJOR}_cuda${CUDA_VERSION_MAJOR}_v4.0.8.zstd.run"
+ZED_SDK_URL="https://download.stereolabs.com/zedsdk/${ZED_VERSION_MAJOR}.${ZED_VERSION_MINOR}/cu${CUDA_VERSION_MAJOR}${CUDA_VERSION_MINOR}/ubuntu${UBUNTU_VERSION_MAJOR}"
 echo "Using ZED SDK URL: ${ZED_SDK_URL}"
 cd /tmp
 wget -q -O ZED_SDK_Linux_Ubuntu.run ${ZED_SDK_URL}
 chmod +x ZED_SDK_Linux_Ubuntu.run 
-sudo ./ZED_SDK_Linux_Ubuntu.run -- silent skip_python skip_cuda
+sudo ./ZED_SDK_Linux_Ubuntu.run -- silent
 sudo chown -R 1000:1000 /usr/local/zed/
 sudo ln -sf /lib/x86_64-linux-gnu/libusb-1.0.so.0 /usr/lib/x86_64-linux-gnu/libusb-1.0.so 
 sudo rm ZED_SDK_Linux_Ubuntu.run 

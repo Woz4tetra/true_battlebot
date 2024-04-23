@@ -1,0 +1,4 @@
+--find-links https://download.pytorch.org/whl/cu121/torch_stable.html
+torch==2.2.2+cu121
+torchvision==0.17.2+cu121
+segmentation_models-pytorch==0.3.3
