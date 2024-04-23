@@ -1,11 +1,15 @@
 import logging
 from queue import Empty, Full, Queue
+from typing import Generic, Type, TypeVar
 
-from rosbridge.types import RawRosMessage
+from perception_tools.rosbridge.ros_message_interface import RosMessageInterface
+from perception_tools.rosbridge.types import RawRosMessage
 from roslibpy import Ros, Topic
 
+T = TypeVar("T", bound=RosMessageInterface)
 
-class RosPollSubscriber:
+
+class RosPollRawSubscriber(Generic[T]):
     topic: Topic
 
     def __init__(self, ros: Ros, topic: str, msg_type: str, queue_size: int):
@@ -22,6 +26,9 @@ class RosPollSubscriber:
         self.topic.subscribe(self._callback)
 
     def receive(self) -> RawRosMessage | None:
+        return self._receive_raw()
+
+    def _receive_raw(self) -> RawRosMessage | None:
         if self.queue_size != 1:
             return self._pop_message()
         return_val = self.last_value
@@ -47,3 +54,17 @@ class RosPollSubscriber:
         except Empty:
             return_val = None
         return return_val
+
+
+class RosPollSubscriber(RosPollRawSubscriber, Generic[T]):
+    topic: Topic
+
+    def __init__(self, ros: Ros, topic: str, msg_type: Type[T], queue_size: int):
+        self.msg_type = msg_type
+        super().__init__(ros, topic, msg_type.type, queue_size)
+
+    def receive(self) -> T | None:
+        raw_msg = self._receive_raw()
+        if raw_msg is None:
+            return None
+        return self.msg_type.from_raw(raw_msg)

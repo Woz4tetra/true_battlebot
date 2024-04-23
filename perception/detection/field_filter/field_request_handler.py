@@ -2,13 +2,16 @@ import logging
 import time
 
 from perception_tools.messages.field_result import FieldResult
-from rosbridge.ros_poll_subscriber import RosPollSubscriber
-from rosbridge.ros_publisher import RosPublisher
+from perception_tools.rosbridge.ros_poll_subscriber import RosPollRawSubscriber
+from perception_tools.rosbridge.ros_publisher import RosPublisher
 
 
 class FieldRequestHandler:
     def __init__(
-        self, stale_image: float, request_subscriber: RosPollSubscriber, response_subscriber: RosPublisher
+        self,
+        stale_image: float,
+        request_subscriber: RosPollRawSubscriber,
+        response_subscriber: RosPublisher[FieldResult],
     ) -> None:
         self.logger = logging.getLogger("perception")
         self.stale_image = stale_image
@@ -23,4 +26,4 @@ class FieldRequestHandler:
         return self.request_subscriber.receive() is not None
 
     def send_response(self, field_result: FieldResult) -> None:
-        pass
+        self.response_subscriber.publish(field_result)

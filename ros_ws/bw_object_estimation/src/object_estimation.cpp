@@ -47,10 +47,10 @@ void ObjectEstimation::synced_callback(
             continue;
         }
         robot_msg.label = instance.label;
-        robot_msg.state.header = segmentation->header;
+        robot_msg.header = segmentation->header;
         robot_array.robots.push_back(robot_msg);
 
-        robot_poses.poses.push_back(robot_msg.state.pose.pose);
+        robot_poses.poses.push_back(robot_msg.pose.pose);
     }
     _robot_pub.publish(robot_array);
     _robot_pose_pub.publish(robot_poses);
@@ -105,10 +105,10 @@ bool ObjectEstimation::find_object(bw_interfaces::EstimatedObject &robot_msg, cv
 
     cv::Point3d center = get_ray(centroid, depth_image);
 
-    robot_msg.state.pose.pose.position.x = center.x;
-    robot_msg.state.pose.pose.position.y = center.y;
-    robot_msg.state.pose.pose.position.z = center.z;
-    robot_msg.state.pose.pose.orientation.w = 1.0; // orientation is not calculated
+    robot_msg.pose.pose.position.x = center.x;
+    robot_msg.pose.pose.position.y = center.y;
+    robot_msg.pose.pose.position.z = center.z;
+    robot_msg.pose.pose.orientation.w = 1.0; // orientation is not calculated
 
     cv::Point3d edge = get_ray(max_px, depth_image);
 

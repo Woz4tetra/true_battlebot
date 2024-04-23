@@ -2,5 +2,6 @@ from typing import Union
 
 from .instance_segmentation_config import InstanceSegmentationConfig
 from .noop_segmentation_config import NoopSegmentationConfig
+from .simulated_segmentation_config import SimulatedSegmentationConfig
 
-SegmentationConfig = Union[NoopSegmentationConfig, InstanceSegmentationConfig]
+SegmentationConfig = Union[NoopSegmentationConfig, InstanceSegmentationConfig, SimulatedSegmentationConfig]

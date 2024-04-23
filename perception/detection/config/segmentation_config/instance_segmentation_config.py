@@ -4,11 +4,11 @@ from dataclasses import dataclass
 @dataclass
 class InstanceSegmentationConfig:
     type: str = "InstanceSegmentation"
-    model_path = "model.torchscript"
-    metadata_path = "model_metadata.json"
-    threshold = 0.8
-    nms_threshold = 0.4
-    mask_conversion_threshold = 0.5
-    decimate = 1.0
-    image_delay_threshold = 0.2
-    debug = False
+    model_path: str = "model.torchscript"
+    metadata_path: str = "model_metadata.json"
+    threshold: float = 0.8
+    nms_threshold: float = 0.4
+    mask_conversion_threshold: float = 0.5
+    decimate: float = 1.0
+    image_delay_threshold: float = 0.2
+    debug: bool = False

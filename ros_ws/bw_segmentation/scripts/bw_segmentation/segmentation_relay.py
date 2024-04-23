@@ -6,8 +6,8 @@ import cv2
 import numpy as np
 import rospy
 from bw_interfaces.msg import Contour, SegmentationInstance, SegmentationInstanceArray, UVKeypoint
+from bw_shared.enums.labels import Label
 from bw_tools.get_param import get_param
-from bw_tools.structs.labels import Label
 from cv_bridge import CvBridge, CvBridgeError
 from sensor_msgs.msg import Image
 

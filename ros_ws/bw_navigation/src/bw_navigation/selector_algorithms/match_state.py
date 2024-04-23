@@ -17,15 +17,15 @@ class MatchState:
 
     @cached_property
     def guidance_pose(self) -> Pose2D:
-        return Pose2D.from_msg(self.guidance_bot.state.pose.pose)
+        return Pose2D.from_msg(self.guidance_bot.pose.pose)
 
     @cached_property
     def opponent_pose(self) -> Pose2D:
-        return Pose2D.from_msg(self.opponent_bot.state.pose.pose)
+        return Pose2D.from_msg(self.opponent_bot.pose.pose)
 
     @cached_property
     def controlled_pose(self) -> Pose2D:
-        return Pose2D.from_msg(self.controlled_bot.state.pose.pose)
+        return Pose2D.from_msg(self.controlled_bot.pose.pose)
 
     @cached_property
     def guidance_to_opponent_heading(self) -> float:

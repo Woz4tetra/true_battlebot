@@ -323,7 +323,7 @@ def load_data(bag_path: str, temp_dir: str) -> tuple[EstimatedObject, CameraInfo
 
     with tqdm(total=bag.get_message_count()) as pbar:
         for topic, msg, timestamp in bag.read_messages():
-            if "filter/field" in topic and msg.state.header.frame_id and not field.state.header.frame_id:
+            if "filter/field" in topic and msg.header.frame_id and not field.header.frame_id:
                 field = msg
             elif "/camera_0/rgb/camera_info" in topic and not camera_info.header.frame_id:
                 camera_info = msg

@@ -15,8 +15,8 @@ class SacrificialSelector(BaseSelector):
         pass
 
     def get_target(self, match_state: MatchState) -> SelectionResult:
-        control_pose = Pose2D.from_msg(match_state.guidance_bot.state.pose.pose)
-        opponent_pose = Pose2D.from_msg(match_state.opponent_bot.state.pose.pose)
+        control_pose = Pose2D.from_msg(match_state.guidance_bot.pose.pose)
+        opponent_pose = Pose2D.from_msg(match_state.opponent_bot.pose.pose)
 
         mid_pose = Pose2D(
             (opponent_pose.x + control_pose.x) / 2,

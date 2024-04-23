@@ -7,10 +7,10 @@ import tf2_ros
 from apriltag_ros.msg import AprilTagDetectionArray
 from bw_interfaces.msg import EstimatedObject, EstimatedObjectArray
 from bw_shared.configs.robots import RobotConfig, RobotFleetConfig, RobotTeam
+from bw_shared.enums.labels import Label
 from bw_tools.configs.rosparam_client import get_shared_config
 from bw_tools.get_param import get_param
 from bw_tools.structs.header import Header
-from bw_tools.structs.labels import Label
 from bw_tools.structs.pose2d import Pose2D
 from bw_tools.structs.pose2d_stamped import Pose2DStamped
 from bw_tools.structs.rpy import RPY
@@ -187,7 +187,7 @@ class RobotFilter:
     ) -> None:
         map_measurements: List[Pose] = []
         for measurement in robots:
-            map_pose = self.transform_to_map(measurement.state.header, measurement.state.pose.pose)
+            map_pose = self.transform_to_map(measurement.header, measurement.pose.pose)
             if map_pose is None:
                 rospy.logwarn(f"Could not transform pose for measurement {measurement}")
                 continue
@@ -353,7 +353,7 @@ class RobotFilter:
             robot_filter.reset()
 
     def field_received(self) -> bool:
-        return self.field.state.header.stamp != rospy.Time(0)
+        return self.field.header.stamp != rospy.Time(0)
 
     def is_in_field_bounds(self, position: Point) -> bool:
         if not self.field_received():

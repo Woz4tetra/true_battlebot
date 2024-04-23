@@ -8,6 +8,7 @@ import tf2_ros
 from bw_interfaces.msg import CageCorner as RosCageCorner
 from bw_interfaces.msg import EstimatedObject, SegmentationInstance, SegmentationInstanceArray
 from bw_shared.configs.maps import FieldType
+from bw_shared.enums.labels import Label
 from bw_tools.configs.rosparam_client import get_shared_config
 from bw_tools.get_param import get_param
 from bw_tools.projection_math.find_minimum_rectangle import (
@@ -19,7 +20,6 @@ from bw_tools.projection_math.get_field_segmentation import get_field_segmentati
 from bw_tools.projection_math.points_transform import points_transform
 from bw_tools.projection_math.project_segmentation import project_segmentation, raycast_segmentation
 from bw_tools.structs.cage_corner import CageCorner
-from bw_tools.structs.labels import Label
 from bw_tools.structs.rpy import RPY
 from bw_tools.structs.transform3d import Transform3D
 from bw_tools.structs.xyz import XYZ
@@ -168,9 +168,9 @@ class FieldFilter:
 
         self.estimated_field = EstimatedObject()
         self.estimated_field.size = extents.to_msg()
-        self.estimated_field.state.header = Header(frame_id=self.relative_map_frame, stamp=rospy.Time.now())
-        self.estimated_field.state.child_frame_id = self.base_frame
-        self.estimated_field.state.pose.pose = transform.to_pose_msg()
+        self.estimated_field.header = Header(frame_id=self.relative_map_frame, stamp=rospy.Time.now())
+        self.estimated_field.child_frame_id = self.base_frame
+        self.estimated_field.pose.pose = transform.to_pose_msg()
         self.estimated_field.label = Label.FIELD.value
         self.estimated_field_pub.publish(self.estimated_field)
         self.publish_field_markers(self.estimated_field)
@@ -243,13 +243,13 @@ class FieldFilter:
         return delta_transform.rpy
 
     def publish_field_tf(self, estimated_field: EstimatedObject) -> tf2_ros.TransformStamped:
-        field_pose = estimated_field.state.pose.pose
+        field_pose = estimated_field.pose.pose
         transform = Transform3D.from_pose_msg(field_pose)
 
         field_tf = tf2_ros.TransformStamped()
-        field_tf.header.stamp = estimated_field.state.header.stamp
-        field_tf.header.frame_id = estimated_field.state.header.frame_id
-        field_tf.child_frame_id = estimated_field.state.child_frame_id
+        field_tf.header.stamp = estimated_field.header.stamp
+        field_tf.header.frame_id = estimated_field.header.frame_id
+        field_tf.child_frame_id = estimated_field.child_frame_id
         field_tf.transform = transform.to_msg()
         return field_tf
 
@@ -379,9 +379,9 @@ class FieldFilter:
     def run(self) -> None:
         while not rospy.is_shutdown():
             rospy.sleep(0.5)
-            if len(self.estimated_field.state.header.frame_id) == 0:
+            if len(self.estimated_field.header.frame_id) == 0:
                 continue
-            self.estimated_field.state.header.stamp = rospy.Time.now()
+            self.estimated_field.header.stamp = rospy.Time.now()
             self.publish_transforms()
 
 
