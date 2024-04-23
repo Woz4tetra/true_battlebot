@@ -2,7 +2,8 @@ from dataclasses import dataclass
 
 
 @dataclass
-class Size:
+class Quaternion:
     x: float
     y: float
     z: float
+    w: float

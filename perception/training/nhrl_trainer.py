@@ -11,7 +11,7 @@ from detectron2.data import DatasetMapper, MetadataCatalog, build_detection_test
 from detectron2.engine import DefaultTrainer
 from detectron2.engine.hooks import HookBase
 from detectron2.evaluation import COCOEvaluator, SemSegEvaluator
-from detectron2.utils.logger import log_every_n, log_every_n_seconds
+from detectron2.utils.logger import log_every_n_seconds
 from matplotlib import pyplot as plt
 from torch.utils.data import DataLoader
 

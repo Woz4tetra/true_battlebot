@@ -4,8 +4,7 @@ from dataclasses import asdict, dataclass
 from typing import List
 
 from dacite import from_dict
-
-from bw_tools.structs.color import Color
+from perception_tools.messages.color import Color
 
 
 @dataclass
