@@ -1,6 +1,7 @@
 import numpy as np
-from bw_tools.structs.xy import XY
 from scipy.spatial import ConvexHull
+
+from bw_tools.structs.xy import XY
 
 
 def find_minimum_rectangle(points: np.ndarray) -> np.ndarray:
