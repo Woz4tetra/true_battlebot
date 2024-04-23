@@ -128,10 +128,10 @@ ENV PATH=/opt/${ORGANIZATION}/scripts${PATH:+:${PATH}} \
 # launch environment
 # ---
 
-COPY --chown=1000:1000 ./install/bashrc/base_bashrc ${HOME}/.base_bashrc
+COPY --chown=1000:1000 ./install/bashrc/base_bashrc ${HOME}/.bashrc
 COPY --chown=1000:1000 ./install/bashrc/perception_bashrc ${HOME}/bashrc_overlay
 RUN cat ${HOME}/bashrc_overlay >> ${HOME}/.bashrc && rm ${HOME}/bashrc_overlay
-
+    
 COPY --chown=1000:1000 \
     ./launch/perception.sh \
     /opt/${ORGANIZATION}/

@@ -13,7 +13,7 @@ class CommandLineArgs(Protocol):
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("config_dir", type=str, required=True)
+    parser.add_argument("config_dir", type=str)
     args: CommandLineArgs = cast(CommandLineArgs, parser.parse_args())
 
     config_dir = args.config_dir
