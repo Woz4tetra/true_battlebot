@@ -4,11 +4,12 @@ from perception_tools.messages.camera.image import Image
 from perception_tools.messages.field_result import FieldResult
 from perception_tools.messages.segmentation.segmentation_instance_array import SegmentationInstanceArray
 
-from app.config.field_filter_config import FieldFilterConfig
+from app.config.field_filter_config.ransac_field_filter_config import RansacFieldFilterConfig
+from app.field_filter.field_filter_interface import FieldFilterInterface
 
 
-class FieldFilter:
-    def __init__(self, map_config: MapConfig, field_filter_config: FieldFilterConfig) -> None:
+class RansacFieldFilter(FieldFilterInterface):
+    def __init__(self, map_config: MapConfig, field_filter_config: RansacFieldFilterConfig) -> None:
         self.map_config = map_config
         self.field_filter_config = field_filter_config
 

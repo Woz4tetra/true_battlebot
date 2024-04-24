@@ -2,5 +2,5 @@ from dataclasses import dataclass
 
 
 @dataclass
-class FieldFilterConfig:
+class FieldRequestConfig:
     stale_image_timeout: float = 1.0
