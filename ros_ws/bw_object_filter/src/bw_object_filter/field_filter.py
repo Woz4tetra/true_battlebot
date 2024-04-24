@@ -73,35 +73,18 @@ class FieldFilter:
         self.segmentation = SegmentationInstanceArray()
         self.camera_model = PinholeCameraModel()
 
-        self.plane_request_pub = rospy.Publisher("plane_request", PointStamped, queue_size=1)
-        self.plane_response_sub = rospy.Subscriber("plane_response", PoseStamped, self.plane_response_callback)
+        self.request_pub = rospy.Publisher("/perception/field/request", Empty, queue_size=1)
+        self.response_sub = rospy.Subscriber("/perception/field/response", EstimatedObject, self.response_callback)
         self.estimated_field_pub = rospy.Publisher("filter/field", EstimatedObject, queue_size=1, latch=True)
         self.estimated_field_marker_pub = rospy.Publisher("filter/field/marker", MarkerArray, queue_size=1, latch=True)
-        self.debug_marker_pub = rospy.Publisher("filter/field/debug", MarkerArray, queue_size=1, latch=True)
         self.corner_pub = rospy.Publisher("cage_corner", RosCageCorner, queue_size=1, latch=True)
 
-        self.recommended_point_sub = rospy.Subscriber(
-            "estimation/recommended_field_point", PointStamped, self.recommended_point_callback
-        )
-        # self.camera_tilt_sub = rospy.Subscriber("imu", Imu, self.imu_callback, queue_size=1)
         self.manual_request_sub = rospy.Subscriber(
             "manual_plane_request", Empty, self.manual_request_callback, queue_size=1
         )
         self.corner_side_sub = rospy.Subscriber(
             "set_cage_corner", RosCageCorner, self.corner_side_callback, queue_size=1
         )
-        self.segmentation_sub = rospy.Subscriber(
-            "segmentation", SegmentationInstanceArray, self.segmentation_callback, queue_size=1
-        )
-        self.camera_info_sub = rospy.Subscriber("camera_info", CameraInfo, self.camera_info_callback, queue_size=1)
-
-    def segmentation_callback(self, segmentation: SegmentationInstanceArray) -> None:
-        self.segmentation = segmentation
-
-    def camera_info_callback(self, camera_info: CameraInfo) -> None:
-        rospy.loginfo("Received camera info")
-        self.camera_model.fromCameraInfo(camera_info)
-        self.camera_info_sub.unregister()
 
     def recommended_point_callback(self, point: PointStamped) -> None:
         if not self.has_manual_query_been_received:
@@ -110,12 +93,7 @@ class FieldFilter:
             rospy.loginfo("Requesting plane from manual query.")
             self.has_manual_query = False
             should_request = True
-        else:
-            should_request = self.did_camera_tilt()
-            if should_request:
-                rospy.loginfo("Camera tilt detected.")
         if should_request:
-            self.reset_camera_tilt_detection()
             self.publish_plane_request(point)
             self.prev_request_time = rospy.Time.now()
 
@@ -126,91 +104,20 @@ class FieldFilter:
 
     def publish_plane_request(self, request_point: PointStamped) -> None:
         rospy.loginfo("Requesting plane")
-        self.plane_request_pub.publish(request_point)
+        self.request_pub.publish(request_point)
 
-    def plane_response_callback(self, plane_pose: PoseStamped) -> None:
-        rospy.loginfo("Received plane response")
-        lens_plane_pose = lookup_pose_in_frame(
-            self.tf_buffer, plane_pose, self.segmentation.header.frame_id, timeout=rospy.Duration.from_sec(30.0)
-        )
-        if lens_plane_pose is None:
-            return
-        lens_plane_pose.pose.orientation = self.rotate_field_orientation(
-            lens_plane_pose.pose.orientation, self.field_rotate_tf
-        )
-
-        field_centered_pose = lens_plane_pose.pose
-        extents = self.unbounded_dims
-        passes = False
-
-        field_segmentation = None if self.always_use_default_dims else get_field_segmentation(self.segmentation)
-        if field_segmentation:
-            field_centered_pose, extents = self.compute_plane_from_segmentation(
-                lens_plane_pose.pose, field_segmentation
-            )
-            passes = self.extents_range[0] < extents < self.extents_range[1]
-
-        if passes:
-            rospy.loginfo("Field passes validation.")
-        else:
-            rospy.logwarn(f"Field does not pass validation. Using default values: {self.unbounded_dims}")
-            field_centered_pose = lens_plane_pose.pose
-            extents = self.unbounded_dims
-
-        lens_field_pose = PoseStamped(header=self.segmentation.header, pose=field_centered_pose)
-        base_field_pose = lookup_pose_in_frame(
-            self.tf_buffer, lens_field_pose, self.base_frame, timeout=rospy.Duration.from_sec(30.0)
-        )
-        if base_field_pose is None:
-            return
-
-        transform = Transform3D.from_pose_msg(base_field_pose.pose).inverse()
+    def response_callback(self, field: EstimatedObject) -> None:
+        rospy.loginfo("Received field response")
+        transform = Transform3D.from_pose_msg(field.pose.pose).inverse()
 
         self.estimated_field = EstimatedObject()
-        self.estimated_field.size = extents.to_msg()
-        self.estimated_field.header = Header(frame_id=self.relative_map_frame, stamp=rospy.Time.now())
-        self.estimated_field.child_frame_id = self.base_frame
+        self.estimated_field.size = field.size
+        self.estimated_field.header = Header(frame_id=field.child_frame_id, stamp=field.header.stamp)
+        self.estimated_field.child_frame_id = field.header.frame_id
         self.estimated_field.pose.pose = transform.to_pose_msg()
         self.estimated_field.label = Label.FIELD.value
         self.estimated_field_pub.publish(self.estimated_field)
         self.publish_field_markers(self.estimated_field)
-
-    def compute_plane_from_segmentation(
-        self, lens_plane_pose: Pose, field_segmentation: SegmentationInstance
-    ) -> Tuple[Pose, XYZ]:
-        plane_transform = Transform3D.from_position_and_quaternion(
-            lens_plane_pose.position, lens_plane_pose.orientation
-        )
-
-        plane_center = plane_transform.position_array
-        plane_normal = plane_transform.rotation_matrix @ np.array((0, 0, 1))
-
-        rays = raycast_segmentation(self.camera_model, field_segmentation)
-        projected_points = project_segmentation(rays, plane_center, plane_normal)
-
-        flattened_points = points_transform(projected_points, plane_transform.inverse().tfmat)
-        flattened_points2d = flattened_points[:, :2]
-        min_rect = find_minimum_rectangle(flattened_points2d)
-        extents = get_rectangle_extents(min_rect)
-        angle = get_rectangle_angle(min_rect)
-        centroid = np.mean(min_rect, axis=0)
-        field_centered_plane = Transform3D.from_position_and_rpy(
-            Vector3(centroid[0], centroid[1], 0), RPY((0, 0, angle))
-        ).forward_by(plane_transform)
-
-        self.publish_debug_markers(flattened_points, min_rect, centroid)
-        rospy.loginfo(f"Field angle: {angle}. Extents: {extents}")
-
-        return field_centered_plane.to_pose_msg(), XYZ(extents.x, extents.y, self.expected_size.z)
-
-    def rotate_field_orientation(
-        self,
-        field_orientation: Quaternion,
-        rotate_tf: Transform3D,
-    ) -> Quaternion:
-        field_tf = Transform3D.from_position_and_quaternion(Vector3(), field_orientation)
-        rotated_field = field_tf.transform_by(rotate_tf)
-        return rotated_field.quaternion
 
     def get_cage_aligned_transform(self) -> Transform3D:
         if self.cage_corner is None:
@@ -226,22 +133,6 @@ class FieldFilter:
         self.cage_corner = CageCorner.from_msg(corner)
         self.corner_pub.publish(corner)
 
-    def imu_callback(self, imu: Imu) -> None:
-        self.current_imu = imu
-
-    def did_camera_tilt(self) -> bool:
-        delta_rpy = self.compute_delta_rpy(self.current_imu.orientation, self.prev_imu.orientation)
-        return bool(np.any(np.abs(delta_rpy.to_array()) > self.angle_delta_threshold))
-
-    def reset_camera_tilt_detection(self) -> None:
-        self.prev_imu = self.current_imu
-
-    def compute_delta_rpy(self, new_quat: Quaternion, old_quat: Quaternion) -> RPY:
-        new_transform = Transform3D.from_position_and_quaternion(Vector3(0, 0, 0), new_quat)
-        old_transform = Transform3D.from_position_and_quaternion(Vector3(0, 0, 0), old_quat)
-        delta_transform = new_transform.transform_by(old_transform.inverse())
-        return delta_transform.rpy
-
     def publish_field_tf(self, estimated_field: EstimatedObject) -> tf2_ros.TransformStamped:
         field_pose = estimated_field.pose.pose
         transform = Transform3D.from_pose_msg(field_pose)
@@ -253,18 +144,18 @@ class FieldFilter:
         field_tf.transform = transform.to_msg()
         return field_tf
 
-    def publish_aligned_tf(self) -> tf2_ros.TransformStamped:
+    def publish_aligned_tf(self, estimated_field: EstimatedObject) -> tf2_ros.TransformStamped:
         transform = self.get_cage_aligned_transform()
         aligned_tf = tf2_ros.TransformStamped()
         aligned_tf.header.stamp = rospy.Time.now()
         aligned_tf.header.frame_id = self.map_frame
-        aligned_tf.child_frame_id = self.relative_map_frame
+        aligned_tf.child_frame_id = estimated_field.header.frame_id
         aligned_tf.transform = transform.to_msg()
         return aligned_tf
 
     def publish_transforms(self) -> None:
         field_tf = self.publish_field_tf(self.estimated_field)
-        aligned_tf = self.publish_aligned_tf()
+        aligned_tf = self.publish_aligned_tf(self.estimated_field)
         self.tf_broadcaster.sendTransform([field_tf, aligned_tf])
 
     def publish_field_markers(self, estimated_field: EstimatedObject) -> None:
@@ -274,66 +165,6 @@ class FieldFilter:
             self.estimated_object_to_text_marker(estimated_field, "far side", ColorRGBA(1, 1, 1, 1), 2, (0, -1)),
         ]
         self.estimated_field_marker_pub.publish(MarkerArray(markers=markers))
-
-    def publish_debug_markers(self, flattened_points: np.ndarray, min_rect: np.ndarray, centroid: np.ndarray) -> None:
-        header = Header(frame_id=self.relative_map_frame, stamp=rospy.Time.now())
-        self.debug_marker_pub.publish(
-            MarkerArray(
-                markers=[
-                    self.polygon_to_marker(header, flattened_points, ColorRGBA(0, 0.5, 1, 1), 1),
-                    self.polygon_to_marker(header, min_rect, ColorRGBA(1, 0, 0, 1), 2),
-                    self.point_to_marker(header, (centroid[0], centroid[1], 0.0), ColorRGBA(1, 0, 0, 1), 3, 0.1),
-                ]
-            )
-        )
-
-    def polygon_to_marker(
-        self,
-        header: Header,
-        points: np.ndarray,
-        color: ColorRGBA,
-        id: int = 0,
-        line_width: float = 0.05,
-        closed: bool = True,
-    ) -> Marker:
-        marker = Marker()
-        marker.header = Header(frame_id=header.frame_id, stamp=rospy.Time.now())
-        marker.type = Marker.LINE_STRIP
-        marker.ns = "polygon"
-        marker.id = id
-        marker.action = Marker.ADD
-        marker.frame_locked = True
-        marker.scale.x = line_width
-        marker.color = color
-        if points.shape[1] == 3:
-            marker.points = [Point(x=x, y=y, z=z) for x, y, z in points]
-        else:
-            marker.points = [Point(x=x, y=y, z=0) for x, y in points]
-        if closed:
-            marker.points.append(marker.points[0])
-        return marker
-
-    def point_to_marker(
-        self,
-        header: Header,
-        point: Tuple[float, float, float],
-        color: ColorRGBA,
-        id: int = 0,
-        size: float = 1.0,
-        type: int = Marker.SPHERE,
-    ) -> Marker:
-        marker = Marker()
-        marker.header = Header(frame_id=header.frame_id, stamp=rospy.Time.now())
-        marker.type = type
-        marker.ns = "polygon"
-        marker.id = id
-        marker.action = Marker.ADD
-        marker.pose.position = Point(x=point[0], y=point[1], z=point[2])
-        marker.pose.orientation.w = 1.0
-        marker.frame_locked = False
-        marker.scale = Vector3(x=size, y=size, z=size)
-        marker.color = color
-        return marker
 
     def estimated_object_to_plane_marker(
         self, estimated_object: EstimatedObject, color: ColorRGBA, id: int = 0

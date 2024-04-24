@@ -1,6 +1,5 @@
 from typing import Union
 
-from container import Container
 from perception_tools.messages.camera.image import Image
 from perception_tools.messages.segmentation.segmentation_instance_array import SegmentationInstanceArray
 from perception_tools.rosbridge.ros_factory import RosFactory
@@ -9,6 +8,7 @@ from app.config.segmentation_config.instance_segmentation_config import Instance
 from app.config.segmentation_config.noop_segmentation_config import NoopSegmentationConfig
 from app.config.segmentation_config.segmentation_types import SegmentationConfig
 from app.config.segmentation_config.simulated_segmentation_config import SimulatedSegmentationConfig
+from app.container import Container
 
 from .instance_segmentation import InstanceSegmentation
 from .noop_segmentation import NoopSegmentation

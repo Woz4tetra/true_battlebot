@@ -3,3 +3,7 @@ type = "NoopCamera"
 
 [field_segmentation]
 type = "NoopSegmentation"
+# type = "SimulatedSegmentationConfig"
+
+[field_filter]
+type = "SimulatedFieldFilter"

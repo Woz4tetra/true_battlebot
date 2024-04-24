@@ -16,4 +16,4 @@ class RansacFieldFilter(FieldFilterInterface):
     def compute_field(
         self, segmentations: SegmentationInstanceArray, depth_image: Image, camera_info: CameraInfo
     ) -> FieldResult:
-        pass
+        return FieldResult()

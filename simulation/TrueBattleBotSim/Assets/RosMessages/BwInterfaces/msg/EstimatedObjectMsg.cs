@@ -13,20 +13,29 @@ namespace RosMessageTypes.BwInterfaces
         public const string k_RosMessageName = "bw_interfaces/EstimatedObject";
         public override string RosMessageName => k_RosMessageName;
 
-        public Nav.OdometryMsg state;
+        public Std.HeaderMsg header;
+        public string child_frame_id;
+        public Geometry.PoseWithCovarianceMsg pose;
+        public Geometry.TwistWithCovarianceMsg twist;
         public Geometry.Vector3Msg size;
         public string label;
 
         public EstimatedObjectMsg()
         {
-            this.state = new Nav.OdometryMsg();
+            this.header = new Std.HeaderMsg();
+            this.child_frame_id = "";
+            this.pose = new Geometry.PoseWithCovarianceMsg();
+            this.twist = new Geometry.TwistWithCovarianceMsg();
             this.size = new Geometry.Vector3Msg();
             this.label = "";
         }
 
-        public EstimatedObjectMsg(Nav.OdometryMsg state, Geometry.Vector3Msg size, string label)
+        public EstimatedObjectMsg(Std.HeaderMsg header, string child_frame_id, Geometry.PoseWithCovarianceMsg pose, Geometry.TwistWithCovarianceMsg twist, Geometry.Vector3Msg size, string label)
         {
-            this.state = state;
+            this.header = header;
+            this.child_frame_id = child_frame_id;
+            this.pose = pose;
+            this.twist = twist;
             this.size = size;
             this.label = label;
         }
@@ -35,14 +44,20 @@ namespace RosMessageTypes.BwInterfaces
 
         private EstimatedObjectMsg(MessageDeserializer deserializer)
         {
-            this.state = Nav.OdometryMsg.Deserialize(deserializer);
+            this.header = Std.HeaderMsg.Deserialize(deserializer);
+            deserializer.Read(out this.child_frame_id);
+            this.pose = Geometry.PoseWithCovarianceMsg.Deserialize(deserializer);
+            this.twist = Geometry.TwistWithCovarianceMsg.Deserialize(deserializer);
             this.size = Geometry.Vector3Msg.Deserialize(deserializer);
             deserializer.Read(out this.label);
         }
 
         public override void SerializeTo(MessageSerializer serializer)
         {
-            serializer.Write(this.state);
+            serializer.Write(this.header);
+            serializer.Write(this.child_frame_id);
+            serializer.Write(this.pose);
+            serializer.Write(this.twist);
             serializer.Write(this.size);
             serializer.Write(this.label);
         }
@@ -50,7 +65,10 @@ namespace RosMessageTypes.BwInterfaces
         public override string ToString()
         {
             return "EstimatedObjectMsg: " +
-            "\nstate: " + state.ToString() +
+            "\nheader: " + header.ToString() +
+            "\nchild_frame_id: " + child_frame_id.ToString() +
+            "\npose: " + pose.ToString() +
+            "\ntwist: " + twist.ToString() +
             "\nsize: " + size.ToString() +
             "\nlabel: " + label.ToString();
         }

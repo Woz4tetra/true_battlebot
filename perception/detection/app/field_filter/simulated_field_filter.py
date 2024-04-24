@@ -1,3 +1,5 @@
+import logging
+
 from bw_shared.configs.maps import MapConfig
 from perception_tools.messages.camera.camera_info import CameraInfo
 from perception_tools.messages.camera.image import Image
@@ -18,8 +20,15 @@ class SimulatedFieldFilter(FieldFilterInterface):
     ) -> None:
         self.map_config = map_config
         self.field_filter_config = field_filter_config
+        self.simulated_field_result_sub = simulated_field_result_sub
+        self.last_field_result = FieldResult()
+        self.logger = logging.getLogger("perception")
 
     def compute_field(
         self, segmentations: SegmentationInstanceArray, depth_image: Image, camera_info: CameraInfo
     ) -> FieldResult:
-        pass
+        if result := self.simulated_field_result_sub.receive():
+            self.last_field_result = result
+        else:
+            self.logger.warning("No simulated field result received. Using last result.")
+        return self.last_field_result

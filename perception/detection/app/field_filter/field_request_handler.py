@@ -13,12 +13,12 @@ class FieldRequestHandler:
         self,
         field_request_config: FieldRequestConfig,
         request_subscriber: RosPollRawSubscriber,
-        response_subscriber: RosPublisher[FieldResult],
+        response_publisher: RosPublisher[FieldResult],
     ) -> None:
         self.logger = logging.getLogger("perception")
         self.stale_image_timeout = field_request_config.stale_image_timeout
         self.request_subscriber = request_subscriber
-        self.response_subscriber = response_subscriber
+        self.response_publisher = response_publisher
 
     def has_request(self, last_image_time: float) -> bool:
         now = time.time()
@@ -28,4 +28,4 @@ class FieldRequestHandler:
         return self.request_subscriber.receive() is not None
 
     def send_response(self, field_result: FieldResult) -> None:
-        self.response_subscriber.publish(field_result)
+        self.response_publisher.publish(field_result)

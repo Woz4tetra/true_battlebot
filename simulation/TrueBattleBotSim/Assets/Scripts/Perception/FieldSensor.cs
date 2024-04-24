@@ -6,11 +6,12 @@ using RosMessageTypes.BwInterfaces;
 using RosMessageTypes.Std;
 using UnityEngine;
 using System;
-using RosMessageTypes.Nav;
 
 public class FieldSensor : BaseRectangleSensor
 {
     [SerializeField] private string topic = "detections";
+    [SerializeField] private string child_frame_id = "map_relative";
+    [SerializeField] private string label = "field";
 
     override protected void BaseRectangleSensorStart()
     {
@@ -47,19 +48,19 @@ public class FieldSensor : BaseRectangleSensor
             };
             EstimatedObjectMsg msg = new EstimatedObjectMsg
             {
-                state = new OdometryMsg
+
+                header = header,
+                pose = new PoseWithCovarianceMsg
                 {
-                    header = header,
-                    pose = new PoseWithCovarianceMsg
+                    pose = new PoseMsg
                     {
-                        pose = new PoseMsg
-                        {
-                            position = targetPose.GetT().To<FLU>(),
-                            orientation = targetPose.GetR().To<FLU>()
-                        }
+                        position = targetPose.GetT().To<FLU>(),
+                        orientation = targetPose.GetR().To<FLU>()
                     }
                 },
-                size = size
+                child_frame_id = child_frame_id,
+                size = size,
+                label = label
             };
             fields.Add(msg);
         }

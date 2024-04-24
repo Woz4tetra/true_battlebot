@@ -30,10 +30,10 @@ class Runner:
         self.container = container
         self.ros_factory = self.container.resolve(RosFactory)
         self.camera = self.container.resolve(CameraInterface)
-        self.field_segmentation: SegmentationInterface = self.container.resolve("field_segmentation")
+        self.field_segmentation: SegmentationInterface = self.container.resolve_by_name("field_segmentation")
         self.field_filter = self.container.resolve(FieldFilterInterface)
         self.field_request_handler = self.container.resolve(FieldRequestHandler)
-        self.field_debug_image_publisher: RosPublisher = self.container.resolve("field_debug_image_publisher")
+        self.field_debug_image_publisher: RosPublisher = self.container.resolve_by_name("field_debug_image_publisher")
         self.camera_data: CameraData | None = None
 
     def start(self) -> None:
@@ -68,6 +68,13 @@ class CommandLineArgs(Protocol):
 
 
 logger = logging.getLogger("perception")
+
+
+def make_camera(config: Config, container: Container) -> None:
+    camera = load_camera(config.camera)
+    container.register(camera, CameraInterface)
+
+    logger.info(f"Camera: {camera}")
 
 
 def make_ros_factory(config: Config, container: Container) -> None:
@@ -114,12 +121,10 @@ def main() -> None:
     config = load_config(config_dir, get_robot())
 
     initialize()
-
-    camera = load_camera(config.camera)
     print()  # Start log on a fresh line
-    logger.info(f"Camera: {camera}")
 
     container = Container()
+    make_camera(config, container)
     make_ros_factory(config, container)
     make_field_segmentation(config, container)
     make_field_interface(config, shared_config, container)
