@@ -4,6 +4,7 @@ set -e
 
 BASE_DIR=$(realpath "$(dirname "${0}")")
 
+sudo apt-get update
 sudo apt-get install -y \
     v4l-utils  \
     libusb-1.0-0*  \
@@ -15,6 +16,7 @@ sudo apt-get install -y \
 
 if ! /usr/bin/python3 --version | grep -q "${PYTHON_INSTALL_VERSION}"; then
     sudo add-apt-repository -y ppa:deadsnakes/ppa
+    sudo apt-get update
     sudo apt-get install -y \
     python${PYTHON_INSTALL_VERSION} \
     python${PYTHON_INSTALL_VERSION}-dev \
