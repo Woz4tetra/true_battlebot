@@ -1,7 +1,8 @@
 import os
 
 import toml
-from config.config import Config
+
+from app.config.config import Config
 
 
 def load_config(config_dir: str, robot_name: str) -> Config:

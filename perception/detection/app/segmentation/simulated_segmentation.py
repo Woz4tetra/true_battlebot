@@ -3,7 +3,6 @@ import logging
 import cv2
 import numpy as np
 from bw_shared.enums.labels import Label
-from config.segmentation_config.simulated_segmentation_config import SimulatedSegmentationConfig
 from perception_tools.messages.camera.image import Image
 from perception_tools.messages.segmentation.contour import Contour
 from perception_tools.messages.segmentation.segmentation_instance import SegmentationInstance
@@ -11,7 +10,9 @@ from perception_tools.messages.segmentation.segmentation_instance_array import S
 from perception_tools.messages.segmentation.uv_keypoint import UVKeypoint
 from perception_tools.rosbridge.ros_poll_subscriber import RosPollSubscriber
 from perception_tools.rosbridge.ros_publisher import RosPublisher
-from segmentation.segmentation_interface import SegmentationInterface
+
+from app.config.segmentation_config.simulated_segmentation_config import SimulatedSegmentationConfig
+from app.segmentation.segmentation_interface import SegmentationInterface
 
 
 class SimulatedSegmentation(SegmentationInterface):

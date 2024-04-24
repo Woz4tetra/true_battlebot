@@ -1,9 +1,10 @@
 from bw_shared.configs.maps import MapConfig
-from config.field_filter_config import FieldFilterConfig
 from perception_tools.messages.camera.camera_info import CameraInfo
 from perception_tools.messages.camera.image import Image
 from perception_tools.messages.field_result import FieldResult
 from perception_tools.messages.segmentation.segmentation_instance_array import SegmentationInstanceArray
+
+from app.config.field_filter_config import FieldFilterConfig
 
 
 class FieldFilter:

@@ -18,11 +18,13 @@ class RosFactory:
     def disconnect(self) -> None:
         self.ros.close()
 
-    def make_subscriber(self, topic: str, msg_type: Type[T], queue_size: int) -> RosPollSubscriber[T]:
+    def make_subscriber(self, topic: str, msg_type: Type[T], queue_size: int = 1) -> RosPollSubscriber[T]:
         return RosPollSubscriber(self.ros, topic, msg_type, queue_size)
 
-    def make_raw_subscriber(self, topic: str, msg_type: str, queue_size: int) -> RosPollRawSubscriber:
+    def make_raw_subscriber(self, topic: str, msg_type: str, queue_size: int = 1) -> RosPollRawSubscriber:
         return RosPollRawSubscriber(self.ros, topic, msg_type, queue_size)
 
-    def make_publisher(self, topic: str, msg_type: Type[T], queue_size: int, latch: bool = False) -> RosPublisher[T]:
+    def make_publisher(
+        self, topic: str, msg_type: Type[T], queue_size: int = 1, latch: bool = False
+    ) -> RosPublisher[T]:
         return RosPublisher(self.ros, topic, msg_type, queue_size, latch)

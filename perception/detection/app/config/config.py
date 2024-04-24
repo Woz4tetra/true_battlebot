@@ -2,12 +2,13 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
 
-from config.camera_config.camera_types import CameraConfig
-from config.camera_config.noop_config import NoopCameraConfig
-from config.field_filter_config import FieldFilterConfig
-from config.rosbridge_config import RosBridgeConfig
-from config.segmentation_config.segmentation_types import InstanceSegmentationConfig, SegmentationConfig
 from dacite import from_dict
+
+from app.config.camera_config.camera_types import CameraConfig
+from app.config.camera_config.noop_config import NoopCameraConfig
+from app.config.field_filter_config import FieldFilterConfig
+from app.config.rosbridge_config import RosBridgeConfig
+from app.config.segmentation_config.segmentation_types import InstanceSegmentationConfig, SegmentationConfig
 
 
 @dataclass
