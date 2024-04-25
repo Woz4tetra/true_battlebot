@@ -9,7 +9,7 @@ fi
 
 WORKSPACE_DIR=${BASE_DIR}/../..
 
-devcontainer up --workspace-folder ${WORKSPACE_DIR} --override-config ${WORKSPACE_DIR}/.devcontainer/perception/devcontainer.json
+devcontainer up --workspace-folder ${WORKSPACE_DIR} --config ${WORKSPACE_DIR}/.devcontainer/perception/devcontainer.json
 
 # Run a shell in the container
 ${BASE_DIR}/enter_perception_dev
