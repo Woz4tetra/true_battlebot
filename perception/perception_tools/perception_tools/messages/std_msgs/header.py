@@ -8,11 +8,12 @@ from bw_shared.context_sequence_counter import ContextSequenceCounter
 from perception_tools.rosbridge.types import RawRosMessage
 
 
-@dataclass(frozen=True, eq=True)
+@dataclass(eq=True)
 class Header:
     stamp: float
     frame_id: str
     seq: int
+    type: str = "std_msgs/Header"
 
     @classmethod
     def auto(cls, frame_id: str = "", stamp: float = float("nan"), seq: Optional[int] = None) -> "Header":

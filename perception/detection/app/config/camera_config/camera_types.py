@@ -1,6 +1,7 @@
 from typing import Union
 
-from .noop_config import NoopCameraConfig
-from .zed_config import ZedConfig
+from .noop_camera_config import NoopCameraConfig
+from .simulated_camera_config import SimulatedCameraConfig
+from .zed_camera_config import ZedCameraConfig
 
-CameraConfig = Union[NoopCameraConfig, ZedConfig]
+CameraConfig = Union[NoopCameraConfig, ZedCameraConfig, SimulatedCameraConfig]

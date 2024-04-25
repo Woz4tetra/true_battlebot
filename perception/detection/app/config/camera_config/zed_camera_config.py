@@ -3,5 +3,5 @@ from typing import Literal
 
 
 @dataclass
-class ZedConfig:
+class ZedCameraConfig:
     type: Literal["ZedCamera"] = "ZedCamera"

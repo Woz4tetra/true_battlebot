@@ -1,5 +1,5 @@
 [camera]
-type = "NoopCamera"
+type = "SimulatedCamera"
 
 [field_segmentation]
 type = "NoopSegmentation"

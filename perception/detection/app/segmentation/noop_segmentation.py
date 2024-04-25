@@ -10,4 +10,4 @@ class NoopSegmentation(SegmentationInterface):
         pass
 
     def process_image(self, msg: Image) -> tuple[SegmentationInstanceArray, Image | None]:
-        return SegmentationInstanceArray(), None
+        return SegmentationInstanceArray(), msg

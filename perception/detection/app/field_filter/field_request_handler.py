@@ -21,11 +21,16 @@ class FieldRequestHandler:
         self.response_publisher = response_publisher
 
     def has_request(self, last_image_time: float) -> bool:
-        now = time.time()
-        if now - last_image_time > self.stale_image_timeout:
-            self.logger.debug("Image is stale. Dropping request.")
-            return False
-        return self.request_subscriber.receive() is not None
+        received = self.request_subscriber.receive()
+        if received is not None:
+            self.logger.info("Received field request")
+            now = time.time()
+            delay = now - last_image_time
+            if now - last_image_time > self.stale_image_timeout:
+                self.logger.warning(f"Image is {delay:0.4f} seconds stale. Dropping request.")
+                return False
+            return True
+        return False
 
     def send_response(self, field_result: FieldResult) -> None:
         self.response_publisher.publish(field_result)

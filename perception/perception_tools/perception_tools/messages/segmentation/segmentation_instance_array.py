@@ -9,7 +9,7 @@ from perception_tools.rosbridge.types import RawRosMessage
 
 @dataclass
 class SegmentationInstanceArray:
-    header: Header = Header.auto()
+    header: Header = field(default_factory=lambda: Header.auto())
     height: int = 0
     width: int = 0
     instances: list[SegmentationInstance] = field(default_factory=lambda: [])

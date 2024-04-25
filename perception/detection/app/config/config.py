@@ -5,7 +5,7 @@ from dataclasses import asdict, dataclass, field
 import dacite
 
 from app.config.camera_config.camera_types import CameraConfig
-from app.config.camera_config.noop_config import NoopCameraConfig
+from app.config.camera_config.noop_camera_config import NoopCameraConfig
 from app.config.field_filter_config.field_filter_types import FieldFilterConfig
 from app.config.field_filter_config.field_request_config import FieldRequestConfig
 from app.config.field_filter_config.ransac_field_filter_config import RansacFieldFilterConfig

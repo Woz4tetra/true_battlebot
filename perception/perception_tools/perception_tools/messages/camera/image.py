@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+import sys
+from dataclasses import dataclass, field
 from enum import Enum
 
 import numpy as np
@@ -62,59 +63,49 @@ class Encoding(Enum):
 
 
 ROS_ENCODING_TO_NUMPY = {
-    Encoding.RGB8: np.uint8,
-    Encoding.RGBA8: np.uint8,
-    Encoding.RGB16: np.uint16,
-    Encoding.RGBA16: np.uint16,
-    Encoding.BGR8: np.uint8,
-    Encoding.BGRA8: np.uint8,
-    Encoding.BGR16: np.uint16,
-    Encoding.BGRA16: np.uint16,
-    Encoding.MONO8: np.uint8,
-    Encoding.MONO16: np.uint16,
-    Encoding.TYPE_8UC1: np.uint8,
-    Encoding.TYPE_8UC2: np.uint8,
-    Encoding.TYPE_8UC3: np.uint8,
-    Encoding.TYPE_8UC4: np.uint8,
-    Encoding.TYPE_8SC1: np.int8,
-    Encoding.TYPE_8SC2: np.int8,
-    Encoding.TYPE_8SC3: np.int8,
-    Encoding.TYPE_8SC4: np.int8,
-    Encoding.TYPE_16UC1: np.uint16,
-    Encoding.TYPE_16UC2: np.uint16,
-    Encoding.TYPE_16UC3: np.uint16,
-    Encoding.TYPE_16UC4: np.uint16,
-    Encoding.TYPE_16SC1: np.int16,
-    Encoding.TYPE_16SC2: np.int16,
-    Encoding.TYPE_16SC3: np.int16,
-    Encoding.TYPE_16SC4: np.int16,
-    Encoding.TYPE_32SC1: np.int32,
-    Encoding.TYPE_32SC2: np.int32,
-    Encoding.TYPE_32SC3: np.int32,
-    Encoding.TYPE_32SC4: np.int32,
-    Encoding.TYPE_32FC1: np.float32,
-    Encoding.TYPE_32FC2: np.float32,
-    Encoding.TYPE_32FC3: np.float32,
-    Encoding.TYPE_32FC4: np.float32,
-    Encoding.TYPE_64FC1: np.float64,
-    Encoding.TYPE_64FC2: np.float64,
-    Encoding.TYPE_64FC3: np.float64,
-    Encoding.TYPE_64FC4: np.float64,
-    Encoding.BAYER_RGGB8: np.uint8,
-    Encoding.BAYER_BGGR8: np.uint8,
-    Encoding.BAYER_GBRG8: np.uint8,
-    Encoding.BAYER_GRBG8: np.uint8,
-    Encoding.BAYER_RGGB16: np.uint16,
-    Encoding.BAYER_BGGR16: np.uint16,
-    Encoding.BAYER_GBRG16: np.uint16,
-    Encoding.BAYER_GRBG16: np.uint16,
+    Encoding.RGB8: (np.uint8, 3),
+    Encoding.RGBA8: (np.uint8, 4),
+    Encoding.RGB16: (np.uint16, 3),
+    Encoding.RGBA16: (np.uint16, 4),
+    Encoding.BGR8: (np.uint8, 3),
+    Encoding.BGRA8: (np.uint8, 4),
+    Encoding.BGR16: (np.uint16, 3),
+    Encoding.BGRA16: (np.uint16, 4),
+    Encoding.MONO8: (np.uint8, 1),
+    Encoding.MONO16: (np.uint16, 1),
+    Encoding.TYPE_8UC1: (np.uint8, 1),
+    Encoding.TYPE_8UC2: (np.uint8, 2),
+    Encoding.TYPE_8UC3: (np.uint8, 3),
+    Encoding.TYPE_8UC4: (np.uint8, 4),
+    Encoding.TYPE_8SC1: (np.int8, 1),
+    Encoding.TYPE_8SC2: (np.int8, 2),
+    Encoding.TYPE_8SC3: (np.int8, 3),
+    Encoding.TYPE_8SC4: (np.int8, 4),
+    Encoding.TYPE_16UC1: (np.uint16, 1),
+    Encoding.TYPE_16UC2: (np.uint16, 2),
+    Encoding.TYPE_16UC3: (np.uint16, 3),
+    Encoding.TYPE_16UC4: (np.uint16, 4),
+    Encoding.TYPE_16SC1: (np.int16, 1),
+    Encoding.TYPE_16SC2: (np.int16, 2),
+    Encoding.TYPE_16SC3: (np.int16, 3),
+    Encoding.TYPE_16SC4: (np.int16, 4),
+    Encoding.TYPE_32SC1: (np.int32, 1),
+    Encoding.TYPE_32SC2: (np.int32, 2),
+    Encoding.TYPE_32SC3: (np.int32, 3),
+    Encoding.TYPE_32SC4: (np.int32, 4),
+    Encoding.TYPE_32FC1: (np.float32, 1),
+    Encoding.TYPE_32FC2: (np.float32, 2),
+    Encoding.TYPE_32FC3: (np.float32, 3),
+    Encoding.TYPE_32FC4: (np.float32, 4),
+    Encoding.TYPE_64FC1: (np.float64, 1),
+    Encoding.TYPE_64FC2: (np.float64, 2),
 }
 
 
 @dataclass
 class Image:
-    header: Header
-    data: np.ndarray
+    header: Header = field(default_factory=lambda: Header.auto())
+    data: np.ndarray = field(default_factory=lambda: np.array([]))
     encoding: Encoding = Encoding.BGR8
     is_bigendian: bool = False
     type: str = "sensor_msgs/Image"
@@ -127,15 +118,32 @@ class Image:
             "encoding": self.encoding.value,
             "is_bigendian": self.is_bigendian,
             "step": self.data.shape[1] * self.data.shape[2],
-            "data": self.data.tobytes(),
+            "data": self.data.tobytes().decode(),
         }
 
     @classmethod
     def from_raw(cls, msg: RawRosMessage) -> Image:
         encoding = Encoding(msg["encoding"])
-        return cls(
-            Header.from_raw(msg["header"]),
-            np.frombuffer(msg["data"], dtype=ROS_ENCODING_TO_NUMPY[encoding]).reshape(msg["height"], msg["width"], -1),
-            encoding,
-            msg["is_bigendian"],
-        )
+        data: str = msg["data"]
+        width: int = msg["width"]
+        height: int = msg["height"]
+        step: int = msg["step"]
+        dtype, num_channels = ROS_ENCODING_TO_NUMPY[encoding]
+
+        buffer = np.frombuffer(data.encode(), dtype=dtype)
+
+        if num_channels == 1:
+            image = np.ndarray(shape=(height, int(step / dtype().itemsize)), dtype=dtype, buffer=buffer)
+            image = np.ascontiguousarray(image[:height, :width])
+        else:
+            image = np.ndarray(
+                shape=(height, int(step / dtype().itemsize / num_channels), num_channels), dtype=dtype, buffer=buffer
+            )
+            image = np.ascontiguousarray(image[:height, :width, :])
+
+        # If the byte order is different between the message and the system.
+        is_bigendian: bool = msg["is_bigendian"]
+        if is_bigendian == (sys.byteorder == "little"):
+            image = image.byteswap().newbyteorder()
+
+        return cls(Header.from_raw(msg["header"]), image, encoding, is_bigendian)

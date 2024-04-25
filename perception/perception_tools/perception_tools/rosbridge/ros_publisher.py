@@ -26,5 +26,4 @@ class RosPublisher(Generic[T]):
         self.topic = Topic(ros, self.topic_name, self.msg_type.type, queue_size=queue_size, latch=latch)
 
     def publish(self, msg: T) -> None:
-        self.logger.info(f"Publishing to {self.topic_name}: {msg.to_raw()}")
         self.topic.publish(Message(msg.to_raw()))

@@ -9,6 +9,7 @@ from bw_shared.environment import get_map, get_robot
 from perception_tools.messages.camera.camera_data import CameraData
 from perception_tools.messages.camera.image import Image
 from perception_tools.messages.field_result import FieldResult
+from perception_tools.messages.std_msgs.header import Header
 from perception_tools.rosbridge.ros_factory import RosFactory
 from perception_tools.rosbridge.ros_publisher import RosPublisher
 
@@ -29,6 +30,7 @@ class Runner:
     def __init__(self, container: Container) -> None:
         self.container = container
         self.ros_factory = self.container.resolve(RosFactory)
+        self.heartbeat_publisher: RosPublisher[Header] = self.container.resolve_by_name("heartbeat_publisher")
         self.camera = self.container.resolve(CameraInterface)
         self.field_segmentation: SegmentationInterface = self.container.resolve_by_name("field_segmentation")
         self.field_filter = self.container.resolve(FieldFilterInterface)
@@ -36,22 +38,27 @@ class Runner:
         self.field_debug_image_publisher: RosPublisher = self.container.resolve_by_name("field_debug_image_publisher")
         self.camera_data: CameraData | None = None
         self.logger = logging.getLogger("perception")
+        self.logger.setLevel(logging.DEBUG)
 
     def start(self) -> None:
         self.ros_factory.connect()
         self.logger.info("Runner started")
 
     def loop(self) -> None:
+        self.heartbeat_publisher.publish(Header.auto())
         camera = self.camera
         field_segmentation = self.field_segmentation
         field_filter = self.field_filter
         field_request_handler = self.field_request_handler
 
         if camera_data := camera.poll():
+            if self.camera_data is None:
+                self.logger.info("Received camera data")
             self.camera_data = camera_data
         if self.camera_data is not None and field_request_handler.has_request(
             self.camera_data.camera_info.header.stamp
         ):
+            self.logger.info("Processing field request")
             image = self.camera_data.color_image
             seg_result, debug_image = field_segmentation.process_image(image)
             field_result = field_filter.compute_field(
@@ -59,7 +66,7 @@ class Runner:
             )
             field_request_handler.send_response(field_result)
             if debug_image:
-                self.field_debug_image_publisher.publish(debug_image.to_raw())
+                self.field_debug_image_publisher.publish(debug_image)
 
     def stop(self) -> None:
         self.ros_factory.disconnect()
@@ -74,7 +81,7 @@ logger = logging.getLogger("perception")
 
 
 def make_camera(config: Config, container: Container) -> None:
-    camera = load_camera(config.camera)
+    camera = load_camera(config.camera, container)
     container.register(camera, CameraInterface)
 
     logger.info(f"Camera: {camera}")
@@ -83,6 +90,9 @@ def make_camera(config: Config, container: Container) -> None:
 def make_ros_factory(config: Config, container: Container) -> None:
     ros_factory = RosFactory(config.rosbridge.host, config.rosbridge.port)
     container.register(ros_factory)
+
+    heartbeat_publisher = ros_factory.make_publisher("/perception/heartbeat", Header, queue_size=1)
+    container.register(heartbeat_publisher, "heartbeat_publisher")
 
 
 def make_field_segmentation(config: Config, container: Container) -> None:
@@ -127,8 +137,8 @@ def main() -> None:
     print()  # Start log on a fresh line
 
     container = Container()
-    make_camera(config, container)
     make_ros_factory(config, container)
+    make_camera(config, container)
     make_field_segmentation(config, container)
     make_field_interface(config, shared_config, container)
     make_field_request_handler(config, container)
