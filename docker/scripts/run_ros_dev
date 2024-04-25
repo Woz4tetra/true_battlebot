@@ -1,0 +1,15 @@
+#!/bin/bash
+BASE_DIR=$(realpath "$(dirname $0)")
+
+if ! (devcontainer --version > /dev/null); then
+	echo "Devcontainer not installed. Installing devcontainer from npm"
+	npm install -g @devcontainers/cli
+	nodenv rehash
+fi
+
+WORKSPACE_DIR=${BASE_DIR}/../..
+
+devcontainer up --workspace-folder ${WORKSPACE_DIR} --config ${WORKSPACE_DIR}/.devcontainer/ros_ws/devcontainer.json
+
+# Run a shell in the container
+${BASE_DIR}/enter_ros_dev

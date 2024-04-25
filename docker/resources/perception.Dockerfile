@@ -128,6 +128,11 @@ ENV PATH=/opt/${ORGANIZATION}/scripts${PATH:+:${PATH}} \
 # launch environment
 # ---
 
+COPY --chown=1000:1000 \
+    ./install/increase_file_watchers.sh \
+    /opt/${ORGANIZATION}/install/
+RUN bash /opt/${ORGANIZATION}/install/increase_file_watchers.sh
+
 COPY --chown=1000:1000 ./install/bashrc/base_bashrc ${HOME}/.bashrc
 COPY --chown=1000:1000 ./install/bashrc/perception_bashrc ${HOME}/bashrc_overlay
 RUN cat ${HOME}/bashrc_overlay >> ${HOME}/.bashrc && rm ${HOME}/bashrc_overlay

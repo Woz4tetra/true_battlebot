@@ -8,7 +8,8 @@ if [ -n "${REMOTE_MACHINE}" ]; then
 fi
 
 if [ "$color_prompt" = yes ]; then
-    PS1='🤖️ ${PS1}'
+    PS1="🤖️ $PS1"
 else
-    PS1='[ROS] ${PS1}'
+    PS1="[ROS] $PS1"
 fi
+unset color_prompt force_color_prompt
