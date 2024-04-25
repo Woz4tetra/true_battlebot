@@ -1,6 +1,7 @@
 from dataclasses import dataclass
+from typing import Literal
 
 
 @dataclass
 class RansacFieldFilterConfig:
-    type: str = "RansacFieldFilter"
+    type: Literal["RansacFieldFilter"] = "RansacFieldFilter"

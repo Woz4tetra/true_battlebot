@@ -2,7 +2,7 @@ from typing import Protocol, Type, TypeVar
 
 from perception_tools.rosbridge.types import RawRosMessage
 
-T = TypeVar("T")
+T = TypeVar("T", bound="RosMessageInterface")
 
 
 class RosMessageInterface(Protocol):

@@ -42,7 +42,7 @@ class TeleopNode:
     def filtered_states_callback(self, msg: EstimatedObjectArray) -> None:
         for robot in msg.robots:
             if robot.label in self.states:
-                self.states[robot.label] = self.is_orientation_right_side_up(robot.state.pose.pose.orientation)
+                self.states[robot.label] = self.is_orientation_right_side_up(robot.pose.pose.orientation)
 
     def is_orientation_right_side_up(self, quaternion: Quaternion) -> bool:
         angles = transformations.euler_from_quaternion((quaternion.x, quaternion.y, quaternion.z, quaternion.w))

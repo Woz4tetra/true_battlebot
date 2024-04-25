@@ -404,15 +404,23 @@ class RobotFilter:
     def get_robot_frame_id(self, robot_name: str) -> str:
         return self.robot_frame_prefix + "_" + robot_name
 
-    def odom_to_transform(self, odom: Odometry) -> TransformStamped:
+    def state_to_transform(self, state_msg: EstimatedObject) -> TransformStamped:
         transform = TransformStamped()
-        transform.header = odom.header
-        transform.child_frame_id = odom.child_frame_id
+        transform.header = state_msg.header
+        transform.child_frame_id = state_msg.child_frame_id
         transform.transform.translation = Vector3(
-            odom.pose.pose.position.x, odom.pose.pose.position.y, odom.pose.pose.position.z
+            state_msg.pose.pose.position.x, state_msg.pose.pose.position.y, state_msg.pose.pose.position.z
         )
-        transform.transform.rotation = odom.pose.pose.orientation
+        transform.transform.rotation = state_msg.pose.pose.orientation
         return transform
+
+    def state_to_odom(self, state_msg: EstimatedObject) -> Odometry:
+        odom = Odometry()
+        odom.header = state_msg.header
+        odom.child_frame_id = state_msg.child_frame_id
+        odom.pose = state_msg.pose
+        odom.twist = state_msg.twist
+        return odom
 
     def publish_all_filters(self) -> None:
         transforms = []
@@ -421,23 +429,20 @@ class RobotFilter:
             robot_frame_id = self.get_robot_frame_id(robot_name)
             pose, twist = bot_filter.get_state()
             diameter = self.robot_sizes[robot_name] * 2
-            state_msg = Odometry()
-            state_msg.header.frame_id = self.map_frame
-            state_msg.header.stamp = rospy.Time.now()
-            state_msg.child_frame_id = robot_frame_id
-            state_msg.pose = pose
-            state_msg.twist = twist
 
-            transforms.append(self.odom_to_transform(state_msg))
-            self.filter_state_pubs[robot_name].publish(state_msg)
-
-            filtered_states.robots.append(
-                EstimatedObject(
-                    state=state_msg,
-                    size=Vector3(diameter, diameter, diameter),
-                    label=robot_name,
-                )
+            state_msg = EstimatedObject(
+                header=RosHeader(frame_id=self.map_frame, stamp=rospy.Time.now()),
+                child_frame_id=robot_frame_id,
+                pose=pose,
+                twist=twist,
+                size=Vector3(diameter, diameter, diameter),
+                label=robot_name,
             )
+
+            transforms.append(self.state_to_transform(state_msg))
+            self.filter_state_pubs[robot_name].publish(self.state_to_odom(state_msg))
+
+            filtered_states.robots.append(state_msg)
         self.filter_state_array_pub.publish(filtered_states)
 
         self.tf_broadcaster.sendTransform(transforms)

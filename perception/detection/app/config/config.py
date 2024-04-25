@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
 
-from dacite import from_dict
+import dacite
 
 from app.config.camera_config.camera_types import CameraConfig
 from app.config.camera_config.noop_config import NoopCameraConfig
@@ -24,7 +24,7 @@ class Config:
 
     @classmethod
     def from_dict(cls, data: dict) -> Config:
-        return from_dict(data_class=cls, data=data)
+        return dacite.from_dict(data_class=cls, data=data)
 
     def to_dict(self) -> dict:
         return asdict(self)

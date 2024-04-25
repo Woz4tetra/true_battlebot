@@ -25,8 +25,6 @@ int_handler() {
 }
 trap 'int_handler' SIGINT
 
-/opt/${ORGANIZATION}/scripts/lib/cleanup_tmux_logger.sh ${PROJECT_NAME}_perception perception
-
 tmux send -t "${SESSION}" 'source /opt/${ORGANIZATION}/scripts/lib/enable_tmux_logger.sh ${PROJECT_NAME}_perception perception' ENTER
 tmux send -t "${SESSION}" 'source /opt/${ORGANIZATION}/scripts/lib/set_master.sh ${ROS_MASTER_INTERFACE}' ENTER
 tmux send -t "${SESSION}" 'cd /opt/${ORGANIZATION}/${PROJECT_NAME}' ENTER

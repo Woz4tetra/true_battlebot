@@ -1,6 +1,7 @@
 from dataclasses import dataclass
+from typing import Literal
 
 
 @dataclass
 class NoopSegmentationConfig:
-    type: str = "NoopSegmentation"
+    type: Literal["NoopSegmentation"] = "NoopSegmentation"

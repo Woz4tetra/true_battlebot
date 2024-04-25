@@ -6,6 +6,7 @@ import numpy as np
 from perception_tools.messages.geometry.quaternion import Quaternion
 from perception_tools.messages.geometry.rpy import RPY
 from perception_tools.messages.geometry.xyz import XYZ
+from perception_tools.rosbridge.types import RawRosMessage
 from scipy.spatial.transform import Rotation
 
 
@@ -135,6 +136,16 @@ class Transform:
         tfmat[0:3, 0:3] = rotate_mat.as_matrix()
         tfmat[0:3, 3] = np.array([position.x, position.y, position.z])
         return Transform(tfmat)
+
+    def to_raw(self) -> RawRosMessage:
+        return {
+            "position": self.position.to_raw(),
+            "orientation": self.quaternion.to_raw(),
+        }
+
+    @classmethod
+    def from_raw(cls, msg: RawRosMessage) -> Transform:
+        return cls.from_position_and_quaternion(XYZ.from_raw(msg["position"]), Quaternion.from_raw(msg["orientation"]))
 
     def __hash__(self) -> int:
         return hash(tuple([tuple(row) for row in self.tfmat]))

@@ -74,12 +74,16 @@ def print_line(log_line: Dict, args: ParserInput) -> None:
     log_level = log_line["severity"].strip()
 
     try:
-        level_index = SEVERITY_ORDER.index(log_level)
-        log_color = LOG_COLORS[log_level]
+        for key in LOG_COLORS:
+            if log_level.startswith(key):
+                log_color = LOG_COLORS[key]
+                log_level = key
+                break
+
     except ValueError:
-        level_index = len(SEVERITY_ORDER)
         log_color = COLORS.CYAN
 
+    level_index = SEVERITY_ORDER.index(log_level)
     if level_index < args.log_level:
         return
     if not args.log_filter.does_match(log_line):
@@ -308,11 +312,13 @@ def main() -> None:
     if filename is None:
         filename = find_latest_log_file(log_dir)
         print("Watching", filename)
+    else:
+        print_all = True
 
     if print_all:
         print_entire_file(filename, inputs)
         if args.filename is None:
-            print(f"\n{COLORS.RESET}Log path: {filename}")
+            print(f"\n{COLORS.RESET}Log path: {os.path.realpath(filename)}")
         return
     try:
         follow_and_process(filename, inputs)
@@ -320,7 +326,7 @@ def main() -> None:
         pass
     finally:
         if args.filename is None:
-            print(f"\n{COLORS.RESET}Log path: {filename}")
+            print(f"\n{COLORS.RESET}Log path: {os.path.realpath(filename)}")
 
 
 if __name__ == "__main__":

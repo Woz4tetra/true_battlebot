@@ -21,14 +21,16 @@ class SimulatedFieldFilter(FieldFilterInterface):
         self.map_config = map_config
         self.field_filter_config = field_filter_config
         self.simulated_field_result_sub = simulated_field_result_sub
-        self.last_field_result = FieldResult()
+        self.last_field_result: FieldResult | None = None
         self.logger = logging.getLogger("perception")
 
     def compute_field(
         self, segmentations: SegmentationInstanceArray, depth_image: Image, camera_info: CameraInfo
     ) -> FieldResult:
-        if result := self.simulated_field_result_sub.receive():
-            self.last_field_result = result
-        else:
-            self.logger.warning("No simulated field result received. Using last result.")
+        if not self.last_field_result:
+            self.logger.warning("Waiting for simulated field result")
+        while not self.last_field_result:
+            if result := self.simulated_field_result_sub.receive():
+                self.last_field_result = result
+                self.logger.info(f"Received simulated field result: {result}")
         return self.last_field_result

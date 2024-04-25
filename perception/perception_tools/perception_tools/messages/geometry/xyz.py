@@ -4,6 +4,8 @@ import math
 from dataclasses import dataclass
 from typing import Any, Sequence, Tuple, Union, overload
 
+from perception_tools.rosbridge.types import RawRosMessage
+
 
 @dataclass
 class XYZ(Sequence):
@@ -53,3 +55,10 @@ class XYZ(Sequence):
 
     def __lt__(self, other: Any) -> bool:
         return self.x < other.x and self.y < other.y and self.z < other.z
+
+    def to_raw(self) -> RawRosMessage:
+        return {"x": self.x, "y": self.y, "z": self.z}
+
+    @classmethod
+    def from_raw(cls, msg: RawRosMessage) -> XYZ:
+        return cls(msg["x"], msg["y"], msg["z"])

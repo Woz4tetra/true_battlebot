@@ -2,76 +2,35 @@
 import math
 from typing import Optional, Tuple
 
-import numpy as np
 import rospy
 import tf2_ros
 from bw_interfaces.msg import CageCorner as RosCageCorner
-from bw_interfaces.msg import EstimatedObject, SegmentationInstance, SegmentationInstanceArray
-from bw_shared.configs.maps import FieldType
+from bw_interfaces.msg import EstimatedObject
 from bw_shared.enums.labels import Label
-from bw_tools.configs.rosparam_client import get_shared_config
 from bw_tools.get_param import get_param
-from bw_tools.projection_math.find_minimum_rectangle import (
-    find_minimum_rectangle,
-    get_rectangle_angle,
-    get_rectangle_extents,
-)
-from bw_tools.projection_math.get_field_segmentation import get_field_segmentation
-from bw_tools.projection_math.points_transform import points_transform
-from bw_tools.projection_math.project_segmentation import project_segmentation, raycast_segmentation
 from bw_tools.structs.cage_corner import CageCorner
 from bw_tools.structs.rpy import RPY
 from bw_tools.structs.transform3d import Transform3D
-from bw_tools.structs.xyz import XYZ
-from bw_tools.transforms import lookup_pose_in_frame
-from geometry_msgs.msg import Point, PointStamped, Pose, PoseStamped, Quaternion, Vector3
-from image_geometry import PinholeCameraModel
-from sensor_msgs.msg import CameraInfo, Imu
+from geometry_msgs.msg import Vector3
 from std_msgs.msg import ColorRGBA, Empty, Header
 from visualization_msgs.msg import Marker, MarkerArray
 
 
 class FieldFilter:
     def __init__(self) -> None:
-        shared_config = get_shared_config()
-
-        self.angle_delta_threshold = math.radians(get_param("angle_delta_threshold_degrees", 3.0))
-        self.base_frame = get_param("~base_frame", "camera")
         self.map_frame = get_param("~map_frame", "map")
         self.relative_map_frame = get_param("~relative_map_frame", "map_relative")
         auto_initialize = get_param("~auto_initialize", False)
-        self.always_use_default_dims = get_param("~always_use_default_dims", False)
-        self.map_name = FieldType(get_param("~map", "nhrl_small"))
-        self.expected_size = XYZ.from_size(shared_config.get_map(self.map_name).size)
-        field_dims_buffer = get_param("~field_dims_buffer", 0.25)
-        buffer_extents = XYZ(field_dims_buffer, field_dims_buffer, field_dims_buffer)
-        self.extents_range = (self.expected_size - buffer_extents, self.expected_size + buffer_extents)
-        rospy.loginfo(f"Map name: {self.map_name}")
-        rospy.loginfo(f"Extents range: {self.extents_range}")
 
-        self.unbounded_dims = self.expected_size + XYZ(0.5, 0.5, 0.0)
-        self.has_manual_query_been_received = auto_initialize
-        self.has_manual_query = auto_initialize
-        self.current_imu = Imu()
-        self.prev_imu = Imu()
-        self.current_imu.orientation.w = 1.0
-        self.prev_imu.orientation.w = 1.0
         self.cage_corner: Optional[CageCorner] = None
         self.field_rotations = {
             CageCorner.DOOR_SIDE: Transform3D.from_position_and_rpy(Vector3(), RPY((0, 0, -math.pi / 2))),
             CageCorner.FAR_SIDE: Transform3D.from_position_and_rpy(Vector3(), RPY((0, 0, math.pi / 2))),
         }
         self.estimated_field = EstimatedObject()
+        self.field_rotate_tf = self.field_rotations[CageCorner.DOOR_SIDE]
 
-        self.tf_buffer = tf2_ros.Buffer()
-        self.tf_listener = tf2_ros.TransformListener(self.tf_buffer)
         self.tf_broadcaster = tf2_ros.TransformBroadcaster()
-
-        self.field_rotate_tf = Transform3D.from_position_and_rpy(Vector3(), RPY((0, -np.pi / 2, 0)))
-
-        self.prev_request_time = rospy.Time(0)
-        self.segmentation = SegmentationInstanceArray()
-        self.camera_model = PinholeCameraModel()
 
         self.request_pub = rospy.Publisher("/perception/field/request", Empty, queue_size=1)
         self.response_sub = rospy.Subscriber("/perception/field/response", EstimatedObject, self.response_callback)
@@ -86,25 +45,16 @@ class FieldFilter:
             "set_cage_corner", RosCageCorner, self.corner_side_callback, queue_size=1
         )
 
-    def recommended_point_callback(self, point: PointStamped) -> None:
-        if not self.has_manual_query_been_received:
-            return
-        if self.has_manual_query:
-            rospy.loginfo("Requesting plane from manual query.")
-            self.has_manual_query = False
-            should_request = True
-        if should_request:
-            self.publish_plane_request(point)
-            self.prev_request_time = rospy.Time.now()
+        if auto_initialize:
+            self.request_field()
 
     def manual_request_callback(self, _: Empty) -> None:
         rospy.loginfo("Manual plane request received")
-        self.has_manual_query = True
-        self.has_manual_query_been_received = True
+        self.request_field()
 
-    def publish_plane_request(self, request_point: PointStamped) -> None:
-        rospy.loginfo("Requesting plane")
-        self.request_pub.publish(request_point)
+    def request_field(self) -> None:
+        rospy.loginfo("Requesting field")
+        self.request_pub.publish(Empty())
 
     def response_callback(self, field: EstimatedObject) -> None:
         rospy.loginfo("Received field response")

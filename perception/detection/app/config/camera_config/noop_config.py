@@ -1,6 +1,7 @@
 from dataclasses import dataclass
+from typing import Literal
 
 
 @dataclass
 class NoopCameraConfig:
-    type: str = "NoopCamera"
+    type: Literal["NoopCamera"] = "NoopCamera"

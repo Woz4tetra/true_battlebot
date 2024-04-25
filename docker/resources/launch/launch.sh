@@ -25,8 +25,6 @@ int_handler() {
 }
 trap 'int_handler' SIGINT
 
-/opt/${ORGANIZATION}/scripts/lib/cleanup_tmux_logger.sh ${PROJECT_NAME}
-
 tmux send -t "${SESSION}" 'source /opt/${ORGANIZATION}/scripts/lib/enable_tmux_logger.sh ${PROJECT_NAME}' ENTER
 tmux send -t "${SESSION}" 'source /opt/${ORGANIZATION}/scripts/lib/set_master.sh ${ROS_MASTER_INTERFACE}' ENTER
 tmux send -t "${SESSION}" 'source /opt/${ORGANIZATION}/set_log_format.sh' ENTER

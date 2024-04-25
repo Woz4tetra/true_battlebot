@@ -2,6 +2,7 @@
 BASE_DIR=$(realpath "$(dirname $0)")
 
 PROJECT_NAME=$(${BASE_DIR}/../get_project_name)
+sleep 0.5
 docker exec -it \
     --env="DISPLAY" \
     --env="QT_X11_NO_MITSHM=1" \

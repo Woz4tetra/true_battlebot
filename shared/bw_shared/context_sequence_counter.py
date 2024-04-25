@@ -30,7 +30,7 @@ class ContextSequenceCounter:
     @classmethod
     def seq(cls) -> int:
         frame = inspect.currentframe()
-        frame = _jump_up_n_frames(frame, 1)
+        frame = _jump_up_n_frames(frame, 2)
         caller_id = _frame_to_caller_id(frame)
         counter = cls._counter_table.get(caller_id, 0)
         cls._counter_table[caller_id] = counter + 1

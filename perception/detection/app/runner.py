@@ -35,9 +35,11 @@ class Runner:
         self.field_request_handler = self.container.resolve(FieldRequestHandler)
         self.field_debug_image_publisher: RosPublisher = self.container.resolve_by_name("field_debug_image_publisher")
         self.camera_data: CameraData | None = None
+        self.logger = logging.getLogger("perception")
 
     def start(self) -> None:
         self.ros_factory.connect()
+        self.logger.info("Runner started")
 
     def loop(self) -> None:
         camera = self.camera
@@ -61,6 +63,7 @@ class Runner:
 
     def stop(self) -> None:
         self.ros_factory.disconnect()
+        self.logger.info("Runner stopped")
 
 
 class CommandLineArgs(Protocol):

@@ -6,3 +6,9 @@ export ROSCONSOLE_FORMAT='[${node}] [${severity}] [${time}]: ${message}'
 if [ -n "${REMOTE_MACHINE}" ]; then
     source /opt/"${ORGANIZATION}"/scripts/set_client "${REMOTE_MACHINE}"
 fi
+
+if [ "$color_prompt" = yes ]; then
+    PS1='🤖️ ${PS1}'
+else
+    PS1='[ROS] ${PS1}'
+fi
