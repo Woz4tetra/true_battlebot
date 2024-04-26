@@ -1,0 +1,5 @@
+#!/bin/bash
+BASE_DIR=$(realpath "$(dirname $0)")
+
+EXTENSION=$(uname -i)
+${BASE_DIR}/TrueBattleBotSim/Build/TrueBattleBotSim.${EXTENSION}
