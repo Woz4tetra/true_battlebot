@@ -169,25 +169,38 @@ function initCarets() {
 
 window.onload = function () {
     var robot_ip = location.hostname;
+    let url = "ws://" + robot_ip + ":9090";
 
     ros = new ROSLIB.Ros({
-        url: "ws://" + robot_ip + ":9090",
+        url: url,
     });
 
+    var connection_status = document.getElementById("connection-status");
+    var connection_icon = document.getElementById("connection-icon");
+    connection_icon.ondragstart = function () {
+        return false;
+    };
+
     ros.on("connection", function () {
-        document.getElementById("connection-status").innerHTML = "Connected";
+        connection_status.innerHTML = "Connected";
+        connection_icon.src = "resources/check_circle_black_24dp.svg";
+        connection_icon.className = "filter-green";
         console.log("Connected to websocket server.");
     });
 
     ros.on("error", function (error) {
         console.log("Error connecting to websocket server: ", error);
-        document.getElementById("connection-status").innerHTML =
-            "Error: " + error;
+        connection_status.innerHTML = "Error: " + error;
+        connection_icon.src = "resources/error_black_24dp.svg";
+        connection_icon.className = "filter-red";
     });
 
     ros.on("close", function () {
         console.log("Connection to websocket server closed.");
-        document.getElementById("connection-status").innerHTML = "Disconnected";
+        connection_status.innerHTML = "Disconnected";
+        connection_icon.src = "resources/error_black_24dp.svg";
+        connection_icon.className = "filter-red";
+        ros.connect(url);
     });
 
     initSummarySubscriber();

@@ -17,11 +17,11 @@
                 max-width: 1200px;
                 display: grid;
                 grid-template-columns: auto auto auto;
-                padding: 10px;
+                padding: 7px;
                 border: 1px solid #ccc;
             }
             .grid-item {
-                padding: 10px;
+                padding: 7px;
                 font-size: 20px;
                 text-align: left;
             }
@@ -68,6 +68,19 @@
                 display: block;
             }
 
+            .inline-with-icon {
+                position: relative;
+                top: -7px;
+            }
+
+            /* Computed with https://codepen.io/sosuke/pen/Pjoqqp */
+            .filter-green{
+                filter: invert(50%) sepia(94%) saturate(1766%) hue-rotate(77deg) brightness(107%) contrast(115%);
+            }
+            .filter-red{
+                filter: invert(10%) sepia(95%) saturate(6705%) hue-rotate(13deg) brightness(93%) contrast(120%);
+            }
+
             input[type=radio] {
                 border: 0px;
                 width: 15%;
@@ -95,6 +108,17 @@
         <!-- Summary -->
         <div class="grid-container">
             <div class="grid-item">
+                <div>Connection</span></div>
+            </div>
+            <div class="grid-item">
+                <div>
+                    <img id="connection-icon" class="filter-red" width="30" height="30">
+                    <span id="connection-status" class="inline-with-icon">Disconnected</span>
+                </div>
+            </div>
+        </div>
+        <div class="grid-container">
+            <div class="grid-item">
                 <div>Summary</div>
             </div>
 
@@ -119,14 +143,6 @@
             </div>
             <div class="grid-item">
                 <div><span id="summary-version"></span></div>
-            </div>
-
-            <div class="grid-item"></div>
-            <div class="grid-item">
-                <div>Connection</span></div>
-            </div>
-            <div class="grid-item">
-                <div><span id="connection-status">Unknown</span></div>
             </div>
         </div>
 
@@ -162,9 +178,9 @@
 
             <div class="grid-item" id="radio-group">
                 <input type="radio" id="door-side" name="cage-corner" onclick="publishCageCorner(0)">
-                <label for="door-side">Door side</label><br>
+                <label for="door-side" class="inline-with-icon">Door side</label><br>
                 <input type="radio" id="far-side" name="cage-corner" onclick="publishCageCorner(1)">
-                <label for="far-side">Far side</label><br>
+                <label for="far-side" class="inline-with-icon">Far side</label><br>
             </div>
         </div>
 
@@ -176,13 +192,13 @@
 
             <div class="grid-item" id="radio-group">
                 <input type="radio" class="mode-idle" name="robot-mode" onclick="publishRobotMode(0)">
-                <label for="mode-idle">Idle</label><br>
+                <label for="mode-idle" class="inline-with-icon">Idle</label><br>
                 <input type="radio" class="mode-corner" name="robot-mode" onclick="publishRobotMode(1)">
-                <label for="mode-corner">Corner</label><br>
+                <label for="mode-corner" class="inline-with-icon">Corner</label><br>
                 <input type="radio" class="mode-clicked" name="robot-mode" onclick="publishRobotMode(3)">
-                <label for="mode-clicked">Clicked point</label><br>
+                <label for="mode-clicked" class="inline-with-icon">Clicked point</label><br>
                 <input type="radio" class="mode-fight" name="robot-mode" onclick="publishRobotMode(2)">
-                <label for="mode-fight">Fight!!!</label><br>
+                <label for="mode-fight" class="inline-with-icon">Fight!!!</label><br>
             </div>
         </div>
 
