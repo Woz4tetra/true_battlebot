@@ -1,7 +1,7 @@
 #!/bin/bash
 SUBTYPE=$1
-if [ ! -z "${SUBTYPE}" ]; then
-  SUBTYPE=-${SUBTYPE}
+if [ -n "${SUBTYPE}" ]; then
+  SUBTYPE=_${SUBTYPE}
 fi
 BASE_DIR=$(realpath "$(dirname $0)")
 PROJECT_NAME=$(${BASE_DIR}/get_project_name)

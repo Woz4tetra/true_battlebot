@@ -191,9 +191,11 @@ def get_log_paths(search_dir: str) -> list[str]:
 
 
 def find_latest_log_file(search_dir: str) -> str:
-    latest_path = os.path.join(search_dir, "latest")
+    image_version = os.environ.get("IMAGE_VERSION", "")
+    image_type = image_version.split(":")[0] if image_version else ""
+    latest_path = os.path.join(search_dir, image_type, "latest")
     if not os.path.isfile(latest_path):
-        sys.stdout.write(f"Waiting for log files to appear in {search_dir}\n")
+        sys.stdout.write(f"Waiting for log files to appear in {latest_path}\n")
         while not os.path.isfile(latest_path):
             time.sleep(1.0)
     return latest_path

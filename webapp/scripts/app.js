@@ -175,15 +175,19 @@ window.onload = function () {
     });
 
     ros.on("connection", function () {
+        document.getElementById("connection-status").innerHTML = "Connected";
         console.log("Connected to websocket server.");
     });
 
     ros.on("error", function (error) {
         console.log("Error connecting to websocket server: ", error);
+        document.getElementById("connection-status").innerHTML =
+            "Error: " + error;
     });
 
     ros.on("close", function () {
         console.log("Connection to websocket server closed.");
+        document.getElementById("connection-status").innerHTML = "Disconnected";
     });
 
     initSummarySubscriber();

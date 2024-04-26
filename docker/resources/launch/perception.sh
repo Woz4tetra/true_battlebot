@@ -25,7 +25,7 @@ int_handler() {
 }
 trap 'int_handler' SIGINT
 
-tmux send -t "${SESSION}" 'source /opt/${ORGANIZATION}/scripts/lib/enable_tmux_logger.sh ${PROJECT_NAME}_perception perception' ENTER
+tmux send -t "${SESSION}" 'source /opt/${ORGANIZATION}/scripts/lib/enable_tmux_logger.sh ${PROJECT_NAME}_perception ${PROJECT_NAME}_perception' ENTER
 tmux send -t "${SESSION}" 'source /opt/${ORGANIZATION}/scripts/lib/set_master.sh ${ROS_MASTER_INTERFACE}' ENTER
 tmux send -t "${SESSION}" 'cd /opt/${ORGANIZATION}/${PROJECT_NAME}' ENTER
 tmux send -t "${SESSION}" 'python perception/detection/main.py perception/configs &' ENTER
