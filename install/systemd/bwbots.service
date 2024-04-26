@@ -7,7 +7,7 @@ Type=oneshot
 User=bwbots
 Group=bwbots
 RemainAfterExit=yes
-ExecStart=/home/bwbots/true_battlebot/docker/scripts/run_containers wlp4s0
+ExecStart=ROS_MASTER_INTERFACE=wlp4s0 /home/bwbots/true_battlebot/docker/scripts/run_container
 ExecStop=/home/bwbots/true_battlebot/docker/scripts/stop_container
 
 [Install]

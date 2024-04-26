@@ -1,7 +1,13 @@
 #!/bin/bash
 BASE_DIR=$(realpath "$(dirname $0)")
 
+int_handler() {
+    echo "Caught stop signal"
+    ${BASE_DIR}/docker/scripts/stop_container
+    exit 0;
+}
+trap 'int_handler' SIGINT
+
 ${BASE_DIR}/docker/scripts/copy_project
-${BASE_DIR}/docker/scripts/run_containers "" $@
+${BASE_DIR}/docker/scripts/run_container
 sleep infinity
-${BASE_DIR}/docker/scripts/stop_container $@
