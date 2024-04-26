@@ -164,8 +164,6 @@ add_dependencies(base_estimation ${base_estimation_EXPORTED_TARGETS} ${catkin_EX
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 add_executable(object_estimation src/object_estimation.cpp)
-add_executable(field_estimation src/field_estimation.cpp)
-add_executable(recommended_plane_point src/recommended_plane_point.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -176,22 +174,12 @@ add_executable(recommended_plane_point src/recommended_plane_point.cpp)
 ## Add cmake target dependencies of the executable
 ## same as for the library above
 add_dependencies(object_estimation ${object_estimation_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-add_dependencies(field_estimation ${field_estimation_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-add_dependencies(recommended_plane_point ${recommended_plane_point_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(base_estimation
   ${catkin_LIBRARIES}
 )
 target_link_libraries(object_estimation
-  ${catkin_LIBRARIES}
-  base_estimation
-)
-target_link_libraries(field_estimation
-  ${catkin_LIBRARIES}
-  base_estimation
-)
-target_link_libraries(recommended_plane_point
   ${catkin_LIBRARIES}
   base_estimation
 )
@@ -213,9 +201,6 @@ target_link_libraries(recommended_plane_point
 ## Mark executables for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_executables.html
 install(TARGETS object_estimation
-  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
-install(TARGETS field_estimation
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

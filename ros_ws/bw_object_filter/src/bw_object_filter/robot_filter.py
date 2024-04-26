@@ -46,6 +46,7 @@ class RobotFilter:
 
         self.map_frame = get_param("~map_frame", "map")
         self.robot_frame_prefix = get_param("~robot_frame_prefix", "base_link")
+        self.controlled_robot_name = get_param("~controlled_robot_name", "mini_bot")
 
         self.command_timeout = rospy.Duration.from_sec(get_param("~command_timeout", 0.5))
 
@@ -118,6 +119,13 @@ class RobotFilter:
                     name: filter
                     for name, filter in self.robot_filters.items()
                     if self.robot_configs[name].team == RobotTeam.OUR_TEAM
+                }
+            ),
+            Label.CONTROLLED_ROBOT: RobotMeasurementSorter(
+                {
+                    name: filter
+                    for name, filter in self.robot_filters.items()
+                    if self.robot_configs[name].name == self.controlled_robot_name
                 }
             ),
         }
