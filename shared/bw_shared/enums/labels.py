@@ -6,3 +6,4 @@ class Label(Enum):
     FIELD = "field"
     REFEREE = "referee"
     FRIENDLY_ROBOT = "friendly_robot"
+    CONTROLLED_ROBOT = "controlled_robot"

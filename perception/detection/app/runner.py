@@ -9,6 +9,7 @@ from bw_shared.environment import get_map, get_robot, get_ros_ip
 from perception_tools.messages.camera.camera_data import CameraData
 from perception_tools.messages.camera.compressed_image import CompressedImage
 from perception_tools.messages.field_result import FieldResult
+from perception_tools.messages.segmentation.segmentation_instance_array import SegmentationInstanceArray
 from perception_tools.messages.std_msgs.header import Header
 from perception_tools.rosbridge.empty import Empty
 from perception_tools.rosbridge.ros_poll_subscriber import RosPollSubscriber
@@ -34,11 +35,24 @@ class Runner:
         self.ros = self.container.resolve(Ros)
         self.heartbeat_publisher: RosPublisher[Header] = self.container.resolve_by_name("heartbeat_publisher")
         self.camera = self.container.resolve(CameraInterface)
-        self.field_segmentation: SegmentationInterface = self.container.resolve_by_name("field_segmentation")
+
         self.field_filter = self.container.resolve(FieldFilterInterface)
         self.field_request_handler = self.container.resolve(FieldRequestHandler)
+
+        self.field_segmentation: SegmentationInterface = self.container.resolve_by_name("field_segmentation")
         self.field_debug_image_publisher: RosPublisher[CompressedImage] = self.container.resolve_by_name(
             "field_debug_image_publisher"
+        )
+        self.field_segmentation_publisher: RosPublisher[SegmentationInstanceArray] = self.container.resolve_by_name(
+            "field_segmentation_publisher"
+        )
+
+        self.robot_segmentation: SegmentationInterface = self.container.resolve_by_name("robot_segmentation")
+        self.robot_debug_image_publisher: RosPublisher[CompressedImage] = self.container.resolve_by_name(
+            "robot_debug_image_publisher"
+        )
+        self.robot_segmentation_publisher: RosPublisher[SegmentationInstanceArray] = self.container.resolve_by_name(
+            "robot_segmentation_publisher"
         )
         self.camera_data: CameraData | None = None
         self.logger = logging.getLogger("perception")
@@ -49,25 +63,27 @@ class Runner:
 
     def loop(self) -> None:
         self.heartbeat_publisher.publish(Header.auto())
-        camera = self.camera
-        field_segmentation = self.field_segmentation
-        field_filter = self.field_filter
-        field_request_handler = self.field_request_handler
 
-        if camera_data := camera.poll():
+        if camera_data := self.camera.poll():
             if self.camera_data is None:
                 self.logger.info("Received camera data")
             self.camera_data = camera_data
-        if self.camera_data is not None and field_request_handler.has_request(
+            robot_seg, debug_image = self.robot_segmentation.process_image(self.camera_data.color_image)
+            if debug_image:
+                self.robot_debug_image_publisher.publish(debug_image.to_compressed())
+            self.robot_segmentation_publisher.publish(robot_seg)
+
+        if self.camera_data is not None and self.field_request_handler.has_request(
             self.camera_data.camera_info.header.stamp
         ):
             self.logger.info("Processing field request")
             image = self.camera_data.color_image
-            seg_result, debug_image = field_segmentation.process_image(image)
-            field_result = field_filter.compute_field(
-                seg_result, self.camera_data.depth_image, self.camera_data.camera_info
+            field_seg, debug_image = self.field_segmentation.process_image(image)
+            self.field_segmentation_publisher.publish(field_seg)
+            field_result = self.field_filter.compute_field(
+                field_seg, self.camera_data.depth_image, self.camera_data.camera_info
             )
-            field_request_handler.send_response(field_result)
+            self.field_request_handler.send_response(field_result)
             if debug_image:
                 self.logger.info("Publishing debug image")
                 self.field_debug_image_publisher.publish(debug_image.to_compressed())
@@ -86,14 +102,16 @@ class CommandLineArgs(Protocol):
 logger = logging.getLogger("perception")
 
 
-def make_camera(config: Config, container: Container) -> None:
+def make_camera(container: Container) -> None:
+    config = container.resolve(Config)
     camera = load_camera(config.camera, container)
     container.register(camera, CameraInterface)
 
     logger.info(f"Camera: {camera}")
 
 
-def make_ros_comms(config: Config, container: Container) -> None:
+def make_ros_comms(container: Container) -> None:
+    config = container.resolve(Config)
     host_ip = config.rosbridge.host if config.rosbridge.host else get_ros_ip()
     port = config.rosbridge.port
     ros = Ros(host_ip, port)
@@ -101,26 +119,47 @@ def make_ros_comms(config: Config, container: Container) -> None:
     logger.info(f"ROS: {host_ip}:{port}")
 
     RosPublisher.log = config.rosbridge.log
-    RosPublisher.log_filters = config.rosbridge.log_filters
+    RosPublisher.exclude_filters = config.rosbridge.exclude_filters
     RosPollSubscriber.log = config.rosbridge.log
-    RosPollSubscriber.log_filters = config.rosbridge.log_filters
+    RosPollSubscriber.exclude_filters = config.rosbridge.exclude_filters
 
     heartbeat_publisher = RosPublisher(ros, "/perception/heartbeat", Header)
     container.register(heartbeat_publisher, "heartbeat_publisher")
 
 
-def make_field_segmentation(config: Config, container: Container) -> None:
+def make_field_segmentation(container: Container) -> None:
+    config = container.resolve(Config)
     ros = container.resolve(Ros)
+    namespace = config.camera_topic.namespace
     field_segmentation = load_segmentation(container, config.field_segmentation)
-    field_debug_image_publisher = RosPublisher(ros, "/perception/field/debug_image", CompressedImage)
+    field_debug_image_publisher = RosPublisher(ros, namespace + "/field/debug_image", CompressedImage)
+    field_segmentation_publisher = RosPublisher(ros, namespace + "/field/segmentation", SegmentationInstanceArray)
 
     container.register(field_segmentation, "field_segmentation")
+    container.register(field_segmentation_publisher, "field_segmentation_publisher")
     container.register(field_debug_image_publisher, "field_debug_image_publisher")
 
     logger.info(f"Field segmentation: {field_segmentation}")
 
 
-def make_field_interface(config: Config, shared_config: SharedConfig, container: Container) -> None:
+def make_robot_segmentation(container: Container) -> None:
+    config = container.resolve(Config)
+    ros = container.resolve(Ros)
+    namespace = config.camera_topic.namespace
+    robot_segmentation = load_segmentation(container, config.robot_segmentation)
+    robot_debug_image_publisher = RosPublisher(ros, namespace + "/robot/debug_image", CompressedImage)
+    robot_segmentation_publisher = RosPublisher(ros, namespace + "/robot/segmentation", SegmentationInstanceArray)
+
+    container.register(robot_segmentation, "robot_segmentation")
+    container.register(robot_segmentation_publisher, "robot_segmentation_publisher")
+    container.register(robot_debug_image_publisher, "robot_debug_image_publisher")
+
+    logger.info(f"Robot segmentation: {robot_segmentation}")
+
+
+def make_field_interface(container: Container) -> None:
+    config = container.resolve(Config)
+    shared_config = container.resolve(SharedConfig)
     map_config = shared_config.get_map(FieldType(get_map()))
     field_filter = load_field_filter(map_config, config.field_filter, container)
     container.register(map_config)
@@ -129,7 +168,8 @@ def make_field_interface(config: Config, shared_config: SharedConfig, container:
     logger.info(f"Field filter: {field_filter}")
 
 
-def make_field_request_handler(config: Config, container: Container) -> None:
+def make_field_request_handler(container: Container) -> None:
+    config = container.resolve(Config)
     ros = container.resolve(Ros)
     request_subscriber = RosPollSubscriber(ros, "/perception/field/request", Empty)
     response_subscriber = RosPublisher(ros, "/perception/field/response", FieldResult)
@@ -151,11 +191,14 @@ def main() -> None:
     print()  # Start log on a fresh line
 
     container = Container()
-    make_ros_comms(config, container)
-    make_camera(config, container)
-    make_field_segmentation(config, container)
-    make_field_interface(config, shared_config, container)
-    make_field_request_handler(config, container)
+    container.register(config)
+    container.register(shared_config)
+    make_ros_comms(container)
+    make_camera(container)
+    make_field_segmentation(container)
+    make_robot_segmentation(container)
+    make_field_interface(container)
+    make_field_request_handler(container)
 
     poll_delay = 1.0 / config.poll_rate
     app = Runner(container)

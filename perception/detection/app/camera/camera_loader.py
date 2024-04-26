@@ -9,6 +9,7 @@ from app.config.camera_config.camera_types import CameraConfig
 from app.config.camera_config.noop_camera_config import NoopCameraConfig
 from app.config.camera_config.simulated_camera_config import SimulatedCameraConfig
 from app.config.camera_config.zed_camera_config import ZedCameraConfig
+from app.config.config import Config
 from app.container import Container
 
 from .noop_camera import NoopCamera
@@ -18,15 +19,16 @@ from .zed_camera import ZedCamera
 CameraImplementation = Union[ZedCamera, NoopCamera, SimulatedCamera]
 
 
-def make_simulated_camera(config: SimulatedCameraConfig, container: Container) -> CameraImplementation:
+def make_simulated_camera(camera_config: SimulatedCameraConfig, container: Container) -> CameraImplementation:
     ros = container.resolve(Ros)
+    config = container.resolve(Config)
+    ns = config.camera_topic.namespace
 
-    ns = config.namespace
     color_image_sub = RosPollSubscriber(ros, ns + "/rgb/image_rect_color/compressed", CompressedImage)
     depth_image_sub = RosPollSubscriber(ros, ns + "/depth/depth_registered/compressed", CompressedImage)
     camera_info_sub = RosPollSubscriber(ros, ns + "/rgb/camera_info", CameraInfo)
 
-    return SimulatedCamera(config, color_image_sub, depth_image_sub, camera_info_sub)
+    return SimulatedCamera(camera_config, color_image_sub, depth_image_sub, camera_info_sub)
 
 
 def load_camera(config: CameraConfig, container: Container) -> CameraImplementation:

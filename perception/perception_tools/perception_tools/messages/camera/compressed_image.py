@@ -26,10 +26,13 @@ class CompressedImage:
 
     def to_raw(self) -> RawRosMessage:
         extension = ".jpg"
-        success, encoded_data = cv2.imencode(extension, self.data, [int(cv2.IMWRITE_JPEG_QUALITY), 90])
-        if not success:
-            raise ValueError(f"Failed to encode image. {self}")
-        data = base64.b64encode(encoded_data.tobytes()).decode("ascii")
+        if len(self.data) != 0:
+            success, encoded_data = cv2.imencode(extension, self.data, [int(cv2.IMWRITE_JPEG_QUALITY), 90])
+            if not success:
+                raise ValueError(f"Failed to encode image. {self}")
+            data = base64.b64encode(encoded_data.tobytes()).decode("ascii")
+        else:
+            data = ""
         return {
             "header": self.header.to_raw(),
             "format": self.format,

@@ -1,11 +1,10 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Literal
 
 
 @dataclass
 class SimulatedSegmentationConfig:
     type: Literal["SimulatedSegmentation"] = "SimulatedSegmentation"
-    separate_friendlies: bool = True
     debug: bool = True
-    namespace: str = "camera_0"
     compression_error_tolerance: int = 15
+    simulated_to_real_labels: dict[str, str] = field(default_factory=dict)

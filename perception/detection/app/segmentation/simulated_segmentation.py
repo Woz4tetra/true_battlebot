@@ -3,52 +3,44 @@ import logging
 import cv2
 import numpy as np
 from bw_shared.enums.labels import Label
-from perception_tools.messages.camera.compressed_image import CompressedImage
 from perception_tools.messages.camera.image import Image
 from perception_tools.messages.segmentation.contour import Contour
 from perception_tools.messages.segmentation.segmentation_instance import SegmentationInstance
 from perception_tools.messages.segmentation.segmentation_instance_array import SegmentationInstanceArray
 from perception_tools.messages.segmentation.uv_keypoint import UVKeypoint
-from perception_tools.rosbridge.ros_poll_subscriber import RosPollSubscriber
-from perception_tools.rosbridge.ros_publisher import RosPublisher
 
 from app.config.segmentation_config.simulated_segmentation_config import SimulatedSegmentationConfig
 from app.segmentation.segmentation_interface import SegmentationInterface
+from app.segmentation.simulated_segmentation_manager import SimulatedSegmentationManager
 
 
 class SimulatedSegmentation(SegmentationInterface):
     def __init__(
         self,
         config: SimulatedSegmentationConfig,
-        sim_segmentation_image_sub: RosPollSubscriber[CompressedImage],
-        segmentation_pub: RosPublisher[SegmentationInstanceArray],
-        simulated_segmentation_sub: RosPollSubscriber[SegmentationInstanceArray],
+        segmentation_manager: SimulatedSegmentationManager,
     ) -> None:
         self.logger = logging.getLogger("perception")
-        self.separately_friendlies = config.separate_friendlies
         self.debug = config.debug
         self.error_range = config.compression_error_tolerance
 
-        self.simulated_to_real_labels: dict[str, Label] = {
-            "Mini bot": Label.FRIENDLY_ROBOT if self.separately_friendlies else Label.ROBOT,
-            "Main bot": Label.FRIENDLY_ROBOT if self.separately_friendlies else Label.ROBOT,
-            "Enemy bot": Label.ROBOT,
-            "Field": Label.FIELD,
-            "Referee": Label.REFEREE,
+        self.simulated_to_real_labels = {
+            sim_label: Label(real_label) for sim_label, real_label in config.simulated_to_real_labels.items()
         }
+        if len(self.simulated_to_real_labels) == 0:
+            self.logger.warning("No simulated to real label mapping provided")
+        self.logger.info(f"Simulated to real label mapping: {self.simulated_to_real_labels}")
         self.real_model_labels = tuple(Label)
         self.simulated_segmentations: dict[int, Label] = {}
 
-        self.segmentation_pub = segmentation_pub
-        self.simulated_segmentation_sub = simulated_segmentation_sub
-        self.sim_segmentation_image_sub = sim_segmentation_image_sub
+        self.segmentation_manager = segmentation_manager
 
     def process_image(self, rgb_image: Image) -> tuple[SegmentationInstanceArray, Image | None]:
-        image = self.sim_segmentation_image_sub.receive()
+        image = self.segmentation_manager.get_image()
         if image is None:
             self.logger.warning("No simulated segmentation image received yet")
             return SegmentationInstanceArray(), None
-        if segmentation := self.simulated_segmentation_sub.receive():
+        if segmentation := self.segmentation_manager.get_segmentation():
             self.simulated_segmentations.update(self.process_segmentation(segmentation))
         if len(self.simulated_segmentations) == 0:
             self.logger.warning("No simulated segmentation received yet")
@@ -71,7 +63,7 @@ class SimulatedSegmentation(SegmentationInterface):
             contours, hierarchy = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
             if hierarchy is None:  # empty mask
                 continue
-            has_holes = (hierarchy.reshape(-1, 4)[:, 3] >= 0).sum() > 0  # type: ignore
+            has_holes = bool((hierarchy.reshape(-1, 4)[:, 3] >= 0).sum() > 0)  # type: ignore
             object_index = object_counts[label]
             segmentation = SegmentationInstance(
                 contours=[self.to_contours_msg(contour) for contour in contours],
@@ -113,6 +105,6 @@ class SimulatedSegmentation(SegmentationInterface):
     def to_contours_msg(self, contours: np.ndarray) -> Contour:
         contour_msg = Contour([], 0.0)
         for x, y in contours[:, 0]:
-            contour_msg.points.append(UVKeypoint(x, y))
+            contour_msg.points.append(UVKeypoint(int(x), int(y)))
         contour_msg.area = cv2.contourArea(contours)
         return contour_msg

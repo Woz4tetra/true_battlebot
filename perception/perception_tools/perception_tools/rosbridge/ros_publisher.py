@@ -2,6 +2,7 @@ import logging
 from queue import Queue
 from typing import Generic, Type, TypeVar
 
+from perception_tools.rosbridge.message_logging import get_shortened_message
 from perception_tools.rosbridge.ros_message_interface import RosMessageInterface
 from perception_tools.rosbridge.types import RawRosMessage
 from roslibpy import Message, Ros, Topic
@@ -12,7 +13,7 @@ T = TypeVar("T", bound=RosMessageInterface)
 class RosPublisher(Generic[T]):
     topic: Topic
     log: bool = False
-    log_filters: list[str] = []
+    exclude_filters: list[str] = []
 
     def __init__(
         self,
@@ -43,6 +44,7 @@ class RosPublisher(Generic[T]):
         )
 
     def publish(self, msg: T) -> None:
-        if self.log and (len(self.log_filters) == 0 or self.topic_name in self.log_filters):
-            self.logger.debug(f"{self.topic_name} published a message: {msg}")
-        self.topic.publish(Message(msg.to_raw()))
+        raw_msg = msg.to_raw()
+        if self.log and (len(self.exclude_filters) == 0 or self.topic_name not in self.exclude_filters):
+            self.logger.debug(f"{self.topic_name} published a message: {get_shortened_message(raw_msg)}")
+        self.topic.publish(Message(raw_msg))

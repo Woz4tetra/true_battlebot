@@ -2,6 +2,7 @@ import logging
 from queue import Empty, Full, Queue
 from typing import Generic, Type, TypeVar
 
+from perception_tools.rosbridge.message_logging import get_shortened_message
 from perception_tools.rosbridge.ros_message_interface import RosMessageInterface
 from perception_tools.rosbridge.types import RawRosMessage
 from roslibpy import Ros, Topic
@@ -12,7 +13,7 @@ T = TypeVar("T", bound=RosMessageInterface)
 class RosPollSubscriber(Generic[T]):
     topic: Topic
     log: bool = False
-    log_filters: list[str] = []
+    exclude_filters: list[str] = []
 
     def __init__(self, ros: Ros, topic: str, msg_type: Type[T], queue_size: int = 1):
         self.queue_size = queue_size
@@ -36,8 +37,8 @@ class RosPollSubscriber(Generic[T]):
         return return_val
 
     def _callback(self, raw_msg: RawRosMessage) -> None:
-        if self.log and (len(self.log_filters) == 0 or self.topic_name in self.log_filters):
-            self.logger.debug(f"{self.topic_name} received a message: {raw_msg}")
+        if self.log and (len(self.exclude_filters) == 0 or self.topic_name not in self.exclude_filters):
+            self.logger.debug(f"{self.topic_name} received a message: {get_shortened_message(raw_msg)}")
         msg = self.msg_type.from_raw(raw_msg)
         if self.queue_size == 1:
             self.last_value = msg
