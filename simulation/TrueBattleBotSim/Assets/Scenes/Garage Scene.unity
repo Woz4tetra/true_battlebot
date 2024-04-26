@@ -15083,6 +15083,8 @@ MonoBehaviour:
   publishRate: 1
   viewAngleThreshold: 70
   topic: /camera_0/simulated_field_result
+  child_frame_id: map_relative
+  label: field
 --- !u!1 &8843940501417694363
 GameObject:
   m_ObjectHideFlags: 0

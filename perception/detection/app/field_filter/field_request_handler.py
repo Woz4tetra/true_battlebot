@@ -2,7 +2,8 @@ import logging
 import time
 
 from perception_tools.messages.field_result import FieldResult
-from perception_tools.rosbridge.ros_poll_subscriber import RosPollRawSubscriber
+from perception_tools.rosbridge.empty import Empty
+from perception_tools.rosbridge.ros_poll_subscriber import RosPollSubscriber
 from perception_tools.rosbridge.ros_publisher import RosPublisher
 
 from app.config.field_filter_config.field_request_config import FieldRequestConfig
@@ -12,7 +13,7 @@ class FieldRequestHandler:
     def __init__(
         self,
         field_request_config: FieldRequestConfig,
-        request_subscriber: RosPollRawSubscriber,
+        request_subscriber: RosPollSubscriber[Empty],
         response_publisher: RosPublisher[FieldResult],
     ) -> None:
         self.logger = logging.getLogger("perception")

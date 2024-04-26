@@ -1,6 +1,5 @@
-import numpy as np
 from perception_tools.messages.camera.camera_data import CameraData
-from perception_tools.messages.camera.camera_info import CameraInfo, RegionOfInterest
+from perception_tools.messages.camera.camera_info import CameraInfo
 from perception_tools.messages.camera.image import Image
 from perception_tools.messages.std_msgs.header import Header
 

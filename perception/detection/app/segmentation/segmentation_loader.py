@@ -1,8 +1,10 @@
 from typing import Union
 
-from perception_tools.messages.camera.image import Image
+from perception_tools.messages.camera.compressed_image import CompressedImage
 from perception_tools.messages.segmentation.segmentation_instance_array import SegmentationInstanceArray
-from perception_tools.rosbridge.ros_factory import RosFactory
+from perception_tools.rosbridge.ros_poll_subscriber import RosPollSubscriber
+from perception_tools.rosbridge.ros_publisher import RosPublisher
+from roslibpy import Ros
 
 from app.config.segmentation_config.instance_segmentation_config import InstanceSegmentationConfig
 from app.config.segmentation_config.noop_segmentation_config import NoopSegmentationConfig
@@ -23,12 +25,12 @@ def load_segmentation(container: Container, config: SegmentationConfig) -> Segme
     elif isinstance(config, NoopSegmentationConfig):
         return NoopSegmentation(config)
     elif isinstance(config, SimulatedSegmentationConfig):
-        ros_factory = container.resolve(RosFactory)
+        ros = container.resolve(Ros)
         namespace = config.namespace
-        sim_segmentation_image_sub = ros_factory.make_subscriber(namespace + "/segmentation_image", Image)
-        segmentation_pub = ros_factory.make_publisher(namespace + "/segmentation", SegmentationInstanceArray)
-        simulated_segmentation_sub = ros_factory.make_subscriber(
-            namespace + "/simulated_segmentation", SegmentationInstanceArray
+        sim_segmentation_image_sub = RosPollSubscriber(ros, namespace + "/layer/image_raw/compressed", CompressedImage)
+        segmentation_pub = RosPublisher(ros, namespace + "/segmentation", SegmentationInstanceArray)
+        simulated_segmentation_sub = RosPollSubscriber(
+            ros, namespace + "/simulated_segmentation", SegmentationInstanceArray
         )
         return SimulatedSegmentation(config, sim_segmentation_image_sub, segmentation_pub, simulated_segmentation_sub)
     else:

@@ -16,8 +16,18 @@ class SegmentationInstanceArray:
     type: str = "bw_interfaces/SegmentationInstanceArray"
 
     def to_raw(self) -> RawRosMessage:
-        pass
+        return {
+            "header": self.header.to_raw(),
+            "height": self.height,
+            "width": self.width,
+            "instances": [instance.to_raw() for instance in self.instances],
+        }
 
     @classmethod
     def from_raw(cls, msg: RawRosMessage) -> SegmentationInstanceArray:
-        pass
+        return cls(
+            header=Header.from_raw(msg["header"]),
+            height=msg["height"],
+            width=msg["width"],
+            instances=[SegmentationInstance.from_raw(instance) for instance in msg["instances"]],
+        )

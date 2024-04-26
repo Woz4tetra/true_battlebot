@@ -2,8 +2,18 @@
 type = "SimulatedCamera"
 
 [field_segmentation]
-type = "NoopSegmentation"
-# type = "SimulatedSegmentationConfig"
+type = "SimulatedSegmentation"
 
 [field_filter]
 type = "SimulatedFieldFilter"
+
+[field_request]
+stale_image_timeout = 2.0
+
+[rosbridge]
+log = true
+log_filters = [
+    "/camera_0/rgb/camera_info/compressed",
+    "/camera_0/rgb/image_rect_color/compressed",
+    "/camera_0/depth/depth_registered/compressed",
+]

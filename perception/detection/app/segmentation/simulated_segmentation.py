@@ -3,6 +3,7 @@ import logging
 import cv2
 import numpy as np
 from bw_shared.enums.labels import Label
+from perception_tools.messages.camera.compressed_image import CompressedImage
 from perception_tools.messages.camera.image import Image
 from perception_tools.messages.segmentation.contour import Contour
 from perception_tools.messages.segmentation.segmentation_instance import SegmentationInstance
@@ -19,13 +20,14 @@ class SimulatedSegmentation(SegmentationInterface):
     def __init__(
         self,
         config: SimulatedSegmentationConfig,
-        sim_segmentation_image_sub: RosPollSubscriber[Image],
+        sim_segmentation_image_sub: RosPollSubscriber[CompressedImage],
         segmentation_pub: RosPublisher[SegmentationInstanceArray],
         simulated_segmentation_sub: RosPollSubscriber[SegmentationInstanceArray],
     ) -> None:
         self.logger = logging.getLogger("perception")
         self.separately_friendlies = config.separate_friendlies
         self.debug = config.debug
+        self.error_range = config.compression_error_tolerance
 
         self.simulated_to_real_labels: dict[str, Label] = {
             "Mini bot": Label.FRIENDLY_ROBOT if self.separately_friendlies else Label.ROBOT,
@@ -47,7 +49,7 @@ class SimulatedSegmentation(SegmentationInterface):
             self.logger.warning("No simulated segmentation image received yet")
             return SegmentationInstanceArray(), None
         if segmentation := self.simulated_segmentation_sub.receive():
-            self.process_segmentation(segmentation)
+            self.simulated_segmentations.update(self.process_segmentation(segmentation))
         if len(self.simulated_segmentations) == 0:
             self.logger.warning("No simulated segmentation received yet")
             return SegmentationInstanceArray(), None
@@ -55,13 +57,16 @@ class SimulatedSegmentation(SegmentationInterface):
         segmentation_array = SegmentationInstanceArray()
 
         if self.debug:
-            debug_image = Image(rgb_image.header, rgb_image.data.copy())
+            debug_image = Image.from_other(rgb_image)
         else:
             debug_image = None
         object_counts = {label: 0 for label in self.real_model_labels}
         for color, label in self.simulated_segmentations.items():
             color_rgb = self.color_i32_to_rgb(color)
-            mask = np.all(image.data == color_rgb, axis=2).astype(np.uint8)
+            color_nominal = np.array(color_rgb)
+            color_lower = color_nominal - self.error_range
+            color_upper = color_nominal + self.error_range
+            mask = cv2.inRange(image.data, color_lower, color_upper)
             mask = self.bridge_gaps(mask, 3)
             contours, hierarchy = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
             if hierarchy is None:  # empty mask
@@ -88,13 +93,15 @@ class SimulatedSegmentation(SegmentationInterface):
 
         return segmentation_array, debug_image
 
-    def process_segmentation(self, msg: SegmentationInstanceArray) -> None:
+    def process_segmentation(self, msg: SegmentationInstanceArray) -> dict[int, Label]:
+        simulated_segmentations = {}
         for instant in msg.instances:
             if instant.label not in self.simulated_to_real_labels:
                 continue
             color = instant.class_index
             label = self.simulated_to_real_labels[instant.label]
-            self.simulated_segmentations[color] = label
+            simulated_segmentations[color] = label
+        return simulated_segmentations
 
     def color_i32_to_rgb(self, color: int) -> tuple[int, int, int]:
         return color & 0xFF, (color >> 8) & 0xFF, (color >> 16) & 0xFF

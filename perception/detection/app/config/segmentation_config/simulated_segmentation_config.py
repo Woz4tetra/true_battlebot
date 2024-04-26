@@ -6,5 +6,6 @@ from typing import Literal
 class SimulatedSegmentationConfig:
     type: Literal["SimulatedSegmentation"] = "SimulatedSegmentation"
     separate_friendlies: bool = True
-    debug: bool = False
+    debug: bool = True
     namespace: str = "camera_0"
+    compression_error_tolerance: int = 15

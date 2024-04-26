@@ -11,8 +11,18 @@ T = TypeVar("T", bound=RosMessageInterface)
 
 class RosPublisher(Generic[T]):
     topic: Topic
+    log: bool = False
+    log_filters: list[str] = []
 
-    def __init__(self, ros: Ros, topic: str, msg_type: Type[T], queue_size: int, latch: bool = False):
+    def __init__(
+        self,
+        ros: Ros,
+        topic: str,
+        msg_type: Type[T],
+        queue_size: int = 1,
+        latch: bool = False,
+        compression: str | None = None,
+    ):
         self.queue_size = queue_size
         if queue_size == 1:
             self.last_value: RawRosMessage | None = None
@@ -23,7 +33,16 @@ class RosPublisher(Generic[T]):
 
         self.msg_type = msg_type
         self.topic_name = topic.replace("-", "_")
-        self.topic = Topic(ros, self.topic_name, self.msg_type.type, queue_size=queue_size, latch=latch)
+        self.topic = Topic(
+            ros,
+            self.topic_name,
+            self.msg_type.type,
+            queue_size=queue_size,
+            latch=latch,
+            compression=compression,
+        )
 
     def publish(self, msg: T) -> None:
+        if self.log and (len(self.log_filters) == 0 or self.topic_name in self.log_filters):
+            self.logger.debug(f"{self.topic_name} published a message: {msg}")
         self.topic.publish(Message(msg.to_raw()))

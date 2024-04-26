@@ -29,8 +29,12 @@ class SimulatedFieldFilter(FieldFilterInterface):
     ) -> FieldResult:
         if not self.last_field_result:
             self.logger.warning("Waiting for simulated field result")
-        while not self.last_field_result:
-            if result := self.simulated_field_result_sub.receive():
-                self.last_field_result = result
-                self.logger.info(f"Received simulated field result: {result}")
+            while not self.last_field_result:
+                if result := self.simulated_field_result_sub.receive():
+                    self.logger.debug("Got new simulated field result while waiting")
+                    self.last_field_result = result
+        elif result := self.simulated_field_result_sub.receive():
+            self.logger.debug("Got new simulated field result")
+            self.last_field_result = result
+        self.logger.info(f"Received simulated field result: {result}")
         return self.last_field_result

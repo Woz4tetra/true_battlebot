@@ -1,0 +1,46 @@
+<launch>
+    <node pkg="nodelet" type="nodelet" args="manager" name="synthetic_relay_manager"
+        output="screen" />
+    <node pkg="nodelet" type="nodelet" name="synthetic_cloudify" output="screen"
+        args="load depth_image_proc/point_cloud_xyzrgb synthetic_relay_manager --no-bond">
+        <remap from="depth_registered/image_rect" to="depth/depth_registered" />
+        <remap from="rgb/image_rect_color" to="rgb/image_rect_color" />
+        <remap from="rgb/camera_info" to="rgb/camera_info" />
+        <remap from="depth_registered/points" to="point_cloud/cloud_registered" />
+    </node>
+
+    <node pkg="nodelet" type="nodelet" args="manager" name="sim_image_proc"
+        output="screen" />
+    <node pkg="nodelet" type="nodelet" name="sim_image_readout" output="screen"
+        args="load image_proc/crop_decimate sim_image_proc --no-bond">
+        <remap from="camera/image_raw" to="rgb/image_rect_color" />
+        <remap from="camera/camera_info" to="rgb/camera_info" />
+        <remap from="camera_out/image_raw" to="readout/image_rect_color" />
+        <remap from="camera_out/camera_info" to="readout/camera_info" />
+        <param name="decimation_x" value="1" />
+        <param name="decimation_y" value="1" />
+    </node>
+
+
+    <node name="$(anon compressed)" pkg="image_transport" type="republish" output="screen"
+        required="false"
+        args="raw
+        in:=rgb/image_rect_color
+        compressed
+        out:=rgb/image_rect_color
+    " />
+    <node name="$(anon depth_compressed)" pkg="image_transport" type="republish" output="screen"
+        required="false"
+        args="raw
+        in:=depth/image_rect_color
+        compressed
+        out:=depth/image_rect_color
+    " />
+    <node name="$(anon layer_compressed)" pkg="image_transport" type="republish" output="screen"
+        required="false"
+        args="raw
+        in:=layer/image_raw
+        compressed
+        out:=layer/image_raw
+    " />
+</launch>

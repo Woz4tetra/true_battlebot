@@ -145,15 +145,15 @@ public class ImageSynthesis : MonoBehaviour
             pass.infoTopicState = ros.GetOrCreateTopic(GetImageTopic(pass.infoTopic), MessageRegistry.GetRosMessageName<CameraInfoMsg>());
             if (!pass.imageTopicState.IsPublisher)
             {
-                ros.RegisterPublisher<ImageMsg>(pass.imageTopicState.Topic);
+                ros.RegisterPublisher<ImageMsg>(pass.imageTopicState.Topic, queue_size: 1);
             }
             if (!pass.infoTopicState.IsPublisher)
             {
-                ros.RegisterPublisher<CameraInfoMsg>(pass.infoTopicState.Topic);
+                ros.RegisterPublisher<CameraInfoMsg>(pass.infoTopicState.Topic, queue_size: 1);
             }
         }
         if (publishSegmentationLabels)
-            ros.RegisterPublisher<SegmentationInstanceArrayMsg>(baseTopic + "/" + segmentationTopic);
+            ros.RegisterPublisher<SegmentationInstanceArrayMsg>(baseTopic + "/" + segmentationTopic, queue_size: 1);
 
         // default fallbacks, if shaders are unspecified
         if (!uberReplacementShader)

@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import base64
 import sys
 from dataclasses import dataclass, field
 from enum import Enum
 
 import numpy as np
+from perception_tools.messages.camera.compressed_image import CompressedImage
 from perception_tools.messages.std_msgs.header import Header
 from perception_tools.rosbridge.types import RawRosMessage
 
@@ -110,15 +112,37 @@ class Image:
     is_bigendian: bool = False
     type: str = "sensor_msgs/Image"
 
+    @classmethod
+    def from_other(cls, other: Image) -> Image:
+        return Image(
+            header=Header(other.header.stamp, other.header.frame_id, other.header.seq),
+            data=other.data.copy(),
+            encoding=other.encoding,
+            is_bigendian=other.is_bigendian,
+        )
+
+    def to_compressed(self) -> CompressedImage:
+        return CompressedImage(header=self.header, data=self.data)
+
+    @classmethod
+    def from_compressed(cls, compressed: CompressedImage) -> Image:
+        return Image(
+            header=Header(compressed.header.stamp, compressed.header.frame_id, compressed.header.seq),
+            data=compressed.data,
+            encoding=Encoding.BGR8,
+            is_bigendian=False,
+        )
+
     def to_raw(self) -> RawRosMessage:
+        data = base64.b64encode(self.data.tobytes()).decode("ascii")
         return {
             "header": self.header.to_raw(),
             "height": self.data.shape[0],
             "width": self.data.shape[1],
             "encoding": self.encoding.value,
-            "is_bigendian": self.is_bigendian,
-            "step": self.data.shape[1] * self.data.shape[2],
-            "data": self.data.tobytes().decode(),
+            "is_bigendian": int(self.is_bigendian),
+            "step": self.data.shape[1] * self.data.shape[2] * self.data.dtype.itemsize,
+            "data": data,
         }
 
     @classmethod
@@ -127,22 +151,18 @@ class Image:
         data: str = msg["data"]
         width: int = msg["width"]
         height: int = msg["height"]
-        step: int = msg["step"]
         dtype, num_channels = ROS_ENCODING_TO_NUMPY[encoding]
 
-        buffer = np.frombuffer(data.encode(), dtype=dtype)
+        base64_bytes = data.encode("ascii")
+        buffer = np.frombuffer(base64.b64decode(base64_bytes), dtype=dtype)
 
         if num_channels == 1:
-            image = np.ndarray(shape=(height, int(step / dtype().itemsize)), dtype=dtype, buffer=buffer)
-            image = np.ascontiguousarray(image[:height, :width])
+            image = buffer.reshape((height, width))
         else:
-            image = np.ndarray(
-                shape=(height, int(step / dtype().itemsize / num_channels), num_channels), dtype=dtype, buffer=buffer
-            )
-            image = np.ascontiguousarray(image[:height, :width, :])
+            image = buffer.reshape((height, width, num_channels))
 
         # If the byte order is different between the message and the system.
-        is_bigendian: bool = msg["is_bigendian"]
+        is_bigendian = msg["is_bigendian"] != 0
         if is_bigendian == (sys.byteorder == "little"):
             image = image.byteswap().newbyteorder()
 

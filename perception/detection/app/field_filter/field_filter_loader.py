@@ -1,6 +1,7 @@
 from bw_shared.configs.maps import MapConfig
 from perception_tools.messages.field_result import FieldResult
-from perception_tools.rosbridge.ros_factory import RosFactory
+from perception_tools.rosbridge.ros_poll_subscriber import RosPollSubscriber
+from roslibpy import Ros
 
 from app.config.field_filter_config.field_filter_types import FieldFilterConfig
 from app.config.field_filter_config.ransac_field_filter_config import RansacFieldFilterConfig
@@ -17,9 +18,9 @@ def load_field_filter(
     if isinstance(field_filter, RansacFieldFilterConfig):
         return RansacFieldFilter(map_config, field_filter)
     elif isinstance(field_filter, SimulatedFieldFilterConfig):
-        ros_factory = container.resolve(RosFactory)
-        simulated_field_result_sub = ros_factory.make_subscriber(
-            field_filter.namespace + "/simulated_field_result", FieldResult
+        ros = container.resolve(Ros)
+        simulated_field_result_sub = RosPollSubscriber(
+            ros, field_filter.namespace + "/simulated_field_result", FieldResult
         )
         return SimulatedFieldFilter(map_config, field_filter, simulated_field_result_sub)
     else:

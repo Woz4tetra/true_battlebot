@@ -9,33 +9,36 @@ from roslibpy import Ros, Topic
 T = TypeVar("T", bound=RosMessageInterface)
 
 
-class RosPollRawSubscriber(Generic[T]):
+class RosPollSubscriber(Generic[T]):
     topic: Topic
+    log: bool = False
+    log_filters: list[str] = []
 
-    def __init__(self, ros: Ros, topic: str, msg_type: str, queue_size: int):
+    def __init__(self, ros: Ros, topic: str, msg_type: Type[T], queue_size: int = 1):
         self.queue_size = queue_size
         if queue_size == 1:
-            self.last_value: RawRosMessage | None = None
+            self.last_value: T | None = None
         else:
-            self.queue: Queue[RawRosMessage] = Queue(maxsize=queue_size)
+            self.queue: Queue[T] = Queue(maxsize=queue_size)
 
         self.logger = logging.getLogger("perception")
 
-        self.topic_name = topic.replace("-", "_")
-        self.topic = Topic(ros, self.topic_name, msg_type, queue_size=queue_size)
+        self.msg_type = msg_type
+        self.topic_name = topic
+        self.topic = Topic(ros, self.topic_name, msg_type.type, queue_size=queue_size)
         self.topic.subscribe(self._callback)
 
-    def receive(self) -> RawRosMessage | None:
-        return self._receive_raw()
-
-    def _receive_raw(self) -> RawRosMessage | None:
+    def receive(self) -> T | None:
         if self.queue_size != 1:
             return self._pop_message()
         return_val = self.last_value
         self.last_value = None
         return return_val
 
-    def _callback(self, msg: RawRosMessage) -> None:
+    def _callback(self, raw_msg: RawRosMessage) -> None:
+        if self.log and (len(self.log_filters) == 0 or self.topic_name in self.log_filters):
+            self.logger.debug(f"{self.topic_name} received a message: {raw_msg}")
+        msg = self.msg_type.from_raw(raw_msg)
         if self.queue_size == 1:
             self.last_value = msg
             return
@@ -48,23 +51,9 @@ class RosPollRawSubscriber(Generic[T]):
                 self.logger.debug(f"{self.topic_name} dropping a message from the queue")
                 self._pop_message()
 
-    def _pop_message(self) -> RawRosMessage | None:
+    def _pop_message(self) -> T | None:
         try:
             return_val = self.queue.get(block=False)
         except Empty:
             return_val = None
         return return_val
-
-
-class RosPollSubscriber(RosPollRawSubscriber, Generic[T]):
-    topic: Topic
-
-    def __init__(self, ros: Ros, topic: str, msg_type: Type[T], queue_size: int):
-        self.msg_type = msg_type
-        super().__init__(ros, topic, msg_type.type, queue_size)
-
-    def receive(self) -> T | None:
-        raw_msg = self._receive_raw()
-        if raw_msg is None:
-            return None
-        return self.msg_type.from_raw(raw_msg)

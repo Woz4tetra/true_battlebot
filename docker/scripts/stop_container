@@ -1,9 +1,5 @@
 #!/bin/bash
-if [ -z $1 ]; then
-    BASE_DIR=$(realpath "$(dirname $0)")
-else
-    BASE_DIR=$(realpath "$1")
-fi
+BASE_DIR=$(realpath "$(dirname $0)")
 
 export PROJECT_DIR=$(realpath "${BASE_DIR}/../../")
 export PROJECT_NAME=$(${BASE_DIR}/../get_project_name)
@@ -13,4 +9,4 @@ export ORGANIZATION=$(${BASE_DIR}/../get_organization)
 export ROS_MASTER_INTERFACE=${HOST_INTERFACE}
 
 cd ${BASE_DIR}/../resources
-docker-compose -f docker-compose.${PROJECT_NAME}.yml stop
+docker-compose -f docker-compose.${PROJECT_NAME}.yml stop $@
