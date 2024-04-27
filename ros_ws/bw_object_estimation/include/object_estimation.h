@@ -29,7 +29,7 @@ private:
     ros::Publisher _robot_marker_pub;
 
     bool find_object(bw_interfaces::EstimatedObject &robot_msg, cv::Mat depth_image, std::vector<std::vector<cv::Point>> cv_contours);
-    void fill_marker_array(int obj_index, bw_interfaces::EstimatedObject &robot_msg, visualization_msgs::MarkerArray robot_markers);
+    void fill_marker_array(int obj_index, bw_interfaces::EstimatedObject &robot_msg, visualization_msgs::MarkerArray &robot_markers);
 
 protected:
     void synced_callback(

@@ -117,12 +117,14 @@ bool ObjectEstimation::find_object(bw_interfaces::EstimatedObject &robot_msg, cv
     return true;
 }
 
-void ObjectEstimation::fill_marker_array(int obj_index, bw_interfaces::EstimatedObject &robot_msg, visualization_msgs::MarkerArray robot_markers)
+void ObjectEstimation::fill_marker_array(int obj_index, bw_interfaces::EstimatedObject &robot_msg, visualization_msgs::MarkerArray &robot_markers)
 {
     visualization_msgs::Marker cube_marker;
     cube_marker.header = robot_msg.header;
     cube_marker.ns = robot_msg.label + "_cube";
     cube_marker.id = obj_index;
+    cube_marker.frame_locked = false;
+    cube_marker.lifetime = ros::Duration(1.0);
     cube_marker.type = visualization_msgs::Marker::CUBE;
     cube_marker.action = visualization_msgs::Marker::ADD;
     cube_marker.pose = robot_msg.pose.pose;
@@ -137,12 +139,14 @@ void ObjectEstimation::fill_marker_array(int obj_index, bw_interfaces::Estimated
     arrow_marker.header = robot_msg.header;
     arrow_marker.ns = robot_msg.label + "_arrow";
     arrow_marker.id = obj_index;
+    arrow_marker.frame_locked = false;
+    arrow_marker.lifetime = ros::Duration(1.0);
     arrow_marker.type = visualization_msgs::Marker::ARROW;
     arrow_marker.action = visualization_msgs::Marker::ADD;
     arrow_marker.pose = robot_msg.pose.pose;
-    arrow_marker.scale.x = 1.0;
-    arrow_marker.scale.y = 0.1;
-    arrow_marker.scale.z = 0.1;
+    arrow_marker.scale.x = 0.5;
+    arrow_marker.scale.y = 0.05;
+    arrow_marker.scale.z = 0.05;
     arrow_marker.color.a = 1.0;
     arrow_marker.color.r = 1.0;
     arrow_marker.color.g = 0.1;
@@ -153,10 +157,12 @@ void ObjectEstimation::fill_marker_array(int obj_index, bw_interfaces::Estimated
     text_marker.header = robot_msg.header;
     text_marker.ns = robot_msg.label + "_text";
     text_marker.id = obj_index;
+    text_marker.frame_locked = false;
+    text_marker.lifetime = ros::Duration(1.0);
     text_marker.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
     text_marker.action = visualization_msgs::Marker::ADD;
     text_marker.pose = robot_msg.pose.pose;
-    text_marker.pose.position.z += 0.1;
+    text_marker.pose.position.z -= 0.1;
     text_marker.scale.z = 0.1;
     text_marker.color.a = 1.0;
     text_marker.color.r = 1.0;

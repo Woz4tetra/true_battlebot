@@ -8,9 +8,7 @@ T = TypeVar("T", bound="RosMessageInterface")
 class RosMessageInterface(Protocol):
     type: str
 
-    def to_raw(self) -> RawRosMessage:
-        pass
+    def to_raw(self) -> RawRosMessage: ...
 
     @classmethod
-    def from_raw(cls: Type[T], msg: RawRosMessage) -> T:
-        pass
+    def from_raw(cls: Type[T], msg: RawRosMessage) -> T: ...

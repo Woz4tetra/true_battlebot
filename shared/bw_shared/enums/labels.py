@@ -1,7 +1,7 @@
 from enum import Enum
 
 
-class Label(Enum):
+class Label(str, Enum):
     ROBOT = "robot"
     FIELD = "field"
     REFEREE = "referee"
