@@ -4,7 +4,7 @@ project(bw_object_estimation)
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
 
-# set(CMAKE_BUILD_TYPE Debug)
+set(CMAKE_BUILD_TYPE Debug)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
@@ -16,6 +16,7 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
   std_msgs
   visualization_msgs
+  tf2_ros
   bw_interfaces
 )
 
@@ -133,6 +134,7 @@ catkin_package(
   sensor_msgs
   std_msgs
   visualization_msgs
+  tf2_ros
   bw_interfaces
 #  DEPENDS system_lib
 )

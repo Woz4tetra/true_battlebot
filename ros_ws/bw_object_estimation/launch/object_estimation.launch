@@ -1,11 +1,10 @@
 <launch>
 	<group ns="camera_0">
 		<node pkg="bw_object_estimation" type="object_estimation" name="object_estimation"
-			output="screen" respawn="true">
-			<rosparam param="include_labels">[robot, friendly_robot, controlled_robot, referee]</rosparam>
+			output="screen" respawn="true" launch-prefix="gdb -ex run --args">
 			<param name="queue_size" value="30" />
-			<remap from="depth/camera_info" to="rgb/camera_info" />
-			<remap from="depth/image_raw" to="depth/depth_registered" />
+			<remap from="camera_info" to="rgb/camera_info" />
+			<remap from="field" to="/filter/field" />
 			<remap from="segmentation" to="robot/segmentation" />
 		</node>
 	</group>

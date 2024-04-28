@@ -2,6 +2,7 @@
 
 ObjectEstimation::ObjectEstimation(ros::NodeHandle *nodehandle) : BaseEstimation(nodehandle)
 {
+    _segmentation_sub = nh.subscribe<bw_interfaces::SegmentationInstanceArray>("segmentation", 1, &ObjectEstimation::segmentation_callback, this);
     _robot_pub = nh.advertise<bw_interfaces::EstimatedObjectArray>("estimation/robots", _queue_size);
     _robot_marker_pub = nh.advertise<visualization_msgs::MarkerArray>("estimation/robot_markers", _queue_size);
 
@@ -12,13 +13,11 @@ ObjectEstimation::~ObjectEstimation()
 {
 }
 
-void ObjectEstimation::synced_callback(
-    const sensor_msgs::ImageConstPtr &depth_image,
-    const bw_interfaces::SegmentationInstanceArrayConstPtr &segmentation)
+void ObjectEstimation::segmentation_callback(const bw_interfaces::SegmentationInstanceArrayConstPtr &segmentation)
 {
-    cv::Mat depth_cv_image;
-    if (!get_depth_image(_camera_model, depth_cv_image, depth_image))
+    if (!is_field_received())
     {
+        ROS_WARN_THROTTLE(1.0, "No field received, skipping estimation");
         return;
     }
 
@@ -40,7 +39,7 @@ void ObjectEstimation::synced_callback(
             continue;
         }
         bw_interfaces::EstimatedObject robot_msg;
-        if (!find_object(robot_msg, depth_cv_image, cv_contours))
+        if (!find_object(robot_msg, cv_contours))
         {
             continue;
         }
@@ -54,7 +53,7 @@ void ObjectEstimation::synced_callback(
     _robot_marker_pub.publish(robot_markers);
 }
 
-bool ObjectEstimation::find_object(bw_interfaces::EstimatedObject &robot_msg, cv::Mat depth_image, std::vector<std::vector<cv::Point>> cv_contours)
+bool ObjectEstimation::find_object(bw_interfaces::EstimatedObject &robot_msg, std::vector<std::vector<cv::Point>> cv_contours)
 {
     cv::Point2d centroid(0, 0);
     size_t centroid_count = 0;
@@ -75,6 +74,7 @@ bool ObjectEstimation::find_object(bw_interfaces::EstimatedObject &robot_msg, cv
     }
     if (centroid_count == 0)
     {
+        ROS_WARN("No valid centroid found");
         return false;
     }
     centroid.x /= centroid_count;
@@ -101,14 +101,24 @@ bool ObjectEstimation::find_object(bw_interfaces::EstimatedObject &robot_msg, cv
     max_px.x += centroid.x;
     max_px.y += centroid.y;
 
-    cv::Point3d center = get_ray(centroid, depth_image);
+    cv::Point3d center;
+    if (!project_to_field(centroid, center))
+    {
+        ROS_WARN("Failed to project centroid to field");
+        return false;
+    }
 
     robot_msg.pose.pose.position.x = center.x;
     robot_msg.pose.pose.position.y = center.y;
     robot_msg.pose.pose.position.z = center.z;
     robot_msg.pose.pose.orientation.w = 1.0; // orientation is not calculated
 
-    cv::Point3d edge = get_ray(max_px, depth_image);
+    cv::Point3d edge;
+    if (!project_to_field(max_px, edge))
+    {
+        ROS_WARN("Failed to project edge to field");
+        return false;
+    }
 
     robot_msg.size.x = abs(2 * (edge.x - center.x));
     robot_msg.size.y = abs(2 * (edge.y - center.y));

@@ -125,7 +125,8 @@
         "geometry": "cpp",
         "codecvt": "cpp",
         "*.txx": "cpp",
-        "future": "cpp"
+        "future": "cpp",
+        "core": "cpp"
     },
     "files.watcherExclude": {
         "**/.git/*/**": true,

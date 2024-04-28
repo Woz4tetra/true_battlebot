@@ -1,6 +1,6 @@
 #include "base_estimation.h"
 
-BaseEstimation::BaseEstimation(ros::NodeHandle *nodehandle) : nh(*nodehandle)
+BaseEstimation::BaseEstimation(ros::NodeHandle *nodehandle) : nh(*nodehandle), _tf_listener(_tf_buffer)
 {
     ros::param::param<int>("~queue_size", _queue_size, 10);
     ros::param::param<std::vector<std::string>>("~include_labels", _include_labels, std::vector<std::string>());
@@ -8,12 +8,9 @@ BaseEstimation::BaseEstimation(ros::NodeHandle *nodehandle) : nh(*nodehandle)
     {
         ROS_INFO("No labels specified, including all labels");
     }
-    _depth_msg = sensor_msgs::ImagePtr(new sensor_msgs::Image());
 
-    _depth_info_sub = nh.subscribe<sensor_msgs::CameraInfo>("depth/camera_info", 1, &BaseEstimation::camera_info_callback, this);
-
-    _depth_sub = nh.subscribe<sensor_msgs::Image>("depth/image_raw", 1, &BaseEstimation::depth_callback, this);
-    _segmentation_sub = nh.subscribe<bw_interfaces::SegmentationInstanceArray>("segmentation", 1, &BaseEstimation::segmentation_callback, this);
+    _field_sub = nh.subscribe<bw_interfaces::EstimatedObject>("field", 1, &BaseEstimation::field_callback, this);
+    _info_sub = nh.subscribe<sensor_msgs::CameraInfo>("camera_info", 1, &BaseEstimation::camera_info_callback, this);
 }
 
 BaseEstimation::~BaseEstimation()
@@ -23,21 +20,39 @@ BaseEstimation::~BaseEstimation()
 void BaseEstimation::camera_info_callback(const sensor_msgs::CameraInfoConstPtr &camera_info)
 {
     _camera_model.fromCameraInfo(camera_info);
-    _depth_info_sub.shutdown();
+    _info_sub.shutdown();
     ROS_INFO("Camera model loaded");
 }
 
-void BaseEstimation::depth_callback(const sensor_msgs::ImageConstPtr &depth_image)
+void BaseEstimation::field_callback(const bw_interfaces::EstimatedObjectConstPtr &field)
 {
-    *_depth_msg = *depth_image;
-}
-
-void BaseEstimation::segmentation_callback(const bw_interfaces::SegmentationInstanceArrayConstPtr &segmentation)
-{
-    if (_depth_msg != NULL && _depth_msg->header.frame_id.length() != 0)
+    sensor_msgs::CameraInfo info = _camera_model.cameraInfo();
+    geometry_msgs::TransformStamped transform;
+    try
     {
-        synced_callback(_depth_msg, segmentation);
+        transform = _tf_buffer.lookupTransform(info.header.frame_id, field->header.frame_id, ros::Time(0), ros::Duration(15.0));
     }
+    catch (tf2::TransformException &ex)
+    {
+        ROS_ERROR("Failed to look up transform from %s to %s. %s", info.header.frame_id.c_str(), field->header.frame_id.c_str(), ex.what());
+        return;
+    }
+
+    // Extract the position and orientation from the pose
+    auto position = transform.transform.translation;
+    auto orientation = transform.transform.rotation;
+
+    // Convert the position and orientation to cv::Mat
+    _plane_center = cv::Point3d(position.x, position.y, position.z);
+
+    // Convert the orientation to a quaternion
+    Eigen::Quaterniond quat(orientation.w, orientation.x, orientation.y, orientation.z);
+    Eigen::Matrix3d rotation_matrix = quat.normalized().toRotationMatrix();
+    Eigen::Vector3d normal = rotation_matrix * Eigen::Vector3d(0, 0, 1);
+    _plane_normal = cv::Point3d(normal.x(), normal.y(), normal.z());
+
+    ROS_INFO("Field received");
+    _field_received = true;
 }
 
 bool BaseEstimation::is_label_included(std::string label)
@@ -59,61 +74,20 @@ bool BaseEstimation::is_label_included(std::string label)
     }
 }
 
-cv::Point3d BaseEstimation::get_ray(cv::Point2d centroid_uv, cv::Mat depth_image)
+bool BaseEstimation::project_to_field(cv::Point2d centroid_uv, cv::Point3d &out_point, double epsilon)
 {
-    cv::Point3d ray = _camera_model.projectPixelTo3dRay(centroid_uv);
-    int cx = std::min(depth_image.cols, std::max(0, (int)centroid_uv.x));
-    int cy = std::min(depth_image.rows, std::max(0, (int)centroid_uv.y));
-    float z_meters = depth_image.at<float>(cy, cx);
-    float x_meters = ray.x * z_meters;
-    float y_meters = ray.y * z_meters;
-    return cv::Point3d(x_meters, y_meters, z_meters);
-}
-
-bool get_depth_image(image_geometry::PinholeCameraModel camera_model, cv::Mat &depth_image, const sensor_msgs::ImageConstPtr &depth_msg)
-{
-    if (!camera_model.initialized())
+    cv::Point3d root_vector = _camera_model.projectPixelTo3dRay(centroid_uv);
+    cv::Point3d origin = cv::Point3d(0, 0, 0);
+    double dot = _plane_normal.dot(root_vector);
+    if (std::abs(dot) > epsilon)
     {
-        ROS_WARN("Camera model not loaded yet");
-        return false;
+        cv::Point3d w = origin - _plane_center;
+        double fac = -_plane_normal.dot(w) / dot;
+        cv::Point3d u = root_vector * fac;
+        out_point = origin + u;
+        return true;
     }
-
-    cv_bridge::CvImagePtr depth_ptr;
-    try
-    {
-        depth_ptr = cv_bridge::toCvCopy(depth_msg); // encoding: passthrough
-    }
-    catch (cv_bridge::Exception &e)
-    {
-        ROS_ERROR("Failed to convert depth image: %s", e.what());
-        return false;
-    }
-    depth_image = depth_ptr->image;
-
-    double conversion = get_depth_conversion(depth_ptr->encoding);
-    depth_image.convertTo(depth_image, CV_32F);
-    depth_image *= conversion;
-    cv::patchNaNs(depth_image, 0.0);
-    if (depth_image.size() != camera_model.fullResolution())
-    {
-        ROS_WARN("Depth image size does not match camera model size");
-        return false;
-    }
-    return true;
-}
-
-double get_depth_conversion(std::string encoding)
-{
-    switch (sensor_msgs::image_encodings::bitDepth(encoding))
-    {
-    case 8:
-    case 16:
-        return 0.001;
-    case 32:
-    case 64:
-    default:
-        return 1.0;
-    };
+    return false;
 }
 
 cv::Point2d get_centroid(cv::InputArray points)
