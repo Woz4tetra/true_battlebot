@@ -1893,6 +1893,7 @@ GameObject:
   - component: {fileID: 7009448518100272567}
   - component: {fileID: 2580881806613539878}
   - component: {fileID: 6811436399977471946}
+  - component: {fileID: 1598903337411032006}
   m_Layer: 13
   m_Name: MR STABS A-02
   m_TagString: Mini bot
@@ -2122,6 +2123,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   zeta: 4
   b: 8
+--- !u!114 &1598903337411032006
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1501245057872462398}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9022b84966db145058212ec01274049d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  baseTopic: mini_bot
 --- !u!1 &1621520788016169361
 GameObject:
   m_ObjectHideFlags: 0

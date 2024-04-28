@@ -24,8 +24,8 @@ class FieldFilter:
 
         self.cage_corner: Optional[CageCorner] = None
         self.field_rotations = {
-            CageCorner.DOOR_SIDE: Transform3D.from_position_and_rpy(Vector3(), RPY((0, 0, -math.pi / 2))),
-            CageCorner.FAR_SIDE: Transform3D.from_position_and_rpy(Vector3(), RPY((0, 0, math.pi / 2))),
+            CageCorner.DOOR_SIDE: Transform3D.from_position_and_rpy(Vector3(), RPY((0, 0, 0))),
+            CageCorner.FAR_SIDE: Transform3D.from_position_and_rpy(Vector3(), RPY((0, 0, math.pi))),
         }
         self.estimated_field = EstimatedObject()
         self.field_rotate_tf = self.field_rotations[CageCorner.DOOR_SIDE]

@@ -2,15 +2,8 @@
 
 BaseEstimation::BaseEstimation(ros::NodeHandle *nodehandle) : nh(*nodehandle), _tf_listener(_tf_buffer)
 {
-    ros::param::param<int>("~queue_size", _queue_size, 10);
-    ros::param::param<std::vector<std::string>>("~include_labels", _include_labels, std::vector<std::string>());
-    if (_include_labels.size() == 0)
-    {
-        ROS_INFO("No labels specified, including all labels");
-    }
-
-    _field_sub = nh.subscribe<bw_interfaces::EstimatedObject>("field", 1, &BaseEstimation::field_callback, this);
     _info_sub = nh.subscribe<sensor_msgs::CameraInfo>("camera_info", 1, &BaseEstimation::camera_info_callback, this);
+    _field_sub = nh.subscribe<bw_interfaces::EstimatedObject>("field", 1, &BaseEstimation::field_callback, this);
 }
 
 BaseEstimation::~BaseEstimation()
@@ -30,7 +23,7 @@ void BaseEstimation::field_callback(const bw_interfaces::EstimatedObjectConstPtr
     geometry_msgs::TransformStamped transform;
     try
     {
-        transform = _tf_buffer.lookupTransform(info.header.frame_id, field->header.frame_id, ros::Time(0), ros::Duration(15.0));
+        transform = _tf_buffer.lookupTransform(info.header.frame_id, field->header.frame_id, ros::Time(0), ros::Duration(5.0));
     }
     catch (tf2::TransformException &ex)
     {
@@ -53,25 +46,6 @@ void BaseEstimation::field_callback(const bw_interfaces::EstimatedObjectConstPtr
 
     ROS_INFO("Field received");
     _field_received = true;
-}
-
-bool BaseEstimation::is_label_included(std::string label)
-{
-    if (_include_labels.size() == 0)
-    {
-        return true;
-    }
-    else
-    {
-        for (size_t index = 0; index < _include_labels.size(); index++)
-        {
-            if (label.compare(_include_labels[index]) == 0)
-            {
-                return true;
-            }
-        }
-        return false;
-    }
 }
 
 bool BaseEstimation::project_to_field(cv::Point2d centroid_uv, cv::Point3d &out_point, double epsilon)

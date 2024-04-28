@@ -491,6 +491,7 @@ public class ImageSynthesis : MonoBehaviour
         // extract bytes
         byte[] bytes = texture.GetRawTextureData();
 
+
         switch (encoding)
         {
             case Encoding.RGB8:
@@ -498,7 +499,11 @@ public class ImageSynthesis : MonoBehaviour
             case Encoding.MONO16:
                 for (int i = 0; i < bytes.Length; i += 2)
                 {
-                    (bytes[i], bytes[i + 1]) = convertBytesToMillimeters(bytes[i], bytes[i + 1]);
+                    (bytes[i], bytes[i + 1]) = convertBytesToMillimeters(
+                        bytes[i],
+                        bytes[i + 1],
+                        camera.farClipPlane
+                    );
                 }
                 break;
             default:
@@ -532,7 +537,7 @@ public class ImageSynthesis : MonoBehaviour
         pass.infoTopicState.Publish(cameraInfoMsg);
     }
 
-    static (byte, byte) convertBytesToMillimeters(byte lowerByte, byte higherByte)
+    static (byte, byte) convertBytesToMillimeters(byte lowerByte, byte higherByte, float farClipPlane)
     {
         uint unscaledRawDepth = (uint)(lowerByte | (higherByte << 8));
         if (unscaledRawDepth == 0)
@@ -540,7 +545,8 @@ public class ImageSynthesis : MonoBehaviour
             return (0, 0);
         }
         float depthMeters = 1.0f / 0xffff * unscaledRawDepth;
-        depthMeters = 3.90625f * (depthMeters - 0.256f) + 1.0f;
+        depthMeters *= farClipPlane / 1000.0f;  // scale based on reference clip plane
+        depthMeters = 3.90625f * (depthMeters - 0.256f) + 1.002f;
         uint depthMillimeters = (uint)(1000.0f * depthMeters);
         byte rawDepthLowerByte = (byte)(depthMillimeters & 0xff);
         byte rawDepthHigherByte = (byte)((depthMillimeters >> 8) & 0xff);

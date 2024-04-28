@@ -1156,6 +1156,7 @@ MonoBehaviour:
   - {fileID: 2100000, guid: 68683291b3e9e8e72ba0a389c2363f4c, type: 2}
   - {fileID: 2100000, guid: 635f8fad0e7775ec79b509bd75a88608, type: 2}
   - {fileID: 2100000, guid: 884e60567029b7f37b0f4a19525806d2, type: 2}
+  - {fileID: 2100000, guid: b1176b9cc7ef6d659b76ba509dc059f8, type: 2}
 --- !u!1 &284639720
 GameObject:
   m_ObjectHideFlags: 0
@@ -4685,9 +4686,13 @@ MonoBehaviour:
   publishSegmentationLabels: 0
   captureConfig:
   - name: image
-    image_topic: image_rect_color
+    image_topic: image_raw
     info_topic: camera_info
     renderTexture: {fileID: 8400000, guid: db58390c5d35b7c5b808a363aef6de06, type: 2}
+  - name: flow
+    image_topic: simulated_motion/image_raw
+    info_topic: simulated_motion/camera_info
+    renderTexture: {fileID: 8400000, guid: 694125d690c0f72109eb7f2bb85cc9e8, type: 2}
   uberReplacementShader: {fileID: 4800000, guid: b1b5f33c8b6ddb6f38ade45484478858, type: 3}
   opticalFlowShader: {fileID: 4800000, guid: 382790d66e210253eb2a15e3240b485e, type: 3}
   opticalFlowSensitivity: 1
@@ -4733,12 +4738,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 867903849}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c019cbd95d690a5a084df864ebfdcb43, type: 3}
+  m_Script: {fileID: 11500000, guid: 79ee6d13bcae6b921bd5cf7a828c2afc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  topic: /camera_1/ground_truth
+  topic: /camera_1/ground_truth/pose
   frame_id: map
-  relativeTo: {fileID: 8473918206287048381}
+  referenceObject: {fileID: 8473918206287048381}
 --- !u!1 &869799605
 GameObject:
   m_ObjectHideFlags: 0
@@ -11605,7 +11610,7 @@ Camera:
     width: 1
     height: 1
   near clip plane: 0.01
-  far clip plane: 1000
+  far clip plane: 10000
   field of view: 65.546265
   orthographic: 0
   orthographic size: 5
@@ -12714,7 +12719,7 @@ MonoBehaviour:
   publishSegmentationLabels: 1
   captureConfig:
   - name: image
-    image_topic: rgb/image_rect_color
+    image_topic: rgb/image_raw
     info_topic: rgb/camera_info
     renderTexture: {fileID: 8400000, guid: 38cd70c343ffec90ab87796bb230126e, type: 2}
   - name: layer
@@ -13105,7 +13110,7 @@ GameObject:
   - component: {fileID: 8809695232415556565}
   - component: {fileID: 2960329944041769614}
   - component: {fileID: 4595039344115579849}
-  - component: {fileID: 8475728306278484342}
+  - component: {fileID: 8809695232415556566}
   m_Layer: 0
   m_Name: Slow Camera
   m_TagString: MainCamera
@@ -14818,7 +14823,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cdcdcfb4a221bb3b68e7574f1643d4ad, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  frameId: camera_0_left_camera_optical_frame
+  frameId: camera_0
 --- !u!1 &8434422845570140880
 GameObject:
   m_ObjectHideFlags: 0
@@ -14876,21 +14881,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &8475728306278484342
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5601284786778337271}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c019cbd95d690a5a084df864ebfdcb43, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  topic: /camera_0/ground_truth
-  frame_id: map
-  relativeTo: {fileID: 8473918206287048381}
 --- !u!4 &8532847766310829772
 Transform:
   m_ObjectHideFlags: 0
@@ -15085,6 +15075,21 @@ MonoBehaviour:
   topic: /camera_0/simulated_field_result
   child_frame_id: map_relative
   label: field
+--- !u!114 &8809695232415556566
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5601284786778337271}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 79ee6d13bcae6b921bd5cf7a828c2afc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  topic: /camera_0/ground_truth/pose
+  frame_id: map
+  referenceObject: {fileID: 8473918206287048381}
 --- !u!1 &8843940501417694363
 GameObject:
   m_ObjectHideFlags: 0

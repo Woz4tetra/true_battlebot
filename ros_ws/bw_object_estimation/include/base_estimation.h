@@ -22,12 +22,8 @@ class BaseEstimation
 protected:
     ros::NodeHandle nh; // ROS node handle
 
-    int _queue_size;
-    std::vector<std::string> _include_labels;
-
     ros::Subscriber _info_sub;
     ros::Subscriber _field_sub;
-    ros::Subscriber _segmentation_sub;
 
     image_geometry::PinholeCameraModel _camera_model;
     sensor_msgs::CameraInfoPtr _info_msg;
@@ -40,7 +36,6 @@ protected:
 
     void camera_info_callback(const sensor_msgs::CameraInfoConstPtr &camera_info);
     void field_callback(const bw_interfaces::EstimatedObjectConstPtr &field);
-    bool is_label_included(std::string label);
     bool project_to_field(cv::Point2d centroid_uv, cv::Point3d &out_point, double epsilon = 1e-6);
     bool is_field_received() { return _field_received; }
 

@@ -25,9 +25,14 @@ class ObjectEstimation : BaseEstimation
 private:
     ros::NodeHandle nh; // ROS node handle
 
+    std::vector<std::string> _include_labels;
+
+    ros::Subscriber _segmentation_sub;
+
     ros::Publisher _robot_pub;
     ros::Publisher _robot_marker_pub;
 
+    bool is_label_included(std::string label);
     bool find_object(bw_interfaces::EstimatedObject &robot_msg, std::vector<std::vector<cv::Point>> cv_contours);
     void fill_marker_array(int obj_index, bw_interfaces::EstimatedObject &robot_msg, visualization_msgs::MarkerArray &robot_markers);
 

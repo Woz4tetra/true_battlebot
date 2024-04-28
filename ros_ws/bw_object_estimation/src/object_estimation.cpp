@@ -2,15 +2,40 @@
 
 ObjectEstimation::ObjectEstimation(ros::NodeHandle *nodehandle) : BaseEstimation(nodehandle)
 {
+    ros::param::param<std::vector<std::string>>("~include_labels", _include_labels, std::vector<std::string>());
+    if (_include_labels.size() == 0)
+    {
+        ROS_INFO("No labels specified, including all labels");
+    }
+
     _segmentation_sub = nh.subscribe<bw_interfaces::SegmentationInstanceArray>("segmentation", 1, &ObjectEstimation::segmentation_callback, this);
-    _robot_pub = nh.advertise<bw_interfaces::EstimatedObjectArray>("estimation/robots", _queue_size);
-    _robot_marker_pub = nh.advertise<visualization_msgs::MarkerArray>("estimation/robot_markers", _queue_size);
+    _robot_pub = nh.advertise<bw_interfaces::EstimatedObjectArray>("estimation/robots", 10);
+    _robot_marker_pub = nh.advertise<visualization_msgs::MarkerArray>("estimation/robot_markers", 10);
 
     ROS_INFO("ObjectEstimation node initialized");
 }
 
 ObjectEstimation::~ObjectEstimation()
 {
+}
+
+bool ObjectEstimation::is_label_included(std::string label)
+{
+    if (_include_labels.size() == 0)
+    {
+        return true;
+    }
+    else
+    {
+        for (size_t index = 0; index < _include_labels.size(); index++)
+        {
+            if (label.compare(_include_labels[index]) == 0)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
 }
 
 void ObjectEstimation::segmentation_callback(const bw_interfaces::SegmentationInstanceArrayConstPtr &segmentation)

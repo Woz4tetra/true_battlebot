@@ -24,11 +24,11 @@ def make_simulated_camera(camera_config: SimulatedCameraConfig, container: Conta
     config = container.resolve(Config)
     ns = config.camera_topic.namespace
 
-    color_image_sub = RosPollSubscriber(ros, ns + "/rgb/image_rect_color/compressed", CompressedImage)
+    color_image_sub = RosPollSubscriber(ros, ns + "/rgb/image_raw/compressed", CompressedImage)
     depth_image_sub = RosPollSubscriber(ros, ns + "/depth/depth_registered/compressed", CompressedImage)
     camera_info_sub = RosPollSubscriber(ros, ns + "/rgb/camera_info", CameraInfo)
 
-    return SimulatedCamera(camera_config, color_image_sub, depth_image_sub, camera_info_sub)
+    return SimulatedCamera(camera_config, config.camera_topic, color_image_sub, depth_image_sub, camera_info_sub)
 
 
 def load_camera(config: CameraConfig, container: Container) -> CameraImplementation:

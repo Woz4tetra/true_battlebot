@@ -329,7 +329,7 @@ def load_data(bag_path: str, temp_dir: str) -> tuple[EstimatedObject, CameraInfo
                 camera_info = msg
             elif "optical_camera_to_map_pose" in topic and not optical_camera_to_map_pose:
                 optical_camera_to_map_pose = msg
-            elif "/camera_0/rgb/image_rect_color" in topic:
+            elif "/camera_0/rgb/image_raw" in topic:
                 image = bridge.imgmsg_to_cv2(msg, "bgr8")
                 image_path = os.path.join(temp_dir, f"{msg.header.stamp.to_sec()}.png")
                 if not os.path.isfile(image_path):

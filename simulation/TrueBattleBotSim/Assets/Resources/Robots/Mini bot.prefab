@@ -1573,6 +1573,7 @@ GameObject:
   - component: {fileID: 7189502044868278935}
   - component: {fileID: 2018815609580504363}
   - component: {fileID: 3442637724803760314}
+  - component: {fileID: 3139422594569926977}
   m_Layer: 13
   m_Name: Mini bot
   m_TagString: Mini bot
@@ -1784,3 +1785,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   zeta: 4
   b: 8
+--- !u!114 &3139422594569926977
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9197786164009000317}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9022b84966db145058212ec01274049d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  baseTopic: mini_bot
