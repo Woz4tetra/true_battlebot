@@ -50,6 +50,8 @@ protected:
     cv::Point3d get_plane_center() { return _plane_center; }
     cv::Point3d get_plane_normal() { return _plane_normal; }
 
+    virtual void field_received_callback() {}
+
 public:
     BaseEstimation(ros::NodeHandle *nodehandle);
     ~BaseEstimation();

@@ -4678,9 +4678,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   baseTopic: camera_1
-  imageWidth: 240
-  imageHeight: 135
-  publishRate: 30
+  imageWidth: 480
+  imageHeight: 270
+  publishRate: 15
   segmentationTopic: 
   publishSegmentationLabels: 0
   captureConfig:

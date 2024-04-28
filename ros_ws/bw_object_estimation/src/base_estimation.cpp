@@ -49,6 +49,7 @@ void BaseEstimation::field_callback(const bw_interfaces::EstimatedObjectConstPtr
 
     ROS_INFO("Field received");
     _field_received = true;
+    field_received_callback();
 }
 
 bool BaseEstimation::project_to_field(

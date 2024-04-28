@@ -8,10 +8,6 @@
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
 
-#include <image_geometry/pinhole_camera_model.h>
-
-#include <cv_bridge/cv_bridge.h>
-
 #include <bw_interfaces/SegmentationInstanceArray.h>
 #include <bw_interfaces/SegmentationInstance.h>
 #include <bw_interfaces/Contour.h>
@@ -39,6 +35,8 @@ private:
     void segmentation_callback(const bw_interfaces::SegmentationInstanceArrayConstPtr &segmentation);
 
     double get_label_height(std::string label);
+
+    void field_received_callback() {}
 
 public:
     ObjectEstimation(ros::NodeHandle *nodehandle);
