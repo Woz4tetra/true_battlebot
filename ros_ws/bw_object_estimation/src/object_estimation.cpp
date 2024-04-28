@@ -38,6 +38,15 @@ bool ObjectEstimation::is_label_included(std::string label)
     }
 }
 
+double ObjectEstimation::get_label_height(std::string label)
+{
+    if (_shared_config->labels.hasKey(label))
+    {
+        return _shared_config->labels.get(label).height;
+    }
+    return 0.0;
+}
+
 void ObjectEstimation::segmentation_callback(const bw_interfaces::SegmentationInstanceArrayConstPtr &segmentation)
 {
     if (!is_field_received())
@@ -64,12 +73,12 @@ void ObjectEstimation::segmentation_callback(const bw_interfaces::SegmentationIn
             continue;
         }
         bw_interfaces::EstimatedObject robot_msg;
+        robot_msg.label = instance.label;
+        robot_msg.header = segmentation->header;
         if (!find_object(robot_msg, cv_contours))
         {
             continue;
         }
-        robot_msg.label = instance.label;
-        robot_msg.header = segmentation->header;
         robot_array.robots.push_back(robot_msg);
 
         fill_marker_array(instance.object_index, robot_msg, robot_markers);
@@ -126,8 +135,14 @@ bool ObjectEstimation::find_object(bw_interfaces::EstimatedObject &robot_msg, st
     max_px.x += centroid.x;
     max_px.y += centroid.y;
 
+    cv::Point3d plane_center = get_plane_center();
+    cv::Point3d plane_normal = get_plane_normal();
+
+    cv::Point3d normal_offset = plane_normal * get_label_height(robot_msg.label);
+    plane_center += normal_offset;
+
     cv::Point3d center;
-    if (!project_to_field(centroid, center))
+    if (!project_to_field(centroid, plane_center, plane_normal, center))
     {
         ROS_WARN("Failed to project centroid to field");
         return false;
@@ -139,7 +154,7 @@ bool ObjectEstimation::find_object(bw_interfaces::EstimatedObject &robot_msg, st
     robot_msg.pose.pose.orientation.w = 1.0; // orientation is not calculated
 
     cv::Point3d edge;
-    if (!project_to_field(max_px, edge))
+    if (!project_to_field(max_px, plane_center, plane_normal, edge))
     {
         ROS_WARN("Failed to project edge to field");
         return false;
@@ -197,6 +212,7 @@ void ObjectEstimation::fill_marker_array(int obj_index, bw_interfaces::Estimated
     text_marker.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
     text_marker.action = visualization_msgs::Marker::ADD;
     text_marker.pose = robot_msg.pose.pose;
+    text_marker.pose.position.y -= 0.1;
     text_marker.pose.position.z -= 0.1;
     text_marker.scale.z = 0.1;
     text_marker.color.a = 1.0;

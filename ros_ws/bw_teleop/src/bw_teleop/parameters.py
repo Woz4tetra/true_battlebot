@@ -1,4 +1,4 @@
-from bw_shared.configs.robots import RobotConfig
+from bw_shared.configs.robot_fleet_config import RobotConfig
 from bw_tools.configs.rosparam_client import get_shared_config
 
 

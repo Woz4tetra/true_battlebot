@@ -2,6 +2,9 @@
 
 BaseEstimation::BaseEstimation(ros::NodeHandle *nodehandle) : nh(*nodehandle), _tf_listener(_tf_buffer)
 {
+    ROS_INFO("Loading shared config");
+    *_shared_config = bw_shared_config::getSharedConfig();
+    ROS_INFO("Shared config loaded");
     _info_sub = nh.subscribe<sensor_msgs::CameraInfo>("camera_info", 1, &BaseEstimation::camera_info_callback, this);
     _field_sub = nh.subscribe<bw_interfaces::EstimatedObject>("field", 1, &BaseEstimation::field_callback, this);
 }
@@ -42,21 +45,27 @@ void BaseEstimation::field_callback(const bw_interfaces::EstimatedObjectConstPtr
     Eigen::Quaterniond quat(orientation.w, orientation.x, orientation.y, orientation.z);
     Eigen::Matrix3d rotation_matrix = quat.normalized().toRotationMatrix();
     Eigen::Vector3d normal = rotation_matrix * Eigen::Vector3d(0, 0, 1);
+    normal = normal.normalized();
     _plane_normal = cv::Point3d(normal.x(), normal.y(), normal.z());
 
     ROS_INFO("Field received");
     _field_received = true;
 }
 
-bool BaseEstimation::project_to_field(cv::Point2d centroid_uv, cv::Point3d &out_point, double epsilon)
+bool BaseEstimation::project_to_field(
+    cv::Point2d centroid_uv,
+    cv::Point3d plane_center,
+    cv::Point3d plane_normal,
+    cv::Point3d &out_point,
+    double epsilon)
 {
     cv::Point3d root_vector = _camera_model.projectPixelTo3dRay(centroid_uv);
     cv::Point3d origin = cv::Point3d(0, 0, 0);
-    double dot = _plane_normal.dot(root_vector);
+    double dot = plane_normal.dot(root_vector);
     if (std::abs(dot) > epsilon)
     {
-        cv::Point3d w = origin - _plane_center;
-        double fac = -_plane_normal.dot(w) / dot;
+        cv::Point3d w = origin - plane_center;
+        double fac = -plane_normal.dot(w) / dot;
         cv::Point3d u = root_vector * fac;
         out_point = origin + u;
         return true;

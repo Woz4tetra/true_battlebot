@@ -17,8 +17,14 @@
 #include <bw_interfaces/EstimatedObject.h>
 #include <bw_interfaces/SegmentationInstanceArray.h>
 
+#include <bw_shared_config/bw_shared_config.h>
+
 class BaseEstimation
 {
+private:
+    cv::Point3d _plane_center, _plane_normal;
+    bool _field_received;
+
 protected:
     ros::NodeHandle nh; // ROS node handle
 
@@ -27,17 +33,22 @@ protected:
 
     image_geometry::PinholeCameraModel _camera_model;
     sensor_msgs::CameraInfoPtr _info_msg;
+    bw_shared_config::SharedConfig *_shared_config;
 
     tf2_ros::Buffer _tf_buffer;
     tf2_ros::TransformListener _tf_listener;
 
-    bool _field_received;
-    cv::Point3d _plane_center, _plane_normal;
-
     void camera_info_callback(const sensor_msgs::CameraInfoConstPtr &camera_info);
     void field_callback(const bw_interfaces::EstimatedObjectConstPtr &field);
-    bool project_to_field(cv::Point2d centroid_uv, cv::Point3d &out_point, double epsilon = 1e-6);
+    bool project_to_field(
+        cv::Point2d centroid_uv,
+        cv::Point3d plane_center,
+        cv::Point3d plane_normal,
+        cv::Point3d &out_point,
+        double epsilon = 1e-6);
     bool is_field_received() { return _field_received; }
+    cv::Point3d get_plane_center() { return _plane_center; }
+    cv::Point3d get_plane_normal() { return _plane_normal; }
 
 public:
     BaseEstimation(ros::NodeHandle *nodehandle);

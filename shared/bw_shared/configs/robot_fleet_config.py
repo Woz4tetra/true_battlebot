@@ -1,15 +1,11 @@
+# When adding fields to this file, make sure to update the bw_shared_config C++ module as well
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
-from enum import Enum, auto
 
 from dacite import from_dict
 
-
-class RobotTeam(Enum):
-    OUR_TEAM = auto()  # our team
-    THEIR_TEAM = auto()  # their team
-    REFEREE = auto()
+from bw_shared.enums.robot_team import RobotTeam
 
 
 @dataclass
@@ -21,7 +17,7 @@ class RobotConfig:
     name: str
     up_id: int = -1
     down_id: int = -1
-    radius: float = 0.0  # outer radius of the robot
+    radius: float = 0.0  # outer radius of the robot in meters
     bridge_id: int = -1
     base_width: float = 1.0  # distance between the wheels
 

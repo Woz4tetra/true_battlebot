@@ -38,6 +38,8 @@ private:
 
     void segmentation_callback(const bw_interfaces::SegmentationInstanceArrayConstPtr &segmentation);
 
+    double get_label_height(std::string label);
+
 public:
     ObjectEstimation(ros::NodeHandle *nodehandle);
     ~ObjectEstimation();

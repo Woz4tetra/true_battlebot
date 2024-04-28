@@ -1156,7 +1156,6 @@ MonoBehaviour:
   - {fileID: 2100000, guid: 68683291b3e9e8e72ba0a389c2363f4c, type: 2}
   - {fileID: 2100000, guid: 635f8fad0e7775ec79b509bd75a88608, type: 2}
   - {fileID: 2100000, guid: 884e60567029b7f37b0f4a19525806d2, type: 2}
-  - {fileID: 2100000, guid: b1176b9cc7ef6d659b76ba509dc059f8, type: 2}
 --- !u!1 &284639720
 GameObject:
   m_ObjectHideFlags: 0
@@ -4610,7 +4609,7 @@ Camera:
   serializedVersion: 2
   m_ClearFlags: 2
   m_BackGroundColor: {r: 0.19215687, g: 0.3019608, b: 0.4745098, a: 0}
-  m_projectionMatrixMode: 2
+  m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 1
   m_Iso: 200
@@ -4717,13 +4716,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 86add3b1c87735b5c94dd5bb265f9a5c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxDistance: 5
+  maxDistance: 3
   layerMask:
     serializedVersion: 2
     m_Bits: 1224
   debugRayCast: 0
   publishRate: 4
-  viewAngleThreshold: 70
+  viewAngleThreshold: 45
   topic: /camera_1/tag_detections
 --- !u!114 &867903856
 MonoBehaviour:
@@ -11585,7 +11584,7 @@ Camera:
   serializedVersion: 2
   m_ClearFlags: 2
   m_BackGroundColor: {r: 0.19215687, g: 0.3019608, b: 0.4745098, a: 0}
-  m_projectionMatrixMode: 2
+  m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 1
   m_Iso: 200
@@ -13413,13 +13412,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 86add3b1c87735b5c94dd5bb265f9a5c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxDistance: 5
+  maxDistance: 3
   layerMask:
     serializedVersion: 2
     m_Bits: 1224
   debugRayCast: 0
   publishRate: 4
-  viewAngleThreshold: 70
+  viewAngleThreshold: 45
   topic: /camera_0/tag_detections
 --- !u!1 &6105163997810151798
 GameObject:

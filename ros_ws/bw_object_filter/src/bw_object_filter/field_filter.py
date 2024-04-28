@@ -6,7 +6,7 @@ import rospy
 import tf2_ros
 from bw_interfaces.msg import CageCorner as RosCageCorner
 from bw_interfaces.msg import EstimatedObject
-from bw_shared.enums.labels import Label
+from bw_shared.enums.label import Label
 from bw_tools.get_param import get_param
 from bw_tools.structs.cage_corner import CageCorner
 from bw_tools.structs.rpy import RPY

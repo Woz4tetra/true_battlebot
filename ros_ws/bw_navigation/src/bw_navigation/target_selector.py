@@ -5,7 +5,7 @@ from typing import Optional, Tuple, cast
 import numpy as np
 import rospy
 from bw_interfaces.msg import EstimatedObject, EstimatedObjectArray
-from bw_shared.configs.robots import RobotTeam
+from bw_shared.enums.robot_team import RobotTeam
 from bw_tools.configs.rosparam_client import get_shared_config
 from bw_tools.get_param import get_param
 from bw_tools.structs.pose2d import Pose2D

@@ -1,4 +1,4 @@
-from bw_shared.configs.maps import MapConfig
+from bw_shared.configs.maps_config import MapConfig
 from perception_tools.messages.camera.camera_info import CameraInfo
 from perception_tools.messages.camera.image import Image
 from perception_tools.messages.field_result import FieldResult

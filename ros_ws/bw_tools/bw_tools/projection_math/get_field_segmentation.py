@@ -1,7 +1,7 @@
 from typing import Optional
 
 from bw_interfaces.msg import SegmentationInstance, SegmentationInstanceArray
-from bw_shared.enums.labels import Label
+from bw_shared.enums.label import Label
 
 
 def get_field_segmentation(segmentations: SegmentationInstanceArray) -> Optional[SegmentationInstance]:

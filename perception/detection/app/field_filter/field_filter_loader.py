@@ -1,4 +1,4 @@
-from bw_shared.configs.maps import MapConfig
+from bw_shared.configs.maps_config import MapConfig
 from perception_tools.messages.field_result import FieldResult
 from perception_tools.rosbridge.ros_poll_subscriber import RosPollSubscriber
 from roslibpy import Ros

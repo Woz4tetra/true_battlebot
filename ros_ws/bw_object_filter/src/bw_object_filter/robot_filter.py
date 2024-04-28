@@ -6,8 +6,9 @@ import rospy
 import tf2_ros
 from apriltag_ros.msg import AprilTagDetectionArray
 from bw_interfaces.msg import EstimatedObject, EstimatedObjectArray
-from bw_shared.configs.robots import RobotConfig, RobotFleetConfig, RobotTeam
-from bw_shared.enums.labels import Label
+from bw_shared.configs.robot_fleet_config import RobotConfig, RobotFleetConfig
+from bw_shared.enums.label import Label
+from bw_shared.enums.robot_team import RobotTeam
 from bw_tools.configs.rosparam_client import get_shared_config
 from bw_tools.get_param import get_param
 from bw_tools.structs.header import Header

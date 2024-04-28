@@ -5,7 +5,7 @@ from typing import Protocol
 
 import cv2
 import numpy as np
-from bw_shared.enums.labels import Label
+from bw_shared.enums.label import Label
 from perception_tools.messages.camera.image import Image
 from perception_tools.messages.segmentation.contour import Contour
 from perception_tools.messages.segmentation.segmentation_instance import SegmentationInstance
