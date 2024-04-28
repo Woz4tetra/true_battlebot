@@ -63,6 +63,7 @@ public class ImageSynthesis : MonoBehaviour
         public bool needsRescale = false;
         public ReplacelementModes mode = ReplacelementModes.None;
         public Encoding encoding = Encoding.RGB8;
+        public int targetDisplay = 1;
 
         public uint outputWidth;
         public uint outputHeight;
@@ -177,21 +178,6 @@ public class ImageSynthesis : MonoBehaviour
         }
     }
 
-    private (uint, uint) FixedAspectResize(uint cameraWidth, uint cameraHeight, uint destinationWidth, uint destinationHeight)
-    {
-        uint width = destinationWidth;
-        uint height = destinationHeight;
-        if (cameraWidth * destinationHeight > cameraHeight * destinationWidth)
-        {
-            height = destinationWidth * cameraHeight / cameraWidth;
-        }
-        else
-        {
-            width = destinationHeight * cameraWidth / cameraHeight;
-        }
-        return (width, height);
-    }
-
     private void resizeCameraInfo(CameraInfoMsg cameraInfoMsg, uint destinationWidth, uint destinationHeight)
     {
         float scale_y = (float)destinationHeight / cameraInfoMsg.height;
@@ -287,7 +273,7 @@ public class ImageSynthesis : MonoBehaviour
     public void OnCameraChange()
     {
         Camera mainCamera = GetComponent<Camera>();
-        int targetDisplay = 1;
+        int targetDisplay = mainCamera.targetDisplay;
         foreach (CapturePass pass in capturePasses)
         {
             if (pass.camera == mainCamera || pass.camera == null)
@@ -300,7 +286,8 @@ public class ImageSynthesis : MonoBehaviour
             pass.camera.CopyFrom(mainCamera);
 
             // set targetDisplay here since it gets overriden by CopyFrom()
-            pass.camera.targetDisplay = targetDisplay++;
+            pass.camera.targetDisplay = ++targetDisplay;
+            Debug.Log($"Setting target display to {pass.camera.targetDisplay} for camera {pass.camera.name}");
 
             // setup command buffers and replacement shaders
             if (pass.mode == ReplacelementModes.Flow)

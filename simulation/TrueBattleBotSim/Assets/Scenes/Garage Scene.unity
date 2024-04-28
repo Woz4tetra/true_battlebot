@@ -4641,7 +4641,7 @@ Camera:
     m_Bits: 2761
   m_RenderingPath: -1
   m_TargetTexture: {fileID: 0}
-  m_TargetDisplay: 0
+  m_TargetDisplay: 4
   m_TargetEye: 3
   m_HDR: 1
   m_AllowMSAA: 1
@@ -4689,10 +4689,6 @@ MonoBehaviour:
     image_topic: image_raw
     info_topic: camera_info
     renderTexture: {fileID: 8400000, guid: db58390c5d35b7c5b808a363aef6de06, type: 2}
-  - name: flow
-    image_topic: simulated_motion/image_raw
-    info_topic: simulated_motion/camera_info
-    renderTexture: {fileID: 8400000, guid: 694125d690c0f72109eb7f2bb85cc9e8, type: 2}
   uberReplacementShader: {fileID: 4800000, guid: b1b5f33c8b6ddb6f38ade45484478858, type: 3}
   opticalFlowShader: {fileID: 4800000, guid: 382790d66e210253eb2a15e3240b485e, type: 3}
   opticalFlowSensitivity: 1
@@ -11620,7 +11616,7 @@ Camera:
     m_Bits: 2761
   m_RenderingPath: -1
   m_TargetTexture: {fileID: 0}
-  m_TargetDisplay: 0
+  m_TargetDisplay: 1
   m_TargetEye: 3
   m_HDR: 1
   m_AllowMSAA: 1
