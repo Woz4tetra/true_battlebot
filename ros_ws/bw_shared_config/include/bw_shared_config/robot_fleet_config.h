@@ -13,7 +13,7 @@ namespace bw_shared_config
         {
             RobotFleetConfig config;
             XmlRpc::XmlRpcValue robot_param = data["robots"];
-            for (int i = 0; i < robot_param.size(); ++i)
+            for (int i = 0; i < data["robots"].size(); ++i)
             {
                 config.robots.push_back(RobotConfig::fromXmlRpc(robot_param[i]));
             }

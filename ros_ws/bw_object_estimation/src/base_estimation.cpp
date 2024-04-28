@@ -2,9 +2,8 @@
 
 BaseEstimation::BaseEstimation(ros::NodeHandle *nodehandle) : nh(*nodehandle), _tf_listener(_tf_buffer)
 {
-    ROS_INFO("Loading shared config");
+    _shared_config = new bw_shared_config::SharedConfig();
     *_shared_config = bw_shared_config::getSharedConfig();
-    ROS_INFO("Shared config loaded");
     _info_sub = nh.subscribe<sensor_msgs::CameraInfo>("camera_info", 1, &BaseEstimation::camera_info_callback, this);
     _field_sub = nh.subscribe<bw_interfaces::EstimatedObject>("field", 1, &BaseEstimation::field_callback, this);
 }

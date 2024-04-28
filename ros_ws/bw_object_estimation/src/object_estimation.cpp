@@ -147,6 +147,7 @@ bool ObjectEstimation::find_object(bw_interfaces::EstimatedObject &robot_msg, st
         ROS_WARN("Failed to project centroid to field");
         return false;
     }
+    center -= normal_offset;
 
     robot_msg.pose.pose.position.x = center.x;
     robot_msg.pose.pose.position.y = center.y;
@@ -159,6 +160,7 @@ bool ObjectEstimation::find_object(bw_interfaces::EstimatedObject &robot_msg, st
         ROS_WARN("Failed to project edge to field");
         return false;
     }
+    edge -= normal_offset;
 
     robot_msg.size.x = abs(2 * (edge.x - center.x));
     robot_msg.size.y = abs(2 * (edge.y - center.y));

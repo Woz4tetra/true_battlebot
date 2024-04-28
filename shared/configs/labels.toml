@@ -1,18 +1,15 @@
 [[labels]]
 name = "robot"
-height = 0.05
 
 [[labels]]
 name = "field"
 
 [[labels]]
 name = "referee"
-height = 0.11
+height = 0.2
 
 [[labels]]
 name = "friendly_robot"
-height = 0.05
 
 [[labels]]
 name = "controlled_robot"
-height = 0.05
