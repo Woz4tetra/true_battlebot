@@ -6,7 +6,7 @@ from perception_tools.messages.camera.camera_info import CameraInfo
 from perception_tools.messages.camera.compressed_depth_image import CompressedDepthImage
 from perception_tools.messages.camera.compressed_image import CompressedImage
 from perception_tools.messages.camera.image import Image
-from perception_tools.messages.camera.point_cloud import CloudFieldType, PointCloud
+from perception_tools.messages.camera.point_cloud import PointCloud
 from perception_tools.rosbridge.ros_poll_subscriber import RosPollSubscriber
 
 from app.camera.camera_interface import CameraInterface

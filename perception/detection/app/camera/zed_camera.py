@@ -2,6 +2,7 @@ import logging
 
 import pyzed.sl as sl
 from perception_tools.messages.camera.camera_data import CameraData
+from perception_tools.messages.camera.camera_info import CameraInfo
 
 from app.camera.camera_interface import CameraInterface
 from app.config.camera_config.zed_camera_config import ZedCameraConfig
@@ -16,6 +17,9 @@ class ZedCamera(CameraInterface):
         self.init_params.coordinate_units = sl.UNIT.METER
 
         self.runtime_parameters = sl.RuntimeParameters()
+
+        camera_info = CameraInfo()
+        self.camera_data = CameraData(camera_info=camera_info)
 
     def open(self) -> bool:
         status = None

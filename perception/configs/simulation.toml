@@ -1,5 +1,5 @@
 [camera]
-type = "SimulatedCamera"
+type = "ZedCamera"
 
 [field_filter]
 type = "SimulatedFieldFilter"
