@@ -162,7 +162,6 @@ class PointCloud:
             cloud_data["y"] = self.points[..., 1]
             cloud_data["z"] = self.points[..., 2]
             cloud_data["rgb"] = self.colors
-            print(cloud_data)
 
         cloud_bytes = base64.b64encode(cloud_data.tobytes()).decode("ascii")
 

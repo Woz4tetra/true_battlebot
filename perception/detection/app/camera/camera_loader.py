@@ -32,11 +32,16 @@ def make_simulated_camera(camera_config: SimulatedCameraConfig, container: Conta
     return SimulatedCamera(camera_config, config.camera_topic, color_image_sub, depth_image_sub, camera_info_sub)
 
 
+def make_zed_camera(camera_config: ZedCameraConfig, container: Container) -> CameraImplementation:
+    config = container.resolve(Config)
+    return ZedCamera(camera_config, config.camera_topic)
+
+
 def load_camera(config: CameraConfig, container: Container) -> CameraImplementation:
     if isinstance(config, SimulatedCameraConfig):
         return make_simulated_camera(config, container)
     elif isinstance(config, ZedCameraConfig):
-        return ZedCamera(config)
+        return make_zed_camera(config, container)
     elif isinstance(config, NoopCameraConfig):
         return NoopCamera(config)
     else:

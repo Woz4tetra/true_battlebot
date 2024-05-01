@@ -1,5 +1,6 @@
 [camera]
-type = "SimulatedCamera"
+type = "ZedCamera"
+serial_number = 33234316
 
 [field_filter]
 type = "SimulatedFieldFilter"
@@ -27,6 +28,7 @@ type = "SimulatedSegmentation"
 
 [robot_segmentation]
 type = "SimulatedSegmentation"
+debug = false
 apply_noise = false
 random_sample_interval = 3.0
 
