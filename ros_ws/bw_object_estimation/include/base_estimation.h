@@ -58,4 +58,5 @@ public:
 };
 
 cv::Point2d get_centroid(cv::InputArray points);
+cv::Point2d get_max_pt(std::vector<std::vector<cv::Point>> points);
 std::vector<std::vector<cv::Point>> get_cv_contours(std::vector<bw_interfaces::Contour> contours);

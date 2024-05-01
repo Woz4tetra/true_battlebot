@@ -100,11 +100,15 @@ def main():
     )
 
     rospy.Subscriber("/camera_1/image_raw", Image, lambda m: image_callback(data, m), queue_size=1)
+    frame = np.zeros((data.width, data.width, 3), dtype=np.uint8)
 
     while True:
         keyboard = chr(cv2.waitKey(1) & 0xFF)
         if keyboard == "q":
             break
+        elif keyboard == "c":
+            print("Clearing background model")
+            data.back_subtractor.apply(frame, learningRate=1.0)
 
         if rospy.is_shutdown():
             break

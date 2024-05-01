@@ -1,0 +1,8 @@
+<launch>
+	<group ns="camera_1">
+		<node pkg="bw_object_estimation" type="motion_tracker" name="motion_tracker"
+			output="screen" respawn="true">
+			<remap from="field" to="/filter/field" />
+		</node>
+	</group>
+</launch>

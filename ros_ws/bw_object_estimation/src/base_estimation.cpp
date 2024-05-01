@@ -22,6 +22,11 @@ void BaseEstimation::camera_info_callback(const sensor_msgs::CameraInfoConstPtr 
 void BaseEstimation::field_callback(const bw_interfaces::EstimatedObjectConstPtr &field)
 {
     sensor_msgs::CameraInfo info = _camera_model.cameraInfo();
+    if (info.header.frame_id.empty())
+    {
+        ROS_ERROR("Camera info frame_id is empty. Cannot transform field to camera frame.");
+        return;
+    }
     geometry_msgs::TransformStamped transform;
     try
     {
@@ -83,6 +88,26 @@ cv::Point2d get_centroid(cv::InputArray points)
     coord.x = moment10 / moment00;
     coord.y = moment01 / moment00;
     return coord;
+}
+
+cv::Point2d get_max_pt(std::vector<std::vector<cv::Point>> points)
+{
+    cv::Size max_size(0, 0);
+    cv::Point max_pt(0, 0);
+    for (size_t index = 0; index < points.size(); index++)
+    {
+        cv::Rect bbox = cv::boundingRect(points[index]);
+
+        if (bbox.width * bbox.height > max_size.width * max_size.height)
+        {
+            max_pt.x = bbox.x;
+            max_pt.y = bbox.y;
+            max_size.width = bbox.width;
+            max_size.height = bbox.height;
+        }
+    }
+
+    return max_pt;
 }
 
 std::vector<std::vector<cv::Point>> get_cv_contours(std::vector<bw_interfaces::Contour> contours)

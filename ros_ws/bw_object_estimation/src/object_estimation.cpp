@@ -2,6 +2,7 @@
 
 ObjectEstimation::ObjectEstimation(ros::NodeHandle *nodehandle) : BaseEstimation(nodehandle)
 {
+    ros::param::param<double>("~z_limit", _z_limit, 0.2);
     ros::param::param<std::vector<std::string>>("~include_labels", _include_labels, std::vector<std::string>());
     if (_include_labels.size() == 0)
     {
@@ -114,26 +115,7 @@ bool ObjectEstimation::find_object(bw_interfaces::EstimatedObject &robot_msg, st
     centroid.x /= centroid_count;
     centroid.y /= centroid_count;
 
-    cv::Point2d max_px(0, 0);
-    for (size_t contour_index = 0; contour_index < cv_contours.size(); contour_index++)
-    {
-        for (size_t point_index = 0; point_index < cv_contours[contour_index].size(); point_index++)
-        {
-            cv::Point2d normalized_point(
-                abs(cv_contours[contour_index][point_index].x - centroid.x),
-                abs(cv_contours[contour_index][point_index].y - centroid.y));
-            if (normalized_point.x > max_px.x)
-            {
-                max_px.x = normalized_point.x;
-            }
-            if (normalized_point.y > max_px.y)
-            {
-                max_px.y = normalized_point.y;
-            }
-        }
-    }
-    max_px.x += centroid.x;
-    max_px.y += centroid.y;
+    cv::Point2d max_pt = get_max_pt(cv_contours);
 
     cv::Point3d plane_center = get_plane_center();
     cv::Point3d plane_normal = get_plane_normal();
@@ -149,13 +131,19 @@ bool ObjectEstimation::find_object(bw_interfaces::EstimatedObject &robot_msg, st
     }
     center -= normal_offset;
 
+    if (center.z < _z_limit)
+    {
+        ROS_DEBUG("Object %s too close, skipping", robot_msg.label.c_str());
+        return false;
+    }
+
     robot_msg.pose.pose.position.x = center.x;
     robot_msg.pose.pose.position.y = center.y;
     robot_msg.pose.pose.position.z = center.z;
     robot_msg.pose.pose.orientation.w = 1.0; // orientation is not calculated
 
     cv::Point3d edge;
-    if (!project_to_field(max_px, plane_center, plane_normal, edge))
+    if (!project_to_field(max_pt, plane_center, plane_normal, edge))
     {
         ROS_WARN("Failed to project edge to field");
         return false;
@@ -199,7 +187,7 @@ void ObjectEstimation::fill_marker_array(int obj_index, bw_interfaces::Estimated
     arrow_marker.scale.x = 0.5;
     arrow_marker.scale.y = 0.05;
     arrow_marker.scale.z = 0.05;
-    arrow_marker.color.a = 1.0;
+    arrow_marker.color.a = 0.75;
     arrow_marker.color.r = 1.0;
     arrow_marker.color.g = 0.1;
     arrow_marker.color.b = 0.1;

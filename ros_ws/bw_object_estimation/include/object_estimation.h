@@ -22,6 +22,7 @@ private:
     ros::NodeHandle nh; // ROS node handle
 
     std::vector<std::string> _include_labels;
+    double _z_limit;
 
     ros::Subscriber _segmentation_sub;
 
