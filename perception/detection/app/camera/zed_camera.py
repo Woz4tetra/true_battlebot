@@ -11,15 +11,24 @@ from app.config.camera_config.zed_camera_config import ZedCameraConfig
 class ZedCamera(CameraInterface):
     def __init__(self, config: ZedCameraConfig) -> None:
         self.logger = logging.getLogger("perception")
+        self.config = config
         self.camera = sl.Camera()
         self.init_params = sl.InitParameters()
         self.init_params.depth_mode = sl.DEPTH_MODE.NEURAL_PLUS
         self.init_params.coordinate_units = sl.UNIT.METER
+        self.init_params.camera_resolution = sl.RESOLUTION.HD1080
+        if self.config.serial_number != -1:
+            self.init_params.set_from_serial_number(self.config.serial_number, sl.BUS_TYPE.USB)
+            self.logger.info(f"ZED Camera serial number: {self.config.serial_number}")
+        else:
+            self.logger.info("Auto detecting ZED Camera serial number")
 
         self.runtime_parameters = sl.RuntimeParameters()
 
-        camera_info = CameraInfo()
-        self.camera_data = CameraData(camera_info=camera_info)
+        self.camera_data = CameraData()
+
+        self.color_image = sl.Mat()
+        self.point_cloud = sl.Mat()
 
     def open(self) -> bool:
         status = None
@@ -36,10 +45,11 @@ class ZedCamera(CameraInterface):
         if status != sl.ERROR_CODE.SUCCESS:
             self.logger.error(f"ZED Camera failed to grab frame: {status.name} ({status.value}): {str(status)}")
             return None
-        image = sl.Mat()
-        point_cloud = sl.Mat()
-        self.camera.retrieve_image(image, sl.VIEW.LEFT)
-        self.camera.retrieve_measure(point_cloud, sl.MEASURE.XYZRGBA)
+        self.camera.retrieve_image(self.color_image, sl.VIEW.LEFT)
+        self.camera.retrieve_measure(self.point_cloud, sl.MEASURE.XYZRGBA)
+
+        self.camera_data.color_image = self.color_image.get_data()
+        self.camera_data.point_cloud = self.point_cloud.get_data()[..., :6]
 
     def close(self) -> None:
         self.camera.close()

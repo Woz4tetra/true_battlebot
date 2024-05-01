@@ -1,0 +1,10 @@
+#!/usr/bin/python
+import pyzed.sl as sl
+
+cameras = sl.Camera.get_device_list()
+if len(cameras) == 0:
+    print("No cameras detected")
+    exit()
+for camera in cameras:
+    sn = camera.serial_number
+    print(f"serial_number = {sn}")
