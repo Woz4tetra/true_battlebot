@@ -149,6 +149,11 @@ COPY --chown=1000:1000 \
     ./launch/rosconsole.config \
     /opt/${ORGANIZATION}/
 
+COPY --chown=1000:1000 \
+    ./install/make_ros_symlinks.sh \
+    /opt/${ORGANIZATION}/install/
+RUN bash /opt/${ORGANIZATION}/install/make_ros_symlinks.sh
+
 RUN mkdir -p ${HOME}/.ros && \
     chown -R 1000:1000 ${HOME}/.ros
 

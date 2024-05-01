@@ -1,0 +1,5 @@
+#!/bin/bash
+BASE_DIR=$(realpath "$(dirname $0)")
+
+${BASE_DIR}/stop_container $@
+${BASE_DIR}/run_container $@

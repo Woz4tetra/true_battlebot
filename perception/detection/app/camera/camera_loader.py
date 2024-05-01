@@ -1,6 +1,7 @@
 from typing import Union
 
 from perception_tools.messages.camera.camera_info import CameraInfo
+from perception_tools.messages.camera.compressed_depth_image import CompressedDepthImage
 from perception_tools.messages.camera.compressed_image import CompressedImage
 from perception_tools.rosbridge.ros_poll_subscriber import RosPollSubscriber
 from roslibpy import Ros
@@ -25,7 +26,7 @@ def make_simulated_camera(camera_config: SimulatedCameraConfig, container: Conta
     ns = config.camera_topic.namespace
 
     color_image_sub = RosPollSubscriber(ros, ns + "/rgb/image_raw/compressed", CompressedImage)
-    depth_image_sub = RosPollSubscriber(ros, ns + "/depth/depth_registered/compressed", CompressedImage)
+    depth_image_sub = RosPollSubscriber(ros, ns + "/depth/depth_registered/compressedDepth", CompressedDepthImage)
     camera_info_sub = RosPollSubscriber(ros, ns + "/rgb/camera_info", CameraInfo)
 
     return SimulatedCamera(camera_config, config.camera_topic, color_image_sub, depth_image_sub, camera_info_sub)

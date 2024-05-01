@@ -141,6 +141,11 @@ COPY --chown=1000:1000 \
     ./launch/perception.sh \
     /opt/${ORGANIZATION}/
 
+COPY --chown=1000:1000 \
+    ./install/make_perception_symlinks.sh \
+    /opt/${ORGANIZATION}/install/
+RUN bash /opt/${ORGANIZATION}/install/make_perception_symlinks.sh
+
 WORKDIR /opt/${ORGANIZATION}/${PROJECT_NAME}
 
 ENTRYPOINT ["/usr/bin/dumb-init", "--"]

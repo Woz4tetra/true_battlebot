@@ -7,3 +7,4 @@ ruff
 roslibpy
 toml
 python-json-logger
+open3d

@@ -1,8 +1,7 @@
 import logging
 
 from bw_shared.configs.maps_config import MapConfig
-from perception_tools.messages.camera.camera_info import CameraInfo
-from perception_tools.messages.camera.image import Image
+from perception_tools.messages.camera.point_cloud import PointCloud
 from perception_tools.messages.field_result import FieldResult
 from perception_tools.messages.segmentation.segmentation_instance_array import SegmentationInstanceArray
 from perception_tools.rosbridge.ros_poll_subscriber import RosPollSubscriber
@@ -24,9 +23,7 @@ class SimulatedFieldFilter(FieldFilterInterface):
         self.last_field_result: FieldResult | None = None
         self.logger = logging.getLogger("perception")
 
-    def compute_field(
-        self, segmentations: SegmentationInstanceArray, depth_image: Image, camera_info: CameraInfo
-    ) -> FieldResult:
+    def compute_field(self, segmentations: SegmentationInstanceArray, point_cloud: PointCloud) -> FieldResult:
         if not self.last_field_result:
             self.logger.warning("Waiting for simulated field result")
             while not self.last_field_result:

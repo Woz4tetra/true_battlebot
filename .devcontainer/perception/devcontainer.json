@@ -1,7 +1,10 @@
 {
     "name": "true_battlebot_perception_devcontainer",
     "service": "true_battlebot_perception_devcontainer",
-    "dockerComposeFile": ["../docker-compose.true_battlebot.yaml"],
+    "dockerComposeFile": [
+        "../docker-compose.true_battlebot.yaml",
+        "../docker-compose.gpu.yaml"
+    ],
     "initializeCommand": ".devcontainer/setup_container.sh",
     "workspaceFolder": "/opt/bwbots/true_battlebot",
     "shutdownAction": "none",

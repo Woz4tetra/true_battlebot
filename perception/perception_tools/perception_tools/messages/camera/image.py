@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 
 import numpy as np
+from perception_tools.messages.camera.compressed_depth_image import CompressedDepthImage
 from perception_tools.messages.camera.compressed_image import CompressedImage
 from perception_tools.messages.std_msgs.header import Header
 from perception_tools.rosbridge.types import RawRosMessage
@@ -130,6 +131,15 @@ class Image:
             header=Header(compressed.header.stamp, compressed.header.frame_id, compressed.header.seq),
             data=compressed.data,
             encoding=Encoding.BGR8,
+            is_bigendian=False,
+        )
+
+    @classmethod
+    def from_compressed_depth(cls, compressed: CompressedDepthImage) -> Image:
+        return Image(
+            header=Header(compressed.header.stamp, compressed.header.frame_id, compressed.header.seq),
+            data=compressed.data,
+            encoding=Encoding.MONO16,
             is_bigendian=False,
         )
 

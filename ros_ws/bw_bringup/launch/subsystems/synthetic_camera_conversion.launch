@@ -33,7 +33,7 @@
         required="false"
         args="raw
         in:=depth/depth_registered
-        compressed
+        compressedDepth
         out:=depth/depth_registered
     " />
     <node name="$(anon layer_compressed)" pkg="image_transport" type="republish" output="screen"

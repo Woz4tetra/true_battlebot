@@ -6,7 +6,7 @@
     <node pkg="bw_bringup" type="shared_config_node.py" name="shared_config_node" output="screen" />
 
     <include file="$(find bw_object_estimation)/launch/object_estimation.launch" />
-    <!-- <include file="$(find bw_object_estimation)/launch/motion_tracking.launch" /> -->
+    <include file="$(find bw_object_estimation)/launch/motion_tracking.launch" />
     <include file="$(find bw_tags)/launch/tag_visualization.launch" />
     <include file="$(find bw_bringup)/launch/subsystems/foxglove_bridge.launch">
         <arg name="port" value="8765" />

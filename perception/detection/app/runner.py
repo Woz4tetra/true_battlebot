@@ -8,6 +8,7 @@ from bw_shared.enums.field_type import FieldType
 from bw_shared.environment import get_map, get_robot, get_ros_ip
 from perception_tools.messages.camera.camera_data import CameraData
 from perception_tools.messages.camera.compressed_image import CompressedImage
+from perception_tools.messages.camera.point_cloud import PointCloud
 from perception_tools.messages.field_result import FieldResult
 from perception_tools.messages.segmentation.segmentation_instance_array import SegmentationInstanceArray
 from perception_tools.messages.std_msgs.header import Header
@@ -46,6 +47,7 @@ class Runner:
         self.field_segmentation_publisher: RosPublisher[SegmentationInstanceArray] = self.container.resolve_by_name(
             "field_segmentation_publisher"
         )
+        self.point_cloud_publisher: RosPublisher[PointCloud] = self.container.resolve_by_name("point_cloud_publisher")
 
         self.robot_segmentation: SegmentationInterface = self.container.resolve_by_name("robot_segmentation")
         self.robot_debug_image_publisher: RosPublisher[CompressedImage] = self.container.resolve_by_name(
@@ -59,6 +61,8 @@ class Runner:
 
     def start(self) -> None:
         self.ros.run()
+        if not self.camera.open():
+            raise RuntimeError("Failed to open camera")
         self.logger.info("Runner started")
 
     def loop(self) -> None:
@@ -77,12 +81,11 @@ class Runner:
             self.camera_data.camera_info.header.stamp
         ):
             self.logger.info("Processing field request")
+            self.point_cloud_publisher.publish(self.camera_data.point_cloud)
             image = self.camera_data.color_image
             field_seg, debug_image = self.field_segmentation.process_image(image)
             self.field_segmentation_publisher.publish(field_seg)
-            field_result = self.field_filter.compute_field(
-                field_seg, self.camera_data.depth_image, self.camera_data.camera_info
-            )
+            field_result = self.field_filter.compute_field(field_seg, self.camera_data.point_cloud)
             self.field_request_handler.send_response(field_result)
             if debug_image:
                 self.logger.info("Publishing debug image")
@@ -92,6 +95,7 @@ class Runner:
 
     def stop(self) -> None:
         self.ros.close()
+        self.camera.close()
         self.logger.info("Runner stopped")
 
 
@@ -134,10 +138,12 @@ def make_field_segmentation(container: Container) -> None:
     field_segmentation = load_segmentation(container, config.field_segmentation)
     field_debug_image_publisher = RosPublisher(ros, namespace + "/field/debug_image", CompressedImage)
     field_segmentation_publisher = RosPublisher(ros, namespace + "/field/segmentation", SegmentationInstanceArray)
+    point_cloud_publisher = RosPublisher(ros, namespace + "/field/point_cloud", PointCloud)
 
     container.register(field_segmentation, "field_segmentation")
     container.register(field_segmentation_publisher, "field_segmentation_publisher")
     container.register(field_debug_image_publisher, "field_debug_image_publisher")
+    container.register(point_cloud_publisher, "point_cloud_publisher")
 
     logger.info(f"Field segmentation: {field_segmentation}")
 

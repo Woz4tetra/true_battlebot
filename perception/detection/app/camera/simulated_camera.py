@@ -3,8 +3,10 @@ import time
 
 from perception_tools.messages.camera.camera_data import CameraData
 from perception_tools.messages.camera.camera_info import CameraInfo
+from perception_tools.messages.camera.compressed_depth_image import CompressedDepthImage
 from perception_tools.messages.camera.compressed_image import CompressedImage
 from perception_tools.messages.camera.image import Image
+from perception_tools.messages.camera.point_cloud import CloudFieldType, PointCloud
 from perception_tools.rosbridge.ros_poll_subscriber import RosPollSubscriber
 
 from app.camera.camera_interface import CameraInterface
@@ -18,7 +20,7 @@ class SimulatedCamera(CameraInterface):
         config: SimulatedCameraConfig,
         camera_topic_config: CameraTopicConfig,
         color_image_sub: RosPollSubscriber[CompressedImage],
-        depth_image_sub: RosPollSubscriber[CompressedImage],
+        depth_image_sub: RosPollSubscriber[CompressedDepthImage],
         camera_info_sub: RosPollSubscriber[CameraInfo],
     ) -> None:
         self.config = config
@@ -28,6 +30,9 @@ class SimulatedCamera(CameraInterface):
         self.camera_info_sub = camera_info_sub
         self.camera_data = CameraData()
         self.logger = logging.getLogger("perception")
+
+    def open(self) -> bool:
+        return True
 
     def check_frame_id(self, frame_id: str) -> None:
         if frame_id != self.camera_topic_config.frame_id:
@@ -44,7 +49,15 @@ class SimulatedCamera(CameraInterface):
             depth_image_time = depth.header.stamp
             self.check_frame_id(depth.header.frame_id)
             self.logger.debug(f"Received depth image. Delay: {now - depth_image_time}")
-            self.camera_data.depth_image = Image.from_compressed(depth)
+            if (
+                len(self.camera_data.color_image.header.frame_id) > 0
+                and len(self.camera_data.camera_info.header.frame_id) > 0
+            ):
+                self.camera_data.point_cloud = PointCloud.from_rgbd(
+                    self.camera_data.color_image,
+                    Image.from_compressed_depth(depth),
+                    self.camera_data.camera_info,
+                )
         if camera_info := self.camera_info_sub.receive():
             info_time = camera_info.header.stamp
             self.check_frame_id(camera_info.header.frame_id)
@@ -52,3 +65,6 @@ class SimulatedCamera(CameraInterface):
             self.camera_data.camera_info = camera_info
             return self.camera_data
         return None
+
+    def close(self) -> None:
+        pass

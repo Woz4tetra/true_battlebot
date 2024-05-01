@@ -45,5 +45,10 @@ class CompressedImage:
         format = msg["format"]
         encoded_array = np.frombuffer(base64.b64decode(data.encode("ascii")), np.uint8)
         image = cv2.imdecode(encoded_array, cv2.IMREAD_UNCHANGED)
+        if image is None:
+            msg_str = str(msg)
+            if len(msg_str) > 200:
+                msg_str = msg_str[0:200] + "..."
+            raise ValueError(f"Failed to decode image. {msg_str}")
 
         return cls(Header.from_raw(msg["header"]), format, image)
