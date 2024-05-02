@@ -1,5 +1,6 @@
 import logging
 import time
+from importlib import reload
 from typing import Any
 
 import numpy as np
@@ -30,6 +31,10 @@ class CustomJsonFormatter(jsonlogger.JsonFormatter):
 
 
 def initialize() -> None:
+    # Reinitialize logging to reset rospy logging
+    logging.shutdown()
+    reload(logging)
+
     logger = logging.getLogger("perception")
     formatter = CustomJsonFormatter()
 
@@ -40,12 +45,11 @@ def initialize() -> None:
 
     logger.setLevel(logging.DEBUG)
 
-    # in case any libraries (open3d in particular) have added any handlers to the root logger
-    logging.root.handlers = []
+    # in case any libraries have added any handlers to the root logger
+    logging.root.handlers.clear()
 
     # Do not keep track of processes to increase performance
     logging.logProcesses = False
 
-    # Set numpy print options, which will determine way numpy arrays are
-    # displayed
+    # Set numpy print options, which will determine way numpy arrays are displayed
     np.set_printoptions(formatter={"float": "{: 0.3f}".format})

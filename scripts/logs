@@ -117,6 +117,7 @@ def replace_multiline_chars(line: str) -> str:
     line = line.replace("\n", "\\n")
     line = line.replace("\r", "\\r")
     line = line.replace('"', '\\"')
+    line = line.replace("\\\\", "\\")
     return line
 
 
@@ -163,7 +164,7 @@ def process_line(data: bytes, args: ParserInput, tracker: IncompleteLineTracker)
         line = tracker.process(line)
         if len(line) == 0:
             return
-        log_line = json.loads(line)
+        log_line = json.loads(line, strict=False)
         if isinstance(log_line, dict):
             tracker.set_success()
             print_line(log_line, args)

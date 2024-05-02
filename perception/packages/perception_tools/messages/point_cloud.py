@@ -72,7 +72,7 @@ def to_uint32_color(colors: np.ndarray) -> np.ndarray:
     colors_uint8 = (colors * 255).astype(np.uint32)
 
     # Combine channels into a single uint32 value
-    colors_uint32 = (colors_uint8[..., 2] << 16) | (colors_uint8[..., 1] << 8) | (colors_uint8[..., 0])
+    colors_uint32 = (colors_uint8[..., 0] << 16) | (colors_uint8[..., 1] << 8) | (colors_uint8[..., 2])
 
     return colors_uint32
 

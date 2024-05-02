@@ -3,15 +3,13 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass
 from typing import List
 
+from bw_shared.enums.label import Label
 from dacite import from_dict
-
-from perception_tools.messages.color import Color
 
 
 @dataclass
 class ModelMetadata:
-    labels: List[str]
-    colors: List[Color]
+    labels: List[Label]
 
     @classmethod
     def from_dict(cls, data: dict) -> ModelMetadata:

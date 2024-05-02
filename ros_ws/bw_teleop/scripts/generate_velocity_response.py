@@ -6,7 +6,7 @@ from dataclasses import dataclass
 
 import numpy as np
 from bw_interfaces.msg import MotorCharacterizationSample as MotorCharacterizationSampleMsg
-from bw_tools.structs.header import Header
+from bw_shared.messages.header import Header
 from matplotlib import pyplot as plt
 from rosbag import Bag
 from scipy.io import wavfile

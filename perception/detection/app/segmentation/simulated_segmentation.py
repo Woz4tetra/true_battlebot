@@ -170,14 +170,18 @@ class SimulatedSegmentation(SegmentationInterface):
             debug_image = None
         object_counts = {label: 0 for label in self.real_model_labels}
         for color, label in self.simulated_segmentations.items():
-            color_rgb = self.color_i32_to_rgb(color)
-            color_nominal = np.array(color_rgb)
-            color_lower = color_nominal - self.error_range
-            color_upper = color_nominal + self.error_range
-            mask = cv2.inRange(image.data, color_lower, color_upper)
+            color_bgr = self.color_i32_to_bgr(color)
+            if self.error_range < 0:
+                mask = np.all(image.data == color_bgr, axis=2).astype(np.uint8)
+            else:
+                color_nominal = np.array(color_bgr)
+                color_lower = color_nominal - self.error_range
+                color_upper = color_nominal + self.error_range
+                mask = cv2.inRange(image.data, color_lower, color_upper)
             mask = self.bridge_gaps(mask, 3)
             contours, hierarchy = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
             if hierarchy is None:  # empty mask
+                self.logger.warning(f"Empty mask encountered for {label}")
                 continue
             has_holes = bool((hierarchy.reshape(-1, 4)[:, 3] >= 0).sum() > 0)  # type: ignore
             object_index = object_counts[label]
@@ -193,7 +197,7 @@ class SimulatedSegmentation(SegmentationInterface):
             segmentation_array.instances.append(segmentation)
 
             if debug_image is not None:
-                debug_image.data = cv2.drawContours(debug_image.data, contours, -1, color=color_rgb, thickness=1)
+                debug_image.data = cv2.drawContours(debug_image.data, contours, -1, color=color_bgr, thickness=1)
 
         segmentation_array.header = image.header.to_msg()
         segmentation_array.height = image.data.shape[0]
@@ -221,8 +225,8 @@ class SimulatedSegmentation(SegmentationInterface):
             simulated_segmentations[color] = label
         return simulated_segmentations
 
-    def color_i32_to_rgb(self, color: int) -> tuple[int, int, int]:
-        return color & 0xFF, (color >> 8) & 0xFF, (color >> 16) & 0xFF
+    def color_i32_to_bgr(self, color: int) -> tuple[int, int, int]:
+        return (color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF
 
     def bridge_gaps(self, image: np.ndarray, distance: int) -> np.ndarray:
         image = cv2.dilate(image, np.ones((distance, distance), np.uint8), iterations=1)

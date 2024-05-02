@@ -3,8 +3,8 @@ import cv2
 import numpy as np
 import rospy
 from bw_interfaces.msg import EstimatedObject
+from bw_shared.messages.header import Header
 from bw_tools.get_param import get_param
-from bw_tools.structs.header import Header
 from bw_tools.structs.occupancy_grid import OccupancyGrid
 from nav_msgs.msg import OccupancyGrid as OccupancyGridMsg
 from nav_msgs.srv import GetMap, GetMapResponse

@@ -102,6 +102,7 @@ class Runner:
 
     def stop(self) -> None:
         self.camera.close()
+        rospy.signal_shutdown("Runner stopped")
         self.logger.info("Runner stopped")
 
 
@@ -128,7 +129,7 @@ def make_ros_comms(container: Container) -> None:
     RosPollSubscriber.log = config.ros.log
     RosPollSubscriber.exclude_filters = config.ros.exclude_filters
 
-    heartbeat_publisher = RosPublisher("/perception/heartbeat", Header)
+    heartbeat_publisher = RosPublisher("/perception/heartbeat", RosHeader)
     container.register(heartbeat_publisher, "heartbeat_publisher")
 
 
@@ -193,6 +194,7 @@ def main() -> None:
 
     initialize()
     print()  # Start log on a fresh line
+    logger.info("Initializing perception")
 
     container = Container()
     container.register(config)

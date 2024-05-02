@@ -1,6 +1,5 @@
 [camera]
-type = "ZedCamera"
-serial_number = 33234316
+type = "SimulatedCamera"
 
 [field_filter]
 type = "SimulatedFieldFilter"
@@ -14,9 +13,9 @@ exclude_filters = [
     "/camera_0/simulated_segmentation",
     "/camera_0/robot/debug_image",
     "/camera_0/rgb/camera_info",
-    "/camera_0/rgb/image_raw/compressed",
-    "/camera_0/layer/image_raw/compressed",
-    "/camera_0/depth/depth_registered/compressed",
+    "/camera_0/rgb/image_raw",
+    "/camera_0/layer/image_raw",
+    "/camera_0/depth/depth_registered",
     "/perception/heartbeat",
 ]
 

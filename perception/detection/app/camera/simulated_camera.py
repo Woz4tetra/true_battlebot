@@ -1,6 +1,7 @@
 import logging
 import time
 
+import numpy as np
 from perception_tools.messages.camera_data import CameraData
 from perception_tools.messages.image import Image
 from perception_tools.messages.point_cloud import PointCloud
@@ -52,9 +53,11 @@ class SimulatedCamera(CameraInterface):
                 len(self.camera_data.color_image.header.frame_id) > 0
                 and len(self.camera_data.camera_info.header.frame_id) > 0
             ):
+                depth_image = Image.from_msg(depth)
+                depth_image.data = depth_image.data.astype(np.uint16)
                 self.camera_data.point_cloud = PointCloud.from_rgbd(
                     self.camera_data.color_image,
-                    Image.from_msg(depth),
+                    depth_image,
                     self.camera_data.camera_info,
                 )
         if camera_info := self.camera_info_sub.receive():

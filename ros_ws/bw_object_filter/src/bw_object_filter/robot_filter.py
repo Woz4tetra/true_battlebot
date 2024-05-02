@@ -9,9 +9,9 @@ from bw_interfaces.msg import EstimatedObject, EstimatedObjectArray
 from bw_shared.configs.robot_fleet_config import RobotConfig, RobotFleetConfig
 from bw_shared.enums.label import Label
 from bw_shared.enums.robot_team import RobotTeam
+from bw_shared.messages.header import Header
 from bw_tools.configs.rosparam_client import get_shared_config
 from bw_tools.get_param import get_param
-from bw_tools.structs.header import Header
 from bw_tools.structs.pose2d import Pose2D
 from bw_tools.structs.pose2d_stamped import Pose2DStamped
 from bw_tools.structs.rpy import RPY

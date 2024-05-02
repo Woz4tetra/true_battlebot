@@ -73,7 +73,7 @@ class TankController : MonoBehaviour, ControllerInterface
         Matrix4x4 pose = Matrix4x4.TRS(body.transform.position, body.transform.rotation, Vector3.one);
         if (referenceObject != null)
         {
-            pose = referenceObject.transform.localToWorldMatrix * pose;
+            pose = referenceObject.transform.worldToLocalMatrix * pose;
         }
         return new OdometryMsg
         {

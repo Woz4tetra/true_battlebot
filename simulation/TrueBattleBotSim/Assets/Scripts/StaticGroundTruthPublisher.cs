@@ -20,10 +20,10 @@ public class StaticGroundTruthPublisher : MonoBehaviour
 
     void Update()
     {
-        Matrix4x4 pose = Matrix4x4.TRS(transform.position, transform.rotation, Vector3.one);
+        Matrix4x4 pose = transform.localToWorldMatrix;
         if (referenceObject != null)
         {
-            pose = referenceObject.transform.localToWorldMatrix * pose;
+            pose = referenceObject.transform.worldToLocalMatrix * pose;
         }
         PoseStampedMsg msg = new PoseStampedMsg
         {
@@ -36,7 +36,7 @@ public class StaticGroundTruthPublisher : MonoBehaviour
             pose = new PoseMsg
             {
                 position = pose.GetT().To<FLU>(),
-                orientation = (pose.GetR() * Quaternion.Euler(0, 90, 0)).To<FLU>()
+                orientation = pose.GetR().To<FLU>()
             }
         };
         ros.Publish(topic, msg);

@@ -12,8 +12,8 @@ import cv2
 import numpy as np
 import rosbag
 from bw_interfaces.msg import EstimatedObject
+from bw_shared.messages.header import Header
 from bw_tools.projection_math.project_segmentation import line_plane_intersection
-from bw_tools.structs.header import Header
 from bw_tools.structs.pose2d import Pose2D
 from bw_tools.structs.pose2d_stamped import Pose2DStamped
 from bw_tools.structs.transform3d import Transform3D
