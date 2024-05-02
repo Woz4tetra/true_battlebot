@@ -8,12 +8,12 @@ import cv2
 import numpy as np
 import torch
 import torchvision
+from bw_interfaces.msg import Contour, SegmentationInstance, SegmentationInstanceArray, UVKeypoint
+from bw_shared.messages.header import Header
 from detectron2.layers import paste_masks_in_image
 from detectron2.utils.visualizer import GenericMask
 from perception_tools.config.model_metadata import ModelMetadata
-from perception_tools.messages.camera.image import Image
-from perception_tools.messages.segmentation import Contour, SegmentationInstance, SegmentationInstanceArray, UVKeypoint
-from perception_tools.messages.std_msgs.header import Header
+from perception_tools.messages.image import Image
 from torch import Tensor
 
 from app.config.segmentation_config.instance_segmentation_config import InstanceSegmentationConfig
@@ -100,7 +100,7 @@ class InstanceSegmentation:
             image_data = cv2.resize(image_data, self.original_dims, interpolation=cv2.INTER_NEAREST)
 
         msg = SegmentationInstanceArray()
-        msg.header = image.header
+        msg.header = image.header.to_msg()
         msg.height = height
         msg.width = width
 

@@ -1,0 +1,6 @@
+#!/bin/bash
+BASE_DIR=$(realpath "$(dirname $0)")
+
+${BASE_DIR}/stop_all_containers
+docker volume rm ${PROJECT_NAME}_perception_build
+${BASE_DIR}/build_perception

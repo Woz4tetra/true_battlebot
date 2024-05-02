@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 
-from perception_tools.messages.camera.image import Image
-from perception_tools.messages.segmentation.segmentation_instance_array import SegmentationInstanceArray
+from bw_interfaces.msg import SegmentationInstanceArray
+from perception_tools.messages.image import Image
 
 
 class SegmentationInterface(ABC):

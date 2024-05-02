@@ -1,9 +1,6 @@
 #!/bin/bash
 BASE_DIR=$(realpath "$(dirname $0)")
 
-ROBOT_NAME="${1}"
-MAP_NAME="${2}"
-
 PROJECT_DIR=$(realpath "${BASE_DIR}/../../")
 
 ${BASE_DIR}/copy_project
@@ -27,4 +24,4 @@ docker run \
     -v=${PROJECT_DIR}/scripts:/opt/${ORGANIZATION}/scripts:rw \
     --rm \
     ${IMAGE_VERSION} \
-    /opt/${ORGANIZATION}/scripts/build_ros_ws "${ROBOT_NAME}" "${MAP_NAME}"
+    /opt/${ORGANIZATION}/scripts/build_ros_ws

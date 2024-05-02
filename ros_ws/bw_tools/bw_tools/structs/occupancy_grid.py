@@ -7,11 +7,11 @@ from typing import Any, Dict, Optional, Tuple
 import cv2
 import numpy as np
 import rospy
+from bw_shared.messages.header import Header
 from nav_msgs.msg import MapMetaData as RosMapMetaData
 from nav_msgs.msg import OccupancyGrid as RosOccupancyGrid
 from numpy import typing as npt
 
-from bw_tools.structs.header import Header
 from bw_tools.structs.pose2d import Pose2D
 from bw_tools.structs.transform3d import Transform3D
 

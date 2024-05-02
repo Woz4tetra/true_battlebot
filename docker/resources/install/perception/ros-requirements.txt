@@ -1,0 +1,20 @@
+--extra-index-url https://rospypi.github.io/simple/
+rospy
+rospy-builder
+genmsg
+actionlib-msgs
+std-msgs
+sensor-msgs
+geometry-msgs
+diagnostic-msgs
+visualization-msgs
+nav_msgs
+cv-bridge
+tf
+tf-conversions
+# tf2-geometry-msgs
+# tf2-msgs
+# tf2-msgs-stubs
+# tf2-py
+# tf2-ros
+# tf2-sensor-msgs

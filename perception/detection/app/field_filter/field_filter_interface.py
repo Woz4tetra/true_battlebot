@@ -1,11 +1,11 @@
 from abc import ABC, abstractmethod
 
-from perception_tools.messages.camera.point_cloud import PointCloud
-from perception_tools.messages.field_result import FieldResult
-from perception_tools.messages.segmentation.segmentation_instance_array import SegmentationInstanceArray
+from bw_interfaces.msg import EstimatedObject, SegmentationInstanceArray
 
 
 class FieldFilterInterface(ABC):
     @abstractmethod
-    def compute_field(self, segmentations: SegmentationInstanceArray, point_cloud: PointCloud) -> FieldResult:
+    def compute_field(
+        self, segmentations: SegmentationInstanceArray, point_cloud: SegmentationInstanceArray
+    ) -> EstimatedObject:
         pass

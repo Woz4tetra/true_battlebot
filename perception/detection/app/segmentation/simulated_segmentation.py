@@ -5,12 +5,9 @@ from typing import Protocol
 
 import cv2
 import numpy as np
+from bw_interfaces.msg import Contour, SegmentationInstance, SegmentationInstanceArray, UVKeypoint
 from bw_shared.enums.label import Label
-from perception_tools.messages.camera.image import Image
-from perception_tools.messages.segmentation.contour import Contour
-from perception_tools.messages.segmentation.segmentation_instance import SegmentationInstance
-from perception_tools.messages.segmentation.segmentation_instance_array import SegmentationInstanceArray
-from perception_tools.messages.segmentation.uv_keypoint import UVKeypoint
+from perception_tools.messages.image import Image
 
 from app.config.segmentation_config.simulated_segmentation_config import SimulatedSegmentationConfig
 from app.segmentation.segmentation_interface import SegmentationInterface
@@ -198,7 +195,7 @@ class SimulatedSegmentation(SegmentationInterface):
             if debug_image is not None:
                 debug_image.data = cv2.drawContours(debug_image.data, contours, -1, color=color_rgb, thickness=1)
 
-        segmentation_array.header = image.header
+        segmentation_array.header = image.header.to_msg()
         segmentation_array.height = image.data.shape[0]
         segmentation_array.width = image.data.shape[1]
 

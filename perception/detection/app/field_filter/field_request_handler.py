@@ -1,10 +1,10 @@
 import logging
 import time
 
-from perception_tools.messages.field_result import FieldResult
-from perception_tools.rosbridge.empty import Empty
+from bw_interfaces.msg import EstimatedObject
 from perception_tools.rosbridge.ros_poll_subscriber import RosPollSubscriber
 from perception_tools.rosbridge.ros_publisher import RosPublisher
+from std_msgs.msg import Empty
 
 from app.config.field_filter_config.field_request_config import FieldRequestConfig
 
@@ -14,7 +14,7 @@ class FieldRequestHandler:
         self,
         field_request_config: FieldRequestConfig,
         request_subscriber: RosPollSubscriber[Empty],
-        response_publisher: RosPublisher[FieldResult],
+        response_publisher: RosPublisher[EstimatedObject],
     ) -> None:
         self.logger = logging.getLogger("perception")
         self.stale_image_timeout = field_request_config.stale_image_timeout
@@ -33,5 +33,5 @@ class FieldRequestHandler:
             return True
         return False
 
-    def send_response(self, field_result: FieldResult) -> None:
+    def send_response(self, field_result: EstimatedObject) -> None:
         self.response_publisher.publish(field_result)

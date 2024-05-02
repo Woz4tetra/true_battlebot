@@ -1,10 +1,7 @@
 from typing import Union
 
-from perception_tools.messages.camera.camera_info import CameraInfo
-from perception_tools.messages.camera.compressed_depth_image import CompressedDepthImage
-from perception_tools.messages.camera.compressed_image import CompressedImage
 from perception_tools.rosbridge.ros_poll_subscriber import RosPollSubscriber
-from roslibpy import Ros
+from sensor_msgs.msg import CameraInfo, Image
 
 from app.config.camera_config.camera_types import CameraConfig
 from app.config.camera_config.noop_camera_config import NoopCameraConfig
@@ -21,13 +18,12 @@ CameraImplementation = Union[ZedCamera, NoopCamera, SimulatedCamera]
 
 
 def make_simulated_camera(camera_config: SimulatedCameraConfig, container: Container) -> CameraImplementation:
-    ros = container.resolve(Ros)
     config = container.resolve(Config)
     ns = config.camera_topic.namespace
 
-    color_image_sub = RosPollSubscriber(ros, ns + "/rgb/image_raw/compressed", CompressedImage)
-    depth_image_sub = RosPollSubscriber(ros, ns + "/depth/depth_registered/compressedDepth", CompressedDepthImage)
-    camera_info_sub = RosPollSubscriber(ros, ns + "/rgb/camera_info", CameraInfo)
+    color_image_sub = RosPollSubscriber(ns + "/rgb/image_raw", Image, buff_size=2 << 24)
+    depth_image_sub = RosPollSubscriber(ns + "/depth/depth_registered", Image, buff_size=2 << 24)
+    camera_info_sub = RosPollSubscriber(ns + "/rgb/camera_info", CameraInfo)
 
     return SimulatedCamera(camera_config, config.camera_topic, color_image_sub, depth_image_sub, camera_info_sub)
 

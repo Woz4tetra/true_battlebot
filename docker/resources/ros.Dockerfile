@@ -58,7 +58,7 @@ COPY --chown=1000:1000 \
 RUN bash /opt/${ORGANIZATION}/install/install_python_dependencies.sh
 
 COPY --chown=1000:1000 \
-    ./install/install_platformio.sh \
+    ./install/ros/install_platformio.sh \
     /opt/${ORGANIZATION}/install/
 RUN bash /opt/${ORGANIZATION}/install/install_platformio.sh
 
@@ -82,23 +82,23 @@ ENV PATH=${HOME}/.local/bin${PATH:+:${PATH}}
 ENV BASE_ROS_WS_ROOT=${HOME}/base_ws
 
 COPY --chown=1000:1000 \
-    ./install/install_ros_deps.sh \
+    ./install/ros/install_ros_deps.sh \
     /opt/${ORGANIZATION}/install/
 RUN bash /opt/${ORGANIZATION}/install/install_ros_deps.sh
 
 COPY --chown=1000:1000 \
-    ./install/${ROS_DISTRO}.rosinstall \
-    ./install/install_ros.sh \
+    ./install/ros/${ROS_DISTRO}.rosinstall \
+    ./install/ros/install_ros.sh \
     /opt/${ORGANIZATION}/install/
 RUN bash /opt/${ORGANIZATION}/install/install_ros.sh
 
 ENV DEP_ROS_WS_ROOT=${HOME}/dep_ws
 
 COPY --chown=1000:1000 \
-    ./install/install_ros_packages.sh \
-    ./install/patches/geometry2.patch \
-    ./install/patches/image-pipeline.patch \
-    ./install/${PROJECT_NAME}.rosinstall \
+    ./install/ros/install_ros_packages.sh \
+    ./install/ros/patches/geometry2.patch \
+    ./install/ros/patches/image-pipeline.patch \
+    ./install/ros/${PROJECT_NAME}.rosinstall \
     /opt/${ORGANIZATION}/install/
 RUN bash /opt/${ORGANIZATION}/install/install_ros_packages.sh /opt/${ORGANIZATION}/install/${PROJECT_NAME}.rosinstall
 
@@ -107,8 +107,8 @@ RUN bash /opt/${ORGANIZATION}/install/install_ros_packages.sh /opt/${ORGANIZATIO
 # ---
 
 COPY --chown=1000:1000 \
-    ./install/ros-extra-requirements.txt \
-    ./install/install_ros_python_extras.sh \
+    ./install/ros/ros-extra-requirements.txt \
+    ./install/ros/install_ros_python_extras.sh \
     /opt/${ORGANIZATION}/install/
 RUN bash /opt/${ORGANIZATION}/install/install_ros_python_extras.sh
 
@@ -138,8 +138,8 @@ COPY --chown=1000:1000 \
     /opt/${ORGANIZATION}/install/
 RUN bash /opt/${ORGANIZATION}/install/increase_file_watchers.sh
 
-COPY --chown=1000:1000 ./install/bashrc/base_bashrc ${HOME}/.bashrc
-COPY --chown=1000:1000 ./install/bashrc/ros_bashrc ${HOME}/bashrc_overlay
+COPY --chown=1000:1000 ./install/base_bashrc ${HOME}/.bashrc
+COPY --chown=1000:1000 ./install/ros/ros_bashrc ${HOME}/bashrc_overlay
 RUN cat ${HOME}/bashrc_overlay >> ${HOME}/.bashrc && rm ${HOME}/bashrc_overlay
 
 COPY --chown=1000:1000 \
@@ -150,7 +150,7 @@ COPY --chown=1000:1000 \
     /opt/${ORGANIZATION}/
 
 COPY --chown=1000:1000 \
-    ./install/make_ros_symlinks.sh \
+    ./install/ros/make_ros_symlinks.sh \
     /opt/${ORGANIZATION}/install/
 RUN bash /opt/${ORGANIZATION}/install/make_ros_symlinks.sh
 

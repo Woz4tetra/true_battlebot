@@ -1,0 +1,8 @@
+mypy
+types-requests
+pytest
+dacite
+argcomplete
+ruff
+toml
+python-json-logger

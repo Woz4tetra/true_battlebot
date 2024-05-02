@@ -1,13 +1,12 @@
 import logging
 import time
 
-from perception_tools.messages.camera.camera_data import CameraData
-from perception_tools.messages.camera.camera_info import CameraInfo
-from perception_tools.messages.camera.compressed_depth_image import CompressedDepthImage
-from perception_tools.messages.camera.compressed_image import CompressedImage
-from perception_tools.messages.camera.image import Image
-from perception_tools.messages.camera.point_cloud import PointCloud
+from perception_tools.messages.camera_data import CameraData
+from perception_tools.messages.image import Image
+from perception_tools.messages.point_cloud import PointCloud
 from perception_tools.rosbridge.ros_poll_subscriber import RosPollSubscriber
+from sensor_msgs.msg import CameraInfo
+from sensor_msgs.msg import Image as RosImage
 
 from app.camera.camera_interface import CameraInterface
 from app.config.camera_config.simulated_camera_config import SimulatedCameraConfig
@@ -19,8 +18,8 @@ class SimulatedCamera(CameraInterface):
         self,
         config: SimulatedCameraConfig,
         camera_topic_config: CameraTopicConfig,
-        color_image_sub: RosPollSubscriber[CompressedImage],
-        depth_image_sub: RosPollSubscriber[CompressedDepthImage],
+        color_image_sub: RosPollSubscriber[RosImage],
+        depth_image_sub: RosPollSubscriber[RosImage],
         camera_info_sub: RosPollSubscriber[CameraInfo],
     ) -> None:
         self.config = config
@@ -41,12 +40,12 @@ class SimulatedCamera(CameraInterface):
     def poll(self) -> CameraData | None:
         now = time.time()
         if color := self.color_image_sub.receive():
-            color_image_time = color.header.stamp
-            self.check_frame_id(color.header.frame_id)
+            color_image_time = color.header.stamp.to_sec()
             self.logger.debug(f"Received color image. Delay: {now - color_image_time}")
-            self.camera_data.color_image = Image.from_compressed(color)
+            self.camera_data.color_image = Image.from_msg(color)
+            self.check_frame_id(color.header.frame_id)
         if depth := self.depth_image_sub.receive():
-            depth_image_time = depth.header.stamp
+            depth_image_time = depth.header.stamp.to_sec()
             self.check_frame_id(depth.header.frame_id)
             self.logger.debug(f"Received depth image. Delay: {now - depth_image_time}")
             if (
@@ -55,11 +54,11 @@ class SimulatedCamera(CameraInterface):
             ):
                 self.camera_data.point_cloud = PointCloud.from_rgbd(
                     self.camera_data.color_image,
-                    Image.from_compressed_depth(depth),
+                    Image.from_msg(depth),
                     self.camera_data.camera_info,
                 )
         if camera_info := self.camera_info_sub.receive():
-            info_time = camera_info.header.stamp
+            info_time = camera_info.header.stamp.to_sec()
             self.check_frame_id(camera_info.header.frame_id)
             self.logger.debug(f"Received info. Delay: {now - info_time}")
             self.camera_data.camera_info = camera_info

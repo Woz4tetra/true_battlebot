@@ -5,6 +5,10 @@ volumes:
         name: ${PROJECT_NAME}_ros_build
         external: true
 
+    true_battlebot_perception_build:
+        name: ${PROJECT_NAME}_perception_build
+        external: true
+
 services:
     true_battlebot_devcontainer:
         image: ${IMAGE_VERSION}
@@ -46,6 +50,7 @@ services:
             - IMAGE_VERSION=${PERCEPTION_IMAGE_VERSION}
         ipc: host
         volumes:
+            - ${PROJECT_NAME}_perception_build:/opt/${ORGANIZATION}/build:rw
             - ${PROJECT_DIR}:/opt/${ORGANIZATION}/${PROJECT_NAME}:rw
             - ${PROJECT_DIR}/scripts:/opt/${ORGANIZATION}/scripts:rw
             - /media/storage/torch-cache:/home/bwbots/.torch:rw

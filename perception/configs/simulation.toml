@@ -8,7 +8,7 @@ type = "SimulatedFieldFilter"
 [field_request]
 stale_image_timeout = 2.0
 
-[rosbridge]
+[ros]
 log = true
 exclude_filters = [
     "/camera_0/simulated_segmentation",

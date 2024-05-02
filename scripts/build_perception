@@ -1,0 +1,28 @@
+#!/bin/bash
+
+set -e
+
+sudo chown 1000:1000 "${PERCEPTION_BUILD_DIR}"
+
+BUILD_ROOT_DIR=/opt/${ORGANIZATION}/build
+ROS_DEP_MSG_DIR=${BUILD_ROOT_DIR}/ros_msgs
+SOURCE_MSG_DIR=/opt/${ORGANIZATION}/${PROJECT_NAME}/ros_ws/bw_interfaces
+BUILD_MSG_DIR=${BUILD_ROOT_DIR}/bw_interfaces
+INSTALL_MSG_DIR=/opt/${ORGANIZATION}/${PROJECT_NAME}/perception/packages
+
+mkdir -p ${ROS_DEP_MSG_DIR}
+cd ${ROS_DEP_MSG_DIR}
+
+cp -r ${SOURCE_MSG_DIR} ${BUILD_ROOT_DIR}
+
+if [ ! -d ${ROS_DEP_MSG_DIR}/std_msgs ] ; then
+    git clone https://github.com/ros/std_msgs.git ${ROS_DEP_MSG_DIR}/std_msgs
+fi
+
+if [ ! -d ${ROS_DEP_MSG_DIR}/common_msgs ] ; then
+    git clone https://github.com/ros/common_msgs.git ${ROS_DEP_MSG_DIR}/common_msgs
+fi
+
+rospy-build genmsg ${BUILD_MSG_DIR} -s ${ROS_DEP_MSG_DIR} > /dev/null
+cp -r ${BUILD_MSG_DIR}/bw_interfaces ${INSTALL_MSG_DIR}
+echo "Generated messages in ${INSTALL_MSG_DIR}"

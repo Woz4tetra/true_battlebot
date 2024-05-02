@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from perception_tools.messages.camera.camera_data import CameraData
+from perception_tools.messages.camera_data import CameraData
 
 
 class CameraInterface(ABC):

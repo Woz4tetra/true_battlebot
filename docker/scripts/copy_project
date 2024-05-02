@@ -11,7 +11,7 @@ PROJECT_NAME=$(${BASE_DIR}/../get_project_name)
 
 VALUE=$(docker volume ls -f name=${PROJECT_NAME}_ros_build)
 if ! echo ${VALUE} | grep -q "${PROJECT_NAME}_ros_build"; then
-    echo "Creating volume"
+    echo "Creating ROS volume"
     docker volume create ${PROJECT_NAME}_ros_build
 fi
 

@@ -1,9 +1,8 @@
 from typing import Union
 
-from perception_tools.messages.camera.compressed_image import CompressedImage
-from perception_tools.messages.segmentation.segmentation_instance_array import SegmentationInstanceArray
+from bw_interfaces.msg import SegmentationInstanceArray
 from perception_tools.rosbridge.ros_poll_subscriber import RosPollSubscriber
-from roslibpy import Ros
+from sensor_msgs.msg import Image
 
 from app.config.config import Config
 from app.config.segmentation_config.instance_segmentation_config import InstanceSegmentationConfig
@@ -21,13 +20,10 @@ SegmentationImplementation = Union[InstanceSegmentation, NoopSegmentation, Simul
 
 
 def load_simulated_segmentation_manager(container: Container) -> SimulatedSegmentationManager:
-    ros = container.resolve(Ros)
     config = container.resolve(Config)
     namespace = config.camera_topic.namespace
-    sim_segmentation_image_sub = RosPollSubscriber(ros, namespace + "/layer/image_raw/compressed", CompressedImage)
-    simulated_segmentation_sub = RosPollSubscriber(
-        ros, namespace + "/simulated_segmentation", SegmentationInstanceArray
-    )
+    sim_segmentation_image_sub = RosPollSubscriber(namespace + "/layer/image_raw", Image)
+    simulated_segmentation_sub = RosPollSubscriber(namespace + "/simulated_segmentation", SegmentationInstanceArray)
     return SimulatedSegmentationManager(sim_segmentation_image_sub, simulated_segmentation_sub)
 
 
