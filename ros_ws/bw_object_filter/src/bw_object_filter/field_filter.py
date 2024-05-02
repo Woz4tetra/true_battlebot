@@ -77,7 +77,7 @@ class FieldFilter:
         passes = self.extents_range[0] < extents < self.extents_range[1]
 
         if not passes:
-            rospy.logwarn("Field size does not match expected size")
+            rospy.logwarn(f"Field size does not match expected size: Got {extents}, expected {self.expected_size}")
             return
 
         self.estimated_field = EstimatedObject()
@@ -147,7 +147,6 @@ class FieldFilter:
         marker.action = Marker.ADD
         marker.frame_locked = False
         marker.pose.orientation.w = 1.0
-        marker.pose.position.z += estimated_object.size.z * 0.5
         marker.scale.x = estimated_object.size.x if estimated_object.size.x > 0 else 0.01
         marker.scale.y = estimated_object.size.y if estimated_object.size.y > 0 else 0.01
         marker.scale.z = estimated_object.size.z if estimated_object.size.z > 0 else 0.01
