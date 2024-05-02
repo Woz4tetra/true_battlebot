@@ -7,10 +7,13 @@ import tf2_ros
 from bw_interfaces.msg import CageCorner as RosCageCorner
 from bw_interfaces.msg import EstimatedObject
 from bw_shared.enums.label import Label
+from bw_shared.environment import get_map
+from bw_tools.configs.rosparam_client import get_shared_config
 from bw_tools.get_param import get_param
 from bw_tools.structs.cage_corner import CageCorner
 from bw_tools.structs.rpy import RPY
 from bw_tools.structs.transform3d import Transform3D
+from bw_tools.structs.xyz import XYZ
 from geometry_msgs.msg import Vector3
 from std_msgs.msg import ColorRGBA, Empty, Header
 from visualization_msgs.msg import Marker, MarkerArray
@@ -18,9 +21,19 @@ from visualization_msgs.msg import Marker, MarkerArray
 
 class FieldFilter:
     def __init__(self) -> None:
+        shared_config = get_shared_config()
+        map_name = get_map()
+        map_config = shared_config.get_map(map_name)
+
         self.map_frame = get_param("~map_frame", "map")
         self.relative_map_frame = get_param("~relative_map_frame", "map_relative")
         auto_initialize = get_param("~auto_initialize", False)
+        self.expected_size = XYZ.from_size(map_config.size)
+        field_dims_buffer = get_param("~field_dims_buffer", 0.25)
+        buffer_extents = XYZ(field_dims_buffer, field_dims_buffer, field_dims_buffer)
+        self.extents_range = (self.expected_size - buffer_extents, self.expected_size + buffer_extents)
+        rospy.loginfo(f"Map name: {map_name}")
+        rospy.loginfo(f"Extents range: {self.extents_range}")
 
         self.cage_corner: Optional[CageCorner] = None
         self.field_rotations = {
@@ -59,6 +72,13 @@ class FieldFilter:
     def response_callback(self, field: EstimatedObject) -> None:
         rospy.loginfo("Received field response")
         transform = Transform3D.from_pose_msg(field.pose.pose).inverse()
+
+        extents = XYZ.from_msg(field.size)
+        passes = self.extents_range[0] < extents < self.extents_range[1]
+
+        if not passes:
+            rospy.logwarn("Field size does not match expected size")
+            return
 
         self.estimated_field = EstimatedObject()
         self.estimated_field.size = field.size

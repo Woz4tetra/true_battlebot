@@ -1,9 +1,8 @@
 <launch>
-    <arg name="map" default="$(env MAP_NAME)" />
-    <arg name="robot" default="$(env ROBOT)" />
     <arg name="auto_initialize" default="false" />
 
-    <node pkg="bw_bringup" type="shared_config_node.py" name="shared_config_node" output="screen" />
+    <node pkg="bw_shared_config" type="shared_config_node.py" name="shared_config_node"
+        output="screen" />
 
     <include file="$(find bw_object_estimation)/launch/object_estimation.launch" />
     <include file="$(find bw_object_estimation)/launch/motion_tracking.launch" />
@@ -19,7 +18,6 @@
     <include file="$(find bw_object_filter)/launch/object_filter.launch">
         <arg name="auto_initialize" value="$(arg auto_initialize)" />
         <arg name="filter_config" value="$(find bw_bringup)/config/robot_filter.yaml" />
-        <arg name="map" value="$(arg map)" />
     </include>
     <include file="$(find bw_teleop)/launch/bw_teleop.launch" />
     <include file="$(find bw_system_health)/launch/system_health.launch" />

@@ -1,7 +1,4 @@
 <launch>
-    <arg name="map" default="$(env MAP_NAME)" />
-    <arg name="robot" default="$(env ROBOT)" />
-
     <include file="$(find bw_bringup)/launch/subsystems/common.launch">
         <arg name="auto_initialize" value="true" />
     </include>

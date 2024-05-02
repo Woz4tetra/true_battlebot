@@ -1,12 +1,10 @@
 <launch>
     <arg name="filter_config" default="$(find bw_bringup)/config/robot_filter.yaml" />
-    <arg name="map" default="nhrl_small" />
     <arg name="camera_name" default="camera_0" />
     <arg name="auto_initialize" default="false" />
 
     <node pkg="bw_object_filter" type="field_filter.py" name="field_filter" output="screen">
         <param name="auto_initialize" value="$(arg auto_initialize)" />
-        <param name="map" value="$(arg map)" />
     </node>
     <node pkg="bw_object_filter" type="robot_filter.py" name="robot_filter" output="screen">
         <rosparam command="load" file="$(arg filter_config)" ns="" />
