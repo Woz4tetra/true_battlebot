@@ -38,7 +38,6 @@ class TargetFollower : BaseFollower
                 Matrix4x4 goalPose = GetOdomPose(other_controller.GetGroundTruth());
                 Vector3 delta = goalPose.GetT() - currentPose.GetT();
                 float heading = Mathf.Rad2Deg * Mathf.Atan2(delta.y, delta.x);
-                heading += 180.0f;
                 next = new SequenceElementConfig
                 {
                     timestamp = current.timestamp,
