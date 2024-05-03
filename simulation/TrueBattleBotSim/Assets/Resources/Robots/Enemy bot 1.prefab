@@ -594,6 +594,8 @@ GameObject:
   - component: {fileID: 3265988871498615208}
   - component: {fileID: 5728912702656217744}
   - component: {fileID: 8141477124369095856}
+  - component: {fileID: 430191967845549479}
+  - component: {fileID: 3935608861867334067}
   - component: {fileID: 3173922297348665016}
   m_Layer: 13
   m_Name: Enemy bot 1
@@ -805,6 +807,48 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   zeta: 4
   b: 8
+--- !u!114 &430191967845549479
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4152357345317948689}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7e4961b0a573f1cd0a9ef87897ff0a5f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  linearPID:
+    kp: 2
+    ki: 0
+    kd: 0
+    kf: 1
+    i_zone: 0
+    i_max: 0
+    epsilon: 0.000000001
+    tolerance: 0
+  angularPID:
+    kp: 10
+    ki: 0.1
+    kd: 1
+    kf: 1
+    i_zone: 0
+    i_max: 0
+    epsilon: 0.000000001
+    tolerance: 0
+--- !u!114 &3935608861867334067
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4152357345317948689}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 14e69c3d1b666ef42afaccf0e29290fc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!114 &3173922297348665016
 MonoBehaviour:
   m_ObjectHideFlags: 0

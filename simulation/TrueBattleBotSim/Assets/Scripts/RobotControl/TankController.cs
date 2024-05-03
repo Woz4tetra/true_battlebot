@@ -112,8 +112,8 @@ class TankController : MonoBehaviour, ControllerInterface
 
     private TwistMsg GetGroundTruthVelocity()
     {
-        Vector3 localVelocity = GetRelativeVelocity();
-        Vector3 angularVelocity = -1 * body.angularVelocity;
+        Vector3 localVelocity = GetRelativeVelocity();  // m/s
+        Vector3 angularVelocity = -1 * body.angularVelocity;  // rad/s
 
         return new TwistMsg
         {

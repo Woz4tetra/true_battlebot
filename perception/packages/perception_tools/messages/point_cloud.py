@@ -118,6 +118,8 @@ class PointCloud:
         return PointCloud(header=Header.from_msg(camera_info.header), points=points, colors=colors)
 
     def to_msg(self) -> RosPointCloud:
+        if len(self.points) == 0:
+            return RosPointCloud(header=self.header.to_msg())
         height, width = self.points.shape[:2]
         msg_fields = []
         if len(self.colors) == 0:

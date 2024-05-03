@@ -6,6 +6,7 @@ import rospy
 import tf2_ros
 from bw_interfaces.msg import CageCorner as RosCageCorner
 from bw_interfaces.msg import EstimatedObject
+from bw_shared.enums.field_type import FieldType
 from bw_shared.enums.label import Label
 from bw_shared.environment import get_map
 from bw_tools.configs.rosparam_client import get_shared_config
@@ -23,7 +24,7 @@ class FieldFilter:
     def __init__(self) -> None:
         shared_config = get_shared_config()
         map_name = get_map()
-        map_config = shared_config.get_map(map_name)
+        map_config = shared_config.get_map(FieldType(map_name))
 
         self.map_frame = get_param("~map_frame", "map")
         self.relative_map_frame = get_param("~relative_map_frame", "map_relative")

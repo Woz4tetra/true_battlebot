@@ -17,10 +17,14 @@ public class RamseteFollowerEngine : BaseFollowerEngine
         Matrix4x4 relativePose = currentPose.inverse * goalPose;
         Vector3 relativePosition = relativePose.GetT();
         float relativeAngle = relativePose.GetR().eulerAngles.z * Mathf.Deg2Rad;
-        relativeAngle = (relativeAngle % (2 * Mathf.PI)) - Mathf.PI;
+        relativeAngle = relativeAngle % (2 * Mathf.PI);
+        if (relativeAngle > Mathf.PI)
+        {
+            relativeAngle -= 2 * Mathf.PI;
+        }
 
-        float vxRef = goalVelocity.x;
-        float vtRef = goalVelocity.z;
+        float vxRef = goalVelocity.x;  // m/s
+        float vtRef = goalVelocity.z;  // rad/s
         float k = (
             2.0f
             * zeta

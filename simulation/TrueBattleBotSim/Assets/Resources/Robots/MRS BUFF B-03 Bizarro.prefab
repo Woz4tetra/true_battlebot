@@ -5375,7 +5375,7 @@ ArticulationBody:
     damping: 0
     forceLimit: 3.4028235e+38
     target: 0
-    targetVelocity: -100
+    targetVelocity: 0
     driveType: 3
   m_YDrive:
     lowerLimit: 0
@@ -7292,7 +7292,9 @@ GameObject:
   - component: {fileID: 5598746143870485268}
   - component: {fileID: 5523472086573305422}
   - component: {fileID: 1907273964650821027}
+  - component: {fileID: 3857530334123070071}
   - component: {fileID: 6565830483140698421}
+  - component: {fileID: 366412101632411798}
   m_Layer: 13
   m_Name: MRS BUFF B-03 Bizarro
   m_TagString: Enemy bot
@@ -7458,7 +7460,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   linearScale: 5
-  angularScale: 12.56
+  angularScale: 20
 --- !u!114 &8504872306071854820
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7524,6 +7526,36 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   zeta: 4
   b: 8
+--- !u!114 &3857530334123070071
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2875149751232713950}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7e4961b0a573f1cd0a9ef87897ff0a5f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  linearPID:
+    kp: 1
+    ki: 0
+    kd: 0
+    kf: 1
+    i_zone: 0
+    i_max: 0
+    epsilon: 0.000000001
+    tolerance: 0
+  angularPID:
+    kp: 10
+    ki: 0.1
+    kd: 1
+    kf: 1
+    i_zone: 0
+    i_max: 0
+    epsilon: 0.000000001
+    tolerance: 0
 --- !u!114 &6565830483140698421
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7537,6 +7569,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   baseTopic: opponent_1
+--- !u!114 &366412101632411798
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2875149751232713950}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 14e69c3d1b666ef42afaccf0e29290fc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &2893022683982512379
 GameObject:
   m_ObjectHideFlags: 0

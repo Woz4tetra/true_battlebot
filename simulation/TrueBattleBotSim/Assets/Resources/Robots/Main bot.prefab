@@ -260,7 +260,9 @@ GameObject:
   - component: {fileID: 3923795459663842147}
   - component: {fileID: 7092116137789667424}
   - component: {fileID: 9637584897078815}
+  - component: {fileID: 3277835126963680745}
   - component: {fileID: 3825037986657039423}
+  - component: {fileID: 8726593090106754038}
   m_Layer: 13
   m_Name: Main bot
   m_TagString: Main bot
@@ -473,6 +475,36 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   zeta: 4
   b: 8
+--- !u!114 &3277835126963680745
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2376752813649019072}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7e4961b0a573f1cd0a9ef87897ff0a5f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  linearPID:
+    kp: 2
+    ki: 0
+    kd: 0
+    kf: 1
+    i_zone: 0
+    i_max: 0
+    epsilon: 0.000000001
+    tolerance: 0
+  angularPID:
+    kp: 10
+    ki: 0.1
+    kd: 1
+    kf: 1
+    i_zone: 0
+    i_max: 0
+    epsilon: 0.000000001
+    tolerance: 0
 --- !u!114 &3825037986657039423
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -486,6 +518,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   baseTopic: main_bot
+--- !u!114 &8726593090106754038
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2376752813649019072}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 14e69c3d1b666ef42afaccf0e29290fc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &2839615957513088649
 GameObject:
   m_ObjectHideFlags: 0

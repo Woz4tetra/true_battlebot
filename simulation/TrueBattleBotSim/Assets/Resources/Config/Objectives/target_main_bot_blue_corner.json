@@ -1,0 +1,14 @@
+{
+    "type": "target",
+    "init": {
+        "type": "relative",
+        "x": -0.85,
+        "y": 0.5,
+        "theta": -45.0
+    },
+    "sequence": [
+        {
+            "target_name": "main_bot"
+        }
+    ]
+}

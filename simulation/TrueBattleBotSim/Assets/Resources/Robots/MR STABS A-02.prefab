@@ -1893,7 +1893,9 @@ GameObject:
   - component: {fileID: 7009448518100272567}
   - component: {fileID: 2580881806613539878}
   - component: {fileID: 6811436399977471946}
+  - component: {fileID: 4053962763387750934}
   - component: {fileID: 1598903337411032006}
+  - component: {fileID: 3556139008152104339}
   m_Layer: 13
   m_Name: MR STABS A-02
   m_TagString: Mini bot
@@ -2070,6 +2072,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ab4142c1343d6636daaa5ac45ebdb10a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  followerEngine: {fileID: 6811436399977471946}
 --- !u!114 &4803148873199706657
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2123,6 +2126,36 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   zeta: 4
   b: 8
+--- !u!114 &4053962763387750934
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1501245057872462398}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7e4961b0a573f1cd0a9ef87897ff0a5f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  linearPID:
+    kp: 2
+    ki: 0
+    kd: 0
+    kf: 1
+    i_zone: 0
+    i_max: 0
+    epsilon: 0.000000001
+    tolerance: 0
+  angularPID:
+    kp: 10
+    ki: 0.1
+    kd: 1
+    kf: 1
+    i_zone: 0
+    i_max: 0
+    epsilon: 0.000000001
+    tolerance: 0
 --- !u!114 &1598903337411032006
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2136,6 +2169,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   baseTopic: mini_bot
+--- !u!114 &3556139008152104339
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1501245057872462398}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 14e69c3d1b666ef42afaccf0e29290fc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  followerEngine: {fileID: 6811436399977471946}
 --- !u!1 &1621520788016169361
 GameObject:
   m_ObjectHideFlags: 0

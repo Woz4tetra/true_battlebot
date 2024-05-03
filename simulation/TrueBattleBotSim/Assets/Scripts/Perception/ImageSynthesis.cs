@@ -79,6 +79,7 @@ public class ImageSynthesis : MonoBehaviour
     private CameraInfoMsg cameraInfoMsg;
     private uint seq = 0;
     private TransformFrame frame;
+    private float prevPublishTime = 0.0f;
 
     private SegmentationInstanceArrayMsg segmentationMsg = new SegmentationInstanceArrayMsg();
 
@@ -171,11 +172,6 @@ public class ImageSynthesis : MonoBehaviour
 
         OnCameraChange();
         OnSceneChange(renderers);
-
-        if (publishRate > 0)
-        {
-            InvokeRepeating("PublishTimerCallback", 1.0f, 1.0f / publishRate);
-        }
     }
 
     private void resizeCameraInfo(CameraInfoMsg cameraInfoMsg, uint destinationWidth, uint destinationHeight)
@@ -216,9 +212,10 @@ public class ImageSynthesis : MonoBehaviour
         {
             OnSceneChange(renderers);
         }
-        if (publishRate <= 0)
+        if (publishRate <= 0 || Time.unscaledTime - prevPublishTime > 1.0f / publishRate)
         {
             PublishTimerCallback();
+            prevPublishTime = Time.unscaledTime;
         }
     }
 

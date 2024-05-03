@@ -19,7 +19,12 @@ public class PIDFollowerEngine : BaseFollowerEngine
         Matrix4x4 relativePose = currentPose.inverse * goalPose;
         Vector3 relativePosition = relativePose.GetT();
         float relativeAngle = relativePose.GetR().eulerAngles.z * Mathf.Deg2Rad;
-        relativeAngle = (relativeAngle % (2 * Mathf.PI)) - Mathf.PI;
+        relativeAngle = relativeAngle % (2 * Mathf.PI);
+        if (relativeAngle > Mathf.PI)
+        {
+            relativeAngle -= 2 * Mathf.PI;
+        }
+
         float linearVelocity = linearPID.Update(relativePosition.x, 0.0f, Time.deltaTime);
         float angularVelocity = angularPID.Update(relativeAngle, 0.0f, Time.deltaTime);
         return new TwistMsg

@@ -34,25 +34,25 @@
             "label": "Mini bot",
             "name": "mini_bot",
             "model": "MR STABS A-02",
-            "objective": "auto_door_side"
+            "objective": "auto_red_corner"
         },
         {
             "label": "Main bot",
             "name": "main_bot",
             "model": "MRS BUFF B-03",
-            "objective": "nhrl_2024-03-02T17-59-26_poses_main_bot"
+            "objective": "keyboard_red_corner"
         },
         {
             "label": "Enemy bot",
             "name": "opponent_1",
             "model": "MRS BUFF B-03 Bizarro",
-            "objective": "nhrl_2024-03-02T17-59-26_poses_opponent_1"
+            "objective": "target_main_bot_blue_corner"
         },
         {
             "label": "Referee",
             "name": "referee",
             "model": "Referee",
-            "objective": "nhrl_2024-03-02T17-59-26_poses_referee"
+            "objective": "idle_ref_corner"
         }
     ]
 }

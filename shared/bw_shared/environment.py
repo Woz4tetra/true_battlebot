@@ -1,7 +1,5 @@
 import os
 
-from bw_shared.enums.field_type import FieldType
-
 
 def _get_env(name: str) -> str:
     value = os.environ.get(name, "")
@@ -14,8 +12,8 @@ def get_robot() -> str:
     return _get_env("ROBOT")
 
 
-def get_map() -> FieldType:
-    return FieldType(_get_env("MAP_NAME"))
+def get_map() -> str:
+    return _get_env("MAP_NAME")
 
 
 def get_image_version() -> str:

@@ -125,7 +125,8 @@ public class FieldManager : MonoBehaviour
     {
         KeyboardInput keyboard_input = robot.GetComponent<KeyboardInput>();
         RosControllerConnector controller = robot.GetComponent<RosControllerConnector>();
-        WaypointFollower follower = robot.GetComponent<WaypointFollower>();
+        WaypointFollower waypoint_follower = robot.GetComponent<WaypointFollower>();
+        TargetFollower target_follower = robot.GetComponent<TargetFollower>();
         try
         {
             keyboard_input.enabled = false;
@@ -144,12 +145,21 @@ public class FieldManager : MonoBehaviour
         }
         try
         {
-            follower.enabled = false;
+            waypoint_follower.enabled = false;
         }
         catch (NullReferenceException e)
         {
             Debug.LogError($"Robot {robot.name} prefab missing follower input: {e.Message}");
         }
+        try
+        {
+            target_follower.enabled = false;
+        }
+        catch (NullReferenceException e)
+        {
+            Debug.LogError($"Robot {robot.name} prefab missing target input: {e.Message}");
+        }
+
         switch (objective_config.type)
         {
             case "keyboard":
@@ -166,8 +176,13 @@ public class FieldManager : MonoBehaviour
                 controller.enabled = true;
                 break;
             case "follow":
-                follower.enabled = true;
-                follower.SetSequence(GetScaledSequence(objective_config.init, objective_config.sequence));
+                waypoint_follower.enabled = true;
+                waypoint_follower.SetSequence(GetScaledSequence(objective_config.init, objective_config.sequence));
+                break;
+            case "target":
+                target_follower.enabled = true;
+                target_follower.SetSequence(objective_config.sequence);
+                target_follower.SetActiveRobots(active_robots);
                 break;
             default:
                 Debug.LogError("Invalid objective type: " + objective_config.type);
@@ -178,16 +193,18 @@ public class FieldManager : MonoBehaviour
     List<SequenceElementConfig> GetScaledSequence(ScenarioInitConfig init_config, List<SequenceElementConfig> sequence)
     {
         List<SequenceElementConfig> scaled_sequence = new List<SequenceElementConfig>();
+        float x_scale = scenario.cage.dims.x / 2 * (1.0f - init_config.x_buffer);
+        float y_scale = scenario.cage.dims.y / 2 * (1.0f - init_config.y_buffer);
         foreach (SequenceElementConfig element in sequence)
         {
             scaled_sequence.Add(new SequenceElementConfig
             {
                 timestamp = element.timestamp,
-                x = element.x * scenario.cage.dims.x / 2 * (1.0f - init_config.x_buffer),
-                y = element.y * scenario.cage.dims.y / 2 * (1.0f - init_config.y_buffer),
+                x = element.x * x_scale,
+                y = element.y * y_scale,
                 theta = -element.theta + 90.0f,
-                vx = element.vx,
-                vy = element.vy,
+                vx = element.vx * x_scale,
+                vy = element.vy * y_scale,
                 vtheta = element.vtheta
             });
         }

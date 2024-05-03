@@ -2,6 +2,7 @@ import argparse
 import json
 
 import numpy as np
+from bw_tools.structs.pose2d import Pose2D
 from matplotlib import pyplot as plt
 from scipy.interpolate import splev, splprep
 
@@ -23,6 +24,7 @@ def compute_spline(
     curvature = splev(u, tck, der=2)
     path = np.array(path, dtype=np.float64)
     velocities = curvature / times
+    velocities[:, 0] = 0
 
     return path, velocities
 
@@ -38,9 +40,12 @@ def compute_delta(
     velocities[:, 0] = np.zeros(3)
     for i in range(1, len(times)):
         dt = times[i] - times[i - 1]
-        dx = x[i] - x[i - 1]
-        dy = y[i] - y[i - 1]
-        dtheta = theta[i] - theta[i - 1]
+        pose_0 = Pose2D(x[i - 1], y[i - 1], theta[i - 1])
+        pose_1 = Pose2D(x[i], y[i], theta[i])
+        delta = pose_1.relative_to(pose_0)
+        dx = delta.x
+        dy = delta.y
+        dtheta = delta.theta
         velocities[:, i] = np.array([dx / dt, dy / dt, dtheta / dt], dtype=np.float64)
 
     return path, velocities
@@ -50,8 +55,9 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Compute the velocity of a path")
     parser.add_argument("input", type=str, help="Path to the input JSON file")
     parser.add_argument("output", type=str, default=None, nargs="?", help="Path to the output JSON file")
+    parser.add_argument("-t", "--theta", action="store_true", help="Use positions to compute theta")
     args = parser.parse_args()
-    output_path = args.output if args.output else args.input.replace(".json", "_velocity.json")
+    output_path = args.output if args.output else args.input
 
     with open(args.input, "r") as f:
         data = json.load(f)
@@ -65,10 +71,14 @@ def main() -> None:
         xs.append(element["x"])
         ys.append(element["y"])
         thetas.append(element["theta"])
-    times = np.array(times, dtype=np.float64) + 0.001
+    times = np.array(times, dtype=np.float64)
     xs = np.array(xs, dtype=np.float64)
     ys = np.array(ys, dtype=np.float64)
     thetas = np.array(thetas, dtype=np.float64)
+
+    if args.theta:
+        thetas = np.rad2deg(np.arctan2(np.diff(ys), np.diff(xs)))
+        thetas = np.append(thetas, thetas[-1])
 
     duplicate_indices = np.where(np.diff(times) == 0)[0]
     if len(duplicate_indices) > 0:
@@ -80,14 +90,15 @@ def main() -> None:
         ys = np.delete(ys, duplicate_indices)
         thetas = np.delete(thetas, duplicate_indices)
 
-    # path, velocities = compute_spline(times, xs, ys, thetas)
-    path, velocities = compute_delta(times, xs, ys, thetas)
+    path, velocities = compute_spline(times, xs, ys, thetas)
+    # path, velocities = compute_delta(times, xs, ys, thetas)
+    angle_rad = np.deg2rad(path[2])
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
     ax.plot(xs, ys, label="Original path")
     # ax.plot(path[0], path[1], label="Path")
-    ax.quiver(path[0], path[1], np.cos(path[2]), np.sin(path[2]), label="Orientation")
+    ax.quiver(path[0], path[1], np.cos(angle_rad), np.sin(angle_rad), label="Orientation")
     ax.set_aspect("equal")
     ax.legend()
     plt.show()
