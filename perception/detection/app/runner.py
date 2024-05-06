@@ -91,6 +91,7 @@ class Runner:
 
         camera_data = self.camera.poll()
         if camera_data is None:
+            self.logger.warning("No camera data. Ignoring field request.")
             return
         self.prev_image_time = time.time()
 

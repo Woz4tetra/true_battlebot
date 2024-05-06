@@ -48,8 +48,7 @@ class SimulatedCamera(CameraInterface):
             self._update_depth(now, depth)
         if camera_info := self.camera_info_sub.receive():
             self._update_camera_info(now, camera_info)
-            return self.camera_data
-        return None
+        return self.camera_data
 
     def _update_camera_info(self, now: float, camera_info: CameraInfo) -> None:
         info_time = camera_info.header.stamp.to_sec()

@@ -8,7 +8,7 @@ type = "SimulatedFieldFilter"
 stale_image_timeout = 2.0
 
 [ros]
-log = true
+log = false
 exclude_filters = [
     "/camera_0/simulated_segmentation",
     "/camera_0/robot/debug_image",
@@ -16,6 +16,7 @@ exclude_filters = [
     "/camera_0/rgb/image_raw",
     "/camera_0/layer/image_raw",
     "/camera_0/depth/depth_registered",
+    "/camera_0/robot/segmentation",
     "/perception/heartbeat",
 ]
 

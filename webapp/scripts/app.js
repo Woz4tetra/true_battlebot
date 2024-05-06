@@ -177,6 +177,8 @@ window.onload = function () {
 
     var connection_status = document.getElementById("connection-status");
     var connection_icon = document.getElementById("connection-icon");
+    connection_icon.src = "resources/error_black_24dp.svg";
+    connection_icon.className = "filter-red";
     connection_icon.ondragstart = function () {
         return false;
     };
