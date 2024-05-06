@@ -4,7 +4,7 @@ from perception_tools.messages.image import Image
 from perception_tools.messages.point_cloud import PointCloud
 from sensor_msgs.msg import CameraInfo
 
-from app.camera.camera_interface import CameraInterface
+from app.camera.camera_interface import CameraInterface, CameraMode
 from app.config.camera_config.noop_camera_config import NoopCameraConfig
 
 
@@ -12,7 +12,7 @@ class NoopCamera(CameraInterface):
     def __init__(self, config: NoopCameraConfig) -> None:
         pass
 
-    def open(self) -> bool:
+    def open(self, mode: CameraMode) -> bool:
         return True
 
     def poll(self) -> CameraData | None:

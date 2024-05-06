@@ -22,7 +22,9 @@ class SimulatedFieldFilter(FieldFilterInterface):
         self.last_field_result: EstimatedObject | None = None
         self.logger = logging.getLogger("perception")
 
-    def compute_field(self, segmentations: SegmentationInstanceArray, point_cloud: PointCloud) -> EstimatedObject:
+    def compute_field(
+        self, segmentations: SegmentationInstanceArray, point_cloud: PointCloud
+    ) -> tuple[EstimatedObject, PointCloud | None]:
         if not self.last_field_result:
             self.logger.warning("Waiting for simulated field result")
             while not self.last_field_result:
@@ -33,4 +35,5 @@ class SimulatedFieldFilter(FieldFilterInterface):
             self.logger.debug("Got new simulated field result")
             self.last_field_result = result
         self.logger.info(f"Received simulated field result: {result}")
-        return self.last_field_result
+        # TODO filter point cloud from result
+        return self.last_field_result, point_cloud

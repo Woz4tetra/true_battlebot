@@ -16,7 +16,7 @@ from sensor_msgs.msg import Image, PointCloud2
 from std_msgs.msg import Empty
 from std_msgs.msg import Header as RosHeader
 
-from app.camera.camera_interface import CameraInterface
+from app.camera.camera_interface import CameraInterface, CameraMode
 from app.camera.camera_loader import load_camera
 from app.config.config import Config
 from app.config.config_loader import load_config
@@ -54,51 +54,62 @@ class Runner:
         self.robot_segmentation_publisher: RosPublisher[SegmentationInstanceArray] = self.container.resolve_by_name(
             "robot_segmentation_publisher"
         )
-        self.camera_data: CameraData | None = None
+        self.prev_image_time = time.time()
         self.logger = logging.getLogger("perception")
 
     def start(self) -> None:
         rospy.init_node("perception")
-        if not self.camera.open():
-            raise RuntimeError("Failed to open camera")
         self.logger.info("Runner started")
 
     def loop(self) -> None:
         if rospy.is_shutdown():
             raise KeyboardInterrupt("ROS is shutting down")
         self.heartbeat_publisher.publish(Header.auto().to_msg())
-        self.update_camera()
-        self.update_field()
+        self.perceive_robot()
+        self.perceive_field()
 
-    def update_camera(self) -> None:
-        if camera_data := self.camera.poll():
-            if self.camera_data is None:
-                self.logger.info("Received camera data")
-            self.camera_data = camera_data
-            robot_seg, debug_image = self.robot_segmentation.process_image(self.camera_data.color_image)
-            if debug_image:
-                self.robot_debug_image_publisher.publish(debug_image.to_msg())
-            self.robot_segmentation_publisher.publish(robot_seg)
-
-    def update_field(self) -> None:
-        if self.camera_data is None:
+    def perceive_robot(self) -> None:
+        if not self.camera.open(CameraMode.ROBOT_FINDER):
+            self.logger.error("Failed to open camera")
             return
-        header = Header.from_msg(self.camera_data.camera_info.header)
-        if not self.field_request_handler.has_request(header.stamp):
+        camera_data = self.camera.poll()
+        if camera_data is None:
             return
+        self.prev_image_time = time.time()
+        robot_seg, debug_image = self.robot_segmentation.process_image(camera_data.color_image)
+        if debug_image:
+            self.robot_debug_image_publisher.publish(debug_image.to_msg())
+        self.robot_segmentation_publisher.publish(robot_seg)
 
+    def perceive_field(self) -> None:
+        if not self.field_request_handler.has_request(self.prev_image_time):
+            return
         self.logger.info("Processing field request")
-        self.point_cloud_publisher.publish(self.camera_data.point_cloud.to_msg())
-        image = self.camera_data.color_image
+
+        if not self.camera.open(CameraMode.FIELD_FINDER):
+            self.logger.error("Failed to open camera")
+            return
+
+        camera_data = self.camera.poll()
+        if camera_data is None:
+            return
+        self.prev_image_time = time.time()
+
+        image = camera_data.color_image
         field_seg, debug_image = self.field_segmentation.process_image(image)
         self.field_segmentation_publisher.publish(field_seg)
-        field_result = self.field_filter.compute_field(field_seg, self.camera_data.point_cloud)
+        field_result, field_point_cloud = self.field_filter.compute_field(field_seg, camera_data.point_cloud)
         self.field_request_handler.send_response(field_result)
         if debug_image:
             self.logger.info("Publishing debug image")
             self.field_debug_image_publisher.publish(debug_image.to_msg())
         else:
             self.logger.debug("No debug image to publish")
+        if field_point_cloud:
+            self.logger.info("Publishing field point cloud")
+            self.point_cloud_publisher.publish(field_point_cloud.to_msg())
+        else:
+            self.logger.debug("No field point cloud to publish")
 
     def stop(self) -> None:
         self.camera.close()

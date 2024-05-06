@@ -28,3 +28,6 @@ class RosPublisher(Generic[T]):
         if self.log and (len(self.exclude_filters) == 0 or self.topic_name not in self.exclude_filters):
             self.logger.debug(f"{self.topic_name} published a message: {msg}")
         self.publisher.publish(msg)
+
+    def num_subscribers(self) -> int:
+        return self.publisher.get_num_connections()

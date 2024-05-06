@@ -6,5 +6,7 @@ from perception_tools.messages.point_cloud import PointCloud
 
 class FieldFilterInterface(ABC):
     @abstractmethod
-    def compute_field(self, segmentations: SegmentationInstanceArray, point_cloud: PointCloud) -> EstimatedObject:
+    def compute_field(
+        self, segmentations: SegmentationInstanceArray, point_cloud: PointCloud
+    ) -> tuple[EstimatedObject, PointCloud | None]:
         pass

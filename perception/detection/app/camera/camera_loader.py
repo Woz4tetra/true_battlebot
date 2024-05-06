@@ -1,7 +1,8 @@
 from typing import Union
 
 from perception_tools.rosbridge.ros_poll_subscriber import RosPollSubscriber
-from sensor_msgs.msg import CameraInfo, Image
+from perception_tools.rosbridge.ros_publisher import RosPublisher
+from sensor_msgs.msg import CameraInfo, Image, PointCloud2
 
 from app.config.camera_config.camera_types import CameraConfig
 from app.config.camera_config.noop_camera_config import NoopCameraConfig
@@ -30,7 +31,12 @@ def make_simulated_camera(camera_config: SimulatedCameraConfig, container: Conta
 
 def make_zed_camera(camera_config: ZedCameraConfig, container: Container) -> CameraImplementation:
     config = container.resolve(Config)
-    return ZedCamera(camera_config, config.camera_topic)
+    ns = config.camera_topic.namespace
+
+    color_image_pub = RosPublisher(ns + "/rgb/image_raw", Image)
+    camera_info_pub = RosPublisher(ns + "/rgb/camera_info", CameraInfo)
+
+    return ZedCamera(camera_config, config.camera_topic, color_image_pub, camera_info_pub)
 
 
 def load_camera(config: CameraConfig, container: Container) -> CameraImplementation:

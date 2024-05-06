@@ -17,6 +17,9 @@ class CloudFieldName(Enum):
     Y = "y"
     Z = "z"
     RGB = "rgb"
+    RGBA = "rgba"
+    BGR = "bgr"
+    BGRA = "bgra"
 
 
 class CloudFieldType(IntEnum):
@@ -84,6 +87,7 @@ class PointCloud:
     colors: np.ndarray = field(default_factory=lambda: np.array([], dtype=np.uint32))
     is_bigendian: bool = False
     is_dense: bool = False
+    color_encoding: CloudFieldName = CloudFieldName.RGB
 
     @classmethod
     def from_depth(cls, depth: Image, camera_info: CameraInfo, depth_scale: float = 1000.0) -> PointCloud:
@@ -133,7 +137,7 @@ class PointCloud:
                 CloudFieldName.X: CloudFieldType.FLOAT32,
                 CloudFieldName.Y: CloudFieldType.FLOAT32,
                 CloudFieldName.Z: CloudFieldType.FLOAT32,
-                CloudFieldName.RGB: CloudFieldType.UINT32,
+                self.color_encoding: CloudFieldType.UINT32,
             }
         point_step = 0
         for index, (sub_field, field_type) in enumerate(fields.items()):
@@ -153,7 +157,7 @@ class PointCloud:
         if len(self.colors) > 0:
             cloud_dtype = np.dtype(
                 {
-                    "names": ["x", "y", "z", "rgb"],
+                    "names": ["x", "y", "z", "color"],
                     "formats": [np.float32, np.float32, np.float32, np.uint32],
                     "offsets": [0, 4, 8, 12],
                 }
@@ -162,7 +166,7 @@ class PointCloud:
             cloud_data["x"] = self.points[..., 0]
             cloud_data["y"] = self.points[..., 1]
             cloud_data["z"] = self.points[..., 2]
-            cloud_data["rgb"] = self.colors
+            cloud_data["color"] = self.colors
 
         cloud_bytes = cloud_data.tobytes()
 

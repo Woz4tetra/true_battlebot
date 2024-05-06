@@ -9,7 +9,7 @@ from perception_tools.rosbridge.ros_poll_subscriber import RosPollSubscriber
 from sensor_msgs.msg import CameraInfo
 from sensor_msgs.msg import Image as RosImage
 
-from app.camera.camera_interface import CameraInterface
+from app.camera.camera_interface import CameraInterface, CameraMode
 from app.config.camera_config.simulated_camera_config import SimulatedCameraConfig
 from app.config.camera_topic_config import CameraTopicConfig
 
@@ -29,9 +29,11 @@ class SimulatedCamera(CameraInterface):
         self.depth_image_sub = depth_image_sub
         self.camera_info_sub = camera_info_sub
         self.camera_data = CameraData()
+        self.mode = CameraMode.ROBOT_FINDER
         self.logger = logging.getLogger("perception")
 
-    def open(self) -> bool:
+    def open(self, mode: CameraMode) -> bool:
+        self.mode = mode
         return True
 
     def check_frame_id(self, frame_id: str) -> None:
@@ -46,6 +48,9 @@ class SimulatedCamera(CameraInterface):
             self.camera_data.color_image = Image.from_msg(color)
             self.check_frame_id(color.header.frame_id)
         if depth := self.depth_image_sub.receive():
+            if self.mode != CameraMode.FIELD_FINDER:
+                self.camera_data.point_cloud = PointCloud(self.camera_data.color_image.header)
+                return
             depth_image_time = depth.header.stamp.to_sec()
             self.check_frame_id(depth.header.frame_id)
             self.logger.debug(f"Received depth image. Delay: {now - depth_image_time}")

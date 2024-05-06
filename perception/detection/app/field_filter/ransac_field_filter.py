@@ -11,5 +11,7 @@ class RansacFieldFilter(FieldFilterInterface):
         self.map_config = map_config
         self.field_filter_config = field_filter_config
 
-    def compute_field(self, segmentations: SegmentationInstanceArray, point_cloud: PointCloud) -> EstimatedObject:
-        return EstimatedObject()
+    def compute_field(
+        self, segmentations: SegmentationInstanceArray, point_cloud: PointCloud
+    ) -> tuple[EstimatedObject, PointCloud | None]:
+        return EstimatedObject(), point_cloud
