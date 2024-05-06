@@ -20,26 +20,27 @@ public class VirtualWeapon : MonoBehaviour
 
     void OnTriggerEnter(Collider other)
     {
-        Debug.Log($"Weapon collided with {other.gameObject.tag} {other.gameObject.name}");
         if (other.gameObject.tag == gameObject.tag)
         {
             Debug.Log($"Weapon collided with another weapon {other.gameObject.name}");
-            ApplyForceToOther(gameObject);
-            ApplyForceToOther(other.gameObject);
+            ApplyForceToOther(gameObject, -gameObject.transform.forward.normalized);
+            ApplyForceToOther(other.gameObject, -other.gameObject.transform.forward.normalized);
         }
         else if (isTagInFilter(other.gameObject.tag))
         {
             Debug.Log($"Weapon collided with a target {other.gameObject.name}");
-            ApplyForceToOther(gameObject, -reactionForceScale);
-            ApplyForceToOther(other.gameObject);
+            ApplyForceToOther(gameObject, -transform.up.normalized);
+            ApplyForceToOther(other.gameObject, other.transform.up.normalized);
+        }
+        else
+        {
+            Debug.Log($"Ignoring weapon collision with {other.gameObject.tag} {other.gameObject.name}");
         }
     }
 
-    private void ApplyForceToOther(GameObject other, float scale = 1.0f)
+    private void ApplyForceToOther(GameObject other, Vector3 direction)
     {
-
-        Vector3 direction = other.transform.up.normalized;
-        Vector3 force = direction * forceMagnitude * scale;
+        Vector3 force = direction * forceMagnitude;
         Rigidbody body = ObjectUtils.GetComponentInTree<Rigidbody>(gameObject);
         if (body != null)
         {

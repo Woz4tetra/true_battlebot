@@ -1317,7 +1317,8 @@ Transform:
   m_LocalPosition: {x: 0.17150001, y: 0.02591, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 3603566538478096681}
   m_Father: {fileID: 3601771975644299429}
   m_RootOrder: -1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -1336,7 +1337,7 @@ ArticulationBody:
   m_AnchorPosition: {x: 0, y: 0, z: 0}
   m_AnchorRotation: {x: 0, y: 0.70710677, z: 0, w: 0.70710677}
   m_MatchAnchors: 1
-  m_ArticulationJointType: 0
+  m_ArticulationJointType: 2
   m_LinearX: 2
   m_LinearY: 2
   m_LinearZ: 2
@@ -1350,7 +1351,7 @@ ArticulationBody:
     damping: 0
     forceLimit: 3.4028235e+38
     target: 0
-    targetVelocity: -100
+    targetVelocity: -2000
     driveType: 3
   m_YDrive:
     lowerLimit: 0
@@ -2239,7 +2240,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1cfaef01096bc8508a46259d2d63ff08, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  linearScale: 5
+  linearScale: 4
   angularScale: 20
 --- !u!114 &2066639536634566804
 MonoBehaviour:
@@ -2517,6 +2518,7 @@ MonoBehaviour:
   - Main bot
   - Mini bot
   - Enemy bot
+  - Cage
 --- !u!1 &1003908610190401278
 GameObject:
   m_ObjectHideFlags: 0
@@ -3144,14 +3146,14 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1054658102281541374}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 9039921659196945060}
   - {fileID: 3652057025087261825}
-  m_Father: {fileID: 4022542954857115865}
+  m_Father: {fileID: 6182667055593795355}
   m_RootOrder: -1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1074314513679771709
@@ -5847,7 +5849,6 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 3603566538478096681}
   - {fileID: 1453014711237690991}
   m_Father: {fileID: 3601771975644299429}
   m_RootOrder: -1
@@ -5867,7 +5868,7 @@ ArticulationBody:
   m_AnchorPosition: {x: 0, y: 0, z: 0}
   m_AnchorRotation: {x: 0, y: 0.70710677, z: 0, w: 0.70710677}
   m_MatchAnchors: 1
-  m_ArticulationJointType: 2
+  m_ArticulationJointType: 0
   m_LinearX: 2
   m_LinearY: 2
   m_LinearZ: 2
@@ -20955,10 +20956,6 @@ PrefabInstance:
       propertyPath: m_Layer
       value: 13
       objectReference: {fileID: 0}
-    - target: {fileID: 3265985549162480872, guid: f981367d517eae126b9f354839beafa9, type: 3}
-      propertyPath: maxWheelSpeed
-      value: 8
-      objectReference: {fileID: 0}
     - target: {fileID: 3591701462781367809, guid: f981367d517eae126b9f354839beafa9, type: 3}
       propertyPath: m_ParentAnchorPosition.x
       value: 0.15400004
@@ -21134,7 +21131,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3265985549162480872, guid: f981367d517eae126b9f354839beafa9, type: 3}
       propertyPath: maxWheelSpeed
-      value: 8
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 3591701462781367809, guid: f981367d517eae126b9f354839beafa9, type: 3}
       propertyPath: m_ParentAnchorPosition.x
@@ -21307,7 +21304,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3265985549162480872, guid: f981367d517eae126b9f354839beafa9, type: 3}
       propertyPath: maxWheelSpeed
-      value: 8
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 3591701462781367809, guid: f981367d517eae126b9f354839beafa9, type: 3}
       propertyPath: m_ParentAnchorPosition.x
@@ -21484,7 +21481,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3265985549162480872, guid: f981367d517eae126b9f354839beafa9, type: 3}
       propertyPath: maxWheelSpeed
-      value: 8
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 3591701462781367809, guid: f981367d517eae126b9f354839beafa9, type: 3}
       propertyPath: m_ParentAnchorPosition.x

@@ -146,9 +146,7 @@ class BaseFollower : MonoBehaviour
         );
         Vector3 goalVelocity = new Vector3(currentElement.vx, currentElement.vy, currentElement.vtheta * Mathf.Deg2Rad);
 
-        TwistMsg command = followerEngine.ComputeVelocity(currentPose, goalPose, currentVelocity, goalVelocity);
-        Debug.Log($"{gameObject.name} | vt error: {command.angular.z - odom.twist.twist.angular.z} | v error: {command.linear.x - odom.twist.twist.linear.x}");
-        return command;
+        return followerEngine.ComputeVelocity(currentPose, goalPose, currentVelocity, goalVelocity);
     }
 
     private void updateCommand()

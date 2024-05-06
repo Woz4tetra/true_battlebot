@@ -7,11 +7,11 @@ case $DEVICE in
     ;;
 
   dadbot-meatball)
-    echo -n "192.168.1.81"
+    echo -n "192.168.1.117"
     ;;
 
   dadbot-kgb)
-    echo -n "192.168.39.182"
+    echo -n "192.168.234.182"
     ;;
 
   *)

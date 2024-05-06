@@ -9,6 +9,7 @@ TagManager:
   - Mini bot
   - Enemy bot
   - Referee
+  - Cage
   layers:
   - Default
   - TransparentFX

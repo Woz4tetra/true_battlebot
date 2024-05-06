@@ -849,7 +849,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8ded925f1af29c171ab41237d10cdbe4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxWheelSpeed: 10
+  maxWheelSpeed: 6
   wheelRadius: 0.0262529
 --- !u!1 &6851637035682310395
 GameObject:

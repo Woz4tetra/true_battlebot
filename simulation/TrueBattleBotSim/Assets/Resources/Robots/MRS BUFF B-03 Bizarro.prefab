@@ -1371,7 +1371,8 @@ MonoBehaviour:
   filterTags:
   - Main bot
   - Mini bot
-  - Ebot
+  - Enemy bot
+  - Cage
 --- !u!1 &578942191018867359
 GameObject:
   m_ObjectHideFlags: 0
@@ -7459,7 +7460,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1cfaef01096bc8508a46259d2d63ff08, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  linearScale: 5
+  linearScale: 4
   angularScale: 20
 --- !u!114 &8504872306071854820
 MonoBehaviour:
@@ -20413,7 +20414,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3265985549162480872, guid: f981367d517eae126b9f354839beafa9, type: 3}
       propertyPath: maxWheelSpeed
-      value: 8
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 3591701462781367809, guid: f981367d517eae126b9f354839beafa9, type: 3}
       propertyPath: m_ParentAnchorPosition.x
@@ -20586,7 +20587,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3265985549162480872, guid: f981367d517eae126b9f354839beafa9, type: 3}
       propertyPath: maxWheelSpeed
-      value: 8
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 3591701462781367809, guid: f981367d517eae126b9f354839beafa9, type: 3}
       propertyPath: m_ParentAnchorPosition.x
@@ -20763,7 +20764,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3265985549162480872, guid: f981367d517eae126b9f354839beafa9, type: 3}
       propertyPath: maxWheelSpeed
-      value: 8
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 3591701462781367809, guid: f981367d517eae126b9f354839beafa9, type: 3}
       propertyPath: m_ParentAnchorPosition.x
@@ -20940,7 +20941,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3265985549162480872, guid: f981367d517eae126b9f354839beafa9, type: 3}
       propertyPath: maxWheelSpeed
-      value: 8
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 3591701462781367809, guid: f981367d517eae126b9f354839beafa9, type: 3}
       propertyPath: m_ParentAnchorPosition.x

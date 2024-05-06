@@ -2,15 +2,14 @@ import logging
 
 import numpy as np
 import pyzed.sl as sl
+from app.camera.camera_interface import CameraInterface
+from app.config.camera_config.zed_camera_config import ZedCameraConfig
+from app.config.camera_topic_config import CameraTopicConfig
 from bw_shared.messages.header import Header
 from perception_tools.messages.camera_data import CameraData
 from perception_tools.messages.image import Image
 from perception_tools.messages.point_cloud import PointCloud
 from sensor_msgs.msg import CameraInfo
-
-from app.camera.camera_interface import CameraInterface
-from app.config.camera_config.zed_camera_config import ZedCameraConfig
-from app.config.camera_topic_config import CameraTopicConfig
 
 
 class ZedCamera(CameraInterface):
@@ -79,6 +78,7 @@ class ZedCamera(CameraInterface):
         self.camera.retrieve_measure(self.point_cloud, sl.MEASURE.XYZRGBA)
 
         color_image_data = self.color_image.get_data()
+        print(color_image_data.shape)
 
         raw_cloud_data = self.point_cloud.get_data()
         points = raw_cloud_data[..., 0:3]
