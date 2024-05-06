@@ -3,13 +3,14 @@ using UnityEngine;
 public class VirtualWeapon : MonoBehaviour
 {
     [SerializeField] float forceMagnitude = 10;
-    [SerializeField] float reactionForceScale = 0.25f;
+    [SerializeField] float collisionCooldown = 0.25f;
     [SerializeField] string[] filterTags = new string[] { };
+    float collisionCooldownTimer = 0.0f;
 
     // Start is called before the first frame update
     void Start()
     {
-
+        collisionCooldownTimer = 0.0f;
     }
 
     // Update is called once per frame
@@ -20,11 +21,23 @@ public class VirtualWeapon : MonoBehaviour
 
     void OnTriggerEnter(Collider other)
     {
+        float timerDelta = Time.realtimeSinceStartup - collisionCooldownTimer;
+        if (timerDelta < collisionCooldown)
+        {
+            Debug.Log(
+                "Ignoring weapon collision with " +
+                $"{other.gameObject.tag} {other.gameObject.name} due to cooldown. " +
+                $"Time left: {timerDelta}"
+            );
+            return;
+        }
         if (other.gameObject.tag == gameObject.tag)
         {
             Debug.Log($"Weapon collided with another weapon {other.gameObject.name}");
-            ApplyForceToOther(gameObject, -gameObject.transform.forward.normalized);
-            ApplyForceToOther(other.gameObject, -other.gameObject.transform.forward.normalized);
+            Vector3 this_backwards = -1 * Vector3.Normalize(gameObject.transform.forward + gameObject.transform.right);
+            Vector3 other_backwards = -1 * Vector3.Normalize(other.gameObject.transform.forward + other.gameObject.transform.right);
+            ApplyForceToOther(gameObject, 2 * this_backwards);
+            ApplyForceToOther(other.gameObject, 2 * other_backwards);
         }
         else if (isTagInFilter(other.gameObject.tag))
         {
@@ -38,10 +51,11 @@ public class VirtualWeapon : MonoBehaviour
         }
     }
 
-    private void ApplyForceToOther(GameObject other, Vector3 direction)
+    private void ApplyForceToOther(GameObject obj, Vector3 direction)
     {
+        collisionCooldownTimer = Time.realtimeSinceStartup;
         Vector3 force = direction * forceMagnitude;
-        Rigidbody body = ObjectUtils.GetComponentInTree<Rigidbody>(gameObject);
+        Rigidbody body = ObjectUtils.GetComponentInTree<Rigidbody>(obj);
         if (body != null)
         {
             force *= body.mass;
@@ -50,7 +64,7 @@ public class VirtualWeapon : MonoBehaviour
         }
         else
         {
-            ArticulationBody artBody = ObjectUtils.GetComponentInTree<ArticulationBody>(other);
+            ArticulationBody artBody = ObjectUtils.GetComponentInTree<ArticulationBody>(obj);
             if (artBody != null)
             {
                 force *= artBody.mass;
@@ -58,7 +72,7 @@ public class VirtualWeapon : MonoBehaviour
                 return;
             }
         }
-        Debug.Log($"No rigidbody or articulation body found in tree for {other.name}");
+        Debug.Log($"No rigidbody or articulation body found in tree for {obj.name}");
     }
 
     private bool isTagInFilter(string tag)

@@ -1366,8 +1366,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5594596243fe58aee8517a465522322c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  forceMagnitude: 3
+  forceMagnitude: 5
   reactionForceScale: 0.25
+  collisionCooldown: 0.25
   filterTags:
   - Main bot
   - Mini bot
@@ -3100,7 +3101,7 @@ GameObject:
   - component: {fileID: 1016985606437092242}
   - component: {fileID: 7184932385247722929}
   m_Layer: 13
-  m_Name: Mrs Buff Weapon
+  m_Name: Mrs Buff Weapon Collider
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3118,7 +3119,6 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 5602494080381194849}
   - {fileID: 1407301564676546981}
   m_Father: {fileID: 6339738913989681207}
   m_RootOrder: -1
@@ -3132,13 +3132,13 @@ ArticulationBody:
   m_GameObject: {fileID: 1341350502259402290}
   m_Enabled: 1
   serializedVersion: 5
-  m_Mass: 0.0000001
+  m_Mass: 0.2207164
   m_ParentAnchorPosition: {x: 0.17150003, y: 0.02591, z: 0}
   m_ParentAnchorRotation: {x: 0, y: 0.70710677, z: 0, w: 0.70710677}
   m_AnchorPosition: {x: 0, y: 0, z: 0}
   m_AnchorRotation: {x: 0, y: 0.70710677, z: 0, w: 0.70710677}
   m_MatchAnchors: 1
-  m_ArticulationJointType: 2
+  m_ArticulationJointType: 0
   m_LinearX: 2
   m_LinearY: 2
   m_LinearZ: 2
@@ -5326,7 +5326,7 @@ GameObject:
   - component: {fileID: 5415381650513486448}
   - component: {fileID: 4101170719043607474}
   m_Layer: 13
-  m_Name: Mrs Buff Weapon Mass
+  m_Name: Mrs Buff Weapon Spinner
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -5343,7 +5343,8 @@ Transform:
   m_LocalPosition: {x: 0.17150003, y: 0.02591, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 5602494080381194849}
   m_Father: {fileID: 6339738913989681207}
   m_RootOrder: -1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -5356,7 +5357,7 @@ ArticulationBody:
   m_GameObject: {fileID: 2053306206036085662}
   m_Enabled: 1
   serializedVersion: 5
-  m_Mass: 0.22071639
+  m_Mass: 0.0000001
   m_ParentAnchorPosition: {x: 0.17150003, y: 0.02591, z: 0}
   m_ParentAnchorRotation: {x: 0, y: 0.70710677, z: 0, w: 0.70710677}
   m_AnchorPosition: {x: 0, y: 0, z: 0}
@@ -5376,7 +5377,7 @@ ArticulationBody:
     damping: 0
     forceLimit: 3.4028235e+38
     target: 0
-    targetVelocity: 0
+    targetVelocity: -2000
     driveType: 3
   m_YDrive:
     lowerLimit: 0
@@ -5602,14 +5603,14 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2165317471088841467}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 6139556561740678262}
   - {fileID: 7557896553442611684}
-  m_Father: {fileID: 1016985606437092242}
+  m_Father: {fileID: 5415381650513486448}
   m_RootOrder: -1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2182651203227145952

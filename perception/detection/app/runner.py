@@ -9,7 +9,6 @@ from bw_shared.configs.shared_config import SharedConfig
 from bw_shared.enums.field_type import FieldType
 from bw_shared.environment import get_map, get_robot
 from bw_shared.messages.header import Header
-from perception_tools.messages.camera_data import CameraData
 from perception_tools.rosbridge.ros_poll_subscriber import RosPollSubscriber
 from perception_tools.rosbridge.ros_publisher import RosPublisher
 from sensor_msgs.msg import Image, PointCloud2

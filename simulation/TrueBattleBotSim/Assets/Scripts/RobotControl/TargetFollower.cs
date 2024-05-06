@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using MathExtensions;
-using RosMessageTypes.Nav;
 using UnityEngine;
 
 class TargetFollower : BaseFollower

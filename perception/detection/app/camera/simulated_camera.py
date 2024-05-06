@@ -43,14 +43,30 @@ class SimulatedCamera(CameraInterface):
     def poll(self) -> CameraData | None:
         now = time.time()
         if color := self.color_image_sub.receive():
-            color_image_time = color.header.stamp.to_sec()
-            self.logger.debug(f"Received color image. Delay: {now - color_image_time}")
-            self.camera_data.color_image = Image.from_msg(color)
-            self.check_frame_id(color.header.frame_id)
+            self._update_color(now, color)
         if depth := self.depth_image_sub.receive():
-            if self.mode != CameraMode.FIELD_FINDER:
-                self.camera_data.point_cloud = PointCloud(self.camera_data.color_image.header)
-                return
+            self._update_depth(now, depth)
+        if camera_info := self.camera_info_sub.receive():
+            self._update_camera_info(now, camera_info)
+            return self.camera_data
+        return None
+
+    def _update_camera_info(self, now: float, camera_info: CameraInfo) -> None:
+        info_time = camera_info.header.stamp.to_sec()
+        self.check_frame_id(camera_info.header.frame_id)
+        self.logger.debug(f"Received info. Delay: {now - info_time}")
+        self.camera_data.camera_info = camera_info
+
+    def _update_color(self, now: float, color: RosImage) -> None:
+        color_image_time = color.header.stamp.to_sec()
+        self.logger.debug(f"Received color image. Delay: {now - color_image_time}")
+        self.camera_data.color_image = Image.from_msg(color)
+        self.check_frame_id(color.header.frame_id)
+
+    def _update_depth(self, now: float, depth: RosImage) -> None:
+        if self.mode != CameraMode.FIELD_FINDER:
+            self.camera_data.point_cloud = PointCloud(self.camera_data.color_image.header)
+        else:
             depth_image_time = depth.header.stamp.to_sec()
             self.check_frame_id(depth.header.frame_id)
             self.logger.debug(f"Received depth image. Delay: {now - depth_image_time}")
@@ -65,13 +81,6 @@ class SimulatedCamera(CameraInterface):
                     depth_image,
                     self.camera_data.camera_info,
                 )
-        if camera_info := self.camera_info_sub.receive():
-            info_time = camera_info.header.stamp.to_sec()
-            self.check_frame_id(camera_info.header.frame_id)
-            self.logger.debug(f"Received info. Delay: {now - info_time}")
-            self.camera_data.camera_info = camera_info
-            return self.camera_data
-        return None
 
     def close(self) -> None:
         pass

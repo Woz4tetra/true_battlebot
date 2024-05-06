@@ -2,24 +2,17 @@ using UnityEngine;
 
 public class ObjectUtils
 {
-    public static T GetComponentInTree<T>(GameObject obj)
+    public static T GetComponentInTree<T>(GameObject obj) where T : Component
     {
         Transform tf = obj.transform;
         T component = obj.GetComponent<T>();
         while (true)
         {
-            bool should_break = component is not null;
-
-            if (Application.isEditor)
-            {
-                // ???somehow this only works in reverse for editor only???
-                should_break = !should_break;
-            }
-            if (should_break)
+            if (component != null)
             {
                 break;
             }
-            if (tf.parent is null)
+            if (tf.parent == null)
             {
                 break;
             }

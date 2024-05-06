@@ -2,7 +2,7 @@ from typing import Union
 
 from perception_tools.rosbridge.ros_poll_subscriber import RosPollSubscriber
 from perception_tools.rosbridge.ros_publisher import RosPublisher
-from sensor_msgs.msg import CameraInfo, Image, PointCloud2
+from sensor_msgs.msg import CameraInfo, Image
 
 from app.config.camera_config.camera_types import CameraConfig
 from app.config.camera_config.noop_camera_config import NoopCameraConfig
