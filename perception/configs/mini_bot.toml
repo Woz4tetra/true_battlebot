@@ -1,3 +1,11 @@
 [camera]
 type = "ZedCamera"
 serial_number = 33234316
+
+[field_segmentation]
+model_path = "data/models/battlebots_mask_rcnn_R_50_FPN_3x_2024-02-25.torchscript"
+metadata_path = "data/models/battlebots_mask_rcnn_R_50_FPN_3x_2024-02-25_metadata.json"
+
+[robot_segmentation]
+model_path = "data/models/battlebots_mask_rcnn_R_50_FPN_3x_2024-02-25.torchscript"
+metadata_path = "data/models/battlebots_mask_rcnn_R_50_FPN_3x_2024-02-25_metadata.json"
