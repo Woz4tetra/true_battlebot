@@ -530,6 +530,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 14e69c3d1b666ef42afaccf0e29290fc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  maxLinearSpeed: 10
+  maxAngularSpeed: 1000
+  reverseWhenUpsideDown: 1
 --- !u!1 &2839615957513088649
 GameObject:
   m_ObjectHideFlags: 0
@@ -921,7 +924,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   forceMagnitude: 1
-  reactionForceScale: 0.25
+  collisionCooldown: 0.25
   filterTags:
   - Main bot
   - Mini bot

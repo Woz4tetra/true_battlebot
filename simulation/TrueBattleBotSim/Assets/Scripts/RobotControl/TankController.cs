@@ -148,7 +148,16 @@ class TankController : MonoBehaviour, ControllerInterface
 
     public void SetCommand(TwistMsg twist)
     {
+        if (IsUpsideDown())
+        {
+            twist.linear.x *= -1;
+        }
         setpoint = twist;
+    }
+
+    public bool IsUpsideDown()
+    {
+        return transform.up.y < 0;
     }
 
     public void Reset()

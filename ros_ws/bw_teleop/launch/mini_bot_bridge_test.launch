@@ -5,6 +5,4 @@
         <include file="$(find bw_teleop)/launch/simple_teleop.launch" />
         <include file="$(find bw_bringup)/launch/subsystems/twist_mux.launch" />
     </group>
-    <include
-        file="$(find bw_teleop)/launch/bw_teleop.launch" />
 </launch>

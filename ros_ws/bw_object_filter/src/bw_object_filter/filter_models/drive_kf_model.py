@@ -12,7 +12,6 @@ from .helpers import (
     STATE_t,
     StateArray,
     StateSquareMatrix,
-    flip_quat_upside_down,
     jit_predict,
     jit_update,
     measurement_to_pose,
@@ -28,7 +27,6 @@ class DriveKalmanModel(FilterModel):
     covariance: StateSquareMatrix
     process_noise_q: StateSquareMatrix
     is_initialized: bool
-    is_right_side_up: bool
 
     def __init__(self, dt: float, process_noise: float = 0.001, friction_factor: float = 0.2) -> None:
         self.dt = dt
@@ -89,8 +87,6 @@ class DriveKalmanModel(FilterModel):
     def get_state(self) -> Tuple[PoseWithCovariance, TwistWithCovariance]:
         with self.lock:
             pose = measurement_to_pose(self.state, self.covariance)
-            if not self.is_right_side_up:
-                pose.pose.orientation = flip_quat_upside_down(pose.pose.orientation)
             return (
                 pose,
                 measurement_to_twist(self.state, self.covariance),
@@ -119,4 +115,3 @@ class DriveKalmanModel(FilterModel):
             self.process_noise_q = np.eye(NUM_STATES) * self.process_noise
 
             self.is_initialized = False
-            self.is_right_side_up = True

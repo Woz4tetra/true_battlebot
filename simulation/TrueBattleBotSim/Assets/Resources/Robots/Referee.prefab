@@ -829,6 +829,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 14e69c3d1b666ef42afaccf0e29290fc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  maxLinearSpeed: 10
+  maxAngularSpeed: 1000
+  reverseWhenUpsideDown: 1
 --- !u!1 &3733546209730497114
 GameObject:
   m_ObjectHideFlags: 0

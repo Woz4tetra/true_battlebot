@@ -2,7 +2,7 @@
     <arg name="config" default="$(find bw_bringup)/config/twist_mux.yaml" />
 
     <node pkg="twist_mux" type="twist_mux" name="twist_mux" output="screen">
-        <remap from="cmd_vel_out" to="cmd_vel/absolute" />
+        <remap from="cmd_vel_out" to="cmd_vel" />
 
         <rosparam file="$(arg config)" command="load" />
     </node>

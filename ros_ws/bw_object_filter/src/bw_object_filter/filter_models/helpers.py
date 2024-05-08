@@ -3,8 +3,7 @@ from typing import Dict, Tuple
 
 import numpy as np
 from bw_tools.structs.pose2d import Pose2D
-from bw_tools.structs.transform3d import Transform3D
-from geometry_msgs.msg import PoseWithCovariance, Quaternion, TwistWithCovariance, Vector3
+from geometry_msgs.msg import PoseWithCovariance, TwistWithCovariance
 from numba import njit
 
 NUM_MEASUREMENTS = 3
@@ -62,16 +61,6 @@ def measurement_to_pose(state: np.ndarray, covariance: np.ndarray) -> PoseWithCo
         ros_covariance[msg_index] = covariance[mat_index]
     pose.covariance = ros_covariance  # type: ignore
     return pose
-
-
-ROTATE_ABOUT_X = Quaternion(*(1.0, 0.0, 0.0, 0.0))
-
-
-def flip_quat_upside_down(quat: Quaternion) -> Quaternion:
-    rotate_tf = Transform3D.from_position_and_quaternion(Vector3(), ROTATE_ABOUT_X)
-    main_tf = Transform3D.from_position_and_quaternion(Vector3(), quat)
-    flipped_tf = main_tf.transform_by(rotate_tf)
-    return flipped_tf.quaternion
 
 
 def twist_to_measurement(msg: TwistWithCovariance) -> Tuple[np.ndarray, np.ndarray]:

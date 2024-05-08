@@ -4,6 +4,10 @@ using UnityEngine;
 
 class TargetFollower : BaseFollower
 {
+    [SerializeField] float maxLinearSpeed = 10.0f;
+    [SerializeField] float maxAngularSpeed = 1000.0f;
+    [SerializeField] bool reverseWhenUpsideDown = true;
+
     Dictionary<string, GameObject> active_robots = new Dictionary<string, GameObject>();
 
     public void SetActiveRobots(Dictionary<string, GameObject> active_robots)
@@ -27,6 +31,16 @@ class TargetFollower : BaseFollower
 
         Matrix4x4 currentPose = GetOdomPose(controller.GetGroundTruth());
 
+        float vx_limit;
+        if (reverseWhenUpsideDown)
+        {
+            vx_limit = controller.IsUpsideDown() ? -maxLinearSpeed : maxLinearSpeed;
+        }
+        else
+        {
+            vx_limit = maxLinearSpeed;
+        }
+
         foreach (string name in active_robots.Keys)
         {
             if (name == target_name)
@@ -43,6 +57,9 @@ class TargetFollower : BaseFollower
                     x = robot.transform.position.x,
                     y = robot.transform.position.z,
                     theta = heading,
+                    vx = vx_limit,
+                    vy = 0.0f,
+                    vtheta = maxAngularSpeed,
                 };
                 return true;
             }

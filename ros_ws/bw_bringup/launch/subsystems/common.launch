@@ -19,7 +19,6 @@
         <arg name="auto_initialize" value="$(arg auto_initialize)" />
         <arg name="filter_config" value="$(find bw_bringup)/config/robot_filter.yaml" />
     </include>
-    <include file="$(find bw_teleop)/launch/bw_teleop.launch" />
     <include file="$(find bw_system_health)/launch/system_health.launch" />
     <include file="$(find bw_bringup)/launch/subsystems/static_transforms.launch" />
 </launch>

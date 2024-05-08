@@ -14,7 +14,7 @@ class RosControllerConnector : MonoBehaviour
     public void Start()
     {
         ros = ROSConnection.GetOrCreateInstance();
-        cmdVelTopic = baseTopic + "/cmd_vel/relative";
+        cmdVelTopic = baseTopic + "/cmd_vel";
         ros.Subscribe<TwistMsg>(cmdVelTopic, cmdVelCallback);
         groundTruthTopic = ros.RegisterPublisher<OdometryMsg>(baseTopic + "/ground_truth");
         controller = GetComponent<ControllerInterface>();

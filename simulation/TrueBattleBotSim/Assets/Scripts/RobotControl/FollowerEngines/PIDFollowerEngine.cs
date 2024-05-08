@@ -27,6 +27,19 @@ public class PIDFollowerEngine : BaseFollowerEngine
 
         float linearVelocity = linearPID.Update(relativePosition.x, 0.0f, Time.deltaTime);
         float angularVelocity = angularPID.Update(relativeAngle, 0.0f, Time.deltaTime);
+
+        float maxLinearSpeedMagnitude = Mathf.Abs(goalVelocity.x);
+        linearVelocity = Mathf.Clamp(linearVelocity, -maxLinearSpeedMagnitude, maxLinearSpeedMagnitude);
+        if (goalVelocity.x < 0)
+        {
+            linearVelocity *= -1;
+        }
+        float maxAngularSpeedMagnitude = Mathf.Abs(goalVelocity.z);
+        angularVelocity = Mathf.Clamp(angularVelocity, -maxAngularSpeedMagnitude, maxAngularSpeedMagnitude);
+        if (goalVelocity.z < 0)
+        {
+            angularVelocity *= -1;
+        }
         return new TwistMsg
         {
             linear = new Vector3Msg { x = linearVelocity },
