@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from typing import List, Optional, Tuple
+from typing import List, Optional
 
 import numpy as np
 import rospy
@@ -9,14 +9,10 @@ from bw_interfaces.msg import EstimatedObject, EstimatedObjectArray
 from bw_shared.configs.robot_fleet_config import RobotConfig, RobotFleetConfig
 from bw_shared.enums.label import Label
 from bw_shared.enums.robot_team import RobotTeam
-from bw_shared.messages.header import Header
 from bw_tools.configs.rosparam_client import get_shared_config
 from bw_tools.get_param import get_param
-from bw_tools.structs.pose2d import Pose2D
-from bw_tools.structs.pose2d_stamped import Pose2DStamped
 from bw_tools.structs.rpy import RPY
 from bw_tools.structs.transform3d import Transform3D
-from bw_tools.structs.twist2d import Twist2D
 from bw_tools.structs.xyz import XYZ
 from bw_tools.transforms import lookup_pose_in_frame
 from geometry_msgs.msg import (
@@ -86,8 +82,6 @@ class RobotFilter:
         self.our_robot_heuristics = RobotHeuristics(self.our_base_covariance)
         self.their_robot_heuristics = RobotHeuristics(self.their_base_covariance)
         self.our_robot_cmd_vel_heuristics = CmdVelHeuristics(self.cmd_vel_base_covariance_scalar)
-        self.their_robot_cmd_vel_heuristics = CmdVelHeuristics(self.cmd_vel_base_covariance_scalar)
-        self.their_robot_cmd_vel_heuristics.base_covariance[5, 5] *= 1e6
 
         self.measurement_sorters = {
             Label.ROBOT: RobotMeasurementSorter(
@@ -168,10 +162,10 @@ class RobotFilter:
                 continue
             measurements[label].append(robot)
         for label, sorter in self.measurement_sorters.items():
-            self.apply_update_with_sorter(label, sorter, measurements[label])
+            self.apply_update_with_sorter(sorter, measurements[label])
 
     def apply_update_with_sorter(
-        self, label: Label, measurement_sorter: RobotMeasurementSorter, robots: List[EstimatedObject]
+        self, measurement_sorter: RobotMeasurementSorter, robots: List[EstimatedObject]
     ) -> None:
         map_measurements: List[Pose] = []
         for measurement in robots:
@@ -340,7 +334,7 @@ class RobotFilter:
     def predict_all_filters(self) -> None:
         if not self.field_received():
             return
-        for robot_name, robot_filter in self.robot_filters.items():
+        for robot_filter in self.robot_filters.values():
             try:
                 robot_filter.predict()
             except np.linalg.LinAlgError as e:

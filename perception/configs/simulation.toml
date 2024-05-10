@@ -29,8 +29,8 @@ type = "SimulatedSegmentation"
 [robot_segmentation]
 type = "SimulatedSegmentation"
 debug = false
-apply_noise = false
-random_sample_interval = 3.0
+apply_noise = true
+random_sample_interval = 0.5
 
 [robot_segmentation.simulated_to_real_labels]
 "Mini bot" = "controlled_robot"

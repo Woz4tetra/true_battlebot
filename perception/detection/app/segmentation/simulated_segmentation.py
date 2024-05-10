@@ -138,7 +138,7 @@ class SimulatedSegmentation(SegmentationInterface):
         self.noise_grid: NoiseGrid | None = None
         if self.config.apply_noise:
             np.random.seed(4176)
-            generators = [
+            generators: list[SegmentationNoise] = [
                 GenericRobotLabelNoise(0.3, Label.ROBOT, (Label.FRIENDLY_ROBOT, Label.CONTROLLED_ROBOT)),
                 NullMeasurementNoise(0.5),
             ]
@@ -152,6 +152,9 @@ class SimulatedSegmentation(SegmentationInterface):
         self.segmentation_manager = segmentation_manager
 
     def process_image(self, rgb_image: Image) -> tuple[SegmentationInstanceArray, Image | None]:
+        if len(rgb_image.data) == 0:
+            self.logger.warning("Empty image received")
+            return SegmentationInstanceArray(), None
         image = self.segmentation_manager.get_image()
         if image is None:
             self.logger.warning("No simulated segmentation image received yet")
@@ -168,7 +171,6 @@ class SimulatedSegmentation(SegmentationInterface):
             debug_image = Image.from_other(rgb_image)
         else:
             debug_image = None
-        object_counts = {label: 0 for label in self.real_model_labels}
         for color, label in self.simulated_segmentations.items():
             color_bgr = self.color_i32_to_bgr(color)
             if self.error_range < 0:
@@ -184,16 +186,14 @@ class SimulatedSegmentation(SegmentationInterface):
                 self.logger.warning(f"Empty mask encountered for {label}")
                 continue
             has_holes = bool((hierarchy.reshape(-1, 4)[:, 3] >= 0).sum() > 0)  # type: ignore
-            object_index = object_counts[label]
             segmentation = SegmentationInstance(
                 contours=[self.to_contours_msg(contour) for contour in contours],
                 score=1.0,
                 label=label,
                 class_index=self.real_model_labels.index(label),
-                object_index=object_index,
+                object_index=0,
                 has_holes=has_holes,
             )
-            object_counts[label] += 1
             segmentation_array.instances.append(segmentation)
 
             if debug_image is not None:
@@ -212,6 +212,12 @@ class SimulatedSegmentation(SegmentationInterface):
                 self.noise_grid.reroll()
                 self.prev_random_sample_time = now
             segmentation_array = self.noise_grid.apply_noise(segmentation_array)
+
+        object_counts = {label: 0 for label in self.real_model_labels}
+        for instance in segmentation_array.instances:
+            object_index = object_counts[label]
+            instance.object_index = object_index
+            object_counts[label] += 1
 
         return segmentation_array, debug_image
 

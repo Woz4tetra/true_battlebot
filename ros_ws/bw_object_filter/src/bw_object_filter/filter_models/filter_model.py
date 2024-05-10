@@ -1,7 +1,6 @@
 from abc import abstractmethod
-from typing import Tuple
 
-from geometry_msgs.msg import PoseWithCovariance, PoseWithCovarianceStamped, TwistWithCovariance
+from geometry_msgs.msg import PoseWithCovariance, PoseWithCovarianceStamped
 
 from .helpers import StateSquareMatrix
 
@@ -12,15 +11,15 @@ class FilterModel:
         pass
 
     @abstractmethod
+    def update_position(self, msg: PoseWithCovarianceStamped) -> None:
+        pass
+
+    @abstractmethod
     def update_pose(self, msg: PoseWithCovarianceStamped) -> None:
         pass
 
     @abstractmethod
-    def update_cmd_vel(self, msg: TwistWithCovariance) -> None:
-        pass
-
-    @abstractmethod
-    def get_state(self) -> Tuple[PoseWithCovariance, TwistWithCovariance]:
+    def get_state(self) -> PoseWithCovariance:
         pass
 
     @abstractmethod
