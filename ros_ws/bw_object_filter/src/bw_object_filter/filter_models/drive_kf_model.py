@@ -2,6 +2,7 @@ from threading import Lock
 from typing import Tuple
 
 import numpy as np
+from bw_tools.structs.xy import XY
 from geometry_msgs.msg import PoseWithCovariance, TwistWithCovariance
 
 from .filter_model import FilterModel
@@ -116,3 +117,8 @@ class DriveKalmanModel(FilterModel):
             self.covariance = np.eye(NUM_STATES)
             self.process_noise_q = np.eye(NUM_STATES) * self.process_noise
             self.is_initialized = False
+
+    def clamp_bounds(self, lower_bound: XY, upper_bound: XY) -> None:
+        with self.lock:
+            self.state[0] = np.clip(self.state[0], lower_bound.x, upper_bound.x)
+            self.state[1] = np.clip(self.state[1], lower_bound.y, upper_bound.y)

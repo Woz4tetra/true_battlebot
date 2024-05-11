@@ -13,6 +13,7 @@ from bw_tools.configs.rosparam_client import get_shared_config
 from bw_tools.get_param import get_param
 from bw_tools.structs.rpy import RPY
 from bw_tools.structs.transform3d import Transform3D
+from bw_tools.structs.xy import XY
 from bw_tools.structs.xyz import XYZ
 from bw_tools.transforms import lookup_pose_in_frame
 from geometry_msgs.msg import (
@@ -44,12 +45,12 @@ class RobotFilter:
         self.map_frame = get_param("~map_frame", "map")
         self.robot_frame_prefix = get_param("~robot_frame_prefix", "base_link")
         self.controlled_robot_name = get_param("/robot", "mini_bot")
+        self.estimation_topics = get_param("~estimation_topics", [])
 
         self.command_timeout = rospy.Duration.from_sec(get_param("~command_timeout", 0.5))
 
         self.apriltag_base_covariance_scalar = get_param("~apriltag_base_covariance_scalar", 0.00001)
-        self.our_base_covariance = get_param("~our_robot_estimate_base_covariance_scalar", 0.001)
-        self.their_base_covariance = get_param("~their_robot_estimate_base_covariance_scalar", 0.001)
+        self.robot_base_covariance = get_param("~robot_estimate_base_covariance_scalar", 0.001)
         self.cmd_vel_base_covariance_scalar = get_param("~cmd_vel_base_covariance_scalar", 0.01)
         self.friction_factor = get_param("~friction_factor", 0.05)
         self.process_noise = get_param("~process_noise", 1e-4)
@@ -62,9 +63,9 @@ class RobotFilter:
         self.robots = shared_config.robots
         self.check_unique(self.robots)
 
-        self.prev_cmd_time = rospy.Time.now()
         self.field = EstimatedObject()
         self.field_bounds = (XYZ(0.0, 0.0, 0.0), XYZ(0.0, 0.0, 0.0))
+        self.filter_bounds = (XY(0.0, 0.0), XY(0.0, 0.0))
         self.robot_names = {}
         for config in self.robots.robots:
             self.robot_names[config.up_id] = config.name
@@ -79,9 +80,8 @@ class RobotFilter:
         self.robot_max_sizes = {robot.name: robot.radius for robot in self.robots.robots}
 
         self.tag_heurstics = ApriltagHeuristics(self.apriltag_base_covariance_scalar)
-        self.our_robot_heuristics = RobotHeuristics(self.our_base_covariance)
-        self.their_robot_heuristics = RobotHeuristics(self.their_base_covariance)
-        self.our_robot_cmd_vel_heuristics = CmdVelHeuristics(self.cmd_vel_base_covariance_scalar)
+        self.robot_heuristics = RobotHeuristics(self.robot_base_covariance)
+        self.robot_cmd_vel_heuristics = CmdVelHeuristics(self.cmd_vel_base_covariance_scalar)
 
         self.measurement_sorters = {
             Label.ROBOT: RobotMeasurementSorter(
@@ -89,13 +89,6 @@ class RobotFilter:
                     name: filter
                     for name, filter in self.robot_filters.items()
                     if self.robot_configs[name].team != RobotTeam.REFEREE
-                }
-            ),
-            Label.REFEREE: RobotMeasurementSorter(
-                {
-                    name: filter
-                    for name, filter in self.robot_filters.items()
-                    if self.robot_configs[name].team == RobotTeam.REFEREE
                 }
             ),
             Label.FRIENDLY_ROBOT: RobotMeasurementSorter(
@@ -112,6 +105,13 @@ class RobotFilter:
                     if self.robot_configs[name].name == self.controlled_robot_name
                 }
             ),
+            Label.REFEREE: RobotMeasurementSorter(
+                {
+                    name: filter
+                    for name, filter in self.robot_filters.items()
+                    if self.robot_configs[name].team == RobotTeam.REFEREE
+                }
+            ),
         }
 
         self.tf_buffer = tf2_ros.Buffer()
@@ -123,9 +123,13 @@ class RobotFilter:
         }
         self.filter_state_array_pub = rospy.Publisher("filtered_states", EstimatedObjectArray, queue_size=50)
 
-        self.robots_sub = rospy.Subscriber(
-            "estimation/robots", EstimatedObjectArray, self.robot_estimation_callback, queue_size=50
-        )
+        if not self.estimation_topics:
+            rospy.logwarn("No estimation topics provided. Will not receive robot estimation data.")
+        self.robots_subs: dict[str, rospy.Subscriber] = {}
+        for topic in self.estimation_topics:
+            self.robots_subs[topic] = rospy.Subscriber(
+                topic, EstimatedObjectArray, self.robot_estimation_callback, queue_size=50
+            )
         self.field_sub = rospy.Subscriber("filter/field", EstimatedObject, self.field_callback, queue_size=1)
         self.tags_sub = rospy.Subscriber("tag_detections", AprilTagDetectionArray, self.tags_callback, queue_size=25)
         self.cmd_vel_subs = [
@@ -188,12 +192,8 @@ class RobotFilter:
         self, robot_name: str, map_measurement: Pose, camera_measurement: EstimatedObject
     ) -> None:
         robot_filter = self.robot_filters[robot_name]
-        robot_config = self.robot_configs[robot_name]
-        if robot_config.team == RobotTeam.OUR_TEAM:
-            covariance = self.our_robot_heuristics.compute_covariance(camera_measurement)
-        else:
-            covariance = self.their_robot_heuristics.compute_covariance(camera_measurement)
-            self.robot_sizes[robot_name] = self.get_object_radius(robot_name, camera_measurement)
+        covariance = self.robot_heuristics.compute_covariance(camera_measurement)
+        self.robot_sizes[robot_name] = self.get_object_radius(robot_name, camera_measurement)
 
         pose = PoseWithCovariance()
         pose.pose = map_measurement
@@ -273,17 +273,10 @@ class RobotFilter:
         return rotated_tag.quaternion
 
     def cmd_vel_callback(self, msg: Twist, robot_config: RobotConfig) -> None:
-        self.update_cmd_vel(msg, robot_config)
-        self.prev_cmd_time = rospy.Time.now()
-
-    def update_cmd_vel(self, msg: Twist, robot_config: RobotConfig):
         if not self.field_received():
             return
         measurement = TwistWithCovariance(twist=msg)
-        if robot_config.team == RobotTeam.OUR_TEAM:
-            measurement.covariance = self.our_robot_cmd_vel_heuristics.compute_covariance(measurement)  # type: ignore
-        else:
-            measurement.covariance = self.our_robot_cmd_vel_heuristics.compute_covariance(measurement)  # type: ignore
+        measurement.covariance = self.robot_cmd_vel_heuristics.compute_covariance(measurement)  # type: ignore
 
         robot_name = robot_config.name
         robot_filter = self.robot_filters[robot_name]
@@ -301,9 +294,13 @@ class RobotFilter:
             XYZ(-half_x, -half_y, 0.0) - self.field_buffer,
             XYZ(half_x, half_y, msg.size.z) + self.field_buffer,
         )
+        self.filter_bounds = (
+            XY(self.field_bounds[0].x, self.field_bounds[0].y),
+            XY(self.field_bounds[1].x, self.field_bounds[1].y),
+        )
         rospy.loginfo("Resetting filters.")
         rospy.sleep(0.2)  # wait for changes in TF tree to propagate
-        for robot_name, robot_filter in self.robot_filters.items():
+        for robot_filter in self.robot_filters.values():
             robot_filter.reset()
 
     def field_received(self) -> bool:
@@ -324,13 +321,6 @@ class RobotFilter:
         else:
             return result.pose
 
-    def check_cmd_timeout(self) -> None:
-        if rospy.Time.now() - self.prev_cmd_time <= self.command_timeout:
-            return
-        for config in self.robots.robots:
-            if config.team == RobotTeam.OUR_TEAM:
-                self.update_cmd_vel(Twist(), config)
-
     def predict_all_filters(self) -> None:
         if not self.field_received():
             return
@@ -340,6 +330,8 @@ class RobotFilter:
             except np.linalg.LinAlgError as e:
                 rospy.logwarn(f"Failed predict. Resetting filter. {e}")
                 robot_filter.reset()
+                continue
+            robot_filter.clamp_bounds(self.filter_bounds[0], self.filter_bounds[1])
 
     def get_robot_frame_id(self, robot_name: str) -> str:
         return self.robot_frame_prefix + "_" + robot_name
@@ -364,6 +356,7 @@ class RobotFilter:
 
     def publish_all_filters(self) -> None:
         transforms = []
+        now = rospy.Time.now()
         filtered_states = EstimatedObjectArray()
         for robot_name, bot_filter in self.robot_filters.items():
             robot_frame_id = self.get_robot_frame_id(robot_name)
@@ -371,7 +364,7 @@ class RobotFilter:
             diameter = self.robot_sizes[robot_name] * 2
 
             state_msg = EstimatedObject(
-                header=RosHeader(frame_id=self.map_frame, stamp=rospy.Time.now()),
+                header=RosHeader(frame_id=self.map_frame, stamp=now),
                 child_frame_id=robot_frame_id,
                 pose=pose,
                 twist=twist,
@@ -390,7 +383,6 @@ class RobotFilter:
     def run(self) -> None:
         rate = rospy.Rate(self.update_rate)
         while not rospy.is_shutdown():
-            self.check_cmd_timeout()
             self.predict_all_filters()
             self.publish_all_filters()
             rate.sleep()

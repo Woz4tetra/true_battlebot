@@ -21,6 +21,3 @@ radius = 0.1
 [[robots]]
 name = "opponent_1"
 radius = 0.1
-
-[[robots]]
-name = "opponent_2"
