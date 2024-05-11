@@ -1,20 +1,23 @@
 from threading import Lock
+from typing import Tuple
 
 import numpy as np
-from geometry_msgs.msg import PoseWithCovariance, Twist
+from geometry_msgs.msg import PoseWithCovariance, TwistWithCovariance
 
 from .filter_model import FilterModel
 from .helpers import (
     NUM_MEASUREMENTS,
     NUM_STATES,
+    NUM_STATES_1ST_ORDER,
+    STATE_t,
     StateArray,
-    StateIndices,
     StateSquareMatrix,
     jit_predict,
     jit_update,
     measurement_to_pose,
+    measurement_to_twist,
     pose_to_measurement,
-    twist_to_input,
+    twist_to_measurement,
     warmup,
 )
 
@@ -26,34 +29,32 @@ class DriveKalmanModel(FilterModel):
     process_noise_q: StateSquareMatrix
     is_initialized: bool
 
-    def __init__(
-        self,
-        dt: float,
-        process_noise: float = 0.001,
-        history_window_seconds: float = 1.0,
-    ) -> None:
+    def __init__(self, dt: float, process_noise: float = 0.001, friction_factor: float = 0.2) -> None:
         self.dt = dt
-        self.history_window_seconds = history_window_seconds
+        self.friction_factor = friction_factor
         self.process_noise = process_noise
         self.lock = Lock()
 
         # measurement function for landmarks. Use only pose.
         self.pose_H = np.zeros((NUM_MEASUREMENTS, NUM_STATES))
-        self.pose_H[0:NUM_STATES, 0:NUM_STATES] = np.eye(NUM_MEASUREMENTS)
+        self.pose_H[0:NUM_STATES_1ST_ORDER, 0:NUM_STATES_1ST_ORDER] = np.eye(NUM_MEASUREMENTS)
 
         # measurement function for segmentation estimations. Use only position.
         self.position_H = np.zeros((NUM_MEASUREMENTS, NUM_STATES))
         self.position_H[0:2, 0:2] = np.eye(2)
 
+        # measurement function for cmd_vel. Use only velocity.
+        self.cmd_vel_H = np.zeros((NUM_MEASUREMENTS, NUM_STATES))
+        self.cmd_vel_H[0:NUM_STATES_1ST_ORDER, NUM_STATES_1ST_ORDER:NUM_STATES] = np.eye(NUM_MEASUREMENTS)
+
         self.reset()
         warmup()
 
-    def predict(self, system_input: Twist = Twist()) -> None:
+    def predict(self) -> None:
         with self.lock:
             self._clamp_divergent()
-            input_u = twist_to_input(system_input)
             self.state, self.covariance = jit_predict(
-                self.state, input_u, self.covariance, self.process_noise_q, self.dt
+                self.state, self.covariance, self.process_noise_q, self.dt, self.friction_factor
             )
 
     def update_pose(self, msg: PoseWithCovariance) -> None:
@@ -62,7 +63,7 @@ class DriveKalmanModel(FilterModel):
                 measurement, noise = pose_to_measurement(msg)
                 measurement = np.nan_to_num(measurement, copy=False)
                 self.state, self.covariance = jit_update(
-                    self.state, self.covariance, self.pose_H, measurement, noise, (StateIndices.THETA.value,)
+                    self.state, self.covariance, self.pose_H, measurement, noise, (STATE_t,)
                 )
         else:
             self.teleport(msg)
@@ -73,14 +74,25 @@ class DriveKalmanModel(FilterModel):
                 measurement, noise = pose_to_measurement(msg)
                 measurement = np.nan_to_num(measurement, copy=False)
                 self.state, self.covariance = jit_update(
-                    self.state, self.covariance, self.position_H, measurement, noise, (StateIndices.THETA.value,)
+                    self.state, self.covariance, self.position_H, measurement, noise, (STATE_t,)
                 )
         else:
             self.teleport(msg)
 
-    def get_state(self) -> PoseWithCovariance:
+    def update_cmd_vel(self, msg: TwistWithCovariance) -> None:
         with self.lock:
-            return measurement_to_pose(self.state, self.covariance)
+            measurement, noise = twist_to_measurement(msg)
+            self.state, self.covariance = jit_update(
+                self.state, self.covariance, self.cmd_vel_H, measurement, noise, tuple()
+            )
+
+    def get_state(self) -> Tuple[PoseWithCovariance, TwistWithCovariance]:
+        with self.lock:
+            pose = measurement_to_pose(self.state, self.covariance)
+            return (
+                pose,
+                measurement_to_twist(self.state, self.covariance),
+            )
 
     def get_covariance(self) -> StateSquareMatrix:
         return self.covariance
@@ -93,9 +105,9 @@ class DriveKalmanModel(FilterModel):
         with self.lock:
             measurement, measurement_noise = pose_to_measurement(msg)
             self.state = np.zeros(NUM_STATES)
-            self.state[0:NUM_STATES] = measurement
+            self.state[0:NUM_STATES_1ST_ORDER] = measurement
             self.covariance = np.eye(NUM_STATES)
-            self.covariance[0:NUM_STATES, 0:NUM_STATES] = measurement_noise
+            self.covariance[0:NUM_STATES_1ST_ORDER, 0:NUM_STATES_1ST_ORDER] = measurement_noise
             self.is_initialized = True
 
     def reset(self) -> None:

@@ -4,15 +4,15 @@ from queue import Queue
 import cv2
 import numpy as np
 import rospy
-from centroid_tracker import CentroidTracker
 from cv_bridge import CvBridge
 from sensor_msgs.msg import Image
+from sorter import Sorter
 
 
 @dataclass
 class AppData:
     window_name: str
-    tracker: CentroidTracker
+    sorter: Sorter
     back_subtractor: cv2.BackgroundSubtractorMOG2
     min_area_percentage: float = 0.0005
     cv_bridge: CvBridge = CvBridge()
@@ -28,7 +28,7 @@ def image_callback(data: AppData, msg: Image) -> None:
         print(e)
         return
 
-    # tracker = data.tracker
+    sorter = data.sorter
     back_subtractor = data.back_subtractor
     out_queue = data.out_queue
     min_area_percentage = data.min_area_percentage
@@ -49,40 +49,29 @@ def image_callback(data: AppData, msg: Image) -> None:
         rectangle = cv2.boxPoints(cv2.minAreaRect(contour))
         rectangle = rectangle.astype(np.int32)
         bbox = (
-            np.min(rectangle[:, 0]),
-            np.min(rectangle[:, 1]),
-            np.max(rectangle[:, 0]),
-            np.max(rectangle[:, 1]),
+            int(np.min(rectangle[:, 0])),
+            int(np.min(rectangle[:, 1])),
+            int(np.max(rectangle[:, 0])),
+            int(np.max(rectangle[:, 1])),
         )
-        cv2.rectangle(frame, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (0, 255, 0), 2)
+        cv2.rectangle(frame, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (200, 200, 200), 1)
         objects.append(bbox)
 
-    # for object_id, centroid in tracker.update(objects).items():
-    #     text = "ID {}".format(object_id)
-    #     cv2.putText(
-    #         frame,
-    #         text,
-    #         (centroid[0] - 10, centroid[1] - 10),
-    #         cv2.FONT_HERSHEY_SIMPLEX,
-    #         0.5,
-    #         (0, 255, 0),
-    #         2,
-    #     )
-    #     cv2.circle(frame, (centroid[0], centroid[1]), 4, (0, 255, 0), -1)
+    for object_id, bbox in sorter.update(np.array(objects)).items():
+        bbox = bbox.astype(np.int32)
+        text = "ID {}".format(object_id)
+        cv2.putText(
+            frame,
+            text,
+            (bbox[0], bbox[1]),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.5,
+            (0, 255, 0),
+            2,
+        )
+        cv2.rectangle(frame, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (0, 255, 0), 2)
 
     out_queue.put(frame)
-
-    # zero_mask = fg_mask == 0
-    # frame[zero_mask] = frame[zero_mask] // 2
-    # cv2.polylines(frame, [polygon_roi], True, (0, 0, 255), 1)
-    # frame = cv2.drawContours(
-    #     frame,
-    #     contours,
-    #     -1,
-    #     # color=colors[index % (len(colors) - 1)],
-    #     color=(255, 255, 0),
-    #     thickness=2,
-    # )
 
 
 def main():
@@ -90,12 +79,11 @@ def main():
     window_name = "Frame"
 
     back_subtractor = cv2.createBackgroundSubtractorMOG2()
-    tracker = CentroidTracker(max_disappeared=5)
     cv2.namedWindow(window_name)
 
     data = AppData(
         window_name=window_name,
-        tracker=tracker,
+        sorter=Sorter(num_trackers=4, max_age=12, min_hits=2),
         back_subtractor=back_subtractor,
     )
 
@@ -109,6 +97,7 @@ def main():
         elif keyboard == "c":
             print("Clearing background model")
             data.back_subtractor.apply(frame, learningRate=1.0)
+            data.sorter.reset()
 
         if rospy.is_shutdown():
             break

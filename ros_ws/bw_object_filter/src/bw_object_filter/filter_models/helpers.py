@@ -1,33 +1,27 @@
 import math
-from enum import IntEnum
 from typing import Dict, Tuple
 
 import numpy as np
 from bw_tools.structs.pose2d import Pose2D
-from geometry_msgs.msg import PoseWithCovariance, Twist
+from geometry_msgs.msg import PoseWithCovariance, TwistWithCovariance
 from numba import njit
 
 NUM_MEASUREMENTS = 3
 NUM_POSE_STATES_ROS = 6
-NUM_STATES = 3
-NUM_INPUTS = 3
+NUM_STATES = 6
+NUM_STATES_1ST_ORDER = 3
 
 
-class StateIndices(IntEnum):
-    X = 0
-    Y = 1
-    THETA = 2
+# "enum" for state indices. numba doesn't support python enums
+STATE_x = 0
+STATE_y = 1
+STATE_t = 2
+STATE_vx = 3
+STATE_vy = 4
+STATE_vt = 5
 
-
-class InputIndices(IntEnum):
-    X = 0
-    Y = 1
-    THETA = 2
-
-
-StateArray = np.ndarray  # 3x1 array
-StateSquareMatrix = np.ndarray  # 3x3 array
-InputArray = np.ndarray  # 3x1 array
+StateArray = np.ndarray
+StateSquareMatrix = np.ndarray
 
 
 def get_index(row: int, col: int, row_length: int) -> int:
@@ -38,7 +32,12 @@ POSE_COVARIANCE_INDICES: Dict[Tuple[int, int], int] = {
     (0, 0): get_index(0, 0, NUM_POSE_STATES_ROS),
     (1, 1): get_index(1, 1, NUM_POSE_STATES_ROS),
     (2, 2): get_index(5, 5, NUM_POSE_STATES_ROS),
-}
+}  # fmt: off
+TWIST_COVARIANCE_INDICES: Dict[Tuple[int, int], int] = {
+    (0, 0): get_index(0, 0, NUM_POSE_STATES_ROS),
+    (1, 1): get_index(1, 1, NUM_POSE_STATES_ROS),
+    (2, 2): get_index(5, 5, NUM_POSE_STATES_ROS),
+}  # fmt: off
 
 
 def pose_to_measurement(msg: PoseWithCovariance) -> Tuple[np.ndarray, np.ndarray]:
@@ -54,7 +53,7 @@ def pose_to_measurement(msg: PoseWithCovariance) -> Tuple[np.ndarray, np.ndarray
 
 def measurement_to_pose(state: np.ndarray, covariance: np.ndarray) -> PoseWithCovariance:
     pose = PoseWithCovariance()
-    pose.pose = Pose2D(state[StateIndices.X], state[StateIndices.Y], state[StateIndices.THETA]).to_msg()
+    pose.pose = Pose2D(state[STATE_x], state[STATE_y], state[STATE_t]).to_msg()
     ros_covariance = [0 for _ in range(NUM_POSE_STATES_ROS * NUM_POSE_STATES_ROS)]
     for mat_index, msg_index in POSE_COVARIANCE_INDICES.items():
         ros_covariance[msg_index] = covariance[mat_index]
@@ -62,8 +61,26 @@ def measurement_to_pose(state: np.ndarray, covariance: np.ndarray) -> PoseWithCo
     return pose
 
 
-def twist_to_input(twist: Twist) -> np.ndarray:
-    return np.array([twist.linear.x, twist.linear.y, twist.angular.z])
+def twist_to_measurement(msg: TwistWithCovariance) -> Tuple[np.ndarray, np.ndarray]:
+    measurement = np.array([msg.twist.linear.x, msg.twist.linear.y, msg.twist.angular.z])
+
+    measurement_noise = np.eye(NUM_MEASUREMENTS)
+    for mat_index, msg_index in TWIST_COVARIANCE_INDICES.items():
+        measurement_noise[mat_index] = msg.covariance[msg_index]
+
+    return measurement, measurement_noise
+
+
+def measurement_to_twist(state: np.ndarray, covariance: np.ndarray) -> TwistWithCovariance:
+    twist = TwistWithCovariance()
+    twist.twist.linear.x = state[STATE_vx]
+    twist.twist.linear.y = state[STATE_vy]
+    twist.twist.angular.z = state[STATE_vt]
+    ros_covariance = [0 for _ in range(NUM_POSE_STATES_ROS * NUM_POSE_STATES_ROS)]
+    for mat_index, msg_index in TWIST_COVARIANCE_INDICES.items():
+        ros_covariance[msg_index] = covariance[mat_index]
+    twist.covariance = ros_covariance  # type: ignore
+    return twist
 
 
 @njit
@@ -90,6 +107,30 @@ def input_modulus(value: float, min_value: float, max_value: float) -> float:
 def normalize_theta(theta):
     # normalize theta to -pi..pi
     return input_modulus(theta, -math.pi, math.pi)
+
+
+@njit
+def state_transition(state, dt, friction_factor):
+    x = state[STATE_x]
+    y = state[STATE_y]
+    theta = normalize_theta(state[STATE_t])
+
+    vx_prev = state[STATE_vx]
+    vy_prev = state[STATE_vy]
+
+    vx = vx_prev * math.cos(theta) - vy_prev * math.sin(theta)
+    vy = vx_prev * math.sin(theta) + vy_prev * math.cos(theta)
+    vt = state[STATE_vt]
+
+    next_state = np.zeros_like(state)
+    next_state[STATE_x] = x + dt * vx
+    next_state[STATE_y] = y + dt * vy
+    next_state[STATE_t] = theta + dt * vt
+    next_state[STATE_vx] = vx_prev - np.sign(vx_prev) * friction_factor * dt
+    next_state[STATE_vy] = vy_prev - np.sign(vy_prev) * friction_factor * dt
+    next_state[STATE_vt] = vt - np.sign(vt) * friction_factor * dt
+
+    return next_state
 
 
 @njit
@@ -130,23 +171,27 @@ def jit_update(
 
 @njit
 def jit_predict(
-    state_x: StateArray,
-    input_u: InputArray,
-    covariance_p: StateSquareMatrix,
-    process_noise_q: StateSquareMatrix,
+    state_x: np.ndarray,
+    covariance_p: np.ndarray,
+    process_noise_q: np.ndarray,
     dt: float,
+    friction_factor: float,
 ) -> Tuple[np.ndarray, np.ndarray]:
-    # this model is very simple because the input matches the output
-    state_x += input_u * dt
-    covariance_p += process_noise_q
+    n = len(state_x)
+    n_half = n // 2
+    state_transition_model_f = np.eye(n)
+    state_transition_model_f[0:n_half, n_half:n] = np.eye(n_half) * dt
+    state_x = state_transition(state_x, dt, friction_factor)
+    covariance_p = state_transition_model_f @ covariance_p @ state_transition_model_f.T + process_noise_q
     return state_x, covariance_p
 
 
 def warmup():
     input_modulus(0, -1, 3)
     normalize_theta(0)
+    state_transition(np.zeros(NUM_STATES), 0, 0)
     is_invertible(np.eye(NUM_STATES))
     jit_update(
         np.zeros(NUM_STATES), np.eye(NUM_STATES), np.eye(NUM_STATES), np.zeros(NUM_STATES), np.eye(NUM_STATES), ()
     )
-    jit_predict(np.zeros(NUM_STATES), np.zeros(NUM_INPUTS), np.eye(NUM_STATES), np.eye(NUM_STATES), 1.0)
+    jit_predict(np.zeros(NUM_STATES), np.eye(NUM_STATES), np.eye(NUM_STATES), 0, 0)
