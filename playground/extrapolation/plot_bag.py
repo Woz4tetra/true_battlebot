@@ -34,7 +34,7 @@ def set_axes_equal(ax):
 
 
 def main() -> None:
-    path = "/media/storage/bags/simulation_2024-05-11T22-24-22.bag"
+    path = "/media/storage/bags/simulation_2024-05-11T23-47-42.bag"
     data = load_data(path)
 
     fig = plt.figure(1)

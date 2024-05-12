@@ -56,7 +56,7 @@ class RobotFilter:
 
         self.apriltag_base_covariance_scalar = get_param("~apriltag_base_covariance_scalar", 0.00001)
         self.robot_base_covariance = get_param("~robot_base_covariance_scalar", 0.001)
-        self.robot_angle_covariance = get_param("~robot_angle_covariance", 1.0)
+        self.robot_angle_covariance = get_param("~robot_angle_covariance", 0.01)
         initial_variances = get_param("~initial_variances", [0.25, 0.25, 10.0, 1.0, 1.0, 10.0])
         self.cmd_vel_base_covariance_scalar = get_param("~cmd_vel_base_covariance_scalar", 0.01)
         self.friction_factor = get_param("~friction_factor", 0.05)
@@ -247,7 +247,7 @@ class RobotFilter:
         self.robot_sizes[robot_name] = self.get_object_radius(robot_name, camera_measurement)
 
         try:
-            robot_filter.update_position(map_measurement, use_prev_for_theta=True)
+            robot_filter.update_position(map_measurement, use_history_for_theta=True)
         except np.linalg.LinAlgError as e:
             rospy.logwarn(f"Failed to update from robot measurement. Resetting filter. {e}")
             robot_filter.reset()

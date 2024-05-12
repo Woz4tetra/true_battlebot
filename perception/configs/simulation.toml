@@ -31,7 +31,7 @@ type = "SimulatedSegmentation"
 [robot_segmentation]
 type = "SimulatedSegmentation"
 debug = false
-apply_noise = true
+apply_noise = false
 random_sample_interval = 0.5
 
 [robot_segmentation.simulated_to_real_labels]
