@@ -1,4 +1,5 @@
 import numpy as np
+from bw_tools.structs.pose2d import Pose2D
 from data_extractor import load_data
 from label_colors import COLORS
 from matplotlib import pyplot as plt
@@ -42,33 +43,39 @@ def main() -> None:
     fig.set_figwidth(15)
     fig.set_figheight(10)
     axes = [
-        fig.add_subplot(1, 2, 1),
-        fig.add_subplot(1, 2, 2),
+        fig.add_subplot(1, 3, 1),
+        fig.add_subplot(1, 3, 2),
+        fig.add_subplot(1, 3, 3),
         # fig.add_subplot(2, 2, 3, projection="3d"),
     ]
     # axes[2].set_aspect("equal", "box")
     t0 = None
+    label_filters = ["mini_bot"]
 
     for label, poses in data.ground_truth_data.items():
+        if label_filters and label not in label_filters:
+            continue
         color = COLORS[label]
         if t0 is None:
             t0 = poses[0].header.stamp.to_sec()
         times = [pose.header.stamp.to_sec() - t0 for pose in poses]
-        x = [pose.pose.position.x for pose in poses]
-        y = [pose.pose.position.y for pose in poses]
+        poses2d = [Pose2D.from_msg(pose.pose) for pose in poses]
         label += " (GT)"
-        axes[0].plot(times, x, label=label, color=color)
-        axes[1].plot(times, y, label=label, color=color)
+        axes[0].plot(times, [pose.x for pose in poses2d], label=label, color=color)
+        axes[1].plot(times, [pose.y for pose in poses2d], label=label, color=color)
+        axes[2].plot(times, [pose.theta for pose in poses2d], label=label, color=color)
     for label, poses in data.filtered_data.items():
+        if label_filters and label not in label_filters:
+            continue
         color = COLORS[label]
         color = tuple([c * 0.5 for c in color])
         if t0 is None:
             t0 = poses[0].header.stamp.to_sec()
         times = [pose.header.stamp.to_sec() - t0 for pose in poses]
-        x = [pose.pose.position.x for pose in poses]
-        y = [pose.pose.position.y for pose in poses]
-        axes[0].plot(times, x, label=label, color=color)
-        axes[1].plot(times, y, label=label, color=color)
+        poses2d = [Pose2D.from_msg(pose.pose) for pose in poses]
+        axes[0].plot(times, [pose.x for pose in poses2d], label=label, color=color)
+        axes[1].plot(times, [pose.y for pose in poses2d], label=label, color=color)
+        axes[2].plot(times, [pose.theta for pose in poses2d], label=label, color=color)
     # for label, poses in data.measurements_in_map.items():
     #     if t0 is None:
     #         t0 = poses[0].header.stamp.to_sec()
@@ -79,7 +86,7 @@ def main() -> None:
     #     axes[1].plot(times, y, label=label, color=COLORS[label], marker=".", linestyle="")
     #     # axes[2].scatter3D(times, x, y, color=COLORS[label], marker=".", linestyle="")
 
-    axes[1].legend()
+    axes[2].legend()
     plt.show()
 
 

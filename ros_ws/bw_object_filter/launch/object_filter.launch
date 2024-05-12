@@ -12,6 +12,8 @@
             "/camera_0/estimation/robots",
             "/camera_1/estimation/robots",
             ]</rosparam>
-        <remap from="tag_detections" to="$(arg camera_name)/tag_detections" />
+        <rosparam param="tag_topics" subst_value="True">[
+            "/camera_1/tag_detections",
+            ]</rosparam>
     </node>
 </launch>

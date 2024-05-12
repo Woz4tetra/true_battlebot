@@ -51,6 +51,7 @@ class RobotFilter:
         self.robot_frame_prefix = get_param("~robot_frame_prefix", "base_link")
         self.controlled_robot_name = get_param("~controlled_robot_name", "mini_bot")
         self.estimation_topics = get_param("~estimation_topics", [])
+        self.tag_topics = get_param("~tag_topics", [])
 
         self.command_timeout = rospy.Duration.from_sec(get_param("~command_timeout", 0.5))
 
@@ -165,7 +166,9 @@ class RobotFilter:
                 topic, EstimatedObjectArray, self.robot_estimation_callback, queue_size=50
             )
         self.field_sub = rospy.Subscriber("filter/field", EstimatedObject, self.field_callback, queue_size=1)
-        self.tags_sub = rospy.Subscriber("tag_detections", AprilTagDetectionArray, self.tags_callback, queue_size=25)
+        self.tags_subs: dict[str, rospy.Subscriber] = {}
+        for topic in self.tag_topics:
+            self.tags_subs[topic] = rospy.Subscriber(topic, AprilTagDetectionArray, self.tags_callback, queue_size=25)
         self.cmd_vel_subs = [
             rospy.Subscriber(f"{robot.name}/cmd_vel", Twist, self.cmd_vel_callback, callback_args=robot, queue_size=10)
             for robot in self.robots.robots
