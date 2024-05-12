@@ -50,7 +50,8 @@ class RobotFilter:
         self.command_timeout = rospy.Duration.from_sec(get_param("~command_timeout", 0.5))
 
         self.apriltag_base_covariance_scalar = get_param("~apriltag_base_covariance_scalar", 0.00001)
-        self.robot_base_covariance = get_param("~robot_estimate_base_covariance_scalar", 0.001)
+        self.robot_base_covariance = get_param("~robot_base_covariance_scalar", 0.001)
+        self.robot_angle_covariance = get_param("~robot_angle_covariance", 1000.0)
         self.cmd_vel_base_covariance_scalar = get_param("~cmd_vel_base_covariance_scalar", 0.01)
         self.friction_factor = get_param("~friction_factor", 0.05)
         self.process_noise = get_param("~process_noise", 1e-4)
@@ -80,7 +81,7 @@ class RobotFilter:
         self.robot_max_sizes = {robot.name: robot.radius for robot in self.robots.robots}
 
         self.tag_heurstics = ApriltagHeuristics(self.apriltag_base_covariance_scalar)
-        self.robot_heuristics = RobotHeuristics(self.robot_base_covariance)
+        self.robot_heuristics = RobotHeuristics(self.robot_base_covariance, self.robot_angle_covariance)
         self.robot_cmd_vel_heuristics = CmdVelHeuristics(self.cmd_vel_base_covariance_scalar)
 
         self.measurement_sorters = {
