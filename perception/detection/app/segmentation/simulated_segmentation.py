@@ -157,12 +157,10 @@ class SimulatedSegmentation(SegmentationInterface):
             return SegmentationInstanceArray(), None
         image = self.segmentation_manager.get_image()
         if image is None:
-            self.logger.warning("No simulated segmentation image received yet")
             return SegmentationInstanceArray(), None
         if segmentation := self.segmentation_manager.get_segmentation():
             self.simulated_segmentations.update(self.process_segmentation(segmentation))
         if len(self.simulated_segmentations) == 0:
-            self.logger.warning("No simulated segmentation received yet")
             return SegmentationInstanceArray(), None
 
         segmentation_array = SegmentationInstanceArray()

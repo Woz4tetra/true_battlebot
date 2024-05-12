@@ -26,6 +26,7 @@ from app.field_filter.field_request_handler import FieldRequestHandler
 from app.json_logger import initialize
 from app.segmentation.segmentation_interface import SegmentationInterface
 from app.segmentation.segmentation_loader import load_segmentation
+from app.tick_regulator import regulate_tick
 
 
 class Runner:
@@ -72,7 +73,7 @@ class Runner:
             self.logger.error("Failed to open camera")
             return
         camera_data = self.camera.poll()
-        if camera_data is None:
+        if camera_data is None or camera_data.color_image.data.size == 0:
             return
         self.prev_image_time = time.time()
         robot_seg, debug_image = self.robot_segmentation.process_image(camera_data.color_image)
@@ -90,7 +91,7 @@ class Runner:
             return
 
         camera_data = self.camera.poll()
-        if camera_data is None:
+        if camera_data is None or camera_data.color_image.data.size == 0:
             self.logger.warning("No camera data. Ignoring field request.")
             return
         self.prev_image_time = time.time()
@@ -217,15 +218,13 @@ def main() -> None:
     make_field_interface(container)
     make_field_request_handler(container)
 
-    poll_delay = 1.0 / config.poll_rate
     app = Runner(container)
 
     logger.info("Starting perception")
     app.start()
     logger.info("perception is running")
     try:
-        while True:
-            time.sleep(poll_delay)
+        for dt in regulate_tick(config.target_tick_rate):
             app.loop()
     finally:
         logger.info("perception is stopping")

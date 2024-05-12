@@ -6,16 +6,16 @@ import numpy as np
 from bw_tools.structs.pose2d import Pose2D
 from geometry_msgs.msg import Pose
 
-from bw_object_filter.filter_models.filter_model import FilterModel
+from bw_object_filter.filter_models.drive_kf_model import DriveKalmanModel
 
 
 class RobotMeasurementSorter:
-    def __init__(self, filters: Mapping[str, FilterModel]) -> None:
+    def __init__(self, filters: Mapping[str, DriveKalmanModel]) -> None:
         self.filters = filters
         self.filter_names = [robot_name for robot_name in self.filters.keys()]
         self.cached_permutations: dict[tuple[int, int], np.ndarray] = {}
 
-    def get_distance(self, measurement: Pose, filter_model: FilterModel) -> float:
+    def get_distance(self, measurement: Pose, filter_model: DriveKalmanModel) -> float:
         pose = Pose2D.from_msg(measurement)
         filter_pose = Pose2D.from_msg(filter_model.get_state()[0].pose)
         dx = pose.x - filter_pose.x

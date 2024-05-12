@@ -12,11 +12,11 @@ from nav_msgs.msg import Odometry
 from object_data import ObjectData
 
 
-def odom_callback(ground_truth_data: dict[str, list[PoseStamped]], topic: str, odometry: Odometry) -> None:
+def odom_callback(data: dict[str, list[PoseStamped]], topic: str, odometry: Odometry) -> None:
     key = topic.split("/")[1]
-    if key not in ground_truth_data:
-        ground_truth_data[key] = []
-    ground_truth_data[key].append(PoseStamped(odometry.header, odometry.pose.pose))
+    if key not in data:
+        data[key] = []
+    data[key].append(PoseStamped(odometry.header, odometry.pose.pose))
 
 
 def robot_callback(
@@ -51,12 +51,14 @@ def load_data(bag_path: str) -> ObjectData:
             return pickle.load(f)
     bag = rosbag.Bag(bag_path)
 
-    ground_truth_topics = [
-        "/main_bot/ground_truth",
-        "/mini_bot/ground_truth",
-        "/opponent_1/ground_truth",
-        "/referee/ground_truth",
+    robot_names = [
+        "main_bot",
+        "mini_bot",
+        "opponent_1",
+        "referee",
     ]
+    ground_truth_topics = ["/" + name + "/ground_truth" for name in robot_names]
+    filtered_topics = ["/" + name + "/odom" for name in robot_names]
     robot_measurement_topics = [
         "/camera_0/estimation/robots",
         "/camera_1/estimation/robots",
@@ -65,6 +67,7 @@ def load_data(bag_path: str) -> ObjectData:
         "/camera_1/tag_detections",
     ]
     ground_truth_data: dict[str, list[PoseStamped]] = {}
+    filtered_data: dict[str, list[PoseStamped]] = {}
     measurements: dict[str, list[PoseStamped]] = {}
     config = SharedConfig.from_files()
     robot_tag_ids = {}
@@ -77,6 +80,8 @@ def load_data(bag_path: str) -> ObjectData:
     for topic, msg, timestamp in bag.read_messages():
         if topic in ground_truth_topics:
             odom_callback(ground_truth_data, topic, msg)
+        elif topic in filtered_topics:
+            odom_callback(filtered_data, topic, msg)
         elif topic in robot_measurement_topics:
             robot_callback(sensor_frames, measurements, msg)
         elif topic in tag_measurement_topics:
@@ -93,7 +98,7 @@ def load_data(bag_path: str) -> ObjectData:
         transform = tf_buffer.lookup_transform_core("map", child_frame_id, rospy.Time(0))
         sensor_transforms[child_frame_id] = transform
 
-    data = ObjectData(ground_truth_data, measurements, sensor_transforms)
+    data = ObjectData(ground_truth_data, filtered_data, measurements, sensor_transforms)
     with open(pickle_path, "wb") as f:
         pickle.dump(data, f)
     return data

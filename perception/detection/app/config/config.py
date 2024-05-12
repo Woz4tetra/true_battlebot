@@ -16,7 +16,7 @@ from app.config.segmentation_config.segmentation_types import InstanceSegmentati
 
 @dataclass
 class Config:
-    poll_rate: float = 1000.0
+    target_tick_rate: float = 1000.0
     camera_topic: CameraTopicConfig = field(default_factory=lambda: CameraTopicConfig("/camera_0", "camera_0"))
     camera: CameraConfig = field(default_factory=NoopCameraConfig)
     ros: RosConfig = field(default_factory=RosConfig)

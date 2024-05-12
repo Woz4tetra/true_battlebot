@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from typing import List, Optional
+from typing import Optional
 
 import numpy as np
 import rospy
@@ -44,7 +44,7 @@ class RobotFilter:
 
         self.map_frame = get_param("~map_frame", "map")
         self.robot_frame_prefix = get_param("~robot_frame_prefix", "base_link")
-        self.controlled_robot_name = get_param("/robot", "mini_bot")
+        self.controlled_robot_name = get_param("~controlled_robot_name", "mini_bot")
         self.estimation_topics = get_param("~estimation_topics", [])
 
         self.command_timeout = rospy.Duration.from_sec(get_param("~command_timeout", 0.5))
@@ -72,7 +72,7 @@ class RobotFilter:
             self.robot_names[config.down_id] = config.name
         self.robot_configs = {config.name: config for config in self.robots.robots}
         self.apriltag_rotate_tf = Transform3D.from_position_and_rpy(Vector3(), RPY((0.0, 0.0, np.pi / 2)))
-        self.robot_filters = {
+        self.robot_filters: dict[str, DriveKalmanModel] = {
             robot.name: DriveKalmanModel(self.update_delay, self.process_noise, self.friction_factor)
             for robot in self.robots.robots
         }
@@ -96,6 +96,7 @@ class RobotFilter:
                     name: filter
                     for name, filter in self.robot_filters.items()
                     if self.robot_configs[name].team == RobotTeam.OUR_TEAM
+                    and self.robot_configs[name].name != self.controlled_robot_name
                 }
             ),
             Label.CONTROLLED_ROBOT: RobotMeasurementSorter(
@@ -113,6 +114,27 @@ class RobotFilter:
                 }
             ),
         }
+
+        # measurements labels are checked and applied in this order
+        self.measurement_sorters_priority = [
+            Label.REFEREE,
+            Label.CONTROLLED_ROBOT,
+            Label.FRIENDLY_ROBOT,
+            Label.ROBOT,
+        ]
+        self.initialize_labels: dict[Label, list[str]] = {label: [] for label in Label}
+        for name in self.robot_filters.keys():
+            team = self.robot_configs[name].team
+            if name == self.controlled_robot_name:
+                self.initialize_labels[Label.CONTROLLED_ROBOT].append(name)
+            elif team == RobotTeam.OUR_TEAM:
+                self.initialize_labels[Label.FRIENDLY_ROBOT].append(name)
+            elif team == RobotTeam.THEIR_TEAM:
+                self.initialize_labels[Label.ROBOT].append(name)
+            elif team == RobotTeam.REFEREE:
+                self.initialize_labels[Label.REFEREE].append(name)
+            else:
+                raise ValueError(f"Filter doesn't have an initialization label: {name}")
 
         self.tf_buffer = tf2_ros.Buffer()
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer)
@@ -165,13 +187,23 @@ class RobotFilter:
                 rospy.logwarn(f"Unknown label {robot.label}")
                 continue
             measurements[label].append(robot)
-        for label, sorter in self.measurement_sorters.items():
+        for label, robot_names in self.initialize_labels.items():
+            for name in robot_names:
+                robot_filter = self.robot_filters[name]
+                if not robot_filter.is_initialized and len(measurements[label]) > 0:
+                    measurement = measurements[label].pop()
+                    robot_filter.teleport(measurement.pose)
+                    rospy.loginfo(f"Initialized {name} from {label} measurement.")
+        for label in self.measurement_sorters_priority:
+            if len(measurements[label]) == 0:
+                continue
+            sorter = self.measurement_sorters[label]
             self.apply_update_with_sorter(sorter, measurements[label])
 
     def apply_update_with_sorter(
-        self, measurement_sorter: RobotMeasurementSorter, robots: List[EstimatedObject]
+        self, measurement_sorter: RobotMeasurementSorter, robots: list[EstimatedObject]
     ) -> None:
-        map_measurements: List[Pose] = []
+        map_measurements: list[Pose] = []
         for measurement in robots:
             map_pose = self.transform_to_map(measurement.header, measurement.pose.pose)
             if map_pose is None:
@@ -199,7 +231,7 @@ class RobotFilter:
         pose.pose = map_measurement
         pose.covariance = covariance  # type: ignore
         try:
-            robot_filter.update_position(pose)
+            robot_filter.update_position(pose, use_prev_for_theta=True)
         except np.linalg.LinAlgError as e:
             rospy.logwarn(f"Failed to update from robot measurement. Resetting filter. {e}")
             robot_filter.reset()
@@ -331,7 +363,8 @@ class RobotFilter:
                 rospy.logwarn(f"Failed predict. Resetting filter. {e}")
                 robot_filter.reset()
                 continue
-            robot_filter.clamp_bounds(self.filter_bounds[0], self.filter_bounds[1])
+            if not robot_filter.is_in_bounds(self.filter_bounds[0], self.filter_bounds[1]) or robot_filter.is_stale():
+                robot_filter.reset()
 
     def get_robot_frame_id(self, robot_name: str) -> str:
         return self.robot_frame_prefix + "_" + robot_name

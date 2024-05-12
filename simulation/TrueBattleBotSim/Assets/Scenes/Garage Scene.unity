@@ -4723,7 +4723,7 @@ MonoBehaviour:
     m_Bits: 1224
   debugRayCast: 0
   publishRate: 4
-  viewAngleThreshold: 45
+  viewAngleThreshold: 55
   topic: /camera_1/tag_detections
 --- !u!114 &867903856
 MonoBehaviour:
@@ -13499,7 +13499,7 @@ MonoBehaviour:
     m_Bits: 1224
   debugRayCast: 0
   publishRate: 4
-  viewAngleThreshold: 45
+  viewAngleThreshold: 55
   topic: /camera_0/tag_detections
 --- !u!1 &6105163997810151798
 GameObject:

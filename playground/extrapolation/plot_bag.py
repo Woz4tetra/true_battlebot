@@ -34,7 +34,7 @@ def set_axes_equal(ax):
 
 
 def main() -> None:
-    path = "/media/storage/bags/simulation_2024-05-09T21-15-25.bag"
+    path = "/media/storage/bags/simulation_2024-05-11T21-40-09.bag"
     data = load_data(path)
 
     fig = plt.figure(1)
@@ -50,23 +50,34 @@ def main() -> None:
     t0 = None
 
     for label, poses in data.ground_truth_data.items():
+        color = COLORS[label]
         if t0 is None:
             t0 = poses[0].header.stamp.to_sec()
         times = [pose.header.stamp.to_sec() - t0 for pose in poses]
         x = [pose.pose.position.x for pose in poses]
         y = [pose.pose.position.y for pose in poses]
-        axes[0].plot(times, x, label=label, color=COLORS[label])
-        axes[1].plot(times, y, label=label, color=COLORS[label])
-        # axes[2].scatter3D(times, x, y, color=COLORS[label])
-    for label, poses in data.measurements_in_map.items():
+        label += " (GT)"
+        axes[0].plot(times, x, label=label, color=color)
+        axes[1].plot(times, y, label=label, color=color)
+    for label, poses in data.filtered_data.items():
+        color = COLORS[label]
+        color = tuple([c * 0.5 for c in color])
         if t0 is None:
             t0 = poses[0].header.stamp.to_sec()
         times = [pose.header.stamp.to_sec() - t0 for pose in poses]
         x = [pose.pose.position.x for pose in poses]
         y = [pose.pose.position.y for pose in poses]
-        axes[0].plot(times, x, label=label, color=COLORS[label], marker=".", linestyle="")
-        axes[1].plot(times, y, label=label, color=COLORS[label], marker=".", linestyle="")
-        # axes[2].scatter3D(times, x, y, color=COLORS[label], marker=".", linestyle="")
+        axes[0].plot(times, x, label=label, color=color)
+        axes[1].plot(times, y, label=label, color=color)
+    # for label, poses in data.measurements_in_map.items():
+    #     if t0 is None:
+    #         t0 = poses[0].header.stamp.to_sec()
+    #     times = [pose.header.stamp.to_sec() - t0 for pose in poses]
+    #     x = [pose.pose.position.x for pose in poses]
+    #     y = [pose.pose.position.y for pose in poses]
+    #     axes[0].plot(times, x, label=label, color=COLORS[label], marker=".", linestyle="")
+    #     axes[1].plot(times, y, label=label, color=COLORS[label], marker=".", linestyle="")
+    #     # axes[2].scatter3D(times, x, y, color=COLORS[label], marker=".", linestyle="")
 
     axes[1].legend()
     plt.show()

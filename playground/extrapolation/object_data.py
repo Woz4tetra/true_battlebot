@@ -8,6 +8,7 @@ from std_msgs.msg import Header
 @dataclass
 class ObjectData:
     ground_truth_data: dict[str, list[PoseStamped]]
+    filtered_data: dict[str, list[PoseStamped]]
     measurements: dict[str, list[PoseStamped]]
     sensor_transforms: dict[str, TransformStamped]
 

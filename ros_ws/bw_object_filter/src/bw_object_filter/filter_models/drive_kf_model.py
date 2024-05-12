@@ -1,11 +1,12 @@
+import time
 from threading import Lock
 from typing import Tuple
 
 import numpy as np
+from bw_tools.structs.pose2d import Pose2D
 from bw_tools.structs.xy import XY
 from geometry_msgs.msg import PoseWithCovariance, TwistWithCovariance
 
-from .filter_model import FilterModel
 from .helpers import (
     NUM_MEASUREMENTS,
     NUM_STATES,
@@ -23,17 +24,28 @@ from .helpers import (
 )
 
 
-class DriveKalmanModel(FilterModel):
+class DriveKalmanModel:
     # define properties assigned in "reset"
     state: StateArray
     covariance: StateSquareMatrix
     process_noise_q: StateSquareMatrix
-    is_initialized: bool
+    _is_initialized: bool
+    stale_timer: float
+    prev_significant_pose: Pose2D
 
-    def __init__(self, dt: float, process_noise: float = 0.001, friction_factor: float = 0.2) -> None:
+    def __init__(
+        self,
+        dt: float,
+        process_noise: float = 0.001,
+        friction_factor: float = 0.2,
+        stale_timeout: float = 1.0,
+        significant_distance: float = 0.1,
+    ) -> None:
         self.dt = dt
         self.friction_factor = friction_factor
         self.process_noise = process_noise
+        self.stale_timeout = stale_timeout
+        self.significant_distance = significant_distance
         self.lock = Lock()
 
         # measurement function for landmarks. Use only pose.
@@ -51,6 +63,12 @@ class DriveKalmanModel(FilterModel):
         self.reset()
         warmup()
 
+    def _now(self) -> float:
+        return time.perf_counter()
+
+    def _reset_stale_timer(self) -> None:
+        self.stale_timer = self._now()
+
     def predict(self) -> None:
         with self.lock:
             self._clamp_divergent()
@@ -59,24 +77,29 @@ class DriveKalmanModel(FilterModel):
             )
 
     def update_pose(self, msg: PoseWithCovariance) -> None:
-        if self.is_initialized:
-            with self.lock:
-                measurement, noise = pose_to_measurement(msg)
-                measurement = np.nan_to_num(measurement, copy=False)
-                self.state, self.covariance = jit_update(
-                    self.state, self.covariance, self.pose_H, measurement, noise, (STATE_t,)
-                )
-        else:
-            self.teleport(msg)
+        self._update_model_pose(msg, self.pose_H)
 
-    def update_position(self, msg: PoseWithCovariance) -> None:
-        if self.is_initialized:
+    def update_position(self, msg: PoseWithCovariance, use_prev_for_theta: bool = False) -> None:
+        if use_prev_for_theta:
+            pose2d = Pose2D.from_msg(msg.pose)
+            delta_pose = pose2d.relative_to(self.prev_significant_pose)
+            msg.pose.orientation = delta_pose.to_msg().orientation
+            self._update_model_pose(msg, self.pose_H)
+        else:
+            self._update_model_pose(msg, self.position_H)
+
+    def _update_model_pose(self, msg: PoseWithCovariance, observation_model: np.ndarray) -> None:
+        if self._is_initialized:
             with self.lock:
                 measurement, noise = pose_to_measurement(msg)
                 measurement = np.nan_to_num(measurement, copy=False)
                 self.state, self.covariance = jit_update(
-                    self.state, self.covariance, self.position_H, measurement, noise, (STATE_t,)
+                    self.state, self.covariance, observation_model, measurement, noise, (STATE_t,)
                 )
+                self._reset_stale_timer()
+                pose2d = Pose2D.from_msg(msg.pose)
+                if pose2d.magnitude(self.prev_significant_pose) > self.significant_distance:
+                    self.prev_significant_pose = pose2d
         else:
             self.teleport(msg)
 
@@ -109,16 +132,25 @@ class DriveKalmanModel(FilterModel):
             self.state[0:NUM_STATES_1ST_ORDER] = measurement
             self.covariance = np.eye(NUM_STATES)
             self.covariance[0:NUM_STATES_1ST_ORDER, 0:NUM_STATES_1ST_ORDER] = measurement_noise
-            self.is_initialized = True
+            self._is_initialized = True
+            self._reset_stale_timer()
+            self.prev_significant_pose = Pose2D.from_msg(msg.pose)
 
     def reset(self) -> None:
         with self.lock:
             self.state = np.zeros(NUM_STATES)
             self.covariance = np.eye(NUM_STATES)
             self.process_noise_q = np.eye(NUM_STATES) * self.process_noise
-            self.is_initialized = False
+            self._is_initialized = False
+            self.stale_timer = 0.0
+            self.prev_significant_pose = Pose2D.zeros()
 
-    def clamp_bounds(self, lower_bound: XY, upper_bound: XY) -> None:
-        with self.lock:
-            self.state[0] = np.clip(self.state[0], lower_bound.x, upper_bound.x)
-            self.state[1] = np.clip(self.state[1], lower_bound.y, upper_bound.y)
+    def is_in_bounds(self, lower_bound: XY, upper_bound: XY) -> bool:
+        return lower_bound.x <= self.state[0] <= upper_bound.x and lower_bound.y <= self.state[1] <= upper_bound.y
+
+    @property
+    def is_initialized(self) -> bool:
+        return self._is_initialized
+
+    def is_stale(self) -> bool:
+        return self._now() - self.stale_timer > self.stale_timeout

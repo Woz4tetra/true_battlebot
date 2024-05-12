@@ -1,2 +1,4 @@
+target_tick_rate = 60.0
+
 [camera]
 type = "SvoPlaybackCamera"
