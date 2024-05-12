@@ -125,16 +125,21 @@ class DriveKalmanModel:
         self.state = np.nan_to_num(self.state, copy=False, nan=0.0, posinf=0.0, neginf=0.0)
         self.covariance = np.nan_to_num(self.covariance, copy=False, nan=1e-3, posinf=1e-3, neginf=1e-3)
 
-    def teleport(self, msg: PoseWithCovariance) -> None:
+    def teleport(self, pose: PoseWithCovariance, twist: TwistWithCovariance = TwistWithCovariance()) -> None:
         with self.lock:
-            measurement, measurement_noise = pose_to_measurement(msg)
+            if all([c == 0 for c in twist.covariance]):
+                twist.covariance = np.eye(6).flatten().tolist()  # type: ignore
+            initial_pose, pose_noise = pose_to_measurement(pose)
+            initial_twist, twist_noise = twist_to_measurement(twist)
             self.state = np.zeros(NUM_STATES)
-            self.state[0:NUM_STATES_1ST_ORDER] = measurement
-            self.covariance = np.eye(NUM_STATES)
-            self.covariance[0:NUM_STATES_1ST_ORDER, 0:NUM_STATES_1ST_ORDER] = measurement_noise
+            self.state[0:NUM_STATES_1ST_ORDER] = initial_pose
+            self.state[NUM_STATES_1ST_ORDER:NUM_STATES] = initial_twist
+            self.covariance = np.zeros((NUM_STATES, NUM_STATES))
+            self.covariance[0:NUM_STATES_1ST_ORDER, 0:NUM_STATES_1ST_ORDER] = pose_noise
+            self.covariance[NUM_STATES_1ST_ORDER:NUM_STATES, NUM_STATES_1ST_ORDER:NUM_STATES] = twist_noise
             self._is_initialized = True
             self._reset_stale_timer()
-            self.prev_significant_pose = Pose2D.from_msg(msg.pose)
+            self.prev_significant_pose = Pose2D.from_msg(pose.pose)
 
     def reset(self) -> None:
         with self.lock:

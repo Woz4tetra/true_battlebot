@@ -174,6 +174,8 @@ window.onload = function () {
     ros = new ROSLIB.Ros({
         url: url,
     });
+    console.log("Connecting to " + url);
+    ros.connect(url);
 
     var connection_status = document.getElementById("connection-status");
     var connection_icon = document.getElementById("connection-icon");

@@ -4,7 +4,7 @@ from typing import Dict, List, Mapping, Tuple
 
 import numpy as np
 from bw_tools.structs.pose2d import Pose2D
-from geometry_msgs.msg import Pose
+from geometry_msgs.msg import PoseWithCovariance
 
 from bw_object_filter.filter_models.drive_kf_model import DriveKalmanModel
 
@@ -15,8 +15,8 @@ class RobotMeasurementSorter:
         self.filter_names = [robot_name for robot_name in self.filters.keys()]
         self.cached_permutations: dict[tuple[int, int], np.ndarray] = {}
 
-    def get_distance(self, measurement: Pose, filter_model: DriveKalmanModel) -> float:
-        pose = Pose2D.from_msg(measurement)
+    def get_distance(self, measurement: PoseWithCovariance, filter_model: DriveKalmanModel) -> float:
+        pose = Pose2D.from_msg(measurement.pose)
         filter_pose = Pose2D.from_msg(filter_model.get_state()[0].pose)
         dx = pose.x - filter_pose.x
         dy = pose.y - filter_pose.y
@@ -62,7 +62,7 @@ class RobotMeasurementSorter:
                 mapping.append((matched_column, matched_row))
         return mapping
 
-    def get_ids(self, measurements: List[Pose]) -> Dict[str, int]:
+    def get_ids(self, measurements: List[PoseWithCovariance]) -> Dict[str, int]:
         if len(measurements) == 0 or len(self.filters) == 0:
             return {}
         measurement_ids = {}

@@ -16,7 +16,7 @@ public abstract class BaseRectangleSensor : MonoBehaviour
     [SerializeField] private bool debugRayCast = false;
     [SerializeField] private float publishRate = 0.0f;
     [SerializeField] private float viewAngleThreshold = 70.0f;
-    private float publishStartDelay = 1.0f;
+    private float prevPublishTime = 0.0f;
 
     abstract protected void BaseRectangleSensorStart();
     void Start()
@@ -25,18 +25,15 @@ public abstract class BaseRectangleSensor : MonoBehaviour
         frame = GetComponent<TransformFrame>();
         cameraView = GetComponent<Camera>();
 
-        if (publishRate > 0)
-        {
-            InvokeRepeating("PublishTags", publishStartDelay, 1.0f / publishRate);
-        }
         BaseRectangleSensorStart();
     }
 
     void Update()
     {
-        if (publishRate <= 0)
+        if (publishRate <= 0 || Time.unscaledTime - prevPublishTime > 1.0f / publishRate)
         {
             PublishTags();
+            prevPublishTime = Time.unscaledTime;
         }
     }
 

@@ -30,8 +30,13 @@ from geometry_msgs.msg import (
 from nav_msgs.msg import Odometry
 from std_msgs.msg import Header as RosHeader
 
-from bw_object_filter.covariances import ApriltagHeuristics, CmdVelHeuristics, RobotHeuristics
+from bw_object_filter.covariances import ApriltagHeuristics, CmdVelHeuristics, RobotStaticHeuristics
 from bw_object_filter.filter_models import DriveKalmanModel
+from bw_object_filter.filter_models.helpers import (
+    NUM_STATES,
+    measurement_to_pose,
+    measurement_to_twist,
+)
 from bw_object_filter.robot_measurement_sorter import RobotMeasurementSorter
 
 
@@ -51,15 +56,21 @@ class RobotFilter:
 
         self.apriltag_base_covariance_scalar = get_param("~apriltag_base_covariance_scalar", 0.00001)
         self.robot_base_covariance = get_param("~robot_base_covariance_scalar", 0.001)
-        self.robot_angle_covariance = get_param("~robot_angle_covariance", 1000.0)
+        self.robot_angle_covariance = get_param("~robot_angle_covariance", 1.0)
+        initial_variances = get_param("~initial_variances", [0.25, 0.25, 10.0, 1.0, 1.0, 10.0])
         self.cmd_vel_base_covariance_scalar = get_param("~cmd_vel_base_covariance_scalar", 0.01)
         self.friction_factor = get_param("~friction_factor", 0.05)
         self.process_noise = get_param("~process_noise", 1e-4)
         self.motion_speed_threshold = get_param("~motion_speed_threshold", 0.25)
         self.robot_min_radius = get_param("~robot_min_radius", 0.1)
         self.ignore_measurement_near_tag_threshold = get_param("~ignore_measurement_near_tag_threshold", 0.05)
-        field_buffer = get_param("~field_buffer", 0.1)
+        field_buffer = get_param("~field_buffer", 0.2)
         self.field_buffer = XYZ(field_buffer, field_buffer, field_buffer)
+
+        initial_state = np.zeros(NUM_STATES)
+        initial_covariance = np.diag(initial_variances)
+        self.initial_pose = measurement_to_pose(initial_state, initial_covariance)
+        self.initial_twist = measurement_to_twist(initial_state, initial_covariance)
 
         self.robots = shared_config.robots
         self.check_unique(self.robots)
@@ -81,7 +92,7 @@ class RobotFilter:
         self.robot_max_sizes = {robot.name: robot.radius for robot in self.robots.robots}
 
         self.tag_heurstics = ApriltagHeuristics(self.apriltag_base_covariance_scalar)
-        self.robot_heuristics = RobotHeuristics(self.robot_base_covariance, self.robot_angle_covariance)
+        self.robot_heuristics = RobotStaticHeuristics(self.robot_base_covariance, self.robot_angle_covariance)
         self.robot_cmd_vel_heuristics = CmdVelHeuristics(self.cmd_vel_base_covariance_scalar)
 
         self.measurement_sorters = {
@@ -187,13 +198,16 @@ class RobotFilter:
             except ValueError:
                 rospy.logwarn(f"Unknown label {robot.label}")
                 continue
+            if all([c == 0 for c in robot.pose.covariance]):
+                robot.pose.covariance = self.robot_heuristics.compute_covariance(robot)  # type: ignore
             measurements[label].append(robot)
         for label, robot_names in self.initialize_labels.items():
             for name in robot_names:
                 robot_filter = self.robot_filters[name]
                 if not robot_filter.is_initialized and len(measurements[label]) > 0:
                     measurement = measurements[label].pop()
-                    robot_filter.teleport(measurement.pose)
+                    measurement.pose.covariance = self.initial_pose.covariance
+                    robot_filter.teleport(measurement.pose, self.initial_twist)
                     rospy.loginfo(f"Initialized {name} from {label} measurement.")
         for label in self.measurement_sorters_priority:
             if len(measurements[label]) == 0:
@@ -204,7 +218,7 @@ class RobotFilter:
     def apply_update_with_sorter(
         self, measurement_sorter: RobotMeasurementSorter, robots: list[EstimatedObject]
     ) -> None:
-        map_measurements: list[Pose] = []
+        map_measurements: list[PoseWithCovariance] = []
         for measurement in robots:
             map_pose = self.transform_to_map(measurement.header, measurement.pose.pose)
             if map_pose is None:
@@ -213,7 +227,12 @@ class RobotFilter:
             if not self.is_in_field_bounds(map_pose.position):
                 rospy.logdebug(f"{measurement.label} is out of bounds. Skipping.")
                 continue
-            map_measurements.append(map_pose)
+            map_measurements.append(
+                PoseWithCovariance(
+                    map_pose,
+                    covariance=measurement.pose.covariance,
+                )
+            )
 
         assigned = measurement_sorter.get_ids(map_measurements)
         for robot_name, measurement_index in assigned.items():
@@ -222,17 +241,13 @@ class RobotFilter:
             self.apply_sorted_measurement(robot_name, map_measurement, camera_measurement)
 
     def apply_sorted_measurement(
-        self, robot_name: str, map_measurement: Pose, camera_measurement: EstimatedObject
+        self, robot_name: str, map_measurement: PoseWithCovariance, camera_measurement: EstimatedObject
     ) -> None:
         robot_filter = self.robot_filters[robot_name]
-        covariance = self.robot_heuristics.compute_covariance(camera_measurement)
         self.robot_sizes[robot_name] = self.get_object_radius(robot_name, camera_measurement)
 
-        pose = PoseWithCovariance()
-        pose.pose = map_measurement
-        pose.covariance = covariance  # type: ignore
         try:
-            robot_filter.update_position(pose, use_prev_for_theta=True)
+            robot_filter.update_position(map_measurement, use_prev_for_theta=True)
         except np.linalg.LinAlgError as e:
             rospy.logwarn(f"Failed to update from robot measurement. Resetting filter. {e}")
             robot_filter.reset()

@@ -10,7 +10,7 @@ from bw_object_filter.covariances.covariance_helpers import (
 from bw_object_filter.covariances.covariance_heuristics import CovarianceHeuristics
 
 
-class RobotHeuristics(CovarianceHeuristics[EstimatedObject]):
+class RobotDistanceHeuristics(CovarianceHeuristics[EstimatedObject]):
     def __init__(self, base_covariance_scalar: float, yaw_covariance: float) -> None:
         self.base_covariance = np.diag([base_covariance_scalar] * 6)
         self.yaw_covariance = yaw_covariance
