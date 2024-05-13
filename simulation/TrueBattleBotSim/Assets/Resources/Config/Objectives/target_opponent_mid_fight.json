@@ -1,0 +1,18 @@
+{
+    "type": "target",
+    "init": {
+        "type": "relative",
+        "x": -0.85,
+        "y": -0.5,
+        "theta": 45.0
+    },
+    "sequence": [
+        {
+            "timestamp": 0.0
+        },
+        {
+            "timestamp": 0.4,
+            "target_name": "opponent_1"
+        }
+    ]
+}

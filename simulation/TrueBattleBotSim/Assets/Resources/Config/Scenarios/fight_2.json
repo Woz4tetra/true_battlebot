@@ -37,16 +37,10 @@
             "objective": "target_opponent_mid_fight"
         },
         {
-            "label": "Main bot",
-            "name": "main_bot",
-            "model": "MRS BUFF B-03",
-            "objective": "fight_1_chase"
-        },
-        {
             "label": "Enemy bot",
             "name": "opponent_1",
             "model": "MRS BUFF B-03 Bizarro",
-            "objective": "fight_1_aggressor"
+            "objective": "fight_2_aggressor"
         },
         {
             "label": "Referee",

@@ -40,7 +40,7 @@
             "label": "Main bot",
             "name": "main_bot",
             "model": "MRS BUFF B-03",
-            "objective": "keyboard_blue_corner"
+            "objective": "keyboard_center"
         },
         {
             "label": "Enemy bot",

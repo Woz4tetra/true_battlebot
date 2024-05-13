@@ -7474,6 +7474,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ab4142c1343d6636daaa5ac45ebdb10a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  sequenceProgressTopicName: /opponent_1/sequence_progress
 --- !u!114 &8796651060337530605
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7525,8 +7526,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3695846776a4ee2739ba112c8c2d4777, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  zeta: 4
-  b: 8
+  zeta: 6
+  b: 16
 --- !u!114 &3857530334123070071
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7540,7 +7541,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   linearPID:
-    kp: 1
+    kp: 3
     ki: 0
     kd: 0
     kf: 1
@@ -7549,7 +7550,7 @@ MonoBehaviour:
     epsilon: 0.000000001
     tolerance: 0
   angularPID:
-    kp: 10
+    kp: 50
     ki: 0.1
     kd: 1
     kf: 1
@@ -7582,6 +7583,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 14e69c3d1b666ef42afaccf0e29290fc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  sequenceProgressTopicName: /opponent_1/sequence_progress
   maxLinearSpeed: 10
   maxAngularSpeed: 1000
   reverseWhenUpsideDown: 1

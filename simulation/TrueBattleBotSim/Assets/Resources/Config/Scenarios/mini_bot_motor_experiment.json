@@ -34,25 +34,13 @@
             "label": "Mini bot",
             "name": "mini_bot",
             "model": "MR STABS A-02",
-            "objective": "target_opponent_mid_fight"
-        },
-        {
-            "label": "Main bot",
-            "name": "main_bot",
-            "model": "MRS BUFF B-03",
-            "objective": "fight_1_chase"
+            "objective": "target_opponent_blue_corner"
         },
         {
             "label": "Enemy bot",
             "name": "opponent_1",
             "model": "MRS BUFF B-03 Bizarro",
-            "objective": "fight_1_aggressor"
-        },
-        {
-            "label": "Referee",
-            "name": "referee",
-            "model": "Referee",
-            "objective": "idle_ref_corner"
+            "objective": "keyboard_red_corner"
         }
     ]
 }

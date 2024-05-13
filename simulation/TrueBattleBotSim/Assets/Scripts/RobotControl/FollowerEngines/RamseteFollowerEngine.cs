@@ -5,8 +5,8 @@ using UnityEngine;
 
 public class RamseteFollowerEngine : BaseFollowerEngine
 {
-    [SerializeField] float zeta = 4.0f;
-    [SerializeField] float b = 8.0f;
+    [SerializeField] float zeta = 4.0f;  // Larger values adds damping in the response
+    [SerializeField] float b = 8.0f;  // Larger values make convergence more aggressive like a proportional gain
     public override void Reset()
     {
 

@@ -202,7 +202,7 @@ public class FieldManager : MonoBehaviour
                 timestamp = element.timestamp,
                 x = element.x * x_scale,
                 y = element.y * y_scale,
-                theta = -element.theta + 90.0f,
+                theta = element.theta,
                 vx = element.vx * x_scale,
                 vy = element.vy * y_scale,
                 vtheta = element.vtheta

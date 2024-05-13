@@ -2,15 +2,21 @@ using System;
 using System.Collections.Generic;
 using RosMessageTypes.Geometry;
 using RosMessageTypes.Nav;
+using RosMessageTypes.Std;
+using Unity.Robotics.ROSTCPConnector;
 using UnityEngine;
 
 class BaseFollower : MonoBehaviour
 {
+    [SerializeField] string sequenceProgressTopicName = "sequence_progress";
     protected ControllerInterface controller;
     List<SequenceElementConfig> sequence = new List<SequenceElementConfig>();
     float sequence_time = 0.0f;
     ArrowIndicator arrow;
     BaseFollowerEngine followerEngine;
+    ROSConnection ros;
+    static RosTopicState sequenceProgressTopic = null;
+
 
     public void Start()
     {
@@ -32,10 +38,15 @@ class BaseFollower : MonoBehaviour
         }
         else
         {
-            Debug.Log($"Follower engine: {followerEngine.GetType().Name}");
+            Debug.Log($"{gameObject.name} Follower engine: {followerEngine.GetType().Name}");
         }
 
         Reset();
+        ros = ROSConnection.GetOrCreateInstance();
+        if (sequenceProgressTopic == null)
+        {
+            sequenceProgressTopic = ros.RegisterPublisher<Float64Msg>(sequenceProgressTopicName);
+        }
     }
 
     protected virtual BaseFollowerEngine FindFollowerEngine()
@@ -53,8 +64,12 @@ class BaseFollower : MonoBehaviour
         return engine;
     }
 
-    public void FixedUpdate()
+    public void Update()
     {
+        if (Time.timeScale == 0.0f)
+        {
+            return;
+        }
         updateCommand();
     }
 
@@ -89,6 +104,7 @@ class BaseFollower : MonoBehaviour
         {
             return new TwistMsg();
         }
+        sequenceProgressTopic.Publish(new Float64Msg { data = current_time });
 
         int index = 0;
         while (index < sequence.Count - 1 && sequence[index + 1].timestamp < current_time)
@@ -101,7 +117,7 @@ class BaseFollower : MonoBehaviour
         {
             return new TwistMsg();
         }
-        arrow.Set2D(next.x, 0.1f, next.y, next.theta - 90.0f);
+        arrow.Set2D(next.x, 0.1f, next.y, -next.theta);
         return ComputeVelocity(next);
     }
 

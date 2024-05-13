@@ -1,7 +1,7 @@
 import argparse
 import json
 import math
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 import rospy
 from bw_interfaces.msg import EstimatedObject
