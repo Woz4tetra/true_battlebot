@@ -6053,7 +6053,6 @@ GameObject:
   - component: {fileID: 8227969401044608511}
   - component: {fileID: 4300970013136224358}
   - component: {fileID: 2942874893898380438}
-  - component: {fileID: 1828651711637263332}
   - component: {fileID: 4985250018452182878}
   - component: {fileID: 4195313364929268605}
   - component: {fileID: 3945930661255091538}
@@ -6098,7 +6097,7 @@ ArticulationBody:
   m_GameObject: {fileID: 5523906336024813842}
   m_Enabled: 1
   serializedVersion: 5
-  m_Mass: 0.38845572
+  m_Mass: 0.423509
   m_ParentAnchorPosition: {x: 0, y: 0, z: 0}
   m_ParentAnchorRotation: {x: 0, y: 0, z: 0.7071068, w: 0.7071068}
   m_AnchorPosition: {x: 0, y: 0, z: 0}
@@ -6141,8 +6140,8 @@ ArticulationBody:
   m_LinearDamping: 0
   m_AngularDamping: 0
   m_JointFriction: 0.05
-  m_CenterOfMass: {x: 0.029478, y: 0, z: 0}
-  m_InertiaTensor: {x: 0.00071945507, y: 0.0012394061, z: 0.0005695858}
+  m_CenterOfMass: {x: 0.034438, y: 0, z: 0}
+  m_InertiaTensor: {x: 0.0010081992, y: 0.0015526786, z: 0.0005957404}
   m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
   m_IncludeLayers:
     serializedVersion: 2
@@ -6261,19 +6260,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   baseTopic: mini_bot
---- !u!114 &1828651711637263332
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5523906336024813842}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 44ad33116dfbefafc99b1aace862a2d3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  quality: 0.5
 --- !u!114 &4985250018452182878
 MonoBehaviour:
   m_ObjectHideFlags: 0
