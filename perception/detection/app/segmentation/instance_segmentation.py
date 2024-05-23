@@ -17,11 +17,12 @@ from perception_tools.messages.image import Image
 from torch import Tensor
 
 from app.config.segmentation_config.instance_segmentation_config import InstanceSegmentationConfig
+from app.segmentation.segmentation_interface import SegmentationInterface
 
 BoundingBox = tuple[int, int, int, int]
 
 
-class InstanceSegmentation:
+class InstanceSegmentation(SegmentationInterface):
     def __init__(self, config: InstanceSegmentationConfig) -> None:
         self.model_path = config.model_path
         self.metadata_path = config.metadata_path

@@ -9,12 +9,12 @@ from bw_interfaces.msg import EstimatedObject, EstimatedObjectArray
 from bw_shared.configs.robot_fleet_config import RobotConfig, RobotFleetConfig
 from bw_shared.enums.label import Label
 from bw_shared.enums.robot_team import RobotTeam
+from bw_shared.geometry.rpy import RPY
+from bw_shared.geometry.transform3d import Transform3D
+from bw_shared.geometry.xy import XY
+from bw_shared.geometry.xyz import XYZ
 from bw_tools.configs.rosparam_client import get_shared_config
 from bw_tools.get_param import get_param
-from bw_tools.structs.rpy import RPY
-from bw_tools.structs.transform3d import Transform3D
-from bw_tools.structs.xy import XY
-from bw_tools.structs.xyz import XYZ
 from bw_tools.transforms import lookup_pose_in_frame
 from geometry_msgs.msg import (
     Point,
@@ -48,7 +48,6 @@ class RobotFilter:
         self.update_delay = 1.0 / self.update_rate
 
         self.map_frame = get_param("~map_frame", "map")
-        self.robot_frame_prefix = get_param("~robot_frame_prefix", "base_link")
         self.controlled_robot_name = get_param("~controlled_robot_name", "mini_bot")
         self.estimation_topics = get_param("~estimation_topics", [])
         self.tag_topics = get_param("~tag_topics", [])
@@ -385,9 +384,6 @@ class RobotFilter:
             if not robot_filter.is_in_bounds(self.filter_bounds[0], self.filter_bounds[1]) or robot_filter.is_stale():
                 robot_filter.reset()
 
-    def get_robot_frame_id(self, robot_name: str) -> str:
-        return self.robot_frame_prefix + "_" + robot_name
-
     def state_to_transform(self, state_msg: EstimatedObject) -> TransformStamped:
         transform = TransformStamped()
         transform.header = state_msg.header
@@ -411,13 +407,12 @@ class RobotFilter:
         now = rospy.Time.now()
         filtered_states = EstimatedObjectArray()
         for robot_name, bot_filter in self.robot_filters.items():
-            robot_frame_id = self.get_robot_frame_id(robot_name)
             pose, twist = bot_filter.get_state()
             diameter = self.robot_sizes[robot_name] * 2
 
             state_msg = EstimatedObject(
                 header=RosHeader(frame_id=self.map_frame, stamp=now),
-                child_frame_id=robot_frame_id,
+                child_frame_id=robot_name,
                 pose=pose,
                 twist=twist,
                 size=Vector3(diameter, diameter, diameter),

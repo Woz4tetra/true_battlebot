@@ -1,8 +1,8 @@
 import pytest
 from bw_navigation.selector_algorithms.push_from_behind_selector import PushFromBehindSelector, PushFromBehindState
 from bw_navigation.selector_algorithms.test.helpers import make_match_state
-from bw_tools.structs.pose2d import Pose2D
-from bw_tools.structs.xy import XY
+from bw_shared.geometry.pose2d import Pose2D
+from bw_shared.geometry.xy import XY
 
 
 @pytest.fixture

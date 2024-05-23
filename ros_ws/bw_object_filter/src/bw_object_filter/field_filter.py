@@ -9,12 +9,12 @@ from bw_interfaces.msg import EstimatedObject
 from bw_shared.enums.field_type import FieldType
 from bw_shared.enums.label import Label
 from bw_shared.environment import get_map
+from bw_shared.geometry.rpy import RPY
+from bw_shared.geometry.transform3d import Transform3D
+from bw_shared.geometry.xyz import XYZ
 from bw_tools.configs.rosparam_client import get_shared_config
 from bw_tools.get_param import get_param
 from bw_tools.structs.cage_corner import CageCorner
-from bw_tools.structs.rpy import RPY
-from bw_tools.structs.transform3d import Transform3D
-from bw_tools.structs.xyz import XYZ
 from geometry_msgs.msg import Vector3
 from std_msgs.msg import ColorRGBA, Empty, Header
 from visualization_msgs.msg import Marker, MarkerArray

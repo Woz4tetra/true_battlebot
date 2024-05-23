@@ -9,17 +9,17 @@ import struct
 import genpy
 
 class UVKeypoint(genpy.Message):
-  _md5sum: str = "64be90712af6ea79ae6f103da824ffcf"
+  _md5sum: str = "ff8d7d66dd3e4b731ef14a45d38888b6"
   _type: str = "bw_interfaces/UVKeypoint"
   _has_header: bool = False  # flag to mark the presence of a Header object
-  _full_text: str = """uint32 x
-uint32 y
+  _full_text: str = """float32 x
+float32 y
 """
   __slots__: List[str] = ['x','y']
-  _slot_types: List[str] = ['uint32','uint32']
+  _slot_types: List[str] = ['float32','float32']
 
-  def __init__(self, x: int = None,
-    y: int = None):
+  def __init__(self, x: float = None,
+    y: float = None):
     """
     Constructor. Any message fields that are implicitly/explicitly
     set to None will be assigned a default value. The recommend
@@ -35,11 +35,11 @@ uint32 y
     """
     super(UVKeypoint, self).__init__(**{'x': x, 'y': y})
     if self.x is None:
-      self.x: int = 0
+      self.x: float = 0.
     else:
       self.x = x
     if self.y is None:
-      self.y: int = 0
+      self.y: float = 0.
     else:
       self.y = y
 
@@ -56,7 +56,7 @@ uint32 y
     """
     try:
       _x = self
-      buff.write(_get_struct_2I().pack(_x.x, _x.y))
+      buff.write(_get_struct_2f().pack(_x.x, _x.y))
     except struct.error as se: self._check_types(struct.error("%s: '%s' when writing '%s'" % (type(se), str(se), str(locals().get('_x', self)))))
     except TypeError as te: self._check_types(ValueError("%s: '%s' when writing '%s'" % (type(te), str(te), str(locals().get('_x', self)))))
 
@@ -72,7 +72,7 @@ uint32 y
       _x = self
       start = end
       end += 8
-      (_x.x, _x.y,) = _get_struct_2I().unpack(bytes_[start:end])
+      (_x.x, _x.y,) = _get_struct_2f().unpack(bytes_[start:end])
       return self
     except struct.error as e:
       raise genpy.DeserializationError(e)  # most likely buffer underfill
@@ -86,7 +86,7 @@ uint32 y
     """
     try:
       _x = self
-      buff.write(_get_struct_2I().pack(_x.x, _x.y))
+      buff.write(_get_struct_2f().pack(_x.x, _x.y))
     except struct.error as se: self._check_types(struct.error("%s: '%s' when writing '%s'" % (type(se), str(se), str(locals().get('_x', self)))))
     except TypeError as te: self._check_types(ValueError("%s: '%s' when writing '%s'" % (type(te), str(te), str(locals().get('_x', self)))))
 
@@ -103,7 +103,7 @@ uint32 y
       _x = self
       start = end
       end += 8
-      (_x.x, _x.y,) = _get_struct_2I().unpack(bytes_[start:end])
+      (_x.x, _x.y,) = _get_struct_2f().unpack(bytes_[start:end])
       return self
     except struct.error as e:
       raise genpy.DeserializationError(e)  # most likely buffer underfill
@@ -112,9 +112,9 @@ _struct_I = genpy.struct_I
 def _get_struct_I():
     global _struct_I
     return _struct_I
-_struct_2I = None
-def _get_struct_2I():
-    global _struct_2I
-    if _struct_2I is None:
-        _struct_2I = struct.Struct("<2I")
-    return _struct_2I
+_struct_2f = None
+def _get_struct_2f():
+    global _struct_2f
+    if _struct_2f is None:
+        _struct_2f = struct.Struct("<2f")
+    return _struct_2f

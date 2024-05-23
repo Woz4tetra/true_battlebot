@@ -160,8 +160,9 @@ add_dependencies(base_estimation ${base_estimation_EXPORTED_TARGETS} ${catkin_EX
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-add_executable(object_estimation src/object_estimation.cpp)
+add_executable(segmentation_to_object src/segmentation_to_object.cpp)
 add_executable(motion_tracker src/motion_tracker.cpp)
+add_executable(keypoint_to_object src/keypoint_to_object.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -171,18 +172,23 @@ add_executable(motion_tracker src/motion_tracker.cpp)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
-add_dependencies(object_estimation ${object_estimation_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(segmentation_to_object ${segmentation_to_object_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(motion_tracker ${motion_tracker_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(keypoint_to_object ${keypoint_to_object_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(base_estimation
   ${catkin_LIBRARIES}
 )
-target_link_libraries(object_estimation
+target_link_libraries(segmentation_to_object
   ${catkin_LIBRARIES}
   base_estimation
 )
 target_link_libraries(motion_tracker
+  ${catkin_LIBRARIES}
+  base_estimation
+)
+target_link_libraries(keypoint_to_object
   ${catkin_LIBRARIES}
   base_estimation
 )
@@ -203,10 +209,13 @@ target_link_libraries(motion_tracker
 
 ## Mark executables for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_executables.html
-install(TARGETS object_estimation
+install(TARGETS segmentation_to_object
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 install(TARGETS motion_tracker
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+install(TARGETS keypoint_to_object
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

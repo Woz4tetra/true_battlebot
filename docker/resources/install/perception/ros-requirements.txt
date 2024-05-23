@@ -1,6 +1,7 @@
 --extra-index-url https://rospypi.github.io/simple/
 rospy
 rospy-builder
+roscpp==1.15.11
 actionlib-msgs
 std-msgs
 sensor-msgs
@@ -9,14 +10,7 @@ diagnostic-msgs
 visualization-msgs
 nav_msgs
 cv-bridge
-tf
-tf-conversions
-# tf2-geometry-msgs
-# tf2-msgs
-# tf2-msgs-stubs
-# tf2-py
-# tf2-ros
-# tf2-sensor-msgs
+image_geometry
 
 genmsg @ git+https://github.com/ros/genmsg.git/@4e70df6851d37885a10fb5bc9c48e7f08f5e4339
 genpy @ git+https://github.com/Woz4tetra/genpy.git/@7ba2cfabaf6a9954a5c7db6118579d35f090207e

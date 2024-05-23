@@ -1,4 +1,4 @@
-from bw_tools.structs.pose2d import Pose2D
+from bw_shared.geometry.pose2d import Pose2D
 from geometry_msgs.msg import PoseStamped
 
 from bw_navigation.selector_algorithms.match_state import MatchState, SelectionResult

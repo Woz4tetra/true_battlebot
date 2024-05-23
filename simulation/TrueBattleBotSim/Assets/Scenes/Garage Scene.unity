@@ -13252,7 +13252,7 @@ MonoBehaviour:
   baseTopic: camera_0
   imageWidth: 480
   imageHeight: 270
-  publishRate: 10
+  publishRate: 1
   segmentationTopic: simulated_segmentation
   publishSegmentationLabels: 1
   captureConfig:

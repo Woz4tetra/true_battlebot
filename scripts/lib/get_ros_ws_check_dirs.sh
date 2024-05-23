@@ -15,6 +15,7 @@ for root, dirs, files in os.walk(SEARCH_DIR):
         if dir in ("src", "scripts"):
             check_dirs.append(os.path.join(root, dir))
 check_dirs.append(os.path.join(PROJECT_DIR, "ros_ws", "bw_tools"))
+check_dirs.append(os.path.join(PROJECT_DIR, "shared", "bw_shared"))
 check_dirs.append(os.path.join(PROJECT_DIR, "scripts"))
 
 filtered_check_dirs = []

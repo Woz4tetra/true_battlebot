@@ -118,8 +118,8 @@ std::vector<std::vector<cv::Point>> get_cv_contours(std::vector<bw_interfaces::C
         bw_interfaces::Contour contour = contours[contour_index];
         for (size_t points_index = 0; points_index < contour.points.size(); points_index++)
         {
-            int contour_x = contour.points[points_index].x;
-            int contour_y = contour.points[points_index].y;
+            int contour_x = (int)contour.points[points_index].x;
+            int contour_y = (int)contour.points[points_index].y;
             cv::Point point(contour_x, contour_y);
             cv_contours[0].push_back(point);
         }

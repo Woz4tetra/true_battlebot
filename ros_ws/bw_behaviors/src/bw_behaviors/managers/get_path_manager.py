@@ -3,7 +3,7 @@ from typing import Optional
 import actionlib
 import rospy
 from actionlib_msgs.msg import GoalStatus
-from bw_tools.structs.pose2d_stamped import Pose2DStamped
+from bw_shared.geometry.pose2d_stamped import Pose2DStamped
 from mbf_msgs.msg import GetPathAction, GetPathGoal, GetPathResult
 from nav_msgs.msg import Path
 from py_trees.common import Status

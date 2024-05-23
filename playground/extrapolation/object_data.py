@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from bw_tools.structs.transform3d import Transform3D
+from bw_shared.geometry.transform3d import Transform3D
 from geometry_msgs.msg import PoseStamped, TransformStamped
 from std_msgs.msg import Header
 

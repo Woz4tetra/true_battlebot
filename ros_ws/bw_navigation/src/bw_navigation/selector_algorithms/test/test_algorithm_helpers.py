@@ -12,8 +12,8 @@ from bw_navigation.selector_algorithms.algorithm_helpers import (
     is_point_in_bounds,
 )
 from bw_navigation.selector_algorithms.test.helpers import make_match_state
-from bw_tools.structs.pose2d import Pose2D
-from bw_tools.structs.xy import XY
+from bw_shared.geometry.pose2d import Pose2D
+from bw_shared.geometry.xy import XY
 from geometry_msgs.msg import Vector3
 
 

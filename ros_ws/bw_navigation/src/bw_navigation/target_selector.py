@@ -6,9 +6,9 @@ import numpy as np
 import rospy
 from bw_interfaces.msg import EstimatedObject, EstimatedObjectArray
 from bw_shared.enums.robot_team import RobotTeam
+from bw_shared.geometry.pose2d import Pose2D
 from bw_tools.configs.rosparam_client import get_shared_config
 from bw_tools.get_param import get_param
-from bw_tools.structs.pose2d import Pose2D
 from costmap_converter.msg import ObstacleArrayMsg, ObstacleMsg
 from geometry_msgs.msg import Point32, Polygon, PoseStamped
 from sensor_msgs import point_cloud2

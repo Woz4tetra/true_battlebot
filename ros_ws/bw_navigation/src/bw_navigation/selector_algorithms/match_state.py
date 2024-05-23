@@ -2,8 +2,8 @@ from dataclasses import dataclass
 from functools import cached_property
 
 from bw_interfaces.msg import EstimatedObject
-from bw_tools.structs.pose2d import Pose2D
-from bw_tools.structs.xy import XY
+from bw_shared.geometry.pose2d import Pose2D
+from bw_shared.geometry.xy import XY
 from geometry_msgs.msg import PoseStamped
 
 

@@ -19,7 +19,7 @@ reset_costmap:
     layer_names: ["obstacle_layer"]
 
 map_frame: map
-robot_frame: base_link_mini_bot
+robot_frame: mini_bot
 
 # The rate in Hz at which to run the planning loop
 planner_frequency: 2.0 # 0.0

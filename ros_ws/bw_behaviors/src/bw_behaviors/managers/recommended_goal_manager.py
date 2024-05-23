@@ -1,9 +1,9 @@
 from typing import Optional
 
 import rospy
+from bw_shared.geometry.pose2d import Pose2D
+from bw_shared.geometry.pose2d_stamped import Pose2DStamped
 from bw_shared.messages.header import Header
-from bw_tools.structs.pose2d import Pose2D
-from bw_tools.structs.pose2d_stamped import Pose2DStamped
 from geometry_msgs.msg import PoseStamped
 
 

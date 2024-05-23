@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from ctypes import c_float
 
+from bw_shared.geometry.xyz import XYZ
 from sensor_msgs.msg import Imu
 from tf_conversions import transformations
 
 from bw_tools.structs.teleop_bridge.header import Header
 from bw_tools.structs.teleop_bridge.packet import Packet, build_struct
 from bw_tools.structs.teleop_bridge.packet_type import PacketType
-from bw_tools.structs.xyz import XYZ
 
 Vector3DStruct = build_struct(
     [

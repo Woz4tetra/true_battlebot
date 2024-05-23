@@ -3,7 +3,7 @@ import math
 from typing import Dict, List, Mapping, Tuple
 
 import numpy as np
-from bw_tools.structs.pose2d import Pose2D
+from bw_shared.geometry.pose2d import Pose2D
 from geometry_msgs.msg import PoseWithCovariance
 
 from bw_object_filter.filter_models.drive_kf_model import DriveKalmanModel

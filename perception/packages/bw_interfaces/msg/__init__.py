@@ -5,6 +5,8 @@ from ._Contour import *
 from ._EstimatedObject import *
 from ._EstimatedObjectArray import *
 from ._HealthSummary import *
+from ._KeypointInstance import *
+from ._KeypointInstanceArray import *
 from ._Labels import *
 from ._MotorCharacterizationSample import *
 from ._MotorVelocities import *

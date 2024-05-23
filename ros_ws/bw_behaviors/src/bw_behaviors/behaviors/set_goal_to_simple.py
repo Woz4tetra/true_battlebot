@@ -1,5 +1,5 @@
 import rospy
-from bw_tools.structs.pose2d_stamped import Pose2DStamped
+from bw_shared.geometry.pose2d_stamped import Pose2DStamped
 from geometry_msgs.msg import PoseStamped
 from py_trees.behaviour import Behaviour
 from py_trees.common import Status

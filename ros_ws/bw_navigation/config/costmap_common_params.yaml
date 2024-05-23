@@ -1,6 +1,6 @@
 ### Common costmap parameters ###
 global_frame: map
-robot_base_frame: base_link_mini_bot
+robot_base_frame: mini_bot
 resolution: 0.025
 rolling_window: false
 update_frequency: 3.0

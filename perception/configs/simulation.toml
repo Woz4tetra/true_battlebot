@@ -28,14 +28,11 @@ type = "SimulatedSegmentation"
 [field_segmentation.simulated_to_real_labels]
 "Field" = "field"
 
-[robot_segmentation]
-type = "SimulatedSegmentation"
-debug = false
-apply_noise = false
-random_sample_interval = 0.5
+[robot_keypoint]
+type = "SimulatedKeypoint"
 
-[robot_segmentation.simulated_to_real_labels]
-"Mini bot" = "controlled_robot"
-"Main bot" = "friendly_robot"
-"Enemy bot" = "robot"
-"Referee" = "referee"
+[robot_keypoint.simulated_to_real_labels]
+"mini_bot" = "controlled_robot"
+"main_bot" = "friendly_robot"
+"opponent_1" = "robot"
+"referee" = "referee"

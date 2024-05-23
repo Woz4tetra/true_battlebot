@@ -11,7 +11,7 @@ from bw_interfaces.msg._Contour import Contour as bw_interfaces_msg_Contour
 from bw_interfaces.msg._UVKeypoint import UVKeypoint as bw_interfaces_msg_UVKeypoint
 
 class SegmentationInstance(genpy.Message):
-  _md5sum: str = "81548aa72ad9cd0df8f9d9a3b2415a2b"
+  _md5sum: str = "55a310d93dad04c0354a009bb2379b30"
   _type: str = "bw_interfaces/SegmentationInstance"
   _has_header: bool = False  # flag to mark the presence of a Header object
   _full_text: str = """bw_interfaces/Contour[] contours
@@ -27,8 +27,8 @@ bw_interfaces/UVKeypoint[] points
 float64 area
 ================================================================================
 MSG: bw_interfaces/UVKeypoint
-uint32 x
-uint32 y
+float32 x
+float32 y
 """
   __slots__: List[str] = ['contours','score','label','class_index','object_index','has_holes']
   _slot_types: List[str] = ['bw_interfaces/Contour[]','float32','string','uint32','uint32','bool']
@@ -97,7 +97,7 @@ uint32 y
         buff.write(_struct_I.pack(length))
         for val2 in val1.points:
           _x = val2
-          buff.write(_get_struct_2I().pack(_x.x, _x.y))
+          buff.write(_get_struct_2f().pack(_x.x, _x.y))
         _x = val1.area
         buff.write(_get_struct_d().pack(_x))
       _x = self.score
@@ -139,7 +139,7 @@ uint32 y
           _x = val2
           start = end
           end += 8
-          (_x.x, _x.y,) = _get_struct_2I().unpack(bytes_[start:end])
+          (_x.x, _x.y,) = _get_struct_2f().unpack(bytes_[start:end])
           val1.points.append(val2)
         start = end
         end += 8
@@ -181,7 +181,7 @@ uint32 y
         buff.write(_struct_I.pack(length))
         for val2 in val1.points:
           _x = val2
-          buff.write(_get_struct_2I().pack(_x.x, _x.y))
+          buff.write(_get_struct_2f().pack(_x.x, _x.y))
         _x = val1.area
         buff.write(_get_struct_d().pack(_x))
       _x = self.score
@@ -224,7 +224,7 @@ uint32 y
           _x = val2
           start = end
           end += 8
-          (_x.x, _x.y,) = _get_struct_2I().unpack(bytes_[start:end])
+          (_x.x, _x.y,) = _get_struct_2f().unpack(bytes_[start:end])
           val1.points.append(val2)
         start = end
         end += 8
@@ -255,18 +255,18 @@ _struct_I = genpy.struct_I
 def _get_struct_I():
     global _struct_I
     return _struct_I
-_struct_2I = None
-def _get_struct_2I():
-    global _struct_2I
-    if _struct_2I is None:
-        _struct_2I = struct.Struct("<2I")
-    return _struct_2I
 _struct_2IB = None
 def _get_struct_2IB():
     global _struct_2IB
     if _struct_2IB is None:
         _struct_2IB = struct.Struct("<2IB")
     return _struct_2IB
+_struct_2f = None
+def _get_struct_2f():
+    global _struct_2f
+    if _struct_2f is None:
+        _struct_2f = struct.Struct("<2f")
+    return _struct_2f
 _struct_d = None
 def _get_struct_d():
     global _struct_d

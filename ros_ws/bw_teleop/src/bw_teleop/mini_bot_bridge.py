@@ -22,7 +22,6 @@ class MiniBotBridge:
         port = get_param("~port", 4176)
         device_id = self.mini_bot_config.bridge_id
         broadcast_address = get_param("~broadcast_address", "192.168.8.255")
-        self.robot_frame_prefix = get_param("~robot_frame_prefix", "base_link")
 
         self.poll_rate = get_param("~poll_rate", 1000.0)
         self.send_rate = get_param("~send_rate", 10.0)
@@ -86,7 +85,7 @@ class MiniBotBridge:
         msg = imu.to_msg()
         self.prev_active_time = time.perf_counter()
         msg.header.stamp = rospy.Time.now()
-        msg.header.frame_id = self.robot_frame_prefix + "_" + self.mini_bot_config.name
+        msg.header.frame_id = self.mini_bot_config.name
         self.imu_pub.publish(msg)
 
     def check_ping(self) -> None:

@@ -1,5 +1,5 @@
 import numpy as np
-from bw_tools.structs.pose2d import Pose2D
+from bw_shared.geometry.pose2d import Pose2D
 from data_extractor import load_data
 from label_colors import COLORS
 from matplotlib import pyplot as plt

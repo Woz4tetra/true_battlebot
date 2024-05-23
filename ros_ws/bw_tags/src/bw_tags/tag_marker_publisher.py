@@ -6,8 +6,8 @@ import rospy
 import tf2_geometry_msgs
 import tf2_ros
 from apriltag_ros.msg import AprilTagDetection, AprilTagDetectionArray
+from bw_shared.geometry.transform3d import Transform3D
 from bw_tools.get_param import get_param
-from bw_tools.structs.transform3d import Transform3D
 from geometry_msgs.msg import Point, Pose, PoseArray, PoseStamped, Quaternion, Vector3
 from std_msgs.msg import ColorRGBA
 from tf2_ros import ConnectivityException, ExtrapolationException, LookupException  # type: ignore

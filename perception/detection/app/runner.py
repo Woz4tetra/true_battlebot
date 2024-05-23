@@ -4,7 +4,7 @@ import time
 from typing import Protocol, cast
 
 import rospy
-from bw_interfaces.msg import EstimatedObject, SegmentationInstanceArray
+from bw_interfaces.msg import EstimatedObject, KeypointInstanceArray, SegmentationInstanceArray
 from bw_shared.configs.shared_config import SharedConfig
 from bw_shared.enums.field_type import FieldType
 from bw_shared.environment import get_map, get_robot
@@ -24,6 +24,8 @@ from app.field_filter.field_filter_interface import FieldFilterInterface
 from app.field_filter.field_filter_loader import load_field_filter
 from app.field_filter.field_request_handler import FieldRequestHandler
 from app.json_logger import initialize
+from app.keypoint.keypoint_interface import KeypointInterface
+from app.keypoint.keypoint_loader import load_keypoint
 from app.segmentation.segmentation_interface import SegmentationInterface
 from app.segmentation.segmentation_loader import load_segmentation
 from app.tick_regulator import regulate_tick
@@ -47,12 +49,12 @@ class Runner:
         )
         self.point_cloud_publisher: RosPublisher[PointCloud2] = self.container.resolve_by_name("point_cloud_publisher")
 
-        self.robot_segmentation: SegmentationInterface = self.container.resolve_by_name("robot_segmentation")
+        self.robot_keypoint: KeypointInterface = self.container.resolve_by_name("robot_keypoint")
         self.robot_debug_image_publisher: RosPublisher[Image] = self.container.resolve_by_name(
             "robot_debug_image_publisher"
         )
-        self.robot_segmentation_publisher: RosPublisher[SegmentationInstanceArray] = self.container.resolve_by_name(
-            "robot_segmentation_publisher"
+        self.robot_keypoint_publisher: RosPublisher[KeypointInstanceArray] = self.container.resolve_by_name(
+            "robot_keypoint_publisher"
         )
         self.prev_image_time = time.time()
         self.logger = logging.getLogger("perception")
@@ -76,10 +78,10 @@ class Runner:
         if camera_data is None or camera_data.color_image.data.size == 0:
             return
         self.prev_image_time = time.time()
-        robot_seg, debug_image = self.robot_segmentation.process_image(camera_data.color_image)
+        robot_points, debug_image = self.robot_keypoint.process_image(camera_data.color_image)
         if debug_image:
             self.robot_debug_image_publisher.publish(debug_image.to_msg())
-        self.robot_segmentation_publisher.publish(robot_seg)
+        self.robot_keypoint_publisher.publish(robot_points)
 
     def perceive_field(self) -> None:
         if not self.field_request_handler.has_request(self.prev_image_time):
@@ -161,18 +163,18 @@ def make_field_segmentation(container: Container) -> None:
     logger.info(f"Field segmentation: {field_segmentation}")
 
 
-def make_robot_segmentation(container: Container) -> None:
+def make_robot_keypoint(container: Container) -> None:
     config = container.resolve(Config)
     namespace = config.camera_topic.namespace
-    robot_segmentation = load_segmentation(container, config.robot_segmentation)
+    robot_keypoint = load_keypoint(container, config.robot_keypoint)
     robot_debug_image_publisher = RosPublisher(namespace + "/robot/debug_image", Image)
-    robot_segmentation_publisher = RosPublisher(namespace + "/robot/segmentation", SegmentationInstanceArray)
+    robot_keypoint_publisher = RosPublisher(namespace + "/robot/keypoints", KeypointInstanceArray)
 
-    container.register(robot_segmentation, "robot_segmentation")
-    container.register(robot_segmentation_publisher, "robot_segmentation_publisher")
+    container.register(robot_keypoint, "robot_keypoint")
+    container.register(robot_keypoint_publisher, "robot_keypoint_publisher")
     container.register(robot_debug_image_publisher, "robot_debug_image_publisher")
 
-    logger.info(f"Robot segmentation: {robot_segmentation}")
+    logger.info(f"Robot segmentation: {robot_keypoint}")
 
 
 def make_field_interface(container: Container) -> None:
@@ -214,7 +216,7 @@ def main() -> None:
     make_ros_comms(container)
     make_camera(container)
     make_field_segmentation(container)
-    make_robot_segmentation(container)
+    make_robot_keypoint(container)
     make_field_interface(container)
     make_field_request_handler(container)
 

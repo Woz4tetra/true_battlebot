@@ -46,13 +46,13 @@ def int_to_flags(value: int, length: int) -> list[bool]:
     return [bool((value >> i) & 1) for i in range(length)]
 
 
-def contour_center(contour: Contour) -> tuple[int, int]:
+def contour_center(contour: Contour) -> tuple[float, float]:
     x = sum([point.x for point in contour.points]) // len(contour.points)
     y = sum([point.y for point in contour.points]) // len(contour.points)
     return x, y
 
 
-def multi_contour_center(contours: list[Contour]) -> tuple[int, int]:
+def multi_contour_center(contours: list[Contour]) -> tuple[float, float]:
     x = sum([contour_center(contour)[0] for contour in contours]) // len(contours)
     y = sum([contour_center(contour)[1] for contour in contours]) // len(contours)
     return x, y
@@ -95,8 +95,8 @@ class NoiseGrid:
         )
         for segmentation in segmentation_array.instances:
             x, y = multi_contour_center(segmentation.contours)
-            cell_x = x // cell_width
-            cell_y = y // cell_height
+            cell_x = int(x) // cell_width
+            cell_y = int(y) // cell_height
             noise_index = int(self.grid[cell_y, cell_x])
             filtered_seg = segmentation
             if noise_index != 0:
@@ -239,6 +239,6 @@ class SimulatedSegmentation(SegmentationInterface):
     def to_contours_msg(self, contours: np.ndarray) -> Contour:
         contour_msg = Contour([], 0.0)
         for x, y in contours[:, 0]:
-            contour_msg.points.append(UVKeypoint(int(x), int(y)))
+            contour_msg.points.append(UVKeypoint(x, y))
         contour_msg.area = cv2.contourArea(contours)
         return contour_msg

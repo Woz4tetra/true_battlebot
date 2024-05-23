@@ -1,8 +1,8 @@
 import math
 
 from bw_interfaces.msg import EstimatedObject
-from bw_tools.structs.pose2d import Pose2D
-from bw_tools.structs.xy import XY
+from bw_shared.geometry.pose2d import Pose2D
+from bw_shared.geometry.xy import XY
 
 from bw_navigation.selector_algorithms.match_state import MatchState
 
