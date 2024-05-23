@@ -10,7 +10,7 @@ public abstract class BaseRectangleSensor : BaseGameObjectSensor
         foreach (GameObject obj in objs)
         {
             RectangleTarget tag = obj.GetComponent<RectangleTarget>();
-            if (tag == null || !IsVisible(obj))
+            if (tag == null || !IsVisible(tag.gameObject))
             {
                 continue;
             }

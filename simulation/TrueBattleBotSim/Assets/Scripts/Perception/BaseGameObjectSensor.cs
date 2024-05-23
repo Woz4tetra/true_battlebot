@@ -79,13 +79,12 @@ public abstract class BaseGameObjectSensor : MonoBehaviour
     protected bool IsVisible(GameObject obj)
     {
         Renderer renderer = obj.GetComponentInChildren<Renderer>();
-        Plane[] planes = GeometryUtility.CalculateFrustumPlanes(cameraView);
-
         if (renderer == null)
         {
-            Debug.LogWarning($"Object {obj.name} does not have a renderer");
             return false;
         }
+
+        Plane[] planes = GeometryUtility.CalculateFrustumPlanes(cameraView);
         if (GeometryUtility.TestPlanesAABB(planes, renderer.bounds))
         {
             RaycastHit hit;
