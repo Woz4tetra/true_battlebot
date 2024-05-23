@@ -5,12 +5,11 @@ import numpy as np
 from app.config.keypoint_config.simulated_keypoint_config import SimulatedKeypointConfig
 from app.keypoint.ground_truth_manager import GroundTruthManager
 from app.keypoint.keypoint_interface import KeypointInterface
-from bw_interfaces.msg import KeypointInstance, KeypointInstanceArray, UVKeypoint
+from bw_interfaces.msg import EstimatedObject, KeypointInstance, KeypointInstanceArray, UVKeypoint
 from bw_shared.enums.keypoint_name import RobotKeypointsNames
 from bw_shared.enums.label import Label
 from bw_shared.geometry.transform3d import Transform3D
 from image_geometry import PinholeCameraModel
-from nav_msgs.msg import Odometry
 from perception_tools.messages.image import Image
 from sensor_msgs.msg import CameraInfo
 
@@ -47,30 +46,39 @@ class SimulatedKeypoint(KeypointInterface):
         )
         debug_image = Image.from_other(rgb_image) if self.debug else None
         object_counts = {label: 0 for label in self.real_model_labels}
-        for odom in robots:
-            instance = self.odometry_to_keypoint(self.model, debug_image, odom, object_counts)
+        for robot in robots:
+            instance = self.odometry_to_keypoint(self.model, debug_image, robot, object_counts)
+            if instance is None:
+                self.logger.warning("Failed to convert odometry to keypoint instance")
+                continue
             array.instances.append(instance)
         return array, debug_image
 
     def odometry_to_keypoint(
-        self, model: PinholeCameraModel, debug_image: Image | None, odometry: Odometry, object_counts: dict[Label, int]
-    ) -> KeypointInstance:
+        self,
+        model: PinholeCameraModel,
+        debug_image: Image | None,
+        robot: EstimatedObject,
+        object_counts: dict[Label, int],
+    ) -> KeypointInstance | None:
         """
-        Convert odometry to keypoint instance.
-        Using the assumed radius, project forward and backward in robot space.
+        Convert robot estimated object to keypoint instance.
+        Using the size field, project forward and backward in robot space.
         Compute these two points in camera world space.
         Project these two points to pixel space.
         Fill the keypoint instance with the pixel coordinates.
         """
-        label = self.simulated_to_real_labels[odometry.child_frame_id]
-        radius = self.config.radii.get(odometry.child_frame_id, self.config.default_radius)
-        transform = Transform3D.from_pose_msg(odometry.pose.pose)
+        label = self.simulated_to_real_labels[robot.child_frame_id]
+        radius = max(robot.size.x, robot.size.y) / 2
+        transform = Transform3D.from_pose_msg(robot.pose.pose)
         forward_robot_point = np.array([radius, 0, 0, 1])
         backward_robot_point = np.array([-radius, 0, 0, 1])
         forward_pixel = self.robot_point_to_camera_pixel(transform, forward_robot_point, model)
         backward_pixel = self.robot_point_to_camera_pixel(transform, backward_robot_point, model)
         object_index = object_counts[label]
         object_counts[label] += 1
+        if forward_pixel is None or backward_pixel is None:
+            return None
 
         if debug_image:
             cv2.line(
@@ -103,7 +111,9 @@ class SimulatedKeypoint(KeypointInterface):
 
     def robot_point_to_camera_pixel(
         self, camera_to_robot: Transform3D, robot_point: np.ndarray, model: PinholeCameraModel
-    ) -> UVKeypoint:
+    ) -> UVKeypoint | None:
         camera_point = np.dot(camera_to_robot.tfmat, robot_point)
         pixel = model.project3dToPixel(camera_point[:3])
+        if np.any(np.isnan(pixel)):
+            return None
         return UVKeypoint(x=pixel[0], y=pixel[1])

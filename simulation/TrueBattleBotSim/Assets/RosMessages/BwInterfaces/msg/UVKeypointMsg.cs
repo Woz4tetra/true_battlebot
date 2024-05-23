@@ -13,16 +13,16 @@ namespace RosMessageTypes.BwInterfaces
         public const string k_RosMessageName = "bw_interfaces/UVKeypoint";
         public override string RosMessageName => k_RosMessageName;
 
-        public uint x;
-        public uint y;
+        public float x;
+        public float y;
 
         public UVKeypointMsg()
         {
-            this.x = 0;
-            this.y = 0;
+            this.x = 0.0f;
+            this.y = 0.0f;
         }
 
-        public UVKeypointMsg(uint x, uint y)
+        public UVKeypointMsg(float x, float y)
         {
             this.x = x;
             this.y = y;

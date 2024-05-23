@@ -3,7 +3,6 @@ using UnityEngine;
 public class RectangleTarget : MonoBehaviour
 {
     [SerializeField] private int tagId = 0;
-    [SerializeField] private string tagName = "";
     [SerializeField] Renderer tagRenderer;
 
     void Start()
@@ -17,11 +16,6 @@ public class RectangleTarget : MonoBehaviour
     public int GetTagId()
     {
         return tagId;
-    }
-
-    public string GetTagName()
-    {
-        return tagName;
     }
 
     public Vector3 GetDimensions()

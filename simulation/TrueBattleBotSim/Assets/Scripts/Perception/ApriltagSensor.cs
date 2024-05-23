@@ -9,7 +9,7 @@ using UnityEngine;
 public class ApriltagSensor : BaseRectangleSensor
 {
     [SerializeField] private string topic = "detections";
-    override protected void BaseRectangleSensorStart()
+    override protected void BaseGameObjectSensorStart()
     {
         ros.RegisterPublisher<AprilTagDetectionArrayMsg>(topic);
     }
@@ -37,7 +37,7 @@ public class ApriltagSensor : BaseRectangleSensor
         {
             AprilTagDetectionMsg tagMsg = new AprilTagDetectionMsg
             {
-                id = new int[] { target.tagId },
+                id = new int[] { target.objectId },
                 size = new double[] { Mathf.Max(target.dimensions.x, target.dimensions.y, target.dimensions.z) },
                 pose = {
                     header = header,

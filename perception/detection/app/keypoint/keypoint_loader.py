@@ -7,7 +7,7 @@ from app.config.keypoint_config.simulated_keypoint_config import SimulatedKeypoi
 from app.config.keypoint_config.yolo_keypoint_config import YoloKeypointConfig
 from app.container import Container
 from app.keypoint.ground_truth_manager import GroundTruthManager
-from nav_msgs.msg import Odometry
+from bw_interfaces.msg import EstimatedObjectArray
 from perception_tools.rosbridge.ros_poll_subscriber import RosPollSubscriber
 from sensor_msgs.msg import CameraInfo
 
@@ -22,11 +22,8 @@ def load_ground_truth_manager(container: Container, config: SimulatedKeypointCon
     main_config = container.resolve(Config)
     ns = main_config.camera_topic.namespace
     camera_info_sub = RosPollSubscriber(ns + "/rgb/camera_info", CameraInfo)
-    odom_subs = []
-    for name in config.simulated_to_real_labels:
-        odom_sub = RosPollSubscriber(f"/{name}/odom", Odometry)
-        odom_subs.append(odom_sub)
-    return GroundTruthManager(odom_subs, camera_info_sub)
+    robots_sub = RosPollSubscriber("/camera_0/ground_truth/robots", EstimatedObjectArray)
+    return GroundTruthManager(robots_sub, camera_info_sub)
 
 
 def load_keypoint(container: Container, config: KeypointConfig) -> KeypointImplementation:

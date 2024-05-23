@@ -3101,7 +3101,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   tagId: 0
-  tagName: field
   tagRenderer: {fileID: 645172358}
 --- !u!1 &663762440
 GameObject:
@@ -4862,6 +4861,7 @@ MonoBehaviour:
   debugRayCast: 0
   publishRate: 4
   viewAngleThreshold: 50
+  tagFilters: []
   topic: /camera_1/tag_detections
 --- !u!114 &867903856
 MonoBehaviour:
@@ -13641,15 +13641,16 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1637530238957482425}
+  - component: {fileID: 2960329944041769614}
   - component: {fileID: 3634426207488244914}
   - component: {fileID: 5139225572738745594}
   - component: {fileID: 8348069310365922131}
   - component: {fileID: 6078746320671436741}
   - component: {fileID: 8809695232415556564}
   - component: {fileID: 8809695232415556565}
-  - component: {fileID: 2960329944041769614}
   - component: {fileID: 4595039344115579849}
   - component: {fileID: 8809695232415556566}
+  - component: {fileID: 8809695232415556567}
   m_Layer: 0
   m_Name: Slow Camera
   m_TagString: MainCamera
@@ -13963,6 +13964,7 @@ MonoBehaviour:
   debugRayCast: 0
   publishRate: 4
   viewAngleThreshold: 55
+  tagFilters: []
   topic: /camera_0/tag_detections
 --- !u!1 &6105163997810151798
 GameObject:
@@ -15617,6 +15619,7 @@ MonoBehaviour:
   debugRayCast: 0
   publishRate: 0
   viewAngleThreshold: 70
+  tagFilters: []
   plane_request_topic: camera_0/plane_request
   plane_response_topic: camera_0/plane_response
 --- !u!114 &8809695232415556565
@@ -15638,6 +15641,7 @@ MonoBehaviour:
   debugRayCast: 0
   publishRate: 1
   viewAngleThreshold: 70
+  tagFilters: []
   topic: /camera_0/simulated_field_result
   child_frame_id: map_relative
   label: field
@@ -15656,6 +15660,31 @@ MonoBehaviour:
   topic: /camera_0/ground_truth/pose
   frame_id: map
   referenceObject: {fileID: 8473918206287048381}
+--- !u!114 &8809695232415556567
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5601284786778337271}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 79b8e5816a4c6d9aeb68896e19ac9064, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxDistance: 5
+  layerMask:
+    serializedVersion: 2
+    m_Bits: 8192
+  debugRayCast: 0
+  publishRate: 10
+  viewAngleThreshold: 70
+  tagFilters:
+  - Mini bot
+  - Main bot
+  - Enemy bot
+  - Referee
+  topic: /camera_0/ground_truth/robots
 --- !u!1 &8843940501417694363
 GameObject:
   m_ObjectHideFlags: 0

@@ -12,7 +12,7 @@ public class ZedPlaneSensor : BaseRectangleSensor
     private VisibleTarget[] prevTargets;
     Matrix4x4 fieldRotateMatrix = Matrix4x4.TRS(Vector3.zero, Quaternion.Euler(90.0f, 90.0f, 0.0f), Vector3.one);
 
-    override protected void BaseRectangleSensorStart()
+    override protected void BaseGameObjectSensorStart()
     {
         ros.RegisterPublisher<PoseStampedMsg>(plane_response_topic);
         ros.Subscribe<PointStampedMsg>(plane_request_topic, PlaneRequestCallback);

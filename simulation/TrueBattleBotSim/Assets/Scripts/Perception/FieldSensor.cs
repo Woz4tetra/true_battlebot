@@ -13,7 +13,7 @@ public class FieldSensor : BaseRectangleSensor
     [SerializeField] private string child_frame_id = "map_relative";
     [SerializeField] private string label = "field";
 
-    override protected void BaseRectangleSensorStart()
+    override protected void BaseGameObjectSensorStart()
     {
         ros.RegisterPublisher<EstimatedObjectMsg>(topic);
     }
