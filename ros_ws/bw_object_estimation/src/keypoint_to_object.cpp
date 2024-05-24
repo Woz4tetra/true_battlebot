@@ -79,7 +79,7 @@ void KeypointToObject::keypoint_callback(const bw_interfaces::KeypointInstanceAr
         }
         cv::Point3d front_point = points[front_index];
         cv::Point3d back_point = points[back_index];
-        geometry_msgs::Pose pose = get_pose_from_points(front_point, back_point);
+        geometry_msgs::Pose pose = get_pose_from_points(front_point, back_point, get_plane_normal());
 
         bw_interfaces::EstimatedObject robot_msg;
         robot_msg.label = instance.label;
@@ -114,30 +114,37 @@ std::vector<cv::Point3d> KeypointToObject::project_keypoints_to_field(bw_interfa
     return points;
 }
 
-geometry_msgs::Pose KeypointToObject::get_pose_from_points(cv::Point3d front_point, cv::Point3d back_point)
+geometry_msgs::Pose KeypointToObject::get_pose_from_points(cv::Point3d front_point, cv::Point3d back_point, cv::Point3d plane_normal)
 {
-    geometry_msgs::Pose pose;
-    cv::Point3d direction = back_point - front_point;
-    cv::Point3d center = (front_point + back_point) / 2;
-    cv::Point3d up = cv::Point3d(0, 0, 1);
-    cv::Point3d right = up.cross(direction);
-    right = right / cv::norm(right);
-    up = direction.cross(right);
-    up = up / cv::norm(up);
+    Eigen::Vector3d eigen_front_point(front_point.x, front_point.y, front_point.z);
+    Eigen::Vector3d eigen_back_point(back_point.x, back_point.y, back_point.z);
+    Eigen::Vector3d eigen_plane_normal(plane_normal.x, plane_normal.y, plane_normal.z);
 
-    cv::Matx33d rotation(right.x, up.x, direction.x,
-                         right.y, up.y, direction.y,
-                         right.z, up.z, direction.z);
-    cv::Vec3d rvec;
-    cv::Rodrigues(rotation, rvec);
-    pose.position.x = center.x;
-    pose.position.y = center.y;
-    pose.position.z = center.z;
-    pose.orientation.x = rvec[0];
-    pose.orientation.y = rvec[1];
-    pose.orientation.z = rvec[2];
-    pose.orientation.w = 1.0;
-    return pose;
+    // Calculate the direction vector from front_point to back_point
+    Eigen::Vector3d direction = (eigen_front_point - eigen_back_point).normalized();
+
+    // Get the plane normal
+
+    // Calculate the rotation from the plane normal to the direction vector
+    Eigen::Quaterniond rotation = Eigen::Quaterniond::FromTwoVectors(eigen_plane_normal, direction);
+
+    // Compute center point
+    Eigen::Vector3d center = (eigen_front_point + eigen_back_point) / 2.0;
+
+    // The pose is then defined by the front_point and the rotation
+    Eigen::Affine3d pose = Eigen::Translation3d(center) * rotation;
+
+    // Convert the pose to a geometry_msgs::Pose and return it
+    geometry_msgs::Pose pose_msg;
+    pose_msg.position.x = pose.translation()[0];
+    pose_msg.position.y = pose.translation()[1];
+    pose_msg.position.z = pose.translation()[2];
+    pose_msg.orientation.w = rotation.w();
+    pose_msg.orientation.x = rotation.x();
+    pose_msg.orientation.y = rotation.y();
+    pose_msg.orientation.z = rotation.z();
+
+    return pose_msg;
 }
 
 void KeypointToObject::fill_marker_array(int obj_index, bw_interfaces::EstimatedObject &robot_msg, visualization_msgs::MarkerArray &robot_markers)

@@ -126,7 +126,12 @@
         "codecvt": "cpp",
         "*.txx": "cpp",
         "future": "cpp",
-        "core": "cpp"
+        "core": "cpp",
+        "compare": "cpp",
+        "concepts": "cpp",
+        "numbers": "cpp",
+        "semaphore": "cpp",
+        "stop_token": "cpp"
     },
     "files.watcherExclude": {
         "**/.git/*/**": true,

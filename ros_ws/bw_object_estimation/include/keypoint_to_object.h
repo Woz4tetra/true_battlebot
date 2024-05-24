@@ -36,7 +36,7 @@ private:
 
     double get_label_height(std::string label);
     std::vector<cv::Point3d> project_keypoints_to_field(bw_interfaces::KeypointInstance instance);
-    geometry_msgs::Pose get_pose_from_points(cv::Point3d front_point, cv::Point3d back_point);
+    geometry_msgs::Pose get_pose_from_points(cv::Point3d front_point, cv::Point3d back_point, cv::Point3d plane_normal);
 
     void field_received_callback() {}
 
