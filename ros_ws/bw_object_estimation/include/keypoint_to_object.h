@@ -2,6 +2,7 @@
 #include <ros/ros.h>
 
 #include <opencv2/core.hpp>
+#include <opencv2/calib3d.hpp>
 
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
@@ -20,6 +21,8 @@ private:
 
     std::vector<std::string> _include_labels;
     double _z_limit;
+    std::string _front_keypoint_name;
+    std::string _back_keypoint_name;
 
     ros::Subscriber _keypoint_sub;
 
@@ -32,6 +35,8 @@ private:
     void keypoint_callback(const bw_interfaces::KeypointInstanceArrayConstPtr &keypoints);
 
     double get_label_height(std::string label);
+    std::vector<cv::Point3d> project_keypoints_to_field(bw_interfaces::KeypointInstance instance);
+    geometry_msgs::Pose get_pose_from_points(cv::Point3d front_point, cv::Point3d back_point);
 
     void field_received_callback() {}
 
@@ -40,3 +45,15 @@ public:
     ~KeypointToObject();
     int run();
 };
+
+int get_index(const std::vector<std::string> vec, const std::string label)
+{
+    for (int i = 0; i < vec.size(); i++)
+    {
+        if (vec[i].compare(label) == 0)
+        {
+            return i;
+        }
+    }
+    return -1;
+}

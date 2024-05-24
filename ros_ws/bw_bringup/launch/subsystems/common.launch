@@ -5,6 +5,7 @@
         output="screen" />
 
     <include file="$(find bw_object_estimation)/launch/segmentation_to_object.launch" />
+    <include file="$(find bw_object_estimation)/launch/keypoint_to_object.launch" />
     <include file="$(find bw_object_estimation)/launch/motion_tracking.launch" />
     <include file="$(find bw_tags)/launch/tag_visualization.launch" />
     <include file="$(find bw_bringup)/launch/subsystems/foxglove_bridge.launch">
