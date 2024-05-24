@@ -4,13 +4,21 @@ using RosMessageTypes.Std;
 
 public abstract class BaseRectangleSensor : BaseGameObjectSensor
 {
-    override protected VisibleTarget[] ProcessObjects(GameObject[] objs)
+    override protected void PublishTargets()
+    {
+        RectangleTarget[] tags = FindObjectsOfType<RectangleTarget>();
+        VisibleTarget[] targets = ProcessObjects(tags);
+        TargetsCallback(targets);
+    }
+
+    abstract protected void TargetsCallback(VisibleTarget[] targets);
+
+    private VisibleTarget[] ProcessObjects(RectangleTarget[] tags)
     {
         List<VisibleTarget> tagList = new List<VisibleTarget>();
-        foreach (GameObject obj in objs)
+        foreach (RectangleTarget tag in tags)
         {
-            RectangleTarget tag = obj.GetComponent<RectangleTarget>();
-            if (tag == null || !IsVisible(tag.gameObject))
+            if (tag == null || !IsVisible(tag.gameObject, tag.GetBounds()))
             {
                 continue;
             }
@@ -23,9 +31,9 @@ public abstract class BaseRectangleSensor : BaseGameObjectSensor
                     frame_id = frame.GetFrameId()
                 },
                 objectId = tag.GetTagId(),
-                dimensions = tag.GetDimensions(),
+                dimensions = tag.GetBounds().size,
                 cameraRelativePose = GetObjectPoseInCamera(tag.transform),
-                frame = obj.GetComponent<TransformFrame>()
+                frame = tag.GetComponent<TransformFrame>()
             };
             tagList.Add(tagMsg);
         }

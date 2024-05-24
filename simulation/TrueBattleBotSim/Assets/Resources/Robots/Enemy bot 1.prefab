@@ -597,6 +597,7 @@ GameObject:
   - component: {fileID: 430191967845549479}
   - component: {fileID: 3935608861867334067}
   - component: {fileID: 3173922297348665016}
+  - component: {fileID: 3650721327374056325}
   m_Layer: 13
   m_Name: Enemy bot 1
   m_TagString: Untagged
@@ -867,6 +868,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   baseTopic: opponent_1
+--- !u!114 &3650721327374056325
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4152357345317948689}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3057683c8798007c9b1065b5472043e3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &4781227329094026969
 GameObject:
   m_ObjectHideFlags: 0

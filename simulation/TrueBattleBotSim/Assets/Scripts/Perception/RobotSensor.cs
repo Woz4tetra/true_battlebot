@@ -11,17 +11,27 @@ public class RobotSensor : BaseGameObjectSensor
 {
     [SerializeField] private string topic = "ground_truth/robots";
 
+
+    override protected void PublishTargets()
+    {
+        RobotTracker[] robot_trackers = FindObjectsOfType<RobotTracker>();
+        VisibleTarget[] targets = ProcessObjects(robot_trackers);
+        EstimatedObjectArrayMsg msg = ConvertTargetsToRobots(targets);
+        ros.Publish(topic, msg);
+    }
+
     protected override void BaseGameObjectSensorStart()
     {
         ros.RegisterPublisher<EstimatedObjectArrayMsg>(topic);
     }
 
-    override protected VisibleTarget[] ProcessObjects(GameObject[] objs)
+    private VisibleTarget[] ProcessObjects(RobotTracker[] robot_trackers)
     {
         List<VisibleTarget> targetList = new List<VisibleTarget>();
-        foreach (GameObject obj in objs)
+        foreach (RobotTracker robot in robot_trackers)
         {
-            if (!IsVisible(obj))
+            GameObject obj = robot.gameObject;
+            if (!IsVisible(obj, robot.GetBounds()))
             {
                 continue;
             }
@@ -34,9 +44,9 @@ public class RobotSensor : BaseGameObjectSensor
                     frame_id = frame.GetFrameId()
                 },
                 objectId = 0,
-                dimensions = obj.GetComponent<Renderer>().bounds.size,
+                dimensions = robot.GetBounds().size,
                 cameraRelativePose = GetObjectPoseInCamera(obj.transform),
-                frame = obj.GetComponent<TransformFrame>()
+                frame = robot.GetFrame()
             };
             targetList.Add(tagMsg);
         }
@@ -44,17 +54,7 @@ public class RobotSensor : BaseGameObjectSensor
         return targetList.ToArray();
     }
 
-    protected override void TargetsCallback(VisibleTarget[] targets)
-    {
-        EstimatedObjectMsg[] msgs = ConvertTargetsToRobots(targets);
-        foreach (EstimatedObjectMsg msg in msgs)
-        {
-            ros.Publish(topic, msg);
-        }
-    }
-
-
-    private EstimatedObjectMsg[] ConvertTargetsToRobots(VisibleTarget[] targets)
+    private EstimatedObjectArrayMsg ConvertTargetsToRobots(VisibleTarget[] targets)
     {
         HeaderMsg header = new HeaderMsg
         {
@@ -62,7 +62,7 @@ public class RobotSensor : BaseGameObjectSensor
             stamp = RosUtil.GetTimeMsg(),
             frame_id = frame.GetFrameId()
         };
-        List<EstimatedObjectMsg> fields = new List<EstimatedObjectMsg>();
+        List<EstimatedObjectMsg> robots = new List<EstimatedObjectMsg>();
         foreach (VisibleTarget target in targets)
         {
             Matrix4x4 targetPose = target.cameraRelativePose;
@@ -89,8 +89,8 @@ public class RobotSensor : BaseGameObjectSensor
                 size = size,
                 label = target.frame.GetFrameId()
             };
-            fields.Add(msg);
+            robots.Add(msg);
         }
-        return fields.ToArray();
+        return new EstimatedObjectArrayMsg { robots = robots.ToArray() };
     }
 }

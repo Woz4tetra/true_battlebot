@@ -3,14 +3,11 @@ using UnityEngine;
 public class RectangleTarget : MonoBehaviour
 {
     [SerializeField] private int tagId = 0;
-    [SerializeField] Renderer tagRenderer;
+    Renderer targetRenderer;
 
     void Start()
     {
-        if (tagRenderer == null)
-        {
-            tagRenderer = GetComponent<Renderer>();
-        }
+        targetRenderer = GetComponentInChildren<Renderer>();
     }
 
     public int GetTagId()
@@ -18,18 +15,8 @@ public class RectangleTarget : MonoBehaviour
         return tagId;
     }
 
-    public Vector3 GetDimensions()
+    public Bounds GetBounds()
     {
-        return tagRenderer.bounds.size;
-    }
-
-    public Renderer GetRenderer()
-    {
-        return tagRenderer;
-    }
-
-    public int GetLayer()
-    {
-        return tagRenderer.gameObject.layer;
+        return targetRenderer.bounds;
     }
 }

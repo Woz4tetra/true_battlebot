@@ -99,8 +99,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   tagId: 76
-  tagName: tag_76
-  tagRenderer: {fileID: 576812456160748021}
 --- !u!1 &1369171127915791370
 GameObject:
   m_ObjectHideFlags: 0
@@ -520,8 +518,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   tagId: 41
-  tagName: tag
-  tagRenderer: {fileID: 4866004433155902628}
 --- !u!1 &3673127158950191259
 GameObject:
   m_ObjectHideFlags: 0
@@ -1576,6 +1572,7 @@ GameObject:
   - component: {fileID: 100279690000189297}
   - component: {fileID: 3139422594569926977}
   - component: {fileID: 2840724183782819446}
+  - component: {fileID: 305410368657799572}
   m_Layer: 13
   m_Name: Mini bot
   m_TagString: Mini bot
@@ -1847,3 +1844,15 @@ MonoBehaviour:
   maxLinearSpeed: 10
   maxAngularSpeed: 1000
   reverseWhenUpsideDown: 1
+--- !u!114 &305410368657799572
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9197786164009000317}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3057683c8798007c9b1065b5472043e3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 

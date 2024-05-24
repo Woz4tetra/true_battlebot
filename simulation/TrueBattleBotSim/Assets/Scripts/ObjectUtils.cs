@@ -37,4 +37,30 @@ public class ObjectUtils
         return tf.gameObject;
     }
 
+    public static bool IsChild(GameObject parent, GameObject check)
+    {
+        if (parent == check)
+        {
+            return true;
+        }
+        Transform child = null;
+        for (int i = 0; i < parent.transform.childCount; i++)
+        {
+            child = parent.transform.GetChild(i);
+            if (child.gameObject == check)
+            {
+                return true;
+            }
+            else
+            {
+                bool found = IsChild(child.gameObject, check);
+                if (found)
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
 }

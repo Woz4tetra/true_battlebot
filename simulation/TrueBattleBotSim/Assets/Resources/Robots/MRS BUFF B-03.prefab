@@ -1399,6 +1399,8 @@ GameObject:
   - component: {fileID: 3900634791100671644}
   - component: {fileID: 2282392086391735647}
   - component: {fileID: 1769163147204946028}
+  - component: {fileID: 1472260898486432186}
+  - component: {fileID: 1858240758881258643}
   m_Layer: 6
   m_Name: Mrs Buff Image Synthesis
   m_TagString: Untagged
@@ -1471,6 +1473,40 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!64 &1472260898486432186
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 636178504503861325}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 5
+  m_Convex: 1
+  m_CookingOptions: 30
+  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &1858240758881258643
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 636178504503861325}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3057683c8798007c9b1065b5472043e3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &709566870522771289
 GameObject:
   m_ObjectHideFlags: 0
@@ -3913,8 +3949,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   tagId: 99
-  tagName: tag_9
-  tagRenderer: {fileID: 5438466799553407277}
 --- !u!1 &1454363629535573835
 GameObject:
   m_ObjectHideFlags: 0
@@ -8063,8 +8097,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   tagId: 42
-  tagName: tag_42
-  tagRenderer: {fileID: 6596670402818650668}
 --- !u!1 &3519565313516881089
 GameObject:
   m_ObjectHideFlags: 0

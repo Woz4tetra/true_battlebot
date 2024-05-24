@@ -1,7 +1,6 @@
 using UnityEngine;
 using Unity.Robotics.ROSTCPConnector;
 using MathExtensions;
-using System.Collections.Generic;
 
 public abstract class BaseGameObjectSensor : MonoBehaviour
 {
@@ -15,7 +14,6 @@ public abstract class BaseGameObjectSensor : MonoBehaviour
     [SerializeField] private bool debugRayCast = false;
     [SerializeField] private float publishRate = 0.0f;
     [SerializeField] private float viewAngleThreshold = 70.0f;
-    [SerializeField] private string[] tagFilters = { };
     private float prevPublishTime = 0.0f;
 
     abstract protected void BaseGameObjectSensorStart();
@@ -32,26 +30,13 @@ public abstract class BaseGameObjectSensor : MonoBehaviour
     {
         if (publishRate <= 0 || Time.unscaledTime - prevPublishTime > 1.0f / publishRate)
         {
-            PublishTags();
+            PublishTargets();
             prevPublishTime = Time.unscaledTime;
         }
     }
 
-    private void PublishTags()
-    {
-        List<GameObject> objs = new List<GameObject>();
-        foreach (string tagFilter in tagFilters)
-        {
-            foreach (GameObject obj in GameObject.FindGameObjectsWithTag(tagFilter))
-            {
-                objs.Add(obj);
-            }
-        }
-        VisibleTarget[] targets = ProcessObjects(objs.ToArray());
-        TargetsCallback(targets);
-    }
+    abstract protected void PublishTargets();
 
-    abstract protected void TargetsCallback(VisibleTarget[] targets);
 
     protected void IncrementMessageCount()
     {
@@ -62,7 +47,6 @@ public abstract class BaseGameObjectSensor : MonoBehaviour
         return sentMessageCount;
     }
 
-    abstract protected VisibleTarget[] ProcessObjects(GameObject[] objs);
 
     public Matrix4x4 GetObjectPoseInCamera(Transform tagTransform)
     {
@@ -76,74 +60,39 @@ public abstract class BaseGameObjectSensor : MonoBehaviour
         return Matrix4x4.TRS(relativePoint, localRotation, Vector3.one);
     }
 
-    protected bool IsVisible(GameObject obj)
+    protected bool IsVisible(GameObject obj, Bounds bounds)
     {
-        Renderer renderer = obj.GetComponentInChildren<Renderer>();
-        if (renderer == null)
-        {
-            return false;
-        }
-
         Plane[] planes = GeometryUtility.CalculateFrustumPlanes(cameraView);
-        if (GeometryUtility.TestPlanesAABB(planes, renderer.bounds))
-        {
-            RaycastHit hit;
-            Vector3 tagNormal = obj.transform.rotation * -Vector3.up;
-            Vector3 cameraNormal = cameraView.transform.rotation * Vector3.forward;
-            float tagAngle = Vector3.Angle(tagNormal, cameraNormal);
-            if (tagAngle > viewAngleThreshold)
-            {
-                return false;
-            }
-            Vector3 directionVector = renderer.bounds.center - cameraView.transform.position;
-            var measurementStart = rayCastOffset * directionVector + transform.position;
-            var measurementRay = new Ray(measurementStart, directionVector.normalized);
-            bool containsLayer = layerMask == (layerMask | (1 << obj.layer));
-            if (!containsLayer)
-            {
-                return false;
-            }
-            if (Physics.Raycast(measurementRay, out hit, maxDistance, layerMask))
-            {
-                bool isUnObstructed = IsChild(ObjectUtils.GetTopLevelObject(hit.transform.gameObject), obj);
-                if (debugRayCast)
-                {
-                    Debug.DrawRay(measurementStart, directionVector.normalized * hit.distance, isUnObstructed ? Color.green : Color.yellow);
-                }
-                return isUnObstructed;
-            }
-            return false;
-        }
-        else
+        if (!GeometryUtility.TestPlanesAABB(planes, bounds))
         {
             return false;
         }
-    }
-
-    private bool IsChild(GameObject parent, GameObject check)
-    {
-        if (parent == check)
+        RaycastHit hit;
+        Vector3 tagNormal = obj.transform.rotation * -Vector3.up;
+        Vector3 cameraNormal = cameraView.transform.rotation * Vector3.forward;
+        float tagAngle = Vector3.Angle(tagNormal, cameraNormal);
+        if (tagAngle > viewAngleThreshold)
         {
-            return true;
+            return false;
         }
-        Transform child = null;
-        for (int i = 0; i < parent.transform.childCount; i++)
+        Vector3 directionVector = bounds.center - cameraView.transform.position;
+        var measurementStart = rayCastOffset * directionVector + transform.position;
+        var measurementRay = new Ray(measurementStart, directionVector.normalized);
+        bool containsLayer = layerMask == (layerMask | (1 << obj.layer));
+        if (!containsLayer)
         {
-            child = parent.transform.GetChild(i);
-            if (child.gameObject == check)
-            {
-                return true;
-            }
-            else
-            {
-                bool found = IsChild(child.gameObject, check);
-                if (found)
-                {
-                    return true;
-                }
-            }
+            return false;
         }
-
-        return false;
+        if (!Physics.Raycast(measurementRay, out hit, maxDistance, layerMask))
+        {
+            return false;
+        }
+        GameObject toplevelObj = ObjectUtils.GetTopLevelObject(hit.transform.gameObject);
+        bool isUnObstructed = ObjectUtils.IsChild(toplevelObj, obj);
+        if (debugRayCast)
+        {
+            Debug.DrawRay(measurementStart, directionVector.normalized * hit.distance, isUnObstructed ? Color.green : Color.yellow);
+        }
+        return isUnObstructed;
     }
 }

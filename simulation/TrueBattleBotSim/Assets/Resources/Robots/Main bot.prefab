@@ -263,6 +263,7 @@ GameObject:
   - component: {fileID: 3277835126963680745}
   - component: {fileID: 3825037986657039423}
   - component: {fileID: 8726593090106754038}
+  - component: {fileID: 1803075565051834314}
   m_Layer: 13
   m_Name: Main bot
   m_TagString: Main bot
@@ -535,6 +536,18 @@ MonoBehaviour:
   maxLinearSpeed: 10
   maxAngularSpeed: 1000
   reverseWhenUpsideDown: 1
+--- !u!114 &1803075565051834314
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2376752813649019072}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3057683c8798007c9b1065b5472043e3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &2839615957513088649
 GameObject:
   m_ObjectHideFlags: 0
@@ -1287,8 +1300,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   tagId: 99
-  tagName: tag_9
-  tagRenderer: {fileID: 7052878312664852543}
 --- !u!1 &5557690923790399499
 GameObject:
   m_ObjectHideFlags: 0
@@ -1733,8 +1744,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   tagId: 42
-  tagName: tag_42
-  tagRenderer: {fileID: 7052878312664852543}
 --- !u!1 &8627660490546113600
 GameObject:
   m_ObjectHideFlags: 0
