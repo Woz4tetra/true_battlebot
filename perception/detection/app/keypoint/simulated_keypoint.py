@@ -71,8 +71,8 @@ class SimulatedKeypoint(KeypointInterface):
         label = self.simulated_to_real_labels[robot.child_frame_id]
         radius = max(robot.size.x, robot.size.y) / 2
         transform = Transform3D.from_pose_msg(robot.pose.pose)
-        forward_robot_point = np.array([radius, 0, 0, 1])
-        backward_robot_point = np.array([-radius, 0, 0, 1])
+        forward_robot_point = np.array([0, radius, 0, 1])
+        backward_robot_point = np.array([0, -radius, 0, 1])
         forward_pixel = self.robot_point_to_camera_pixel(transform, forward_robot_point, model)
         backward_pixel = self.robot_point_to_camera_pixel(transform, backward_robot_point, model)
         object_index = object_counts[label]

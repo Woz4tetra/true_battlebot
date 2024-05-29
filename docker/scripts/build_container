@@ -24,5 +24,17 @@ echo -e '\033[1mBuilt Images:\033[0m'
 echo "${IMAGE_VERSION}"
 echo "${PERCEPTION_IMAGE_VERSION}"
 
+export PROJECT_DIR=$(realpath "${BASE_DIR}/../../")
+export PROJECT_NAME=$(${BASE_DIR}/../get_project_name)
+export IMAGE_VERSION=$(${BASE_DIR}/../get_image_tag)
+export PERCEPTION_IMAGE_VERSION=$(${BASE_DIR}/../get_image_tag perception)
+export ORGANIZATION=$(${BASE_DIR}/../get_organization)
+
+docker-compose \
+-f docker-compose.roscore.yml \
+-f docker-compose.${PROJECT_NAME}.yml \
+-f docker-compose.gpu.yaml \
+create
+
 ${BASE_DIR}/build_ros_ws
 ${BASE_DIR}/build_perception
