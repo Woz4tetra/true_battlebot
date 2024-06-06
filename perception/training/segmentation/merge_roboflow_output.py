@@ -18,8 +18,8 @@ def save_annotations(annotations: CocoMetaDataset, annotations_path: str) -> Non
 
 
 def main():
-    images_path = "/media/storage/training/labeled/2024-02-24/battlebots_roboflow"
-    merged_path = "/media/storage/training/labeled/2024-02-24/battlebots_all"
+    images_path = "/media/storage/training/labeled/true-battlebot-keypoints/2024-06-06"
+    merged_path = "/media/storage/training/labeled/true-battlebot-keypoints/2024-06-06-merged"
 
     all_annotations = None
     image_moves = []
