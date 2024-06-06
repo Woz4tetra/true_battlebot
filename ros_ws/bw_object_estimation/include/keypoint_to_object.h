@@ -30,13 +30,18 @@ private:
     ros::Publisher _robot_marker_pub;
 
     bool is_label_included(std::string label);
-    void fill_marker_array(int obj_index, bw_interfaces::EstimatedObject &robot_msg, visualization_msgs::MarkerArray &robot_markers);
+    void fill_marker_array(
+        int obj_index,
+        bw_interfaces::EstimatedObject &robot_msg,
+        cv::Point3d front_point,
+        cv::Point3d back_point,
+        visualization_msgs::MarkerArray &markers);
 
     void keypoint_callback(const bw_interfaces::KeypointInstanceArrayConstPtr &keypoints);
 
     double get_label_height(std::string label);
     std::vector<cv::Point3d> project_keypoints_to_field(bw_interfaces::KeypointInstance instance);
-    geometry_msgs::Pose get_pose_from_points(cv::Point3d front_point, cv::Point3d back_point);
+    geometry_msgs::Pose get_pose_from_points(cv::Point3d front_point, cv::Point3d back_point, cv::Point3d plane_normal);
 
     void field_received_callback() {}
 

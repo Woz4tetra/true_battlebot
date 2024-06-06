@@ -126,9 +126,9 @@ def state_transition(state, dt, friction_factor):
     next_state[STATE_x] = x + dt * vx
     next_state[STATE_y] = y + dt * vy
     next_state[STATE_t] = theta + dt * vt
-    next_state[STATE_vx] = vx_prev - np.sign(vx_prev) * friction_factor * dt
-    next_state[STATE_vy] = vy_prev - np.sign(vy_prev) * friction_factor * dt
-    next_state[STATE_vt] = vt - np.sign(vt) * friction_factor * dt
+    next_state[STATE_vx] = vx_prev * friction_factor
+    next_state[STATE_vy] = vy_prev * friction_factor
+    next_state[STATE_vt] = vt * friction_factor
 
     return next_state
 

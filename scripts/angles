@@ -477,6 +477,9 @@ def main() -> None:
         "euler": convert_quat_to_euler_app,
         "quat": convert_euler_to_quat_app,
     }
+    if args.command is None:
+        print("No command provided. Try --help for more information.")
+        return
     try:
         apps[args.command](args)
     except BaseException as e:

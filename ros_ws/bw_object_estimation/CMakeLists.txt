@@ -17,6 +17,7 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
   std_msgs
   visualization_msgs
+  tf
   tf2_ros
   bw_interfaces
   bw_shared_config
@@ -128,6 +129,7 @@ catkin_package(
   sensor_msgs
   std_msgs
   visualization_msgs
+  tf
   tf2_ros
   bw_interfaces
   bw_shared_config
