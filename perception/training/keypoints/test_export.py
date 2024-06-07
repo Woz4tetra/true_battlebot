@@ -2,10 +2,12 @@ import os
 import time
 
 import cv2
-from bw_shared.enums.label import Label
 from ultralytics import YOLO
 
-model = YOLO("/media/storage/training/models/battlebots/yolov8-pose/runs/pose/battlebots_keypoints8/weights/best.pt")
+os.chdir("/media/storage/training/models/battlebots/yolov8-pose/runs/pose/battlebots_keypoints8/weights/")
+
+
+model = YOLO("best.torchscript")
 
 test_image_dir = "/media/storage/training/labeled/true-battlebot-keypoints/2024-06-06/test/images"
 
@@ -20,14 +22,11 @@ for filename in os.listdir(test_image_dir):
     t1 = time.perf_counter()
     delta = t1 - t0
     diffs.append(delta)
+    breakpoint()
 
     should_exit = False
     for result in results:
-        ids = result.boxes.cpu().cls.int().numpy()  # get the class ids
         keypoints = result.keypoints.cpu().xy.int().numpy()  # get the keypoints
-        labels = [Label(result.names[index]) for index in ids]
-        for keypoint, label in zip(keypoints, labels):
-            print(label, keypoint.tolist())
         img_array = result.plot(kpt_line=True, kpt_radius=6)  # plot a BGR array of predictions
         cv2.imshow("image", img_array)
         key = chr(cv2.waitKey(-1) & 0xFF)

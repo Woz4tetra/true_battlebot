@@ -10,8 +10,7 @@ import cv2
 import numpy as np
 import torch.jit
 import torchvision
-from bw_tools.configs.model_metadata import ModelMetadata
-from bw_tools.structs.color import Color
+from bw_shared.enums.label import Label
 from detectron2 import model_zoo
 from detectron2.checkpoint import DetectionCheckpointer
 from detectron2.config import CfgNode, get_cfg
@@ -26,6 +25,7 @@ from detectron2.utils.env import TORCH_VERSION
 from detectron2.utils.visualizer import ColorMode, GenericMask, Visualizer
 from helpers import load_dataset
 from nhrl_trainer import NhrlTrainer
+from perception_tools.config.model_metadata import LABEL_COLORS, LabelColor, ModelMetadata
 from tensorboard import program
 from torch import ScriptModule, Tensor, nn
 from torch.jit._serialization import save as save_model
@@ -39,13 +39,7 @@ class TrainingManager:
         self.annotations_file_name = "_annotations.coco.json"
         self.expected_number_of_categories = 3
 
-        self.color_mapping = {
-            "robot": Color(r=1.0, g=0.0, b=0.0, a=0.5),
-            "friendly_robot": Color(r=1.0, g=1.0, b=0.0, a=0.5),
-            "referee": Color(r=0.0, g=1.0, b=0.0, a=0.5),
-            "field": Color(r=0.0, g=0.0, b=1.0, a=0.5),
-        }
-        self.default_color = Color(r=0.0, g=0.0, b=0.0, a=0.0)
+        self.default_color = LabelColor(r=0.0, g=0.0, b=0.0, a=0.0)
 
         self.architecture = "mask_rcnn_R_50_FPN_3x"
         self.config_file_path = f"COCO-InstanceSegmentation/{self.architecture}.yaml"
@@ -133,11 +127,10 @@ class TrainingManager:
         torch_model.eval()
         export_scripting(model_path, torch_model=torch_model, cfg=self.cfg, ir_dump=ir_dump)
 
-        labels_length = max([info.id for info in self.train_dataset.dataset.categories]) + 1
-        labels = [""] * labels_length
-        for info in self.train_dataset.dataset.categories:
-            labels[info.id] = info.name
-        colors = [self.color_mapping.get(label, self.default_color) for label in labels]
+        label_index_pairs = [(info.id, info.name) for info in self.train_dataset.dataset.categories]
+        label_index_pairs.sort(key=lambda x: x[0])
+        labels = [Label(name) for _, name in label_index_pairs]
+        colors = [LABEL_COLORS.get(label, self.default_color) for label in labels]
 
         metadata = ModelMetadata(labels=labels, colors=colors)
         with open(model_metadata_path, "w") as f:
@@ -271,7 +264,7 @@ class TrainingManager:
     def copy_to_data(self, model_path: str, model_metadata_path: str) -> None:
         organization = os.environ["ORGANIZATION"]
         project_name = os.environ["PROJECT_NAME"]
-        data_dir = f"/opt/{organization}/{project_name}/src/bw_data/data"
+        data_dir = f"/opt/{organization}/{project_name}/perception/data"
         destination_dir = os.path.join(data_dir, "models")
         date_str = datetime.datetime.now().strftime("%Y-%m-%d")
         model_base_name = f"{self.dataset_name}_{self.architecture}_{date_str}"

@@ -3,6 +3,7 @@ docker-compose.gpu.yaml
 *.pth
 *.pkl
 *.torchscript
+*.pt
 *.wav
 build/
 
