@@ -1,23 +1,44 @@
 import logging
+import time
 
+import numpy as np
 from app.config.keypoint_config.yolo_keypoint_config import YoloKeypointConfig
 from app.keypoint.keypoint_interface import KeypointInterface
 from bw_interfaces.msg import KeypointInstance, KeypointInstanceArray, UVKeypoint
 from bw_shared.enums.keypoint_name import RobotKeypointsNames
 from bw_shared.enums.label import Label
+from perception_tools.data_directory import get_data_directory
 from perception_tools.messages.image import Image
+
+logging.setLoggerClass(logging.Logger)  # fix rospy breaking logs
 from ultralytics import YOLO
 
 
 class YoloKeypoint(KeypointInterface):
     def __init__(self, config: YoloKeypointConfig) -> None:
-        self.config = config
-        self.model = YOLO(config.model_path)
-        self.keypoint_names = [name.value for name in RobotKeypointsNames]
         self.logger = logging.getLogger("perception")
+        self.config = config
+        data_dir = get_data_directory()
+        model_path = data_dir / "models" / config.model_name
+
+        self.logger.info(f"Loading model from {model_path}")
+        self.model = YOLO(str(model_path))
+        self.logger.info("Model loaded")
+        self.keypoint_names = [name.value for name in RobotKeypointsNames]
+
+        self.warmup()
+
+    def warmup(self) -> None:
+        self.logger.info("Warming up model")
+        t0 = time.perf_counter()
+        for _ in range(3):
+            image = np.random.random_integers(0, 255, size=(720, 1280, 3)).astype(np.uint8)
+            self.model(image)
+        t1 = time.perf_counter()
+        self.logger.info(f"Model warmed up in {t1 - t0} seconds")
 
     def process_image(self, msg: Image) -> tuple[KeypointInstanceArray, Image | None]:
-        result = self.model(msg.data)[0]
+        result = self.model(msg.data, verbose=self.config.debug)[0]
 
         ids = result.boxes.cpu().cls.int().numpy()  # get the class ids
         keypoints = result.keypoints.cpu().xy.int().numpy()  # get the keypoints

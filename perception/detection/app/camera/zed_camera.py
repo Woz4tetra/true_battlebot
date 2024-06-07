@@ -12,6 +12,7 @@ from sensor_msgs.msg import CameraInfo
 from sensor_msgs.msg import Image as RosImage
 
 from app.camera.camera_interface import CameraInterface, CameraMode
+from app.camera.zed_helpers import set_field_finder_settings, set_robot_finder_settings, zed_to_ros_camera_info
 from app.config.camera_config.zed_camera_config import ZedCameraConfig
 from app.config.camera_topic_config import CameraTopicConfig
 
@@ -25,11 +26,14 @@ class ZedCamera(CameraInterface):
         camera_info_pub: RosPublisher[CameraInfo],
     ) -> None:
         self.logger = logging.getLogger("perception")
+
         self.config = config
         self.camera_topic_config = camera_topic_config
+        self.color_image_pub = color_image_pub
+        self.camera_info_pub = camera_info_pub
+
         self.camera = sl.Camera()
         self.init_params = sl.InitParameters()
-        self.init_params.coordinate_units = sl.UNIT.METER
         if self.config.serial_number != -1:
             self.init_params.set_from_serial_number(self.config.serial_number, sl.BUS_TYPE.USB)
             self.logger.info(f"ZED Camera serial number: {self.config.serial_number}")
@@ -44,9 +48,6 @@ class ZedCamera(CameraInterface):
         self.color_image = sl.Mat()
         self.point_cloud = sl.Mat()
 
-        self.color_image_pub = color_image_pub
-        self.camera_info_pub = camera_info_pub
-
         self.is_open = False
         self.mode = CameraMode.ROBOT_FINDER
         self.mode_callbacks = {
@@ -56,15 +57,11 @@ class ZedCamera(CameraInterface):
 
     def _set_robot_finder_settings(self):
         self.logger.info("Setting ZED Camera to Robot Finder mode")
-        self.init_params.depth_mode = sl.DEPTH_MODE.PERFORMANCE
-        self.init_params.camera_resolution = sl.RESOLUTION.HD1080
-        self.init_params.camera_fps = 15
+        set_robot_finder_settings(self.init_params)
 
     def _set_field_finder_settings(self):
         self.logger.info("Setting ZED Camera to Field Finder mode")
-        self.init_params.depth_mode = sl.DEPTH_MODE.NEURAL_PLUS
-        self.init_params.camera_resolution = sl.RESOLUTION.HD2K
-        self.init_params.camera_fps = 15
+        set_field_finder_settings(self.init_params)
 
     def open(self, mode: CameraMode) -> bool:
         status = None
@@ -89,29 +86,7 @@ class ZedCamera(CameraInterface):
 
     def load_camera_info(self) -> CameraInfo:
         camera_information = self.camera.get_camera_information()
-        intrinsics = camera_information.camera_configuration.calibration_parameters.left_cam
-        resolution = intrinsics.image_size
-
-        distortion = intrinsics.disto
-        intrinsics = np.array(
-            [
-                [intrinsics.fx, 0, intrinsics.cx],
-                [0, intrinsics.fy, intrinsics.cy],
-                [0, 0, 1],
-            ],
-            dtype=np.float64,
-        )
-        projection = np.append(intrinsics, np.zeros((3, 1)), axis=1)
-
-        return CameraInfo(
-            height=resolution.height,
-            width=resolution.width,
-            distortion_model="plumb_bob",
-            D=distortion,
-            K=intrinsics.flatten().tolist(),
-            R=np.eye(3).flatten().tolist(),
-            P=projection.flatten().tolist(),
-        )
+        return zed_to_ros_camera_info(camera_information)
 
     def next_header(self) -> Header:
         image_time = self.camera.get_timestamp(sl.TIME_REFERENCE.IMAGE).get_nanoseconds()

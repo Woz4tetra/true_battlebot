@@ -2,3 +2,33 @@ target_tick_rate = 60.0
 
 [camera]
 type = "SvoPlaybackCamera"
+path = "/media/storage/svo/zed_2023-09-30T13-38-21_repaired.svo"
+
+[field_filter]
+type = "SimulatedFieldFilter"
+
+[field_request]
+stale_image_timeout = 2.0
+
+[ros]
+log = false
+exclude_filters = [
+    "/camera_0/simulated_segmentation",
+    "/camera_0/robot/debug_image",
+    "/camera_0/rgb/camera_info",
+    "/camera_0/rgb/image_raw",
+    "/camera_0/layer/image_raw",
+    "/camera_0/depth/depth_registered",
+    "/camera_0/robot/segmentation",
+    "/perception/heartbeat",
+]
+
+[field_segmentation]
+type = "SimulatedSegmentation"
+
+[field_segmentation.simulated_to_real_labels]
+"Field" = "field"
+
+[robot_keypoint]
+type = "YoloKeypoint"
+model_name = "yolov8-pose_2024-06-06.pt"

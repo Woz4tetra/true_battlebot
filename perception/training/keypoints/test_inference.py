@@ -1,10 +1,18 @@
+import logging
 import os
 import time
 
+logger = logging.getLoggerClass()
+
 import cv2
+import rospy
+
+logging.setLoggerClass(logging.Logger)
 from bw_shared.enums.label import Label
 from ultralytics import YOLO
 
+loggers = [logging.getLogger(name) for name in logging.root.manager.loggerDict]
+print(loggers)
 model = YOLO("/media/storage/training/models/battlebots/yolov8-pose/runs/pose/battlebots_keypoints8/weights/best.pt")
 
 test_image_dir = "/media/storage/training/labeled/true-battlebot-keypoints/2024-06-06/test/images"
@@ -36,5 +44,5 @@ for filename in os.listdir(test_image_dir):
             break
     if should_exit:
         break
-diffs.pop(0)
-print("Average inference time: ", sum(diffs) / len(diffs))
+print("Warmup time:", diffs.pop(0))
+print("Average inference time:", sum(diffs) / len(diffs))

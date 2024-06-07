@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Type, Union
 
 from perception_tools.rosbridge.ros_poll_subscriber import RosPollSubscriber
 from perception_tools.rosbridge.ros_publisher import RosPublisher
@@ -7,15 +7,17 @@ from sensor_msgs.msg import CameraInfo, Image
 from app.config.camera_config.camera_types import CameraConfig
 from app.config.camera_config.noop_camera_config import NoopCameraConfig
 from app.config.camera_config.simulated_camera_config import SimulatedCameraConfig
+from app.config.camera_config.svo_playback_camera_config import SvoPlaybackCameraConfig
 from app.config.camera_config.zed_camera_config import ZedCameraConfig
 from app.config.config import Config
 from app.container import Container
 
 from .noop_camera import NoopCamera
 from .simulated_camera import SimulatedCamera
+from .svo_playback_camera import SvoPlaybackCamera
 from .zed_camera import ZedCamera
 
-CameraImplementation = Union[ZedCamera, NoopCamera, SimulatedCamera]
+CameraImplementation = Union[ZedCamera, NoopCamera, SimulatedCamera, SvoPlaybackCamera]
 
 
 def make_simulated_camera(camera_config: SimulatedCameraConfig, container: Container) -> CameraImplementation:
@@ -39,11 +41,23 @@ def make_zed_camera(camera_config: ZedCameraConfig, container: Container) -> Cam
     return ZedCamera(camera_config, config.camera_topic, color_image_pub, camera_info_pub)
 
 
+def make_svo_camera(camera_config: SvoPlaybackCameraConfig, container: Container) -> CameraImplementation:
+    config = container.resolve(Config)
+    ns = config.camera_topic.namespace
+
+    color_image_pub = RosPublisher(ns + "/rgb/image_raw", Image)
+    camera_info_pub = RosPublisher(ns + "/rgb/camera_info", CameraInfo)
+
+    return SvoPlaybackCamera(camera_config, config.camera_topic, color_image_pub, camera_info_pub)
+
+
 def load_camera(config: CameraConfig, container: Container) -> CameraImplementation:
     if isinstance(config, SimulatedCameraConfig):
         return make_simulated_camera(config, container)
     elif isinstance(config, ZedCameraConfig):
         return make_zed_camera(config, container)
+    elif isinstance(config, SvoPlaybackCameraConfig):
+        return make_svo_camera(config, container)
     elif isinstance(config, NoopCameraConfig):
         return NoopCamera(config)
     else:

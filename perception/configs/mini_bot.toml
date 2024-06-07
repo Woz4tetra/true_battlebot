@@ -9,4 +9,4 @@ model_path = "data/models/battlebots_mask_rcnn_R_50_FPN_3x_2024-02-25.torchscrip
 metadata_path = "data/models/battlebots_mask_rcnn_R_50_FPN_3x_2024-02-25_metadata.json"
 
 [robot_keypoint]
-type = "NoopKeypoint"
+type = "YoloKeypoint"
