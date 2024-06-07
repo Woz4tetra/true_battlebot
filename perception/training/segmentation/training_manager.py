@@ -32,7 +32,7 @@ from torch.jit._serialization import save as save_model
 
 
 class TrainingManager:
-    def __init__(self, dataset_name: str, dataset_dir: str, output_dir: str) -> None:
+    def __init__(self, dataset_name: str, dataset_dir: str, output_dir: str, zoo_config_path: str) -> None:
         self.dataset_name = dataset_name
         self.dataset_dir = dataset_dir
         self.output_dir = output_dir
@@ -41,8 +41,8 @@ class TrainingManager:
 
         self.default_color = LabelColor(r=0.0, g=0.0, b=0.0, a=0.0)
 
-        self.architecture = "mask_rcnn_R_50_FPN_3x"
-        self.config_file_path = f"COCO-InstanceSegmentation/{self.architecture}.yaml"
+        self.architecture = os.path.splitext(os.path.basename(zoo_config_path))[0]
+        self.config_file_path = zoo_config_path
 
         # TRAIN SET
         self.train_data_set_name = f"{self.dataset_name}-train"
