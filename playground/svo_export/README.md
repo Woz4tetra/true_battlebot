@@ -1,56 +1,39 @@
-# ZED SDK - SVO Export
+# Stereolabs ZED - SVO Export
 
 This sample demonstrates how to read a SVO file and convert it into an AVI file (LEFT + RIGHT) or (LEFT + DEPTH_VIEW).
 
-It can also convert a SVO in the following png image sequences: LEFT, LEFT+RIGHT, LEFT+DEPTH_VIEW, and LEFT+DEPTH_16Bit.
+It can also convert a SVO in the following png image sequences: LEFT+RIGHT, LEFT+DEPTH_VIEW, and LEFT+DEPTH_16Bit.
 
 ## Getting Started
-
--   Get the latest [ZED SDK](https://www.stereolabs.com/developers/release/)
--   Check the [Documentation](https://www.stereolabs.com/docs/)
-
-## Build the program
-
--   Build for [Windows](https://www.stereolabs.com/docs/app-development/cpp/windows/)
--   Build for [Linux/Jetson](https://www.stereolabs.com/docs/app-development/cpp/linux/)
-
+ - Get the latest [ZED SDK](https://www.stereolabs.com/developers/release/) and [pyZED Package](https://www.stereolabs.com/docs/app-development/python/install/)
+ - Check the [Documentation](https://www.stereolabs.com/docs/)
+ 
 ## Run the program
 
--   Navigate to the build directory and launch the executable
--   Or open a terminal in the build directory and run the sample :
+To run the program, use the following command in your terminal:
+```bash
+python export_svo.py --mode <mode> --input_svo_file <input_svo_file> --output_avi_file <output_avi_file> --output_path_dir <output_path_dir>
+```
 
-        ./ZED_SVO_Export  svo_file.svo
-
+Arguments: 
+  - --mode Mode 0 is to export LEFT+RIGHT AVI. <br /> Mode 1 is to export LEFT+DEPTH_VIEW Avi. <br /> Mode 2 is to export LEFT+RIGHT image sequence. <br /> Mode 3 is to export LEFT+DEPTH_View image sequence. <br /> Mode 4 is to export LEFT+DEPTH_16BIT image sequence.
+  - --input_svo_file Path to an existing .svo file 
+  - --output_avi_file Path to a .avi file that will be created
+  - --output_path_dir Path to an existing folder where .png will be saved
 ### Features
-
+ - Export .svo file to LEFT+RIGHT .avi
+ - Export .svo file to LEFT+DEPTH_VIEW .avi
+ - Export .svo file to LEFT+RIGHT image sequence
+ - Export .svo file to LEFT+DEPTH_View image sequence
+ - Export .svo file to LEFT+DEPTH_16BIT image sequence
+Examples : 
 ```
-Usage:
-
-ZED_SVO_Export A B C
-
-Please use the following parameters from the command line:
- A - SVO file path (input) : "path/to/file.svo"
- B - AVI file path (output) or image sequence folder(output) : "path/to/output/file.avi" or "path/to/output/folder/"
- C - Export mode:  0=Export LEFT+RIGHT AVI.
-				   1=Export LEFT+DEPTH_VIEW AVI.
-				   2=Export LEFT+RIGHT image sequence.
-				   3=Export LEFT+DEPTH_VIEW image sequence.
-				   4=Export LEFT+DEPTH_16Bit image sequence.
-				   5=Export LEFT AVI.
- A and B need to end with '/' or '\'
-
-Examples:
-  (AVI LEFT+RIGHT)              ZED_SVO_Export "path/to/file.svo" "path/to/output/file.avi" 0
-  (AVI LEFT+DEPTH)              ZED_SVO_Export "path/to/file.svo" "path/to/output/file.avi" 1
-  (SEQUENCE LEFT+RIGHT)         ZED_SVO_Export "path/to/file.svo" "path/to/output/folder/" 2
-  (SEQUENCE LEFT+DEPTH)         ZED_SVO_Export "path/to/file.svo" "path/to/output/folder/" 3
-  (SEQUENCE LEFT+DEPTH_16Bit)   ZED_SVO_Export "path/to/file.svo" "path/to/output/folder/" 4
+python export_svo.py --mode 0 --input_svo_file <input_svo_file> --output_avi_file <output_avi_file> 
+python export_svo.py --mode 1 --input_svo_file <input_svo_file> --output_avi_file <output_avi_file> 
+python export_svo.py --mode 2 --input_svo_file <input_svo_file> --output_path_dir <output_path_dir> 
+python export_svo.py --mode 3 --input_svo_file <input_svo_file> --output_path_dir <output_path_dir> 
+python export_svo.py --mode 4 --input_svo_file <input_svo_file> --output_path_dir <output_path_dir> 
 ```
-
-## Troubleshooting
-
-If you want to tweak the video file option in the sample code (for example recording a mp4 file), you may have to recompile OpenCV with the FFmpeg option (WITH_FFMPEG).
 
 ## Support
-
 If you need assistance go to our Community site at https://community.stereolabs.com/
