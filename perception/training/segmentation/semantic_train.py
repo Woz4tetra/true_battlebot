@@ -1,4 +1,5 @@
 import os
+import warnings
 
 import numpy as np
 import pytorch_lightning as pl
@@ -33,10 +34,16 @@ class SemanticSegmentationDataset(Dataset):
         self.id2label = {x[0]: x[1] for x in data}
 
         image_file_names = [f for f in os.listdir(self.root_dir) if ".jpg" in f]
-        mask_file_names = [f for f in os.listdir(self.root_dir) if ".png" in f]
+        self.masks = []
 
-        self.images = sorted(image_file_names)
-        self.masks = sorted(mask_file_names)
+        self.images = []
+        for image_name in sorted(image_file_names):
+            mask_name = image_name.replace(".jpg", "_mask.png")
+            if not os.path.isfile(os.path.join(self.root_dir, mask_name)):
+                warnings.warn(f"Missing mask for image {image_name}")
+                continue
+            self.masks.append(mask_name)
+            self.images.append(image_name)
 
     def __len__(self):
         return len(self.images)
