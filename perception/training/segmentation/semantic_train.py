@@ -195,7 +195,7 @@ class SegformerFinetuner(pl.LightningModule):
 
 dataset_location = "/media/storage/training/labeled/semantic-seg/nhrl_field_segmantic"
 
-feature_extractor = SegformerFeatureExtractor.from_pretrained("nvidia/segformer-b0-finetuned-ade-512-512")
+feature_extractor = SegformerFeatureExtractor.from_pretrained("nvidia/segformer-b1-finetuned-ade-512-512")
 feature_extractor.reduce_labels = False
 feature_extractor.size = 128
 
@@ -228,7 +228,7 @@ checkpoint_callback = ModelCheckpoint(save_top_k=1, monitor="val_loss")
 
 trainer = pl.Trainer(
     callbacks=[early_stop_callback, checkpoint_callback],
-    max_epochs=500,
+    max_epochs=250,
     val_check_interval=len(train_dataloader),
 )
 trainer.fit(segformer_finetuner)
