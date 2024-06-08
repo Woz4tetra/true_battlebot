@@ -12,6 +12,7 @@ class HomographyTransform(Transform):
         self.width = width
         self.height = height
         self.tf_image, self.scale_factor = self.perspective_matrix(src_corners, dst_corners)
+        self.tf_scale = np.eye(3) * (1 / self.scale_factor)
 
     @classmethod
     def from_matrix(cls, matrix: np.ndarray):
@@ -43,10 +44,15 @@ class HomographyTransform(Transform):
         """
         coords should be a N * 2 array-like, containing N couples of (x, y) points
         """
-        coords = np.asarray(coords, dtype=float)
-        applied_coords = np.concatenate([coords, np.ones((coords.shape[0], 1))], axis=1)
-        applied_coords = np.tensordot(applied_coords, self.scale_factor, axes=0)[:, :2]
-        applied_coords = cv2.transform(coords[:, np.newaxis, :], self.tf_image)[:, 0, :2]
+        applied_coords = np.asarray(coords, dtype=float)[:, np.newaxis, :]
+        applied_coords = cv2.perspectiveTransform(applied_coords, self.tf_image)
+
+        # scale about the center of the image
+        applied_coords[..., 0] -= self.width / 2
+        applied_coords[..., 1] -= self.height / 2
+        applied_coords = cv2.transform(applied_coords, self.tf_scale)[:, 0, :2]
+        applied_coords[..., 0] += self.width / 2
+        applied_coords[..., 1] += self.height / 2
         return applied_coords
 
     def perspective_matrix(self, src_corners, dst_corners) -> tuple[np.ndarray, float]:
