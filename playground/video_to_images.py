@@ -6,7 +6,7 @@ import cv2
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-v", "--video", type=str, nargs="+", help="path to input video file(s)")
+    parser.add_argument("video", type=str, nargs="+", help="path to input video file(s)")
     parser.add_argument("-o", "--output", type=str, default="", help="output directory")
     parser.add_argument("-s", "--skip", type=int, default=0, help="select x number of frames")
     args = parser.parse_args()
