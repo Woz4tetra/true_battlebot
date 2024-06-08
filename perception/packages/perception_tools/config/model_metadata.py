@@ -23,6 +23,7 @@ LABEL_COLORS = {
     Label.FRIENDLY_ROBOT: LabelColor(0.0, 0.115, 1.0),
     Label.REFEREE: LabelColor(0.339, 0.339, 0.339),
     Label.ROBOT: LabelColor(1.0, 0.61, 0.0),
+    Label.FIELD: LabelColor(0.0, 1.0, 0.0),
 }
 
 

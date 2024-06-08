@@ -74,6 +74,12 @@ class CocoDataset:
     images: List[DatasetImage]
     annotations: List[DatasetAnnotation]
 
+    def get_annotation_by_id(self, annotation_id: int) -> DatasetAnnotation:
+        for annotation in self.annotations:
+            if annotation.id == annotation_id:
+                return annotation
+        raise ValueError(f"Annotation {annotation_id} not found")
+
 
 @dataclass
 class CocoMetaDataset:
@@ -92,7 +98,7 @@ class CocoMetaDataset:
 
     def get_annotations(self, image_id: int) -> List[DatasetAnnotation]:
         annotation_ids = self.image_id_to_annotations[image_id]
-        return [self.dataset.annotations[annotation_id] for annotation_id in annotation_ids]
+        return [self.dataset.get_annotation_by_id(annotation_id) for annotation_id in annotation_ids]
 
     def add_annotation(self, image: DatasetImage, annotations: List[DatasetAnnotation]):
         image.id = self._next_image_id()

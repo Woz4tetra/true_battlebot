@@ -137,23 +137,6 @@ class SegformerFinetuner(pl.LightningModule):
 
         return {"val_loss": loss}
 
-    def validation_epoch_end(self, outputs):
-        metrics = self.val_mean_iou.compute(
-            num_labels=self.num_classes,
-            ignore_index=255,
-            reduce_labels=False,
-        )
-
-        avg_val_loss = torch.stack([x["val_loss"] for x in outputs]).mean()
-        val_mean_iou = metrics["mean_iou"]
-        val_mean_accuracy = metrics["mean_accuracy"]
-
-        metrics = {"val_loss": avg_val_loss, "val_mean_iou": val_mean_iou, "val_mean_accuracy": val_mean_accuracy}
-        for k, v in metrics.items():
-            self.log(k, v)
-
-        return metrics
-
     def test_step(self, batch, batch_nb):
         images, masks = batch["pixel_values"], batch["labels"]
 
@@ -204,15 +187,17 @@ class SegformerFinetuner(pl.LightningModule):
         return self.test_dl
 
 
+dataset_location = "/media/storage/training/labeled/true-battlebot-segmentation/2024-06-08/nhrl_field"
+
 feature_extractor = SegformerFeatureExtractor.from_pretrained("nvidia/segformer-b0-finetuned-ade-512-512")
 feature_extractor.reduce_labels = False
 feature_extractor.size = 128
 
-train_dataset = SemanticSegmentationDataset(f"{dataset.location}/train/", feature_extractor)
-val_dataset = SemanticSegmentationDataset(f"{dataset.location}/valid/", feature_extractor)
-test_dataset = SemanticSegmentationDataset(f"{dataset.location}/test/", feature_extractor)
+train_dataset = SemanticSegmentationDataset(f"{dataset_location}/train/", feature_extractor)
+val_dataset = SemanticSegmentationDataset(f"{dataset_location}/val/", feature_extractor)
+test_dataset = SemanticSegmentationDataset(f"{dataset_location}/test/", feature_extractor)
 
-batch_size = 8
+batch_size = 4
 num_workers = 2
 train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
 val_dataloader = DataLoader(val_dataset, batch_size=batch_size, num_workers=num_workers)
@@ -236,7 +221,6 @@ early_stop_callback = EarlyStopping(
 checkpoint_callback = ModelCheckpoint(save_top_k=1, monitor="val_loss")
 
 trainer = pl.Trainer(
-    gpus=1,
     callbacks=[early_stop_callback, checkpoint_callback],
     max_epochs=500,
     val_check_interval=len(train_dataloader),

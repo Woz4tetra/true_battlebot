@@ -4,7 +4,7 @@ import os
 import shutil
 
 import tqdm
-from coco_dataset import CocoMetaDataset
+from perception_tools.training.coco_dataset import CocoMetaDataset
 
 
 def load_annotations(annotations_path: str) -> CocoMetaDataset:

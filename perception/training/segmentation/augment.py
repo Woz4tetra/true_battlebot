@@ -5,8 +5,8 @@ import os
 import numpy as np
 import tqdm
 from detectron2.data import transforms
-from helpers import (
-    RandomRadialHomography,
+from perception_tools.training.augmentations import RandomRadialHomography
+from perception_tools.training.helpers import (
     augment_dataset_image,
     copy_dataset,
     load_dataset,
@@ -37,27 +37,26 @@ def main():
     np.random.seed(4176)
     augmentations = transforms.AugmentationList(
         [
-            # transforms.RandomRotation(angle=[-15, 15], expand=True),
             transforms.RandomBrightness(0.5, 1.5),
-            RandomRadialHomography(0.5, 0.6),
+            RandomRadialHomography(0.5, 0.55),
         ]
     )
     num_repetitions = 2
-    counter = 0
 
     metadataset = load_dataset(annotations_path)
     new_metadataset = copy.deepcopy(metadataset)
     try:
         with tqdm.tqdm(total=len(metadataset.dataset.images) * num_repetitions) as pbar:
             for dataset_image in metadataset.dataset.images:
-                if counter > 10:
-                    break
-                counter += 1
                 for repetition in range(num_repetitions):
                     image_path = os.path.join(images_path, dataset_image.file_name)
-                    image_transformed, transformed_annotations = augment_dataset_image(
-                        image_path, metadataset, dataset_image, augmentations
-                    )
+                    try:
+                        image_transformed, transformed_annotations = augment_dataset_image(
+                            image_path, metadataset, dataset_image, augmentations
+                        )
+                    except KeyError:
+                        print(f"Skipping image {image_path} due to missing annotations")
+                        continue
                     new_image_filename = write_augmented_image(
                         image_transformed, augmented_path, image_path, repetition
                     )
