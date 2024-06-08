@@ -7,6 +7,8 @@ docker-compose.gpu.yaml
 *.wav
 build/
 
+lightning_logs/
+
 # ZED files
 *neural_depth*.model*
 .*timing_cache

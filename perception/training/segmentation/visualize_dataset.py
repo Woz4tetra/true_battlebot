@@ -3,7 +3,6 @@ import os
 
 import cv2
 import numpy as np
-import tqdm
 from bw_shared.enums.label import Label
 from perception_tools.config.model_metadata import LABEL_COLORS
 from perception_tools.training.helpers import load_dataset

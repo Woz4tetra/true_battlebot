@@ -5,7 +5,6 @@ import time
 logger = logging.getLoggerClass()
 
 import cv2
-import rospy
 
 logging.setLoggerClass(logging.Logger)
 from bw_shared.enums.label import Label

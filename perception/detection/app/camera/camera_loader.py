@@ -1,4 +1,4 @@
-from typing import Type, Union
+from typing import Union
 
 from perception_tools.rosbridge.ros_poll_subscriber import RosPollSubscriber
 from perception_tools.rosbridge.ros_publisher import RosPublisher

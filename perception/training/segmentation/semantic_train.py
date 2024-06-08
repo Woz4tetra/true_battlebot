@@ -1,5 +1,4 @@
 import os
-import random
 
 import numpy as np
 import pytorch_lightning as pl
@@ -9,7 +8,6 @@ from matplotlib import pyplot as plt
 from PIL import Image
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from pytorch_lightning.callbacks.model_checkpoint import ModelCheckpoint
-from pytorch_lightning.loggers import CSVLogger
 from torch import nn
 from torch.utils.data import DataLoader, Dataset
 from transformers import SegformerFeatureExtractor, SegformerForSemanticSegmentation
@@ -23,14 +21,15 @@ class SemanticSegmentationDataset(Dataset):
         Args:
             root_dir (string): Root directory of the dataset containing the images + annotations.
             feature_extractor (SegFormerFeatureExtractor): feature extractor to prepare images + segmentation maps.
-            train (bool): Whether to load "training" or "validation" images + annota SegformerForSemanticSegmentationtions.
+            train (bool): Whether to load "training" or "validation" images + annotations
+                SegformerForSemanticSegmentation.
         """
         self.root_dir = root_dir
         self.feature_extractor = feature_extractor
 
         self.classes_csv_file = os.path.join(self.root_dir, "_classes.csv")
         with open(self.classes_csv_file, "r") as fid:
-            data = [l.split(",") for i, l in enumerate(fid) if i != 0]
+            data = [label.split(",") for index, label in enumerate(fid) if index != 0]
         self.id2label = {x[0]: x[1] for x in data}
 
         image_file_names = [f for f in os.listdir(self.root_dir) if ".jpg" in f]
@@ -187,7 +186,7 @@ class SegformerFinetuner(pl.LightningModule):
         return self.test_dl
 
 
-dataset_location = "/media/storage/training/labeled/true-battlebot-segmentation/2024-06-08/nhrl_field"
+dataset_location = "/media/storage/training/labeled/semantic-seg/nhrl_field_segmantic"
 
 feature_extractor = SegformerFeatureExtractor.from_pretrained("nvidia/segformer-b0-finetuned-ade-512-512")
 feature_extractor.reduce_labels = False

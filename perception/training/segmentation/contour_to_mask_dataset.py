@@ -1,6 +1,5 @@
 import argparse
 import csv
-import os
 from pathlib import Path
 
 import cv2
@@ -32,18 +31,18 @@ def main():
     args = parser.parse_args()
     dataset_path = Path(args.dataset_path)
     output_path = Path(args.output) if args.output else Path(str(dataset_path) + "_segmantic")
+    classes_name = "_classes.csv"
+    annotations_name = "_annotations.coco.json"
 
     copy_dataset(str(dataset_path), str(output_path))
 
     for subdir in dataset_path.glob("*"):
-        annotations_name = "_annotations.coco.json"
         annotations_path = subdir / annotations_name
         if not annotations_path.exists():
             raise FileNotFoundError(f"Annotations file {annotations_path} does not exist")
 
-        classes_name = "_classes.csv"
-        classes_path = subdir / classes_name
         new_subdir = output_path / subdir.name
+        classes_path = new_subdir / classes_name
 
         classes = {0: "background"}
 
