@@ -63,7 +63,13 @@ class SemanticSegmentationDataset(Dataset):
 
 class SegformerFinetuner(pl.LightningModule):
     def __init__(
-        self, id2label, train_dataloader=None, val_dataloader=None, test_dataloader=None, metrics_interval=100
+        self,
+        pretrained_model_name_or_path,
+        id2label,
+        train_dataloader=None,
+        val_dataloader=None,
+        test_dataloader=None,
+        metrics_interval=100,
     ):
         super(SegformerFinetuner, self).__init__()
         self.id2label = id2label
@@ -141,6 +147,7 @@ class SegformerFinetuner(pl.LightningModule):
             predictions=predicted.detach().cpu().numpy(), references=masks.detach().cpu().numpy()
         )
 
+        self.log("val_loss", loss)
         return {"val_loss": loss}
 
     def test_step(self, batch, batch_nb):
@@ -195,7 +202,8 @@ class SegformerFinetuner(pl.LightningModule):
 
 dataset_location = "/media/storage/training/labeled/semantic-seg/nhrl_field_segmantic"
 
-feature_extractor = SegformerFeatureExtractor.from_pretrained("nvidia/segformer-b1-finetuned-ade-512-512")
+pretrained_model_name_or_path = "nvidia/segformer-b1-finetuned-ade-512-512"
+feature_extractor = SegformerFeatureExtractor.from_pretrained(pretrained_model_name_or_path)
 feature_extractor.reduce_labels = False
 feature_extractor.size = 128
 
@@ -210,6 +218,7 @@ val_dataloader = DataLoader(val_dataset, batch_size=batch_size, num_workers=num_
 test_dataloader = DataLoader(test_dataset, batch_size=batch_size, num_workers=num_workers)
 
 segformer_finetuner = SegformerFinetuner(
+    pretrained_model_name_or_path,
     train_dataset.id2label,
     train_dataloader=train_dataloader,
     val_dataloader=val_dataloader,
@@ -229,7 +238,7 @@ checkpoint_callback = ModelCheckpoint(save_top_k=1, monitor="val_loss")
 trainer = pl.Trainer(
     callbacks=[early_stop_callback, checkpoint_callback],
     max_epochs=250,
-    val_check_interval=len(train_dataloader),
+    val_check_interval=1.0,
 )
 trainer.fit(segformer_finetuner)
 
