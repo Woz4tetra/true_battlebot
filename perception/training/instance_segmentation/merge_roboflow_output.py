@@ -1,3 +1,4 @@
+import argparse
 import json
 import os
 import shutil
@@ -18,8 +19,18 @@ def save_annotations(annotations: CocoMetaDataset, annotations_path: str) -> Non
 
 
 def main():
-    images_path = "/media/storage/training/labeled/true-battlebot-keypoints/2024-06-06"
-    merged_path = "/media/storage/training/labeled/true-battlebot-keypoints/2024-06-06-merged"
+    parser = argparse.ArgumentParser(description="Augment a dataset")
+    parser.add_argument(
+        "images_path",
+        type=str,
+        help="Path to the directory containing the images and annotations",
+    )
+    parser.add_argument("-o", "--output", nargs="?", type=str, help="Path to the output directory", default="")
+    args = parser.parse_args()
+    images_path = args.images_path
+    if images_path.endswith("/"):
+        images_path = images_path[:-1]
+    merged_path = args.output if args.output else images_path + "_merged"
 
     all_annotations = None
     image_moves = []

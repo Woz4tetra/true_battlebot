@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime
+import warnings
 from dataclasses import asdict, dataclass, field
 from functools import cached_property
 from typing import Dict, List
@@ -137,7 +138,10 @@ class CocoMetaDataset:
             if license not in self.dataset.licenses:
                 self.dataset.licenses.append(license)
         for image in other.dataset.images:
-            annotations = other.get_annotations(image.id)
+            try:
+                annotations = other.get_annotations(image.id)
+            except KeyError:
+                warnings.warn(f"Image {image} has no annotations")
             self.add_annotation(image, annotations)
 
     @classmethod
