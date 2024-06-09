@@ -7,19 +7,7 @@ export IMAGE_VERSION=$(${BASE_DIR}/../get_image_tag)
 export PERCEPTION_IMAGE_VERSION=$(${BASE_DIR}/../get_image_tag perception)
 export ORGANIZATION=$(${BASE_DIR}/../get_organization)
 
-
-which nvidia-smi > /dev/null
-if [[ $? -eq 1 ]]; then
-	HAS_GPU="disable"
-else
-	nvidia-smi -L > /dev/null
-	num_gpus=$?
-	if ((num_gpus == 0)); then
-		HAS_GPU="enable"
-	else
-		HAS_GPU="disable"
-	fi
-fi
+HAS_GPU=$(${BASE_DIR}/has_gpu)
 
 cd ${BASE_DIR}/../resources
 
