@@ -85,6 +85,7 @@ class SegformerFinetuner(pl.LightningModule):
 
         self.num_classes = len(id2label.keys())
         self.label2id = {v: k for k, v in self.id2label.items()}
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         self.model = SegformerForSemanticSegmentation.from_pretrained(
             pretrained_model_name_or_path,
@@ -94,6 +95,7 @@ class SegformerFinetuner(pl.LightningModule):
             label2id=self.label2id,
             ignore_mismatched_sizes=True,
         )
+        self.model.to(device)
 
         self.train_mean_iou = load_metric("mean_iou")
         self.val_mean_iou = load_metric("mean_iou")
