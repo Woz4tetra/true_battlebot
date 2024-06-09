@@ -1,6 +1,7 @@
 import argparse
 import os
 import warnings
+from pathlib import Path
 
 import numpy as np
 import pytorch_lightning as pl
@@ -73,6 +74,7 @@ class SegformerFinetuner(pl.LightningModule):
         val_dataloader=None,
         test_dataloader=None,
         metrics_interval=100,
+        log_dir="lightning_logs",
     ):
         super(SegformerFinetuner, self).__init__()
         self.id2label = id2label
@@ -235,18 +237,26 @@ def main() -> None:
         default=500,
         help="Number of training epochs",
     )
+    parser.add_argument(
+        "-o",
+        "--output",
+        type=str,
+        default="",
+        help="Output directory for the model and logs",
+    )
     args = parser.parse_args()
-    dataset_location = args.dataset_location
+    dataset_location = Path(args.dataset_location)
     checkpoint = args.checkpoint
+    output = Path(args.output) if args.output else dataset_location.parent / "output"
 
     pretrained_model_name_or_path = "nvidia/segformer-b5-finetuned-ade-640-640"
     feature_extractor = SegformerFeatureExtractor.from_pretrained(pretrained_model_name_or_path)
     feature_extractor.reduce_labels = False
     feature_extractor.size = 128
 
-    train_dataset = SemanticSegmentationDataset(f"{dataset_location}/train/", feature_extractor)
-    val_dataset = SemanticSegmentationDataset(f"{dataset_location}/val/", feature_extractor)
-    test_dataset = SemanticSegmentationDataset(f"{dataset_location}/test/", feature_extractor)
+    train_dataset = SemanticSegmentationDataset(str(dataset_location / "train/"), feature_extractor)
+    val_dataset = SemanticSegmentationDataset(str(dataset_location / "val/"), feature_extractor)
+    test_dataset = SemanticSegmentationDataset(str(dataset_location / "test/"), feature_extractor)
 
     batch_size = args.batch_size
     num_workers = args.num_workers
@@ -279,7 +289,10 @@ def main() -> None:
     )
     trainer.fit(segformer_finetuner, ckpt_path=checkpoint)
 
-    res = trainer.test(ckpt_path="best")
+    segformer_finetuner.model.save_pretrained(output)
+    print(f"Saved model to {output}")
+
+    res = trainer.test(segformer_finetuner, ckpt_path=checkpoint)
 
     for batch in test_dataloader:
         images, masks = batch["pixel_values"], batch["labels"]
@@ -290,10 +303,8 @@ def main() -> None:
         upsampled_logits = nn.functional.interpolate(
             logits, size=masks.shape[-2:], mode="bilinear", align_corners=False
         )
-        predicted_mask = upsampled_logits.argmax(dim=1).cpu().numpy()
+        # predicted_mask = upsampled_logits.argmax(dim=1).cpu().numpy()
         masks = masks.cpu().numpy()
-
-    n_plots = 4
 
     # Predict on a test image and overlay the mask on the original image
     test_idx = 0
@@ -307,22 +318,14 @@ def main() -> None:
 
     loss, logits = outputs[0], outputs[1]
 
-    upsampled_logits = nn.functional.interpolate(logits, size=masks.shape[-2:], mode="bilinear", align_corners=False)
-    predicted_mask = upsampled_logits.argmax(dim=1).cpu().numpy()
+    # upsampled_logits = nn.functional.interpolate(logits, size=masks.shape[-2:], mode="bilinear", align_corners=False)
+    # predicted_mask = upsampled_logits.argmax(dim=1).cpu().numpy()
     mask = prediction_to_vis(np.squeeze(masks))
     mask = mask.resize(input_image.size)
     mask = mask.convert("RGBA")
     input_image = input_image.convert("RGBA")
     overlay_img = Image.blend(input_image, mask, 0.5)
     overlay_img.save("lightning_logs/overlay.png")
-
-    f, axarr = plt.subplots(n_plots, 2)
-    f.set_figheight(15)
-    f.set_figwidth(15)
-    for i in range(n_plots):
-        axarr[i, 0].imshow(prediction_to_vis(predicted_mask[i, :, :]))
-        axarr[i, 1].imshow(prediction_to_vis(masks[i, :, :]))
-    plt.savefig("lightning_logs/predictions.png")
 
 
 if __name__ == "__main__":
