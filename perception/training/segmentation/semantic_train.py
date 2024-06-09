@@ -82,7 +82,7 @@ class SegformerFinetuner(pl.LightningModule):
         self.label2id = {v: k for k, v in self.id2label.items()}
 
         self.model = SegformerForSemanticSegmentation.from_pretrained(
-            "nvidia/segformer-b0-finetuned-ade-512-512",
+            pretrained_model_name_or_path,
             return_dict=False,
             num_labels=self.num_classes,
             id2label=self.id2label,
@@ -169,7 +169,7 @@ class SegformerFinetuner(pl.LightningModule):
 
         return {"test_loss": loss}
 
-    def test_epoch_end(self, outputs):
+    def on_test_epoch_end(self, outputs):
         metrics = self.test_mean_iou.compute(
             num_labels=self.num_classes,
             ignore_index=255,
@@ -201,8 +201,10 @@ class SegformerFinetuner(pl.LightningModule):
 
 
 dataset_location = "/media/storage/training/labeled/semantic-seg/nhrl_field_segmantic"
+checkpoint = "lightning_logs/version_13/checkpoints/epoch=8-step=21393.ckpt"
+# checkpoint = None
 
-pretrained_model_name_or_path = "nvidia/segformer-b1-finetuned-ade-512-512"
+pretrained_model_name_or_path = "nvidia/segformer-b0-finetuned-ade-512-512"
 feature_extractor = SegformerFeatureExtractor.from_pretrained(pretrained_model_name_or_path)
 feature_extractor.reduce_labels = False
 feature_extractor.size = 128
@@ -237,10 +239,10 @@ checkpoint_callback = ModelCheckpoint(save_top_k=1, monitor="val_loss")
 
 trainer = pl.Trainer(
     callbacks=[early_stop_callback, checkpoint_callback],
-    max_epochs=250,
+    max_epochs=230,
     val_check_interval=1.0,
 )
-trainer.fit(segformer_finetuner)
+trainer.fit(segformer_finetuner, ckpt_path=checkpoint)
 
 res = trainer.test(ckpt_path="best")
 color_map = {
@@ -295,3 +297,4 @@ f.set_figwidth(15)
 for i in range(n_plots):
     axarr[i, 0].imshow(prediction_to_vis(predicted_mask[i, :, :]))
     axarr[i, 1].imshow(prediction_to_vis(masks[i, :, :]))
+plt.show()
