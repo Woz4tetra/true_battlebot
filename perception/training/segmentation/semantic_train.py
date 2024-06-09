@@ -1,11 +1,14 @@
+import argparse
 import os
 import warnings
 
 import numpy as np
 import pytorch_lightning as pl
 import torch
+from bw_shared.enums.label import Label
 from datasets import load_metric
 from matplotlib import pyplot as plt
+from perception_tools.config.model_metadata import LABEL_COLORS
 from PIL import Image
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from pytorch_lightning.callbacks.model_checkpoint import ModelCheckpoint
@@ -166,26 +169,9 @@ class SegformerFinetuner(pl.LightningModule):
         self.test_mean_iou.add_batch(
             predictions=predicted.detach().cpu().numpy(), references=masks.detach().cpu().numpy()
         )
+        self.log("test_loss", loss)
 
         return {"test_loss": loss}
-
-    def on_test_epoch_end(self, outputs):
-        metrics = self.test_mean_iou.compute(
-            num_labels=self.num_classes,
-            ignore_index=255,
-            reduce_labels=False,
-        )
-
-        avg_test_loss = torch.stack([x["test_loss"] for x in outputs]).mean()
-        test_mean_iou = metrics["mean_iou"]
-        test_mean_accuracy = metrics["mean_accuracy"]
-
-        metrics = {"test_loss": avg_test_loss, "test_mean_iou": test_mean_iou, "test_mean_accuracy": test_mean_accuracy}
-
-        for k, v in metrics.items():
-            self.log(k, v)
-
-        return metrics
 
     def configure_optimizers(self):
         return torch.optim.Adam([p for p in self.parameters() if p.requires_grad], lr=2e-05, eps=1e-08)
@@ -200,54 +186,9 @@ class SegformerFinetuner(pl.LightningModule):
         return self.test_dl
 
 
-dataset_location = "/media/storage/training/labeled/semantic-seg/nhrl_field_segmantic"
-checkpoint = "lightning_logs/version_13/checkpoints/epoch=8-step=21393.ckpt"
-# checkpoint = None
-
-pretrained_model_name_or_path = "nvidia/segformer-b0-finetuned-ade-512-512"
-feature_extractor = SegformerFeatureExtractor.from_pretrained(pretrained_model_name_or_path)
-feature_extractor.reduce_labels = False
-feature_extractor.size = 128
-
-train_dataset = SemanticSegmentationDataset(f"{dataset_location}/train/", feature_extractor)
-val_dataset = SemanticSegmentationDataset(f"{dataset_location}/val/", feature_extractor)
-test_dataset = SemanticSegmentationDataset(f"{dataset_location}/test/", feature_extractor)
-
-batch_size = 4
-num_workers = 2
-train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
-val_dataloader = DataLoader(val_dataset, batch_size=batch_size, num_workers=num_workers)
-test_dataloader = DataLoader(test_dataset, batch_size=batch_size, num_workers=num_workers)
-
-segformer_finetuner = SegformerFinetuner(
-    pretrained_model_name_or_path,
-    train_dataset.id2label,
-    train_dataloader=train_dataloader,
-    val_dataloader=val_dataloader,
-    test_dataloader=test_dataloader,
-    metrics_interval=10,
-)
-early_stop_callback = EarlyStopping(
-    monitor="val_loss",
-    min_delta=0.00,
-    patience=10,
-    verbose=False,
-    mode="min",
-)
-
-checkpoint_callback = ModelCheckpoint(save_top_k=1, monitor="val_loss")
-
-trainer = pl.Trainer(
-    callbacks=[early_stop_callback, checkpoint_callback],
-    max_epochs=230,
-    val_check_interval=1.0,
-)
-trainer.fit(segformer_finetuner, ckpt_path=checkpoint)
-
-res = trainer.test(ckpt_path="best")
 color_map = {
     0: (0, 0, 0),
-    1: (255, 0, 0),
+    1: LABEL_COLORS[Label.FIELD].to_cv_color(),
 }
 
 
@@ -259,42 +200,126 @@ def prediction_to_vis(prediction):
     return Image.fromarray(vis.astype(np.uint8))
 
 
-for batch in test_dataloader:
-    images, masks = batch["pixel_values"], batch["labels"]
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Train a semantic segmentation model")
+    parser.add_argument(
+        "dataset_location",
+        type=str,
+        help="Path to the directory containing the images and annotations",
+    )
+    parser.add_argument(
+        "--checkpoint",
+        type=str,
+        default=None,
+        help="Path to the checkpoint file",
+    )
+    parser.add_argument(
+        "--batch_size",
+        type=int,
+        default=4,
+        help="Batch size",
+    )
+    parser.add_argument(
+        "--num_workers",
+        type=int,
+        default=2,
+        help="Number of workers",
+    )
+    parser.add_argument(
+        "--num_epochs",
+        type=int,
+        default=500,
+        help="Number of training epochs",
+    )
+    args = parser.parse_args()
+    dataset_location = args.dataset_location
+    checkpoint = args.checkpoint
+
+    pretrained_model_name_or_path = "nvidia/segformer-b5-finetuned-ade-512-512"
+    feature_extractor = SegformerFeatureExtractor.from_pretrained(pretrained_model_name_or_path)
+    feature_extractor.reduce_labels = False
+    feature_extractor.size = 128
+
+    train_dataset = SemanticSegmentationDataset(f"{dataset_location}/train/", feature_extractor)
+    val_dataset = SemanticSegmentationDataset(f"{dataset_location}/val/", feature_extractor)
+    test_dataset = SemanticSegmentationDataset(f"{dataset_location}/test/", feature_extractor)
+
+    batch_size = args.batch_size
+    num_workers = args.num_workers
+    train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
+    val_dataloader = DataLoader(val_dataset, batch_size=batch_size, num_workers=num_workers)
+    test_dataloader = DataLoader(test_dataset, batch_size=batch_size, num_workers=num_workers)
+
+    segformer_finetuner = SegformerFinetuner(
+        pretrained_model_name_or_path,
+        train_dataset.id2label,
+        train_dataloader=train_dataloader,
+        val_dataloader=val_dataloader,
+        test_dataloader=test_dataloader,
+        metrics_interval=10,
+    )
+    early_stop_callback = EarlyStopping(
+        monitor="val_loss",
+        min_delta=0.00,
+        patience=10,
+        verbose=False,
+        mode="min",
+    )
+
+    checkpoint_callback = ModelCheckpoint(save_top_k=1, monitor="val_loss")
+
+    trainer = pl.Trainer(
+        callbacks=[early_stop_callback, checkpoint_callback],
+        max_epochs=args.num_epochs,
+        val_check_interval=1.0,
+    )
+    trainer.fit(segformer_finetuner, ckpt_path=checkpoint)
+
+    res = trainer.test(ckpt_path="best")
+
+    for batch in test_dataloader:
+        images, masks = batch["pixel_values"], batch["labels"]
+        outputs = segformer_finetuner.model(images, masks)
+
+        loss, logits = outputs[0], outputs[1]
+
+        upsampled_logits = nn.functional.interpolate(
+            logits, size=masks.shape[-2:], mode="bilinear", align_corners=False
+        )
+        predicted_mask = upsampled_logits.argmax(dim=1).cpu().numpy()
+        masks = masks.cpu().numpy()
+
+    n_plots = 4
+
+    # Predict on a test image and overlay the mask on the original image
+    test_idx = 0
+    input_image_file = os.path.join(test_dataset.root_dir, test_dataset.images[test_idx])
+    input_image = Image.open(input_image_file)
+    test_batch = test_dataset[test_idx]
+    images, masks = test_batch["pixel_values"], test_batch["labels"]
+    images = torch.unsqueeze(images, 0)
+    masks = torch.unsqueeze(masks, 0)
     outputs = segformer_finetuner.model(images, masks)
 
     loss, logits = outputs[0], outputs[1]
 
     upsampled_logits = nn.functional.interpolate(logits, size=masks.shape[-2:], mode="bilinear", align_corners=False)
     predicted_mask = upsampled_logits.argmax(dim=1).cpu().numpy()
-    masks = masks.cpu().numpy()
+    mask = prediction_to_vis(np.squeeze(masks))
+    mask = mask.resize(input_image.size)
+    mask = mask.convert("RGBA")
+    input_image = input_image.convert("RGBA")
+    overlay_img = Image.blend(input_image, mask, 0.5)
+    overlay_img.save("lightning_logs/overlay.png")
 
-n_plots = 4
+    f, axarr = plt.subplots(n_plots, 2)
+    f.set_figheight(15)
+    f.set_figwidth(15)
+    for i in range(n_plots):
+        axarr[i, 0].imshow(prediction_to_vis(predicted_mask[i, :, :]))
+        axarr[i, 1].imshow(prediction_to_vis(masks[i, :, :]))
+    plt.savefig("lightning_logs/predictions.png")
 
-# Predict on a test image and overlay the mask on the original image
-test_idx = 0
-input_image_file = os.path.join(test_dataset.root_dir, test_dataset.images[test_idx])
-input_image = Image.open(input_image_file)
-test_batch = test_dataset[test_idx]
-images, masks = test_batch["pixel_values"], test_batch["labels"]
-images = torch.unsqueeze(images, 0)
-masks = torch.unsqueeze(masks, 0)
-outputs = segformer_finetuner.model(images, masks)
 
-loss, logits = outputs[0], outputs[1]
-
-upsampled_logits = nn.functional.interpolate(logits, size=masks.shape[-2:], mode="bilinear", align_corners=False)
-predicted_mask = upsampled_logits.argmax(dim=1).cpu().numpy()
-mask = prediction_to_vis(np.squeeze(masks))
-mask = mask.resize(input_image.size)
-mask = mask.convert("RGBA")
-input_image = input_image.convert("RGBA")
-overlay_img = Image.blend(input_image, mask, 0.5)
-
-f, axarr = plt.subplots(n_plots, 2)
-f.set_figheight(15)
-f.set_figwidth(15)
-for i in range(n_plots):
-    axarr[i, 0].imshow(prediction_to_vis(predicted_mask[i, :, :]))
-    axarr[i, 1].imshow(prediction_to_vis(masks[i, :, :]))
-plt.show()
+if __name__ == "__main__":
+    main()
