@@ -7,7 +7,6 @@ PROJECT_DIR=$(realpath "${DIR}/../")
 DOCKER_ROOT_DIR=${PROJECT_DIR}/docker
 
 HAS_GPU=$(${DOCKER_ROOT_DIR}/scripts/has_gpu)
-
 ln -sf docker-compose.gpu-${HAS_GPU}.yaml docker-compose.gpu.yaml
 
 cat <<EOT > ${DIR}/.env
