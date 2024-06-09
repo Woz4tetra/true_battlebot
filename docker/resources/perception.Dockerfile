@@ -87,11 +87,6 @@ COPY --chown=1000:1000 \
     /opt/${ORGANIZATION}/install/
 RUN bash /opt/${ORGANIZATION}/install/install_python_perception.sh
 
-COPY --chown=1000:1000 \
-    ./install/perception/install_torchscript.sh \
-    /opt/${ORGANIZATION}/install/
-RUN bash /opt/${ORGANIZATION}/install/install_torchscript.sh
-
 # ---
 # Python extra packages
 # ---
