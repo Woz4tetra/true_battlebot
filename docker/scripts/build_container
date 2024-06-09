@@ -30,6 +30,9 @@ export IMAGE_VERSION=$(${BASE_DIR}/../get_image_tag)
 export PERCEPTION_IMAGE_VERSION=$(${BASE_DIR}/../get_image_tag perception)
 export ORGANIZATION=$(${BASE_DIR}/../get_organization)
 
+${BASE_DIR}/build_ros_ws
+${BASE_DIR}/build_perception
+
 HAS_GPU=$(${BASE_DIR}/has_gpu)
 ln -sf docker-compose.gpu-${HAS_GPU}.yaml docker-compose.gpu.yaml
 
@@ -38,6 +41,3 @@ docker-compose \
 -f docker-compose.${PROJECT_NAME}.yml \
 -f docker-compose.gpu.yaml \
 create
-
-${BASE_DIR}/build_ros_ws
-${BASE_DIR}/build_perception
