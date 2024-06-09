@@ -208,25 +208,29 @@ def main() -> None:
         help="Path to the directory containing the images and annotations",
     )
     parser.add_argument(
+        "-c",
         "--checkpoint",
         type=str,
         default=None,
         help="Path to the checkpoint file",
     )
     parser.add_argument(
-        "--batch_size",
+        "-b",
+        "--batch-size",
         type=int,
         default=4,
         help="Batch size",
     )
     parser.add_argument(
-        "--num_workers",
+        "-nw",
+        "--num-workers",
         type=int,
         default=2,
         help="Number of workers",
     )
     parser.add_argument(
-        "--num_epochs",
+        "-ne",
+        "--num-epochs",
         type=int,
         default=500,
         help="Number of training epochs",
@@ -235,7 +239,7 @@ def main() -> None:
     dataset_location = args.dataset_location
     checkpoint = args.checkpoint
 
-    pretrained_model_name_or_path = "nvidia/segformer-b5-finetuned-ade-512-512"
+    pretrained_model_name_or_path = "nvidia/segformer-b5-finetuned-ade-640-640"
     feature_extractor = SegformerFeatureExtractor.from_pretrained(pretrained_model_name_or_path)
     feature_extractor.reduce_labels = False
     feature_extractor.size = 128
