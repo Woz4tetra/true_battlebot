@@ -55,6 +55,10 @@ class SemanticSegmentationDataset(Dataset):
     def __getitem__(self, idx):
         image = Image.open(os.path.join(self.root_dir, self.images[idx]))
         segmentation_map = Image.open(os.path.join(self.root_dir, self.annotations[idx]))
+        category_ids = np.unique(np.array(segmentation_map))
+        assert np.all(
+            [category_id in self.id2label for category_id in category_ids]
+        ), f"Not all category IDs are in {self.id2label.keys()}. {category_ids}"
 
         # randomly crop + pad both image and segmentation map to same size
         encoded_inputs = self.image_processor(image, segmentation_map, return_tensors="pt")
@@ -251,7 +255,8 @@ def main() -> None:
     checkpoint = args.checkpoint
     output = Path(args.output) if args.output else dataset_location.parent / "output"
 
-    pretrained_model_name_or_path = "nvidia/segformer-b5-finetuned-ade-640-640"
+    # pretrained_model_name_or_path = "nvidia/segformer-b5-finetuned-ade-640-640"
+    pretrained_model_name_or_path = "nvidia/segformer-b0-finetuned-ade-512-512"
 
     image_processor = SegformerImageProcessor(reduce_labels=True)
 
