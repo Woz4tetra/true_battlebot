@@ -34,7 +34,7 @@ class SemanticSegmentationDataset(Dataset):
         self.classes_csv_file = os.path.join(self.root_dir, "_classes.csv")
         with open(self.classes_csv_file, "r") as fid:
             data = [label.split(",") for index, label in enumerate(fid) if index != 0]
-        self.id2label = {x[0]: x[1] for x in data}
+        self.id2label = {int(x[0]): x[1] for x in data}
 
         # read images and annotations
         image_file_names = [f for f in os.listdir(self.root_dir) if ".jpg" in f]
@@ -255,8 +255,8 @@ def main() -> None:
     checkpoint = args.checkpoint
     output = Path(args.output) if args.output else dataset_location.parent / "output"
 
-    # pretrained_model_name_or_path = "nvidia/segformer-b5-finetuned-ade-640-640"
-    pretrained_model_name_or_path = "nvidia/segformer-b0-finetuned-ade-512-512"
+    pretrained_model_name_or_path = "nvidia/segformer-b5-finetuned-ade-640-640"
+    # pretrained_model_name_or_path = "nvidia/segformer-b0-finetuned-ade-512-512"
 
     image_processor = SegformerImageProcessor(reduce_labels=True)
 
