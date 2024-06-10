@@ -142,7 +142,8 @@ def segmentation_annotations_to_masks(
 ) -> np.ndarray:
     full_mask = np.zeros((image_height, image_width), dtype=np.uint8)
     for annotation in annotations:
-        category_id = annotation.category_id + 1  # 0 is reserved for background
+        category_id = annotation.category_id
+        assert category_id > 0, f"Category ID must be greater than 0, got {category_id}"
         mask = segmentation_to_mask(image_width, image_height, annotation.segmentation, category_id)
         full_mask = np.maximum(full_mask, mask)
     return full_mask

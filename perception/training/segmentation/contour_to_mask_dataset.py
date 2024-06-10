@@ -61,7 +61,6 @@ def main():
                         classes[annotation.category_id] = metadataset.categories[annotation.category_id].name
                     mask = segmentation_annotations_to_masks(width, height, annotations)
                     mask_filename = image_path.name.replace(".jpg", "_mask.png")
-                    print(new_subdir / mask_filename)
                     cv2.imwrite(str(new_subdir / mask_filename), mask)
                     pbar.update(1)
         finally:
