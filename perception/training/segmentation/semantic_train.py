@@ -1,51 +1,52 @@
 import argparse
 import os
 import warnings
+from pathlib import Path
 
 import numpy as np
 import pytorch_lightning as pl
 import torch
 from bw_shared.enums.label import Label
 from datasets import load_metric
-from matplotlib import pyplot as plt
 from perception_tools.config.model_metadata import LABEL_COLORS
 from PIL import Image
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from pytorch_lightning.callbacks.model_checkpoint import ModelCheckpoint
 from torch import nn
 from torch.utils.data import DataLoader, Dataset
-from transformers import SegformerFeatureExtractor, SegformerForSemanticSegmentation
+from transformers import SegformerForSemanticSegmentation, SegformerImageProcessor
 
 
 class SemanticSegmentationDataset(Dataset):
     """Image (semantic) segmentation dataset."""
 
-    def __init__(self, root_dir, feature_extractor):
+    def __init__(self, root_dir, image_processor, train=True):
         """
         Args:
             root_dir (string): Root directory of the dataset containing the images + annotations.
-            feature_extractor (SegFormerFeatureExtractor): feature extractor to prepare images + segmentation maps.
-            train (bool): Whether to load "training" or "validation" images + annotations
-                SegformerForSemanticSegmentation.
+            image_processor (SegFormerImageProcessor): image processor to prepare images + segmentation maps.
+            train (bool): Whether to load "training" or "validation" images + annotations.
         """
         self.root_dir = root_dir
-        self.feature_extractor = feature_extractor
+        self.image_processor = image_processor
+        self.train = train
 
         self.classes_csv_file = os.path.join(self.root_dir, "_classes.csv")
         with open(self.classes_csv_file, "r") as fid:
             data = [label.split(",") for index, label in enumerate(fid) if index != 0]
         self.id2label = {x[0]: x[1] for x in data}
 
+        # read images and annotations
         image_file_names = [f for f in os.listdir(self.root_dir) if ".jpg" in f]
-        self.masks = []
+        self.annotations = []
 
         self.images = []
         for image_name in sorted(image_file_names):
-            mask_name = image_name.replace(".jpg", "_mask.png")
-            if not os.path.isfile(os.path.join(self.root_dir, mask_name)):
+            anno_name = image_name.replace(".jpg", "_mask.png")
+            if not os.path.isfile(os.path.join(self.root_dir, anno_name)):
                 warnings.warn(f"Missing mask for image {image_name}")
                 continue
-            self.masks.append(mask_name)
+            self.annotations.append(anno_name)
             self.images.append(image_name)
 
     def __len__(self):
@@ -53,10 +54,10 @@ class SemanticSegmentationDataset(Dataset):
 
     def __getitem__(self, idx):
         image = Image.open(os.path.join(self.root_dir, self.images[idx]))
-        segmentation_map = Image.open(os.path.join(self.root_dir, self.masks[idx]))
+        segmentation_map = Image.open(os.path.join(self.root_dir, self.annotations[idx]))
 
         # randomly crop + pad both image and segmentation map to same size
-        encoded_inputs = self.feature_extractor(image, segmentation_map, return_tensors="pt")
+        encoded_inputs = self.image_processor(image, segmentation_map, return_tensors="pt")
 
         for k, v in encoded_inputs.items():
             encoded_inputs[k].squeeze_()  # remove batch dimension
@@ -73,6 +74,7 @@ class SegformerFinetuner(pl.LightningModule):
         val_dataloader=None,
         test_dataloader=None,
         metrics_interval=100,
+        log_dir="lightning_logs",
     ):
         super(SegformerFinetuner, self).__init__()
         self.id2label = id2label
@@ -83,6 +85,7 @@ class SegformerFinetuner(pl.LightningModule):
 
         self.num_classes = len(id2label.keys())
         self.label2id = {v: k for k, v in self.id2label.items()}
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         self.model = SegformerForSemanticSegmentation.from_pretrained(
             pretrained_model_name_or_path,
@@ -92,6 +95,7 @@ class SegformerFinetuner(pl.LightningModule):
             label2id=self.label2id,
             ignore_mismatched_sizes=True,
         )
+        self.model.to(device)
 
         self.train_mean_iou = load_metric("mean_iou")
         self.val_mean_iou = load_metric("mean_iou")
@@ -235,18 +239,25 @@ def main() -> None:
         default=500,
         help="Number of training epochs",
     )
+    parser.add_argument(
+        "-o",
+        "--output",
+        type=str,
+        default="",
+        help="Output directory for the model and logs",
+    )
     args = parser.parse_args()
-    dataset_location = args.dataset_location
+    dataset_location = Path(args.dataset_location)
     checkpoint = args.checkpoint
+    output = Path(args.output) if args.output else dataset_location.parent / "output"
 
     pretrained_model_name_or_path = "nvidia/segformer-b5-finetuned-ade-640-640"
-    feature_extractor = SegformerFeatureExtractor.from_pretrained(pretrained_model_name_or_path)
-    feature_extractor.reduce_labels = False
-    feature_extractor.size = 128
 
-    train_dataset = SemanticSegmentationDataset(f"{dataset_location}/train/", feature_extractor)
-    val_dataset = SemanticSegmentationDataset(f"{dataset_location}/val/", feature_extractor)
-    test_dataset = SemanticSegmentationDataset(f"{dataset_location}/test/", feature_extractor)
+    image_processor = SegformerImageProcessor(reduce_labels=True)
+
+    train_dataset = SemanticSegmentationDataset(str(dataset_location / "train/"), image_processor)
+    val_dataset = SemanticSegmentationDataset(str(dataset_location / "val/"), image_processor, train=False)
+    test_dataset = SemanticSegmentationDataset(str(dataset_location / "test/"), image_processor, train=False)
 
     batch_size = args.batch_size
     num_workers = args.num_workers
@@ -279,50 +290,11 @@ def main() -> None:
     )
     trainer.fit(segformer_finetuner, ckpt_path=checkpoint)
 
-    res = trainer.test(ckpt_path="best")
+    segformer_finetuner.model.save_pretrained(output)
+    print(f"Saved model to {output}")
 
-    for batch in test_dataloader:
-        images, masks = batch["pixel_values"], batch["labels"]
-        outputs = segformer_finetuner.model(images, masks)
-
-        loss, logits = outputs[0], outputs[1]
-
-        upsampled_logits = nn.functional.interpolate(
-            logits, size=masks.shape[-2:], mode="bilinear", align_corners=False
-        )
-        predicted_mask = upsampled_logits.argmax(dim=1).cpu().numpy()
-        masks = masks.cpu().numpy()
-
-    n_plots = 4
-
-    # Predict on a test image and overlay the mask on the original image
-    test_idx = 0
-    input_image_file = os.path.join(test_dataset.root_dir, test_dataset.images[test_idx])
-    input_image = Image.open(input_image_file)
-    test_batch = test_dataset[test_idx]
-    images, masks = test_batch["pixel_values"], test_batch["labels"]
-    images = torch.unsqueeze(images, 0)
-    masks = torch.unsqueeze(masks, 0)
-    outputs = segformer_finetuner.model(images, masks)
-
-    loss, logits = outputs[0], outputs[1]
-
-    upsampled_logits = nn.functional.interpolate(logits, size=masks.shape[-2:], mode="bilinear", align_corners=False)
-    predicted_mask = upsampled_logits.argmax(dim=1).cpu().numpy()
-    mask = prediction_to_vis(np.squeeze(masks))
-    mask = mask.resize(input_image.size)
-    mask = mask.convert("RGBA")
-    input_image = input_image.convert("RGBA")
-    overlay_img = Image.blend(input_image, mask, 0.5)
-    overlay_img.save("lightning_logs/overlay.png")
-
-    f, axarr = plt.subplots(n_plots, 2)
-    f.set_figheight(15)
-    f.set_figwidth(15)
-    for i in range(n_plots):
-        axarr[i, 0].imshow(prediction_to_vis(predicted_mask[i, :, :]))
-        axarr[i, 1].imshow(prediction_to_vis(masks[i, :, :]))
-    plt.savefig("lightning_logs/predictions.png")
+    res = trainer.test(segformer_finetuner, ckpt_path=checkpoint)
+    print(res)
 
 
 if __name__ == "__main__":
