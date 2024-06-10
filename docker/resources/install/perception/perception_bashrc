@@ -1,6 +1,6 @@
 if [ "$color_prompt" = yes ]; then
-    PS1="\[📷️\] $PS1"
+    PS1="\[\033[01;35m\][PER] $PS1"
 else
-    PS1="[perception] $PS1"
+    PS1="[PER] $PS1"
 fi
 unset color_prompt force_color_prompt
