@@ -10,3 +10,5 @@ pytorch-lightning
 transformers
 datasets
 roboflow
+
+PyQt5

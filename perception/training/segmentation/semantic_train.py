@@ -1,211 +1,364 @@
 import argparse
-import os
 import warnings
 from pathlib import Path
 
+import cv2
 import numpy as np
-import pytorch_lightning as pl
 import torch
-from bw_shared.enums.label import Label
-from datasets import load_metric
-from perception_tools.config.model_metadata import LABEL_COLORS
-from PIL import Image
-from pytorch_lightning.callbacks.early_stopping import EarlyStopping
-from pytorch_lightning.callbacks.model_checkpoint import ModelCheckpoint
-from torch import nn
+import torch.nn as nn
+import torchvision.transforms as torchvision_t
+from livelossplot import PlotLosses
+from pytorch_lightning import LightningModule
+from torch.nn import functional
 from torch.utils.data import DataLoader, Dataset
-from transformers import SegformerForSemanticSegmentation, SegformerImageProcessor
+from torchmetrics import MeanMetric
+from torchvision.models.segmentation import deeplabv3_mobilenet_v3_large, deeplabv3_resnet50, deeplabv3_resnet101
+from tqdm import tqdm
 
 
-class SemanticSegmentationDataset(Dataset):
-    """Image (semantic) segmentation dataset."""
+def train_transforms(mean=(0.4611, 0.4359, 0.3905), std=(0.2193, 0.2150, 0.2109)):
+    transforms = torchvision_t.Compose(
+        [
+            torchvision_t.ToTensor(),
+            torchvision_t.RandomGrayscale(p=0.4),
+            torchvision_t.Normalize(mean, std),
+        ]
+    )
 
-    def __init__(self, root_dir, image_processor, train=True):
-        """
-        Args:
-            root_dir (string): Root directory of the dataset containing the images + annotations.
-            image_processor (SegFormerImageProcessor): image processor to prepare images + segmentation maps.
-            train (bool): Whether to load "training" or "validation" images + annotations.
-        """
-        self.root_dir = root_dir
-        self.image_processor = image_processor
-        self.train = train
+    return transforms
 
-        self.classes_csv_file = os.path.join(self.root_dir, "_classes.csv")
-        with open(self.classes_csv_file, "r") as fid:
-            data = [label.split(",") for index, label in enumerate(fid) if index != 0]
-        self.id2label = {int(x[0]): x[1] for x in data}
 
-        # read images and annotations
-        image_file_names = [f for f in os.listdir(self.root_dir) if ".jpg" in f]
-        self.annotations = []
+def common_transforms(mean=(0.4611, 0.4359, 0.3905), std=(0.2193, 0.2150, 0.2109)):
+    transforms = torchvision_t.Compose(
+        [
+            torchvision_t.ToTensor(),
+            torchvision_t.Normalize(mean, std),
+        ]
+    )
 
-        self.images = []
-        for image_name in sorted(image_file_names):
-            anno_name = image_name.replace(".jpg", "_mask.png")
-            if not os.path.isfile(os.path.join(self.root_dir, anno_name)):
-                warnings.warn(f"Missing mask for image {image_name}")
-                continue
-            self.annotations.append(anno_name)
-            self.images.append(image_name)
+    return transforms
+
+
+def seed_everything(seed_value):
+    np.random.seed(seed_value)
+    torch.manual_seed(seed_value)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = True
+
+
+# For reproducibility
+seed = 4176
+seed_everything(seed)
+
+
+IMAGE_SIZE = 384
+
+
+class SegDataset(Dataset):
+    def __init__(
+        self, *, img_paths: list[Path], mask_paths: list[Path], image_size=(IMAGE_SIZE, IMAGE_SIZE), data_type="train"
+    ):
+        self.data_type = data_type
+        self.img_paths = img_paths
+        self.mask_paths = mask_paths
+        self.image_size = image_size
+
+        if self.data_type == "train":
+            self.transforms = train_transforms()
+        else:
+            self.transforms = common_transforms()
+
+    def read_file(self, path: Path):
+        image = cv2.imread(str(path))
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        image = cv2.resize(image, self.image_size, interpolation=cv2.INTER_NEAREST)
+        return image
 
     def __len__(self):
-        return len(self.images)
+        return len(self.img_paths)
 
-    def __getitem__(self, idx):
-        image = Image.open(os.path.join(self.root_dir, self.images[idx]))
-        segmentation_map = Image.open(os.path.join(self.root_dir, self.annotations[idx]))
-        category_ids = np.unique(np.array(segmentation_map))
-        assert np.all(
-            [category_id in self.id2label for category_id in category_ids]
-        ), f"Not all category IDs are in {self.id2label.keys()}. {category_ids}"
+    def __getitem__(self, index: int):
+        image_path = self.img_paths[index]
+        image = self.read_file(image_path)
+        image = self.transforms(image)
 
-        # randomly crop + pad both image and segmentation map to same size
-        encoded_inputs = self.image_processor(image, segmentation_map, return_tensors="pt")
+        mask_path = self.mask_paths[index]
 
-        for k, v in encoded_inputs.items():
-            encoded_inputs[k].squeeze_()  # remove batch dimension
+        gt_mask = self.read_file(mask_path).astype(np.int32)
 
-        return encoded_inputs
+        _mask = np.zeros((*self.image_size, 2), dtype=np.float32)
+
+        # BACKGROUND
+        _mask[:, :, 0] = np.where(gt_mask[:, :, 0] == 0, 1.0, 0.0)
+        # FIELD
+        _mask[:, :, 1] = np.where(gt_mask[:, :, 0] > 0, 1.0, 0.0)
+
+        mask = torch.from_numpy(_mask).permute(2, 0, 1)
+
+        return image, mask
 
 
-class SegformerFinetuner(pl.LightningModule):
-    def __init__(
-        self,
-        pretrained_model_name_or_path,
-        id2label,
-        train_dataloader=None,
-        val_dataloader=None,
-        test_dataloader=None,
-        metrics_interval=100,
-        log_dir="lightning_logs",
-    ):
-        super(SegformerFinetuner, self).__init__()
-        self.id2label = id2label
-        self.metrics_interval = metrics_interval
-        self.train_dl = train_dataloader
-        self.val_dl = val_dataloader
-        self.test_dl = test_dataloader
+def get_training_set_paths(data_directory: Path) -> tuple[list[Path], list[Path]]:
+    image_paths = []
+    for path in data_directory.iterdir():
+        if path.suffix == ".jpg":
+            image_paths.append(path)
+    filtered_image_paths = []
+    annotation_paths = []
+    for path in image_paths:
+        anno_name = Path(str(path).replace(".jpg", "_mask.png"))
+        if not anno_name.exists():
+            warnings.warn(f"Missing mask for image {path}")
+            continue
+        annotation_paths.append(anno_name)
+        filtered_image_paths.append(path)
+    return filtered_image_paths, annotation_paths
 
-        self.num_classes = len(id2label.keys())
-        self.label2id = {v: k for k, v in self.id2label.items()}
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-        self.model = SegformerForSemanticSegmentation.from_pretrained(
-            pretrained_model_name_or_path,
-            return_dict=False,
-            num_labels=self.num_classes,
-            id2label=self.id2label,
-            label2id=self.label2id,
-            ignore_mismatched_sizes=True,
+def get_dataset(data_directory: Path, batch_size: int, num_workers: int):
+    train_img_dir = data_directory / "train"
+    valid_img_dir = data_directory / "val"
+
+    train_img_paths, train_msk_paths = get_training_set_paths(train_img_dir)
+    valid_img_paths, valid_msk_paths = get_training_set_paths(valid_img_dir)
+
+    train_ds = SegDataset(img_paths=train_img_paths, mask_paths=train_msk_paths, data_type="train")
+    valid_ds = SegDataset(img_paths=valid_img_paths, mask_paths=valid_msk_paths, data_type="valid")
+
+    train_loader = DataLoader(train_ds, batch_size=batch_size, num_workers=num_workers, shuffle=True, pin_memory=True)
+    valid_loader = DataLoader(valid_ds, batch_size=batch_size, num_workers=num_workers, shuffle=False, pin_memory=True)
+
+    return train_loader, valid_loader
+
+
+def prepare_model(backbone_model: str, num_classes: int):
+    # Initialize model with pre-trained weights.
+    weights = "DEFAULT"
+    model = {
+        "mbv3": deeplabv3_mobilenet_v3_large,
+        "r50": deeplabv3_resnet50,
+        "r101": deeplabv3_resnet101,
+    }[backbone_model](weights=weights)
+
+    # Update the number of output channels for the output layer.
+    # This will remove the pre-trained weights for the last layer.
+    model.classifier[4] = nn.LazyConv2d(num_classes, 1)
+    model.aux_classifier[4] = nn.LazyConv2d(num_classes, 1)
+    return model
+
+
+def intermediate_metric_calculation(predictions, targets, use_dice=False, smooth=1e-6, dims=(2, 3)):
+    # dimscorresponding to image height and width: [B, C, H, W].
+
+    # Intersection: |G ∩ P|. Shape: (batch_size, num_classes)
+    intersection = (predictions * targets).sum(dim=dims) + smooth
+
+    # Summation: |G| + |P|. Shape: (batch_size, num_classes).
+    summation = (predictions.sum(dim=dims) + targets.sum(dim=dims)) + smooth
+
+    if use_dice:
+        # Dice Shape: (batch_size, num_classes)
+        metric = (2.0 * intersection) / summation
+    else:
+        # Union. Shape: (batch_size, num_classes)
+        union = summation - intersection
+
+        # IoU Shape: (batch_size, num_classes)
+        metric = intersection / union
+
+    # Compute the mean over the remaining axes (batch and classes).
+    # Shape: Scalar
+    total = metric.mean()
+
+    return total
+
+
+class Loss(nn.Module):
+    def __init__(self, smooth=1e-6, use_dice=False):
+        super().__init__()
+        self.smooth = smooth
+        self.use_dice = use_dice
+
+    def forward(self, predictions, targets):
+        # predictions --> (B, #C, H, W) unnormalized
+        # targets     --> (B, #C, H, W) one-hot encoded
+
+        # Normalize model predictions
+        predictions = torch.sigmoid(predictions)
+
+        # Calculate pixel-wise loss for both channels. Shape: Scalar
+        pixel_loss = functional.binary_cross_entropy(predictions, targets, reduction="mean")
+
+        mask_loss = 1 - intermediate_metric_calculation(
+            predictions, targets, use_dice=self.use_dice, smooth=self.smooth
         )
-        self.model.to(device)
+        total_loss = mask_loss + pixel_loss
 
-        self.train_mean_iou = load_metric("mean_iou")
-        self.val_mean_iou = load_metric("mean_iou")
-        self.test_mean_iou = load_metric("mean_iou")
+        return total_loss
 
-    def forward(self, images, masks):
-        outputs = self.model(pixel_values=images, labels=masks)
-        return outputs
 
-    def training_step(self, batch, batch_nb):
-        images, masks = batch["pixel_values"], batch["labels"]
+def convert_2_onehot(matrix, num_classes=3):
+    """
+    Perform one-hot encoding across the channel dimension.
+    """
+    matrix = matrix.permute(0, 2, 3, 1)
+    matrix = torch.argmax(matrix, dim=-1)
+    matrix = functional.one_hot(matrix, num_classes=num_classes)
+    matrix = matrix.permute(0, 3, 1, 2)
 
-        outputs = self(images, masks)
+    return matrix
 
-        loss, logits = outputs[0], outputs[1]
 
-        upsampled_logits = nn.functional.interpolate(
-            logits, size=masks.shape[-2:], mode="bilinear", align_corners=False
-        )
+class Metric(nn.Module):
+    def __init__(self, num_classes=3, smooth=1e-6, use_dice=False):
+        super().__init__()
+        self.num_classes = num_classes
+        self.smooth = smooth
+        self.use_dice = use_dice
 
-        predicted = upsampled_logits.argmax(dim=1)
+    def forward(self, predictions, targets):
+        # predictions  --> (B, #C, H, W) unnormalized
+        # targets      --> (B, #C, H, W) one-hot encoded
 
-        self.train_mean_iou.add_batch(
-            predictions=predicted.detach().cpu().numpy(), references=masks.detach().cpu().numpy()
-        )
-        if batch_nb % self.metrics_interval == 0:
-            metrics = self.train_mean_iou.compute(
-                num_labels=self.num_classes,
-                ignore_index=255,
-                reduce_labels=False,
-            )
+        # Converting unnormalized predictions into one-hot encoded across channels.
+        # Shape: (B, #C, H, W)
+        predictions = convert_2_onehot(predictions, num_classes=self.num_classes)  # one hot encoded
 
-            metrics = {"loss": loss, "mean_iou": metrics["mean_iou"], "mean_accuracy": metrics["mean_accuracy"]}
+        metric = intermediate_metric_calculation(predictions, targets, use_dice=self.use_dice, smooth=self.smooth)
 
-            for k, v in metrics.items():
-                self.log(k, v)
+        # Compute the mean over the remaining axes (batch and classes). Shape: Scalar
+        return metric
 
-            return metrics
+
+def to_device(data, device):
+    """Move tensor(s) to chosen device"""
+    if isinstance(data, (list, tuple)):
+        return [to_device(x, device) for x in data]
+    return data.to(device, non_blocking=True)
+
+
+class DeviceDataLoader:
+    """Wrap a dataloader to move data to a device"""
+
+    def __init__(self, dl, device):
+        self.dl = dl
+        self.device = device
+
+    def __iter__(self):
+        """Yield a batch of data after moving it to device"""
+        for b in self.dl:
+            yield to_device(b, self.device)
+
+    def __len__(self):
+        """Number of batches"""
+        return len(self.dl)
+
+
+def get_default_device():
+    return torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+
+def step(
+    model,
+    epoch_num=None,
+    loader=None,
+    optimizer_fn=None,
+    loss_fn=None,
+    metric_fn=None,
+    is_train=False,
+    metric_name="iou",
+):
+    loss_record = MeanMetric()
+    metric_record = MeanMetric()
+
+    loader_len = len(loader)
+
+    text = "Train" if is_train else "Valid"
+
+    for data in tqdm(iterable=loader, total=loader_len, dynamic_ncols=True, desc=f"{text} :: Epoch: {epoch_num}"):
+        if is_train:
+            preds = model(data[0])["out"]
         else:
-            return {"loss": loss}
+            with torch.no_grad():
+                preds = model(data[0])["out"].detach()
 
-    def validation_step(self, batch, batch_nb):
-        images, masks = batch["pixel_values"], batch["labels"]
+        loss = loss_fn(preds, data[1])
 
-        outputs = self(images, masks)
+        if is_train:
+            optimizer_fn.zero_grad()
+            loss.backward()
+            optimizer_fn.step()
 
-        loss, logits = outputs[0], outputs[1]
+        metric = metric_fn(preds.detach(), data[1])
 
-        upsampled_logits = nn.functional.interpolate(
-            logits, size=masks.shape[-2:], mode="bilinear", align_corners=False
-        )
+        loss_value = loss.detach().item()
+        metric_value = metric.detach().item()
 
-        predicted = upsampled_logits.argmax(dim=1)
+        loss_record.update(loss_value)
+        metric_record.update(metric_value)
 
-        self.val_mean_iou.add_batch(
-            predictions=predicted.detach().cpu().numpy(), references=masks.detach().cpu().numpy()
-        )
+    current_loss = loss_record.compute()
+    current_metric = metric_record.compute()
 
-        self.log("val_loss", loss)
-        return {"val_loss": loss}
-
-    def test_step(self, batch, batch_nb):
-        images, masks = batch["pixel_values"], batch["labels"]
-
-        outputs = self(images, masks)
-
-        loss, logits = outputs[0], outputs[1]
-
-        upsampled_logits = nn.functional.interpolate(
-            logits, size=masks.shape[-2:], mode="bilinear", align_corners=False
-        )
-
-        predicted = upsampled_logits.argmax(dim=1)
-
-        self.test_mean_iou.add_batch(
-            predictions=predicted.detach().cpu().numpy(), references=masks.detach().cpu().numpy()
-        )
-        self.log("test_loss", loss)
-
-        return {"test_loss": loss}
-
-    def configure_optimizers(self):
-        return torch.optim.Adam([p for p in self.parameters() if p.requires_grad], lr=2e-05, eps=1e-08)
-
-    def train_dataloader(self):
-        return self.train_dl
-
-    def val_dataloader(self):
-        return self.val_dl
-
-    def test_dataloader(self):
-        return self.test_dl
+    return current_loss, current_metric
 
 
-color_map = {
-    0: (0, 0, 0),
-    1: LABEL_COLORS[Label.FIELD].to_cv_color(),
-}
+class DeepLabV3Finetuner(LightningModule):
+    def __init__(self, model, device, num_classes: int, metric_name: str = "iou") -> None:
+        self.metric_name = metric_name
+        use_dice = True if metric_name == "dice" else False
 
+        self.metric_fn = Metric(num_classes=num_classes, use_dice=use_dice).to(device)
+        self.loss_fn = Loss(use_dice=use_dice).to(device)
 
-def prediction_to_vis(prediction):
-    vis_shape = prediction.shape + (3,)
-    vis = np.zeros(vis_shape)
-    for i, c in color_map.items():
-        vis[prediction == i] = color_map[i]
-    return Image.fromarray(vis.astype(np.uint8))
+        self.optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
+
+        self.model = model
+
+    def forward(self, data):
+        return self.model(data[0])["out"]
+
+    def training_step(self, batch, batch_num):
+        preds = self(batch)
+
+        loss = self.loss_fn(preds, batch[1])
+
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
+
+        metric = self.metric_fn(preds.detach(), batch[1])
+
+        loss_value = loss.detach().item()
+        metric_value = metric.detach().item()
+
+        return {"loss": loss_value, self.metric_name: metric_value}
+
+    def validation_step(self, batch, batch_num):
+        with torch.no_grad():
+            preds = self(batch).detach()
+
+        loss = self.loss_fn(preds, batch[1])
+
+        metric = self.metric_fn(preds.detach(), batch[1])
+
+        loss_value = loss.detach().item()
+        metric_value = metric.detach().item()
+
+        return {"val_loss": loss_value, self.metric_name: metric_value}
+
+    def test_step(self, batch, batch_num):
+        with torch.no_grad():
+            preds = self(batch).detach()
+
+        loss = self.loss_fn(preds, batch[1])
+
+        metric = self.metric_fn(preds.detach(), batch[1])
+
+        loss_value = loss.detach().item()
+        metric_value = metric.detach().item()
+
+        return {"test_loss": loss_value, self.metric_name: metric_value}
 
 
 def main() -> None:
@@ -226,7 +379,7 @@ def main() -> None:
         "-b",
         "--batch-size",
         type=int,
-        default=4,
+        default=2,
         help="Batch size",
     )
     parser.add_argument(
@@ -240,7 +393,7 @@ def main() -> None:
         "-ne",
         "--num-epochs",
         type=int,
-        default=500,
+        default=100,
         help="Number of training epochs",
     )
     parser.add_argument(
@@ -252,54 +405,74 @@ def main() -> None:
     )
     args = parser.parse_args()
     dataset_location = Path(args.dataset_location)
-    checkpoint = args.checkpoint
+    checkpoint_path = args.checkpoint
     output = Path(args.output) if args.output else dataset_location.parent / "output"
-
-    pretrained_model_name_or_path = "nvidia/segformer-b5-finetuned-ade-640-640"
-    # pretrained_model_name_or_path = "nvidia/segformer-b0-finetuned-ade-512-512"
-
-    image_processor = SegformerImageProcessor(reduce_labels=True)
-
-    train_dataset = SemanticSegmentationDataset(str(dataset_location / "train/"), image_processor)
-    val_dataset = SemanticSegmentationDataset(str(dataset_location / "val/"), image_processor, train=False)
-    test_dataset = SemanticSegmentationDataset(str(dataset_location / "test/"), image_processor, train=False)
-
     batch_size = args.batch_size
     num_workers = args.num_workers
-    train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
-    val_dataloader = DataLoader(val_dataset, batch_size=batch_size, num_workers=num_workers)
-    test_dataloader = DataLoader(test_dataset, batch_size=batch_size, num_workers=num_workers)
+    num_epochs = args.num_epochs
+    num_classes = 2
+    backbone_model_name = "mbv3"  # mbv3 | r50 | r101
 
-    segformer_finetuner = SegformerFinetuner(
-        pretrained_model_name_or_path,
-        train_dataset.id2label,
-        train_dataloader=train_dataloader,
-        val_dataloader=val_dataloader,
-        test_dataloader=test_dataloader,
-        metrics_interval=10,
+    output_model = output / "model.pth"
+
+    device = get_default_device()
+
+    model = prepare_model(backbone_model=backbone_model_name, num_classes=num_classes)
+    model.to(device)
+    if checkpoint_path is not None:
+        checkpoints = torch.load(checkpoint_path, map_location=device)
+        model.load_state_dict(checkpoints, strict=False)
+        model.eval()
+
+    # Dummy pass through the model
+    _ = model(torch.randn((2, 3, IMAGE_SIZE, IMAGE_SIZE), device=device))
+
+    train_loader, valid_loader = get_dataset(
+        data_directory=dataset_location, batch_size=batch_size, num_workers=num_workers
     )
-    early_stop_callback = EarlyStopping(
-        monitor="val_loss",
-        min_delta=0.00,
-        patience=10,
-        verbose=False,
-        mode="min",
-    )
+    for i, j in valid_loader:
+        print(f"Image shape: {i.shape}, Image type: {i.dtype}, Mask shape: {j.shape}, Mask type: {j.dtype}")
+        break
+    train_device_loader = DeviceDataLoader(train_loader, device)
+    valid_device_loader = DeviceDataLoader(valid_loader, device)
 
-    checkpoint_callback = ModelCheckpoint(save_top_k=1, monitor="val_loss")
+    best_metric = 0.0
 
-    trainer = pl.Trainer(
-        callbacks=[early_stop_callback, checkpoint_callback],
-        max_epochs=args.num_epochs,
-        val_check_interval=1.0,
-    )
-    trainer.fit(segformer_finetuner, ckpt_path=checkpoint)
+    for epoch in range(1, num_epochs + 1):
+        logs = {}
 
-    segformer_finetuner.model.save_pretrained(output)
-    print(f"Saved model to {output}")
+        model.train()
+        train_loss, train_metric = step(
+            model,
+            epoch_num=epoch,
+            loader=train_device_loader,
+            optimizer_fn=optimizer,
+            loss_fn=loss_fn,
+            metric_fn=metric_fn,
+            is_train=True,
+            metric_name=metric_name,
+        )
 
-    res = trainer.test(segformer_finetuner, ckpt_path=checkpoint)
-    print(res)
+        model.eval()
+        valid_loss, valid_metric = step(
+            model,
+            epoch_num=epoch,
+            loader=valid_device_loader,
+            loss_fn=loss_fn,
+            metric_fn=metric_fn,
+            is_train=False,
+            metric_name=metric_name,
+        )
+
+        logs["loss"] = train_loss
+        logs[metric_name] = train_metric
+        logs["val_loss"] = valid_loss
+        logs[f"val_{metric_name}"] = valid_metric
+
+        if valid_metric >= best_metric:
+            print("\nSaving model.....")
+            torch.save(model.state_dict(), output_model)
+            best_metric = valid_metric
 
 
 if __name__ == "__main__":
