@@ -3,17 +3,20 @@ import warnings
 from pathlib import Path
 
 import cv2
+import matplotlib
 import numpy as np
 import torch
 import torch.nn as nn
 import torchvision.transforms as torchvision_t
 from livelossplot import PlotLosses
-from pytorch_lightning import LightningModule
+from livelossplot.outputs.matplotlib_plot import MatplotlibPlot
 from torch.nn import functional
 from torch.utils.data import DataLoader, Dataset
 from torchmetrics import MeanMetric
 from torchvision.models.segmentation import deeplabv3_mobilenet_v3_large, deeplabv3_resnet50, deeplabv3_resnet101
 from tqdm import tqdm
+
+matplotlib.use("agg")
 
 
 def train_transforms(mean=(0.4611, 0.4359, 0.3905), std=(0.2193, 0.2150, 0.2109)):
@@ -258,36 +261,53 @@ def get_default_device():
     return torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-def step(
-    model,
-    epoch_num=None,
-    loader=None,
-    optimizer_fn=None,
-    loss_fn=None,
-    metric_fn=None,
-    is_train=False,
-    metric_name="iou",
-):
+class TrainingStepInterface:
+    def __init__(self, model) -> None:
+        self.model = model
+
+    def step(self, data) -> tuple[torch.Tensor, torch.Tensor]:
+        raise NotImplementedError
+
+
+class TrainStep(TrainingStepInterface):
+    def __init__(self, model, optimizer_fn, loss_fn) -> None:
+        super().__init__(model)
+        self.optimizer_fn = optimizer_fn
+        self.loss_fn = loss_fn
+
+    def step(self, data) -> tuple[torch.Tensor, torch.Tensor]:
+        preds = self.model(data[0])["out"]
+
+        loss = self.loss_fn(preds, data[1])
+
+        self.optimizer_fn.zero_grad()
+        loss.backward()
+        self.optimizer_fn.step()
+        return preds, loss
+
+
+class ValidationStep(TrainingStepInterface):
+    def __init__(self, model, loss_fn) -> None:
+        super().__init__(model)
+        self.loss_fn = loss_fn
+
+    def step(self, data) -> tuple[torch.Tensor, torch.Tensor]:
+        with torch.no_grad():
+            preds = self.model(data[0])["out"].detach()
+
+        loss = self.loss_fn(preds, data[1])
+
+        return preds, loss
+
+
+def step(epoch_num: int, loader: DeviceDataLoader, step_interface: TrainingStepInterface, metric_fn, step_name):
     loss_record = MeanMetric()
     metric_record = MeanMetric()
 
     loader_len = len(loader)
 
-    text = "Train" if is_train else "Valid"
-
-    for data in tqdm(iterable=loader, total=loader_len, dynamic_ncols=True, desc=f"{text} :: Epoch: {epoch_num}"):
-        if is_train:
-            preds = model(data[0])["out"]
-        else:
-            with torch.no_grad():
-                preds = model(data[0])["out"].detach()
-
-        loss = loss_fn(preds, data[1])
-
-        if is_train:
-            optimizer_fn.zero_grad()
-            loss.backward()
-            optimizer_fn.step()
+    for data in tqdm(iterable=loader, total=loader_len, dynamic_ncols=True, desc=f"{step_name} :: Epoch: {epoch_num}"):
+        preds, loss = step_interface.step(data)
 
         metric = metric_fn(preds.detach(), data[1])
 
@@ -301,64 +321,6 @@ def step(
     current_metric = metric_record.compute()
 
     return current_loss, current_metric
-
-
-class DeepLabV3Finetuner(LightningModule):
-    def __init__(self, model, device, num_classes: int, metric_name: str = "iou") -> None:
-        self.metric_name = metric_name
-        use_dice = True if metric_name == "dice" else False
-
-        self.metric_fn = Metric(num_classes=num_classes, use_dice=use_dice).to(device)
-        self.loss_fn = Loss(use_dice=use_dice).to(device)
-
-        self.optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
-
-        self.model = model
-
-    def forward(self, data):
-        return self.model(data[0])["out"]
-
-    def training_step(self, batch, batch_num):
-        preds = self(batch)
-
-        loss = self.loss_fn(preds, batch[1])
-
-        self.optimizer.zero_grad()
-        loss.backward()
-        self.optimizer.step()
-
-        metric = self.metric_fn(preds.detach(), batch[1])
-
-        loss_value = loss.detach().item()
-        metric_value = metric.detach().item()
-
-        return {"loss": loss_value, self.metric_name: metric_value}
-
-    def validation_step(self, batch, batch_num):
-        with torch.no_grad():
-            preds = self(batch).detach()
-
-        loss = self.loss_fn(preds, batch[1])
-
-        metric = self.metric_fn(preds.detach(), batch[1])
-
-        loss_value = loss.detach().item()
-        metric_value = metric.detach().item()
-
-        return {"val_loss": loss_value, self.metric_name: metric_value}
-
-    def test_step(self, batch, batch_num):
-        with torch.no_grad():
-            preds = self(batch).detach()
-
-        loss = self.loss_fn(preds, batch[1])
-
-        metric = self.metric_fn(preds.detach(), batch[1])
-
-        loss_value = loss.detach().item()
-        metric_value = metric.detach().item()
-
-        return {"test_loss": loss_value, self.metric_name: metric_value}
 
 
 def main() -> None:
@@ -413,7 +375,10 @@ def main() -> None:
     num_classes = 2
     backbone_model_name = "mbv3"  # mbv3 | r50 | r101
 
+    output.mkdir(parents=True, exist_ok=True)
+
     output_model = output / "model.pth"
+    fig_path = output / "plot.png"
 
     device = get_default_device()
 
@@ -436,32 +401,39 @@ def main() -> None:
     train_device_loader = DeviceDataLoader(train_loader, device)
     valid_device_loader = DeviceDataLoader(valid_loader, device)
 
+    metric_name = "iou"
+    use_dice = True if metric_name == "dice" else False
+
+    metric_fn = Metric(num_classes=num_classes, use_dice=use_dice).to(device)
+    loss_fn = Loss(use_dice=use_dice).to(device)
+
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
+
+    liveloss = PlotLosses(outputs=[MatplotlibPlot(figpath=str(fig_path)), "ExtremaPrinter"], mode="script")
+
     best_metric = 0.0
+    train_step = TrainStep(model, optimizer, loss_fn)
+    valid_step = ValidationStep(model, loss_fn)
 
     for epoch in range(1, num_epochs + 1):
         logs = {}
 
         model.train()
         train_loss, train_metric = step(
-            model,
             epoch_num=epoch,
             loader=train_device_loader,
-            optimizer_fn=optimizer,
-            loss_fn=loss_fn,
+            step_interface=train_step,
             metric_fn=metric_fn,
-            is_train=True,
-            metric_name=metric_name,
+            step_name="train",
         )
 
         model.eval()
         valid_loss, valid_metric = step(
-            model,
             epoch_num=epoch,
             loader=valid_device_loader,
-            loss_fn=loss_fn,
+            step_interface=valid_step,
             metric_fn=metric_fn,
-            is_train=False,
-            metric_name=metric_name,
+            step_name="valid",
         )
 
         logs["loss"] = train_loss
@@ -469,8 +441,11 @@ def main() -> None:
         logs["val_loss"] = valid_loss
         logs[f"val_{metric_name}"] = valid_metric
 
+        liveloss.update(logs)
+        liveloss.send()
+
         if valid_metric >= best_metric:
-            print("\nSaving model.....")
+            print(f"Saving model. {valid_metric:0.4f} >= {best_metric:0.4f}")
             torch.save(model.state_dict(), output_model)
             best_metric = valid_metric
 
