@@ -27,7 +27,7 @@ def main() -> None:
     parser.add_argument(
         "model",
         type=str,
-        help="Path to the model (*.safetensors)",
+        help="Path to directory containing the model (folder contains *.safetensors and config.json)",
     )
     parser.add_argument(
         "image_path",
