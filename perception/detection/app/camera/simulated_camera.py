@@ -63,23 +63,20 @@ class SimulatedCamera(CameraInterface):
         self.check_frame_id(color.header.frame_id)
 
     def _update_depth(self, now: float, depth: RosImage) -> None:
-        if self.mode != CameraMode.FIELD_FINDER:
-            self.camera_data.point_cloud = PointCloud(self.camera_data.color_image.header)
-        else:
-            depth_image_time = depth.header.stamp.to_sec()
-            self.check_frame_id(depth.header.frame_id)
-            self.logger.debug(f"Received depth image. Delay: {now - depth_image_time}")
-            if (
-                len(self.camera_data.color_image.header.frame_id) > 0
-                and len(self.camera_data.camera_info.header.frame_id) > 0
-            ):
-                depth_image = Image.from_msg(depth)
-                depth_image.data = depth_image.data.astype(np.uint16)
-                self.camera_data.point_cloud = PointCloud.from_rgbd(
-                    self.camera_data.color_image,
-                    depth_image,
-                    self.camera_data.camera_info,
-                )
+        depth_image_time = depth.header.stamp.to_sec()
+        self.check_frame_id(depth.header.frame_id)
+        self.logger.debug(f"Received depth image. Delay: {now - depth_image_time}")
+        if (
+            len(self.camera_data.color_image.header.frame_id) > 0
+            and len(self.camera_data.camera_info.header.frame_id) > 0
+        ):
+            depth_image = Image.from_msg(depth)
+            depth_image.data = depth_image.data.astype(np.uint16)
+            self.camera_data.point_cloud = PointCloud.from_rgbd(
+                self.camera_data.color_image,
+                depth_image,
+                self.camera_data.camera_info,
+            )
 
     def close(self) -> None:
         pass

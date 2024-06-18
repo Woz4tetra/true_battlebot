@@ -4752,7 +4752,7 @@ MonoBehaviour:
   baseTopic: camera_1
   imageWidth: 480
   imageHeight: 270
-  publishRate: 60
+  publishRate: 10
   segmentationTopic: 
   publishSegmentationLabels: 0
   captureConfig:

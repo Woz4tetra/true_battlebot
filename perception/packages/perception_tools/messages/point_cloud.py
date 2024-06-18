@@ -89,6 +89,14 @@ class PointCloud:
     is_dense: bool = False
     color_encoding: CloudFieldName = CloudFieldName.RGB
 
+    def masked_points(self, mask: np.ndarray) -> np.ndarray:
+        filtered_points = np.copy(self.points)
+        filtered_points[np.bitwise_not(mask)] = np.nan
+        return np.ma.masked_invalid(filtered_points)
+
+    def filtered_points(self, mask: np.ndarray) -> np.ndarray:
+        return self.points[mask]
+
     @classmethod
     def from_depth(cls, depth: Image, camera_info: CameraInfo, depth_scale: float = 1000.0) -> PointCloud:
         depth_data = o3d.geometry.Image(depth.data)

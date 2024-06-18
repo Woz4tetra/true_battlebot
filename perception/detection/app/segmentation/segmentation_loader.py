@@ -11,8 +11,8 @@ from app.config.segmentation_config.segmentation_types import SegmentationConfig
 from app.config.segmentation_config.semantic_segmentation_config import SemanticSegmentationConfig
 from app.config.segmentation_config.simulated_segmentation_config import SimulatedSegmentationConfig
 from app.container import Container
+from app.segmentation.semantic_segmentation import SemanticSegmentation
 from app.segmentation.simulated_segmentation_manager import SimulatedSegmentationManager
-from perception.detection.app.segmentation.semantic_segmentation import SemanticSegmentation
 
 from .instance_segmentation import InstanceSegmentation
 from .noop_segmentation import NoopSegmentation

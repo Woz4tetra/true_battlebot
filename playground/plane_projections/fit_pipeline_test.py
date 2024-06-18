@@ -2,15 +2,15 @@ import pickle
 
 import numpy as np
 from bw_interfaces.msg import SegmentationInstance
-from bw_shared.geometry.rpy import RPY
-from bw_shared.geometry.transform3d import Transform3D
-from bw_tools.projection_math.find_minimum_rectangle import (
+from bw_shared.geometry.projection_math.find_minimum_rectangle import (
     find_minimum_rectangle,
     get_rectangle_angle,
     get_rectangle_extents,
 )
-from bw_tools.projection_math.points_transform import points_transform
-from bw_tools.projection_math.project_segmentation import project_segmentation, raycast_segmentation
+from bw_shared.geometry.projection_math.points_transform import points_transform
+from bw_shared.geometry.projection_math.project_segmentation import project_segmentation, raycast_segmentation
+from bw_shared.geometry.rpy import RPY
+from bw_shared.geometry.transform3d import Transform3D
 from geometry_msgs.msg import Vector3
 from image_geometry import PinholeCameraModel
 from matplotlib import pyplot as plt

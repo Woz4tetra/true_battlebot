@@ -1,6 +1,7 @@
 from typing import Optional
 
 from bw_interfaces.msg import SegmentationInstance, SegmentationInstanceArray
+
 from bw_shared.enums.label import Label
 
 
