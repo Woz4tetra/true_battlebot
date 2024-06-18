@@ -115,7 +115,7 @@ ENV CMAKE_LIBRARY_PATH=/usr/local/cuda/lib64/stubs/${CMAKE_LIBRARY_PATH:+:${CMAK
 ENV PERCEPTION_BUILD_DIR=/opt/${ORGANIZATION}/build
 
 ENV PATH=/opt/${ORGANIZATION}/scripts:${HOME}/.local/bin${PATH:+:${PATH}} \
-    PYTHONPATH=/opt/${ORGANIZATION}/${PROJECT_NAME}/perception/packages:/opt/${ORGANIZATION}/${PROJECT_NAME}/shared${PYTHONPATH:+:${PYTHONPATH}} \
+    PYTHONPATH=/opt/${ORGANIZATION}/${PROJECT_NAME}/perception/detection:/opt/${ORGANIZATION}/${PROJECT_NAME}/perception/packages:/opt/${ORGANIZATION}/${PROJECT_NAME}/shared${PYTHONPATH:+:${PYTHONPATH}} \
     PYTHONIOENCODING=utf-8 \
     PLATFORMIO_CORE_DIR=${ROS_WS_ROOT}/.platformio \
     HISTCONTROL=ignoreboth:erasedups

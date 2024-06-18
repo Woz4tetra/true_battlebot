@@ -1,10 +1,11 @@
 import cv2
 import numpy as np
 import torch
-from perception_tools.config.model_metadata import ModelMetadata
-from perception_tools.inference.common import get_default_device
 from torch import nn
 from torchvision import transforms
+
+from perception_tools.config.model_metadata import ModelMetadata
+from perception_tools.inference.common import get_default_device
 
 IMAGE_SIZE = 344
 PAD_SIZE = 20

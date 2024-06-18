@@ -2,16 +2,15 @@ import logging
 import time
 
 import numpy as np
+from app.camera.camera_interface import CameraInterface, CameraMode
+from app.config.camera_config.simulated_camera_config import SimulatedCameraConfig
+from app.config.camera_topic_config import CameraTopicConfig
 from perception_tools.messages.camera_data import CameraData
 from perception_tools.messages.image import Image
 from perception_tools.messages.point_cloud import PointCloud
 from perception_tools.rosbridge.ros_poll_subscriber import RosPollSubscriber
 from sensor_msgs.msg import CameraInfo
 from sensor_msgs.msg import Image as RosImage
-
-from app.camera.camera_interface import CameraInterface, CameraMode
-from app.config.camera_config.simulated_camera_config import SimulatedCameraConfig
-from app.config.camera_topic_config import CameraTopicConfig
 
 
 class SimulatedCamera(CameraInterface):

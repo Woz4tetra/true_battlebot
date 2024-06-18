@@ -278,7 +278,7 @@ def parse_args() -> CommandLineArgs:
     units = [eu.value for eu in EulerUnit]
     parser = argparse.ArgumentParser(description="quat_euler_tool")
     sub_parsers = parser.add_subparsers(dest="command")
-    to_euler_parser = sub_parsers.add_parser("euler", help="Convert quaternion to euler: r p y")
+    to_euler_parser = sub_parsers.add_parser("euler", help="Convert quaternion (x y z w) to euler (r p y)")
     to_euler_parser.add_argument("values", type=str, nargs="+", help="Quaternion values: x y z w")
     to_euler_parser.add_argument(
         "-i",
@@ -312,7 +312,7 @@ def parse_args() -> CommandLineArgs:
         help="Number of decimal places to round to",
     )
 
-    to_quat_parser = sub_parsers.add_parser("quat", help="Convert euler to quaternion")
+    to_quat_parser = sub_parsers.add_parser("quat", help="Convert euler (r p y) to quaternion (x y z w)")
     to_quat_parser.add_argument("values", type=str, nargs="+", help="Euler values")
     to_quat_parser.add_argument(
         "-i",

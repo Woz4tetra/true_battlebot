@@ -31,9 +31,9 @@ class Transform3D:
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Transform3D):
-            raise NotImplementedError
+            return False
 
-        return np.allclose(np.array(self), np.array(other))
+        return bool(np.all(self.tfmat == other.tfmat))
 
     @property
     def position(self) -> Vector3:
@@ -173,6 +173,9 @@ class Transform3D:
 
     def to_pose2d(self) -> Pose2D:
         return Pose2D(self.x, self.y, self.rpy[2])
+
+    def almost_equal(self, other: Transform3D, atol: float = 1e-6, rtol: float = 1e-6) -> bool:
+        return np.allclose(self.tfmat, other.tfmat, atol=atol, rtol=rtol)
 
     def __hash__(self) -> int:
         return hash(tuple([tuple(row) for row in self.tfmat]))

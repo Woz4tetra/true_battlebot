@@ -1,9 +1,5 @@
 from typing import Union
 
-from perception_tools.rosbridge.ros_poll_subscriber import RosPollSubscriber
-from perception_tools.rosbridge.ros_publisher import RosPublisher
-from sensor_msgs.msg import CameraInfo, Image
-
 from app.config.camera_config.camera_types import CameraConfig
 from app.config.camera_config.noop_camera_config import NoopCameraConfig
 from app.config.camera_config.simulated_camera_config import SimulatedCameraConfig
@@ -11,6 +7,9 @@ from app.config.camera_config.svo_playback_camera_config import SvoPlaybackCamer
 from app.config.camera_config.zed_camera_config import ZedCameraConfig
 from app.config.config import Config
 from app.container import Container
+from perception_tools.rosbridge.ros_poll_subscriber import RosPollSubscriber
+from perception_tools.rosbridge.ros_publisher import RosPublisher
+from sensor_msgs.msg import CameraInfo, Image
 
 from .noop_camera import NoopCamera
 from .simulated_camera import SimulatedCamera

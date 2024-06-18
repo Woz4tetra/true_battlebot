@@ -6,16 +6,15 @@ import cv2
 import numpy as np
 import torch
 import torchvision
+from app.config.segmentation_config.instance_segmentation_config import InstanceSegmentationConfig
+from app.segmentation.segmentation_interface import SegmentationInterface
 from bw_interfaces.msg import SegmentationInstance, SegmentationInstanceArray
 from bw_shared.messages.header import Header
 from detectron2.layers import paste_masks_in_image
 from detectron2.utils.visualizer import GenericMask
-from perception_tools.inference.common import load_metadata, mask_to_msg
+from perception_tools.inference.common import contour_to_msg, load_metadata
 from perception_tools.messages.image import Image
 from torch import Tensor
-
-from app.config.segmentation_config.instance_segmentation_config import InstanceSegmentationConfig
-from app.segmentation.segmentation_interface import SegmentationInterface
 
 BoundingBox = tuple[int, int, int, int]
 
@@ -138,7 +137,7 @@ class InstanceSegmentation(SegmentationInterface):
             label = self.metadata.labels[class_idx]
 
             segmentation_instance = SegmentationInstance(
-                contours=mask_to_msg(contours),
+                contours=contour_to_msg(contours),
                 score=score,
                 label=label,
                 class_index=class_idx,

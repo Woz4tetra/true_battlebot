@@ -1,9 +1,5 @@
 from typing import Union
 
-from bw_interfaces.msg import SegmentationInstanceArray
-from perception_tools.rosbridge.ros_poll_subscriber import RosPollSubscriber
-from sensor_msgs.msg import Image
-
 from app.config.config import Config
 from app.config.segmentation_config.instance_segmentation_config import InstanceSegmentationConfig
 from app.config.segmentation_config.noop_segmentation_config import NoopSegmentationConfig
@@ -13,6 +9,9 @@ from app.config.segmentation_config.simulated_segmentation_config import Simulat
 from app.container import Container
 from app.segmentation.semantic_segmentation import SemanticSegmentation
 from app.segmentation.simulated_segmentation_manager import SimulatedSegmentationManager
+from bw_interfaces.msg import SegmentationInstanceArray
+from perception_tools.rosbridge.ros_poll_subscriber import RosPollSubscriber
+from sensor_msgs.msg import Image
 
 from .instance_segmentation import InstanceSegmentation
 from .noop_segmentation import NoopSegmentation

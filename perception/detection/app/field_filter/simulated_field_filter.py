@@ -1,26 +1,22 @@
 import logging
 import time
 
+from app.config.field_filter_config.simulated_field_filter_config import SimulatedFieldFilterConfig
+from app.field_filter.field_filter_interface import FieldFilterInterface
+from app.field_filter.helpers import get_field
 from bw_interfaces.msg import EstimatedObject, SegmentationInstanceArray
-from bw_shared.configs.maps_config import MapConfig
 from bw_shared.geometry.transform3d import Transform3D
 from perception_tools.inference.common import msg_to_mask
 from perception_tools.messages.point_cloud import PointCloud
 from perception_tools.rosbridge.ros_poll_subscriber import RosPollSubscriber
 
-from app.config.field_filter_config.simulated_field_filter_config import SimulatedFieldFilterConfig
-from app.field_filter.field_filter_interface import FieldFilterInterface
-from app.field_filter.helpers import get_field
-
 
 class SimulatedFieldFilter(FieldFilterInterface):
     def __init__(
         self,
-        map_config: MapConfig,
         field_filter_config: SimulatedFieldFilterConfig,
         simulated_field_result_sub: RosPollSubscriber[EstimatedObject],
     ) -> None:
-        self.map_config = map_config
         self.field_filter_config = field_filter_config
         self.simulated_field_result_sub = simulated_field_result_sub
         self.last_field_result: EstimatedObject | None = None

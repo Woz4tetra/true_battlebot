@@ -1,0 +1,19 @@
+#!/bin/bash
+
+# run the whole script from the project directory
+BASE_DIR=$(realpath "$(dirname $0)")
+
+ORG_DIR=${BASE_DIR}/..
+PROJECT_DIR=$(realpath ${ORG_DIR}/${PROJECT_NAME})
+CHECK_DIRS=(
+    "${PROJECT_DIR}/perception/detection"
+    "${PROJECT_DIR}/perception/packages/perception_tools"
+    "${PROJECT_DIR}/shared/bw_shared"
+)
+
+for dir in ${CHECK_DIRS[@]}; do
+    cd ${dir}
+    printf "\n\nTesting ${dir}\n"
+
+    pytest
+done

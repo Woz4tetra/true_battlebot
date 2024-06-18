@@ -1,6 +1,6 @@
 from typing import Union
 
-from .ransac_field_filter_config import RansacFieldFilterConfig
+from .point_cloud_field_filter_config import PointCloudFieldFilterConfig
 from .simulated_field_filter_config import SimulatedFieldFilterConfig
 
-FieldFilterConfig = Union[RansacFieldFilterConfig, SimulatedFieldFilterConfig]
+FieldFilterConfig = Union[PointCloudFieldFilterConfig, SimulatedFieldFilterConfig]

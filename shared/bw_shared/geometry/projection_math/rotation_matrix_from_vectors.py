@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def rotation_matrix_from_vectors(vec1: np.ndarray, vec2: np.ndarray) -> np.ndarray:
+def rotation_matrix_from_vectors(vec1: np.ndarray, vec2: np.ndarray, epsilon: float = 1e-6) -> np.ndarray:
     """
     Find the rotation matrix that aligns vec1 to vec2
     From https://stackoverflow.com/questions/45142959/calculate-rotation-matrix-to-align-two-vectors-in-3d-space
@@ -9,8 +9,12 @@ def rotation_matrix_from_vectors(vec1: np.ndarray, vec2: np.ndarray) -> np.ndarr
     :param vec2: A 3d "destination" vector
     :return mat: A transform matrix (3x3) which when applied to vec1, aligns it with vec2.
     """
-    a = (vec1 / np.linalg.norm(vec1)).reshape(3)
-    b = (vec2 / np.linalg.norm(vec2)).reshape(3)
+    vec1_mag = np.linalg.norm(vec1)
+    vec2_mag = np.linalg.norm(vec2)
+    if vec1_mag < epsilon or vec2_mag < epsilon or np.allclose(vec1, vec2, atol=epsilon, rtol=0):
+        return np.eye(3)
+    a = (vec1 / vec1_mag).reshape(3)
+    b = (vec2 / vec2_mag).reshape(3)
     v = np.cross(a, b)
     c = np.dot(a, b)
     s = np.linalg.norm(v)

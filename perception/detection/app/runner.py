@@ -4,17 +4,6 @@ import time
 from typing import Protocol, cast
 
 import rospy
-from bw_interfaces.msg import EstimatedObject, KeypointInstanceArray, SegmentationInstanceArray
-from bw_shared.configs.shared_config import SharedConfig
-from bw_shared.enums.field_type import FieldType
-from bw_shared.environment import get_map, get_robot
-from bw_shared.messages.header import Header
-from perception_tools.rosbridge.ros_poll_subscriber import RosPollSubscriber
-from perception_tools.rosbridge.ros_publisher import RosPublisher
-from sensor_msgs.msg import Image, PointCloud2
-from std_msgs.msg import Empty
-from std_msgs.msg import Header as RosHeader
-
 from app.camera.camera_interface import CameraInterface, CameraMode
 from app.camera.camera_loader import load_camera
 from app.config.config import Config
@@ -29,6 +18,16 @@ from app.keypoint.keypoint_loader import load_keypoint
 from app.segmentation.segmentation_interface import SegmentationInterface
 from app.segmentation.segmentation_loader import load_segmentation
 from app.tick_regulator import regulate_tick
+from bw_interfaces.msg import EstimatedObject, KeypointInstanceArray, SegmentationInstanceArray
+from bw_shared.configs.shared_config import SharedConfig
+from bw_shared.enums.field_type import FieldType
+from bw_shared.environment import get_map, get_robot
+from bw_shared.messages.header import Header
+from perception_tools.rosbridge.ros_poll_subscriber import RosPollSubscriber
+from perception_tools.rosbridge.ros_publisher import RosPublisher
+from sensor_msgs.msg import Image, PointCloud2
+from std_msgs.msg import Empty
+from std_msgs.msg import Header as RosHeader
 
 
 class Runner:
@@ -179,10 +178,7 @@ def make_robot_keypoint(container: Container) -> None:
 
 def make_field_interface(container: Container) -> None:
     config = container.resolve(Config)
-    shared_config = container.resolve(SharedConfig)
-    map_config = shared_config.get_map(FieldType(get_map()))
-    field_filter = load_field_filter(map_config, config.field_filter, container)
-    container.register(map_config)
+    field_filter = load_field_filter(config.field_filter, container)
     container.register(field_filter, FieldFilterInterface)
 
     logger.info(f"Field filter: {field_filter}")
@@ -213,6 +209,9 @@ def main() -> None:
     container = Container()
     container.register(config)
     container.register(shared_config)
+    map_config = shared_config.get_map(FieldType(get_map()))
+    container.register(map_config)
+
     make_ros_comms(container)
     make_camera(container)
     make_field_segmentation(container)

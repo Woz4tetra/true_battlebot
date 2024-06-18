@@ -7,7 +7,7 @@ from bw_shared.geometry.projection_math.find_minimum_rectangle import (
     get_rectangle_angle,
     get_rectangle_extents,
 )
-from bw_shared.geometry.projection_math.points_transform import points_transform
+from bw_shared.geometry.projection_math.points_transform import points_transform_by
 from bw_shared.geometry.projection_math.project_segmentation import project_segmentation, raycast_segmentation
 from bw_shared.geometry.rpy import RPY
 from bw_shared.geometry.transform3d import Transform3D
@@ -125,7 +125,7 @@ def plot_plane_mesh(axis, plane, transform: Transform3D = Transform3D.from_posit
     for mesh_point in plane.mesh.vertices:
         mesh_points.append((mesh_point.x, mesh_point.y, mesh_point.z))
     mesh_points = np.array(mesh_points)
-    mesh_points = points_transform(mesh_points, transform.tfmat)
+    mesh_points = points_transform_by(mesh_points, transform.tfmat)
     axis.plot(mesh_points[:, 0], mesh_points[:, 1], mesh_points[:, 2], "g.")
 
 
@@ -175,7 +175,7 @@ def main():
     axes[2].scatter3D(rays[:, 0], rays[:, 1], rays[:, 2])
     axes[2].scatter3D(projected_points[:, 0], projected_points[:, 1], projected_points[:, 2])
 
-    flattened_points = points_transform(projected_points, plane_transform.inverse().tfmat)
+    flattened_points = points_transform_by(projected_points, plane_transform.inverse().tfmat)
 
     flattened_points2d = flattened_points[:, :2]
     min_rect = find_minimum_rectangle(flattened_points2d)
@@ -190,7 +190,7 @@ def main():
     axes[1].plot(centroid[0], centroid[1], "x")
 
     min_rect = np.hstack((min_rect, np.zeros((min_rect.shape[0], 1))))
-    min_rect_reprojected = points_transform(min_rect, plane_transform.tfmat)
+    min_rect_reprojected = points_transform_by(min_rect, plane_transform.tfmat)
     axes[2].plot(min_rect_reprojected[:, 0], min_rect_reprojected[:, 1], min_rect_reprojected[:, 2], "r")
 
     print("angle:", angle)

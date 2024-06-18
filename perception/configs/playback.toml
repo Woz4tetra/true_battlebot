@@ -7,7 +7,7 @@ path = "/media/storage/svo/mini_bot_2024-03-02T17-59-26.svo"
 
 [field_filter]
 # type = "SimulatedFieldFilter"
-type = "RansacFieldFilter"
+type = "PointCloudFieldFilter"
 
 [field_request]
 stale_image_timeout = 2.0

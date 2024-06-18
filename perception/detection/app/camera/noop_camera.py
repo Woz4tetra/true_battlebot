@@ -1,11 +1,10 @@
+from app.camera.camera_interface import CameraInterface, CameraMode
+from app.config.camera_config.noop_camera_config import NoopCameraConfig
 from bw_shared.messages.header import Header
 from perception_tools.messages.camera_data import CameraData
 from perception_tools.messages.image import Image
 from perception_tools.messages.point_cloud import PointCloud
 from sensor_msgs.msg import CameraInfo
-
-from app.camera.camera_interface import CameraInterface, CameraMode
-from app.config.camera_config.noop_camera_config import NoopCameraConfig
 
 
 class NoopCamera(CameraInterface):

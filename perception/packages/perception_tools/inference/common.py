@@ -5,6 +5,7 @@ import numpy as np
 import torch
 from bw_interfaces.msg import Contour, UVKeypoint
 from bw_shared.enums.label import Label
+
 from perception_tools.config.model_metadata import ModelMetadata
 
 
@@ -50,7 +51,7 @@ def get_default_device() -> torch.device:
     return torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-def mask_to_msg(contours: list[np.ndarray]) -> list[Contour]:
+def contour_to_msg(contours: list[np.ndarray]) -> list[Contour]:
     contour_msgs = []
     for contour in contours:
         points = [UVKeypoint(x, y) for x, y in contour]

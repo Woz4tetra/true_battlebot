@@ -1,50 +1,33 @@
 import logging
 
 import numpy as np
+from app.config.field_filter_config.point_cloud_field_filter_config import PointCloudFieldFilterConfig
+from app.field_filter.field_filter_interface import FieldFilterInterface
+from app.field_filter.helpers import get_field
+from app.field_filter.solvers.base_plane_solver import BasePlaneSolver
 from bw_interfaces.msg import EstimatedObject, SegmentationInstanceArray
-from bw_shared.configs.maps_config import MapConfig
 from bw_shared.geometry.projection_math.find_minimum_rectangle import (
     find_minimum_rectangle,
     get_rectangle_angle,
     get_rectangle_extents,
 )
-from bw_shared.geometry.projection_math.points_transform import points_transform
+from bw_shared.geometry.projection_math.points_transform import points_forward_by
 from bw_shared.geometry.projection_math.rotation_matrix_from_vectors import rotation_matrix_from_vectors
 from bw_shared.geometry.rpy import RPY
 from bw_shared.geometry.transform3d import Transform3D
 from geometry_msgs.msg import PoseWithCovariance, Vector3
 from perception_tools.inference.common import msg_to_mask
 from perception_tools.messages.point_cloud import PointCloud
-from sklearn.linear_model import RANSACRegressor
-
-from app.config.field_filter_config.ransac_field_filter_config import RansacFieldFilterConfig
-from app.field_filter.field_filter_interface import FieldFilterInterface
-from app.field_filter.helpers import get_field
 
 
-class RansacFieldFilter(FieldFilterInterface):
-    def __init__(self, map_config: MapConfig, filter_config: RansacFieldFilterConfig) -> None:
+class PointCloudFieldFilter(FieldFilterInterface):
+    def __init__(self, plane_solver: BasePlaneSolver, filter_config: PointCloudFieldFilterConfig) -> None:
         self.logger = logging.getLogger("perception")
-        self.map_config = map_config
         self.field_filter_config = filter_config
-        self.ransac = RANSACRegressor(
-            min_samples=filter_config.min_samples,
-            residual_threshold=filter_config.residual_threshold,
-            max_trials=filter_config.max_trials,
-            max_skips=filter_config.max_skips if filter_config.max_skips else np.inf,  # type: ignore
-            stop_n_inliers=filter_config.stop_n_inliers if filter_config.stop_n_inliers else np.inf,  # type: ignore
-            stop_score=filter_config.stop_score,
-            stop_probability=filter_config.stop_probability,
-            loss=filter_config.loss,
-            random_state=filter_config.random_seed,
-        )
+        self.plane_solver = plane_solver
 
     def compute_plane_coeffs(self, filtered_points: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-        self.ransac.fit(filtered_points[:, :2], filtered_points[:, 2])
-        a, b = self.ransac.estimator_.coef_
-        d = self.ransac.estimator_.intercept_
-        normal = np.array([a, b, d])
-        return normal, self.ransac.inlier_mask_
+        return self.plane_solver.solve(filtered_points)
 
     def compute_plane_vectors(
         self, inlier_point_cloud: PointCloud, plane_coeffs: np.ndarray
@@ -54,7 +37,7 @@ class RansacFieldFilter(FieldFilterInterface):
         return plane_normal, plane_center
 
     def compute_plane_transform(self, plane_normal: np.ndarray, plane_center: np.ndarray) -> Transform3D:
-        towards_camera_vec = np.array([0.0, 0.0, -1.0])
+        towards_camera_vec = np.array([0.0, 0.0, 1.0])
         plane_tfmat = np.eye(4)
         plane_tfmat[:3, :3] = rotation_matrix_from_vectors(plane_normal, towards_camera_vec)
         plane_tfmat[:3, 3] = plane_center
@@ -105,7 +88,7 @@ class RansacFieldFilter(FieldFilterInterface):
         # Rotation about the normal is computed using the edge of the rectangle closest to the camera.
 
         # rotate points so they face the camera. This transform also normalizes with respect to the plane center
-        flattened_points = points_transform(inlier_points, plane_transform.inverse().tfmat)
+        flattened_points = points_forward_by(inlier_points, plane_transform.inverse().tfmat)
         flattened_points2d = flattened_points[:, :2]  # remove z component
         min_rect = find_minimum_rectangle(flattened_points2d)  # find minimum rectangle around 2D points
         extents = get_rectangle_extents(min_rect)  # get the 2D bounds of the rectangle

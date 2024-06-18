@@ -2,13 +2,12 @@ import logging
 import time
 
 import torch
-from bw_interfaces.msg import SegmentationInstance, SegmentationInstanceArray
-from perception_tools.inference.common import get_default_device, load_metadata, mask_to_msg, mask_to_polygons
-from perception_tools.inference.deeplabv3 import IMAGE_SIZE, DeepLabV3Inference
-from perception_tools.messages.image import Image
-
 from app.config.segmentation_config.semantic_segmentation_config import SemanticSegmentationConfig
 from app.segmentation.segmentation_interface import SegmentationInterface
+from bw_interfaces.msg import SegmentationInstance, SegmentationInstanceArray
+from perception_tools.inference.common import contour_to_msg, get_default_device, load_metadata, mask_to_polygons
+from perception_tools.inference.deeplabv3 import IMAGE_SIZE, DeepLabV3Inference
+from perception_tools.messages.image import Image
 
 
 class SemanticSegmentation(SegmentationInterface):
@@ -50,7 +49,7 @@ class SemanticSegmentation(SegmentationInterface):
             object_indices[class_idx] += 1
 
             segmentation_instance = SegmentationInstance(
-                contours=mask_to_msg([contours]),
+                contours=contour_to_msg([contours]),
                 score=1.0,
                 label=label,
                 class_index=class_idx,

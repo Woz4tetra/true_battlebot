@@ -5,13 +5,12 @@ from typing import Protocol
 
 import cv2
 import numpy as np
-from bw_interfaces.msg import Contour, SegmentationInstance, SegmentationInstanceArray, UVKeypoint
-from bw_shared.enums.label import Label
-from perception_tools.messages.image import Image
-
 from app.config.segmentation_config.simulated_segmentation_config import SimulatedSegmentationConfig
 from app.segmentation.segmentation_interface import SegmentationInterface
 from app.segmentation.simulated_segmentation_manager import SimulatedSegmentationManager
+from bw_interfaces.msg import Contour, SegmentationInstance, SegmentationInstanceArray, UVKeypoint
+from bw_shared.enums.label import Label
+from perception_tools.messages.image import Image
 
 
 class SegmentationNoise(Protocol):

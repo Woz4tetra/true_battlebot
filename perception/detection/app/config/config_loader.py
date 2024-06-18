@@ -1,7 +1,6 @@
 import os
 
 import toml
-
 from app.config.config import Config
 
 
