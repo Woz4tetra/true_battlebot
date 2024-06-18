@@ -8,15 +8,22 @@ from app.config.config import Config
 from app.config.segmentation_config.instance_segmentation_config import InstanceSegmentationConfig
 from app.config.segmentation_config.noop_segmentation_config import NoopSegmentationConfig
 from app.config.segmentation_config.segmentation_types import SegmentationConfig
+from app.config.segmentation_config.semantic_segmentation_config import SemanticSegmentationConfig
 from app.config.segmentation_config.simulated_segmentation_config import SimulatedSegmentationConfig
 from app.container import Container
 from app.segmentation.simulated_segmentation_manager import SimulatedSegmentationManager
+from perception.detection.app.segmentation.semantic_segmentation import SemanticSegmentation
 
 from .instance_segmentation import InstanceSegmentation
 from .noop_segmentation import NoopSegmentation
 from .simulated_segmentation import SimulatedSegmentation
 
-SegmentationImplementation = Union[InstanceSegmentation, NoopSegmentation, SimulatedSegmentation]
+SegmentationImplementation = Union[
+    InstanceSegmentation,
+    NoopSegmentation,
+    SimulatedSegmentation,
+    SemanticSegmentation,
+]
 
 
 def load_simulated_segmentation_manager(container: Container) -> SimulatedSegmentationManager:
@@ -39,5 +46,7 @@ def load_segmentation(container: Container, config: SegmentationConfig) -> Segme
             manager = load_simulated_segmentation_manager(container)
             container.register(manager)
         return SimulatedSegmentation(config, manager)
+    elif isinstance(config, SemanticSegmentationConfig):
+        return SemanticSegmentation(config)
     else:
         raise ValueError(f"Unknown segmentation config type: {type(config)}")

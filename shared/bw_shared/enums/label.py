@@ -8,3 +8,4 @@ class Label(str, EnumAutoLowerStr):
     REFEREE = auto()
     FRIENDLY_ROBOT = auto()
     CONTROLLED_ROBOT = auto()
+    BACKGROUND = auto()

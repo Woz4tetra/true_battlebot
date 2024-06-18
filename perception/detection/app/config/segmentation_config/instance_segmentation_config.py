@@ -6,7 +6,7 @@ from typing import Literal
 class InstanceSegmentationConfig:
     type: Literal["InstanceSegmentation"] = "InstanceSegmentation"
     model_path: str = "model.torchscript"
-    metadata_path: str = "model_metadata.json"
+    metadata_path: str = "model.json"
     threshold: float = 0.8
     nms_threshold: float = 0.4
     mask_conversion_threshold: float = 0.5

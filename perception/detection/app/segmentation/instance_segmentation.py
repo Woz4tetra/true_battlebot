@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-import json
 import logging
 import time
 from typing import Callable
@@ -8,11 +6,11 @@ import cv2
 import numpy as np
 import torch
 import torchvision
-from bw_interfaces.msg import Contour, SegmentationInstance, SegmentationInstanceArray, UVKeypoint
+from bw_interfaces.msg import SegmentationInstance, SegmentationInstanceArray
 from bw_shared.messages.header import Header
 from detectron2.layers import paste_masks_in_image
 from detectron2.utils.visualizer import GenericMask
-from perception_tools.config.model_metadata import ModelMetadata
+from perception_tools.inference.common import load_metadata, mask_to_msg
 from perception_tools.messages.image import Image
 from torch import Tensor
 
@@ -33,9 +31,7 @@ class InstanceSegmentation(SegmentationInterface):
         self.image_delay_threshold = config.image_delay_threshold
         self.debug = config.debug
 
-        with open(self.metadata_path, "r") as file:
-            self.metadata = ModelMetadata.from_dict(json.load(file))
-        assert len(self.metadata.labels) > 0
+        self.metadata = load_metadata(config.metadata_path)
 
         self.original_dims: tuple[int, int] | None = None
         self.resize_dims: tuple[int, int] | None = None
@@ -142,7 +138,7 @@ class InstanceSegmentation(SegmentationInterface):
             label = self.metadata.labels[class_idx]
 
             segmentation_instance = SegmentationInstance(
-                contours=self.mask_to_msg(contours),
+                contours=mask_to_msg(contours),
                 score=score,
                 label=label,
                 class_index=class_idx,
@@ -177,15 +173,6 @@ class InstanceSegmentation(SegmentationInterface):
         cv_color = class_color.to_cv_color()
         for contour in contours:
             cv2.drawContours(image, [contour], -1, cv_color, 1)
-
-    def mask_to_msg(self, contours: list[np.ndarray]) -> list[Contour]:
-        contour_msgs = []
-        for contour in contours:
-            points = [UVKeypoint(x, y) for x, y in contour]
-            area = cv2.contourArea(contour)
-            contour_msg = Contour(points=points, area=area)
-            contour_msgs.append(contour_msg)
-        return contour_msgs
 
     def process_image(self, msg: Image) -> tuple[SegmentationInstanceArray, Image | None]:
         self.logger.debug(f"Image delay is: {time.time() - msg.header.stamp}")

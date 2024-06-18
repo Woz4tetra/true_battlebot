@@ -2,7 +2,8 @@ target_tick_rate = 60.0
 
 [camera]
 type = "SvoPlaybackCamera"
-path = "/media/storage/svo/zed_2023-09-30T13-38-21_repaired.svo"
+path = "/media/storage/svo/mini_bot_2024-03-02T17-59-26.svo"
+# path = "/media/storage/svo/mini_bot_2024-03-02T19-00-40.svo"
 
 [field_filter]
 type = "SimulatedFieldFilter"
@@ -24,10 +25,8 @@ exclude_filters = [
 ]
 
 [field_segmentation]
-type = "SimulatedSegmentation"
-
-[field_segmentation.simulated_to_real_labels]
-"Field" = "field"
+model_path = "data/models/field_deeplabv3_mbv3_2024-06-17.torchscript"
+metadata_path = "data/models/field_deeplabv3_mbv3_2024-06-17.json"
 
 [robot_keypoint]
 type = "YoloKeypoint"

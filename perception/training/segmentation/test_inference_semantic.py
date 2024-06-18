@@ -2,24 +2,12 @@ import argparse
 from pathlib import Path
 
 import cv2
-import numpy as np
 import torch
-from bw_shared.enums.label import Label
-from perception_tools.config.model_metadata import LABEL_COLORS
-from transformers import SegformerForSemanticSegmentation, SegformerImageProcessor
-
-color_map = {
-    0: (0, 0, 0),
-    1: LABEL_COLORS[Label.FIELD].to_cv_color(),
-}
-
-
-def prediction_to_vis(prediction):
-    vis_shape = prediction.shape + (3,)
-    vis = np.zeros(vis_shape)
-    for i, c in color_map.items():
-        vis[prediction == i] = color_map[i]
-    return vis.astype(np.uint8)
+import tqdm
+from perception_tools.config.model_metadata import FIELD_SEMANTIC_MODEL_METADATA
+from perception_tools.inference.common import get_default_device
+from perception_tools.inference.deeplabv3 import DeepLabV3Inference
+from perception_tools.training.deeplabv3 import load_model
 
 
 def main() -> None:
@@ -27,7 +15,7 @@ def main() -> None:
     parser.add_argument(
         "model",
         type=str,
-        help="Path to directory containing the model (folder contains *.safetensors and config.json)",
+        help="Path to the model (*.pth or *.torchscript)",
     )
     parser.add_argument(
         "image_path",
@@ -35,35 +23,37 @@ def main() -> None:
         type=str,
         help="Path to the image to test",
     )
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     args = parser.parse_args()
-    model_path = args.model
+    model_path = Path(args.model)
     image_paths = [Path(image_path) for image_path in args.image_path]
 
-    processor = SegformerImageProcessor(do_resize=False)
-    model = SegformerForSemanticSegmentation.from_pretrained(model_path)
-    model.to(device)
     output_path = image_paths[0].parent / Path("output")
     print(f"Saving output to {output_path}")
     output_path.mkdir(exist_ok=True)
 
-    for image_path in image_paths:
+    device = get_default_device()
+
+    print(f"Using device: {device}")
+    if model_path.suffix == ".torchscript":
+        print("Loading torchscript model")
+        model = torch.jit.load(model_path, map_location=device)
+    else:
+        print("Loading PyTorch model")
+        model = load_model(model_path, device)
+
+    inference = DeepLabV3Inference(model, device)
+
+    for image_path in tqdm.tqdm(image_paths):
         image = cv2.imread(str(image_path))
-        pixel_values = processor(image, return_tensors="pt").pixel_values.to(device)
 
-        with torch.no_grad():
-            outputs = model(pixel_values, return_dict=True)
-        predicted_segmentation_map = processor.post_process_semantic_segmentation(
-            outputs, target_sizes=[(image.shape[0], image.shape[1])]
+        out_mask = inference.compute_inference(image)
+        color_seg_resized = inference.draw_debug_image(
+            out_mask, image.shape[1], image.shape[0], FIELD_SEMANTIC_MODEL_METADATA
         )
-        predicted_segmentation_map = predicted_segmentation_map[0].cpu().numpy()
 
-        color_seg = np.zeros_like(image)
-        for label, color in enumerate(color_map.values()):
-            color_seg[predicted_segmentation_map == label] = color
-
-        cv2.addWeighted(image, 0.5, color_seg, 0.5, 0, image)
-        cv2.imwrite(str(output_path / image_path.name), image)
+        output_image = cv2.addWeighted(image, 0.5, color_seg_resized, 0.5, 0)
+        # output_image = cv2.addWeighted(image_resized, 0.5, color_seg, 0.5, 0)
+        cv2.imwrite(str(output_path / image_path.name), output_image)
 
 
 if __name__ == "__main__":

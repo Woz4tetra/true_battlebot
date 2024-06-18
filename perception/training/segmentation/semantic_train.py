@@ -7,9 +7,12 @@ import matplotlib
 import numpy as np
 import torch
 import torch.nn as nn
-import torchvision.transforms as torchvision_t
 from livelossplot import PlotLosses
 from livelossplot.outputs.matplotlib_plot import MatplotlibPlot
+from perception_tools.config.model_metadata import FIELD_SEMANTIC_MODEL_METADATA
+from perception_tools.inference.common import get_default_device
+from perception_tools.inference.deeplabv3 import IMAGE_SIZE, PAD_SIZE, common_transforms
+from perception_tools.training.deeplabv3 import seed_everything
 from torch.nn import functional
 from torch.utils.data import DataLoader, Dataset
 from torchmetrics import MeanMetric
@@ -17,44 +20,6 @@ from torchvision.models.segmentation import deeplabv3_mobilenet_v3_large, deepla
 from tqdm import tqdm
 
 matplotlib.use("agg")
-
-
-def train_transforms(mean=(0.4611, 0.4359, 0.3905), std=(0.2193, 0.2150, 0.2109)):
-    transforms = torchvision_t.Compose(
-        [
-            torchvision_t.ToTensor(),
-            torchvision_t.RandomGrayscale(p=0.4),
-            torchvision_t.Normalize(mean, std),
-        ]
-    )
-
-    return transforms
-
-
-def common_transforms(mean=(0.4611, 0.4359, 0.3905), std=(0.2193, 0.2150, 0.2109)):
-    transforms = torchvision_t.Compose(
-        [
-            torchvision_t.ToTensor(),
-            torchvision_t.Normalize(mean, std),
-        ]
-    )
-
-    return transforms
-
-
-def seed_everything(seed_value):
-    np.random.seed(seed_value)
-    torch.manual_seed(seed_value)
-    torch.backends.cudnn.deterministic = True
-    torch.backends.cudnn.benchmark = True
-
-
-# For reproducibility
-seed = 4176
-seed_everything(seed)
-
-
-IMAGE_SIZE = 384
 
 
 class SegDataset(Dataset):
@@ -66,10 +31,7 @@ class SegDataset(Dataset):
         self.mask_paths = mask_paths
         self.image_size = image_size
 
-        if self.data_type == "train":
-            self.transforms = train_transforms()
-        else:
-            self.transforms = common_transforms()
+        self.transforms = common_transforms()
 
     def read_file(self, path: Path):
         image = cv2.imread(str(path))
@@ -89,14 +51,16 @@ class SegDataset(Dataset):
 
         gt_mask = self.read_file(mask_path).astype(np.int32)
 
-        _mask = np.zeros((*self.image_size, 2), dtype=np.float32)
+        mask = np.zeros((*self.image_size, 2), dtype=np.float32)
 
         # BACKGROUND
-        _mask[:, :, 0] = np.where(gt_mask[:, :, 0] == 0, 1.0, 0.0)
+        mask[:, :, 0] = np.where(gt_mask[:, :, 0] == 0, 1.0, 0.0)
         # FIELD
-        _mask[:, :, 1] = np.where(gt_mask[:, :, 0] > 0, 1.0, 0.0)
+        mask[:, :, 1] = np.where(gt_mask[:, :, 0] > 0, 1.0, 0.0)
 
-        mask = torch.from_numpy(_mask).permute(2, 0, 1)
+        mask = np.pad(mask, ((PAD_SIZE, PAD_SIZE), (PAD_SIZE, PAD_SIZE), (0, 0)), mode="constant", constant_values=0)
+
+        mask = torch.from_numpy(mask).permute(2, 0, 1)
 
         return image, mask
 
@@ -257,10 +221,6 @@ class DeviceDataLoader:
         return len(self.dl)
 
 
-def get_default_device():
-    return torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-
 class TrainingStepInterface:
     def __init__(self, model) -> None:
         self.model = model
@@ -324,6 +284,10 @@ def step(epoch_num: int, loader: DeviceDataLoader, step_interface: TrainingStepI
 
 
 def main() -> None:
+    # For reproducibility
+    seed = 4176
+    seed_everything(seed)
+
     parser = argparse.ArgumentParser(description="Train a semantic segmentation model")
     parser.add_argument(
         "dataset_location",
@@ -355,7 +319,7 @@ def main() -> None:
         "-ne",
         "--num-epochs",
         type=int,
-        default=100,
+        default=50,
         help="Number of training epochs",
     )
     parser.add_argument(
@@ -367,17 +331,17 @@ def main() -> None:
     )
     args = parser.parse_args()
     dataset_location = Path(args.dataset_location)
-    checkpoint_path = args.checkpoint
+    checkpoint_path = Path(args.checkpoint) if args.checkpoint else None
     output = Path(args.output) if args.output else dataset_location.parent / "output"
     batch_size = args.batch_size
     num_workers = args.num_workers
     num_epochs = args.num_epochs
-    num_classes = 2
+    num_classes = len(FIELD_SEMANTIC_MODEL_METADATA.labels)
     backbone_model_name = "mbv3"  # mbv3 | r50 | r101
 
     output.mkdir(parents=True, exist_ok=True)
 
-    output_model = output / "model.pth"
+    output_model = output / f"model_{backbone_model_name}.pth"
     fig_path = output / "plot.png"
 
     device = get_default_device()
@@ -385,12 +349,16 @@ def main() -> None:
     model = prepare_model(backbone_model=backbone_model_name, num_classes=num_classes)
     model.to(device)
     if checkpoint_path is not None:
+        checkpoint_model_name = checkpoint_path.stem.split("_")[1]
+        assert (
+            checkpoint_model_name == backbone_model_name
+        ), f"Model backbone mismatch. {checkpoint_model_name} != {backbone_model_name}"
         checkpoints = torch.load(checkpoint_path, map_location=device)
         model.load_state_dict(checkpoints, strict=False)
         model.eval()
 
     # Dummy pass through the model
-    _ = model(torch.randn((2, 3, IMAGE_SIZE, IMAGE_SIZE), device=device))
+    _ = model(torch.randn((2, 3, IMAGE_SIZE + 2 * PAD_SIZE, IMAGE_SIZE + 2 * PAD_SIZE), device=device))
 
     train_loader, valid_loader = get_dataset(
         data_directory=dataset_location, batch_size=batch_size, num_workers=num_workers
