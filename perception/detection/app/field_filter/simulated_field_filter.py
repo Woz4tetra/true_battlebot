@@ -1,7 +1,6 @@
 import logging
 import time
 
-import numpy as np
 from bw_interfaces.msg import EstimatedObject, SegmentationInstanceArray
 from bw_shared.configs.maps_config import MapConfig
 from bw_shared.geometry.transform3d import Transform3D
