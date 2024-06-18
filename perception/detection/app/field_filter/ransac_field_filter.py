@@ -22,10 +22,6 @@ from app.field_filter.field_filter_interface import FieldFilterInterface
 from app.field_filter.helpers import get_field
 
 
-def plane_equation(x: np.ndarray, y: np.ndarray, intercept: float, coef: np.ndarray) -> np.ndarray:
-    return (-intercept - coef[0] * x - coef[1] * y) / coef[2]
-
-
 class RansacFieldFilter(FieldFilterInterface):
     def __init__(self, map_config: MapConfig, filter_config: RansacFieldFilterConfig) -> None:
         self.logger = logging.getLogger("perception")
@@ -45,7 +41,10 @@ class RansacFieldFilter(FieldFilterInterface):
 
     def compute_plane_coeffs(self, filtered_points: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         self.ransac.fit(filtered_points[:, :2], filtered_points[:, 2])
-        return self.ransac.estimator_.coef_, self.ransac.inlier_mask_
+        a, b = self.ransac.estimator_.coef_
+        d = self.ransac.estimator_.intercept_
+        normal = np.array([a, b, d])
+        return normal, self.ransac.inlier_mask_
 
     def compute_plane_vectors(
         self, inlier_point_cloud: PointCloud, plane_coeffs: np.ndarray
@@ -55,7 +54,7 @@ class RansacFieldFilter(FieldFilterInterface):
         return plane_normal, plane_center
 
     def compute_plane_transform(self, plane_normal: np.ndarray, plane_center: np.ndarray) -> Transform3D:
-        towards_camera_vec = np.array([0.0, 0.0, 1.0])
+        towards_camera_vec = np.array([0.0, 0.0, -1.0])
         plane_tfmat = np.eye(4)
         plane_tfmat[:3, :3] = rotation_matrix_from_vectors(plane_normal, towards_camera_vec)
         plane_tfmat[:3, 3] = plane_center
@@ -117,13 +116,14 @@ class RansacFieldFilter(FieldFilterInterface):
         field_centered_plane = Transform3D.from_position_and_rpy(
             Vector3(centroid[0], centroid[1], 0), RPY((0, 0, angle))
         ).forward_by(plane_transform)
+        self.logger.debug(f"Field centered plane transform: {field_centered_plane}")
         self.logger.debug(f"Minimum rectangle: {min_rect}. Rectangle extents: {extents}. Rectangle angle: {angle}.")
 
         estimated_field = EstimatedObject(
             header=segmentations.header,
-            child_frame_id="map",
+            child_frame_id="map_relative",
             pose=PoseWithCovariance(pose=field_centered_plane.to_pose_msg()),
-            size=Vector3(extents.x),
+            size=Vector3(x=extents.x, y=extents.y, z=0.0),
             label=field.label,
         )
         inlier_point_cloud = PointCloud(header=point_cloud.header, points=inlier_points)

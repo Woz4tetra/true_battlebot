@@ -95,7 +95,9 @@ class PointCloud:
         return np.ma.masked_invalid(filtered_points)
 
     def filtered_points(self, mask: np.ndarray) -> np.ndarray:
-        return self.points[mask]
+        filtered_points = self.points[mask]
+        valid_mask = np.all(np.isfinite(filtered_points), axis=-1)
+        return filtered_points[valid_mask]
 
     @classmethod
     def from_depth(cls, depth: Image, camera_info: CameraInfo, depth_scale: float = 1000.0) -> PointCloud:

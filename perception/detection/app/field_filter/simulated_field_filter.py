@@ -4,6 +4,7 @@ import time
 import numpy as np
 from bw_interfaces.msg import EstimatedObject, SegmentationInstanceArray
 from bw_shared.configs.maps_config import MapConfig
+from bw_shared.geometry.transform3d import Transform3D
 from perception_tools.inference.common import msg_to_mask
 from perception_tools.messages.point_cloud import PointCloud
 from perception_tools.rosbridge.ros_poll_subscriber import RosPollSubscriber
@@ -55,14 +56,14 @@ class SimulatedFieldFilter(FieldFilterInterface):
 
         if len(point_cloud.points) == 0:
             self.logger.error("Point cloud is empty. Skipping filtering.")
-            return self.last_field_result, point_cloud
+            return EstimatedObject(), point_cloud
 
         cloud_size = point_cloud.points.shape[0] * point_cloud.points.shape[1]
         if mask.size != cloud_size:
             self.logger.error(
                 f"Mask size {mask.size} does not match point cloud size {cloud_size}. Skipping filtering."
             )
-            return self.last_field_result, point_cloud
+            return EstimatedObject(), point_cloud
 
         self.logger.debug(
             f"Applying mask to point cloud. Mask shape is {mask.shape}. "
@@ -72,4 +73,8 @@ class SimulatedFieldFilter(FieldFilterInterface):
         filtered_point_cloud = PointCloud(header=point_cloud.header, points=point_cloud.masked_points(mask))
 
         self.logger.debug(f"Finished filtering point cloud. Shape is {filtered_point_cloud.points.shape}")
+
+        plane_transform = Transform3D.from_pose_msg(self.last_field_result.pose.pose)
+        self.logger.debug(f"Field centered plane transform: {plane_transform}")
+
         return self.last_field_result, filtered_point_cloud

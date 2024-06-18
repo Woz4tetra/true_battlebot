@@ -10,7 +10,7 @@ class RansacFieldFilterConfig:
 
     # see sklearn.linear_model.RANSACRegressor for details
     min_samples: int | None = None
-    residual_threshold: float | None = 0.04
+    residual_threshold: float | None = 0.01
     max_trials: int = 100
     max_skips: int | None = None
     stop_n_inliers: int | None = None
