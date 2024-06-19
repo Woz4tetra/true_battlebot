@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 
 import cv2
 import numpy as np
@@ -9,7 +10,7 @@ from bw_shared.enums.label import Label
 from perception_tools.config.model_metadata import ModelMetadata
 
 
-def load_metadata(metadata_path: str) -> ModelMetadata:
+def load_metadata(metadata_path: str | Path) -> ModelMetadata:
     with open(metadata_path, "r") as file:
         metadata = ModelMetadata.from_dict(json.load(file))
     assert len(metadata.labels) > 0
@@ -27,7 +28,7 @@ def mask_to_polygons(mask: np.ndarray, metadata: ModelMetadata) -> dict[Label, t
     for layer_index, label in enumerate(metadata.labels):
         if layer_index == 0:  # skip the background
             continue
-        layer = mask == layer_index
+        layer = (mask == layer_index).astype(np.uint8)
         contour_results = cv2.findContours(layer, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_NONE)
         hierarchy = contour_results[-1]
         if hierarchy is None:  # empty mask

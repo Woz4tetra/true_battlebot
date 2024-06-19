@@ -12,6 +12,7 @@ from bw_interfaces.msg import SegmentationInstance, SegmentationInstanceArray
 from bw_shared.messages.header import Header
 from detectron2.layers import paste_masks_in_image
 from detectron2.utils.visualizer import GenericMask
+from perception_tools.data_directory import get_data_directory
 from perception_tools.inference.common import contour_to_msg, load_metadata
 from perception_tools.messages.image import Image
 from torch import Tensor
@@ -21,8 +22,10 @@ BoundingBox = tuple[int, int, int, int]
 
 class InstanceSegmentation(SegmentationInterface):
     def __init__(self, config: InstanceSegmentationConfig) -> None:
-        self.model_path = config.model_path
-        self.metadata_path = config.metadata_path
+        self.logger = logging.getLogger("perception")
+        data_dir = get_data_directory()
+        self.model_path = data_dir / config.model_path
+        self.metadata_path = data_dir / config.metadata_path
         self.threshold = config.threshold
         self.nms_threshold = config.nms_threshold
         self.mask_conversion_threshold = config.mask_conversion_threshold
@@ -30,16 +33,15 @@ class InstanceSegmentation(SegmentationInterface):
         self.image_delay_threshold = config.image_delay_threshold
         self.debug = config.debug
 
-        self.metadata = load_metadata(config.metadata_path)
+        self.metadata = load_metadata(self.metadata_path)
 
         self.original_dims: tuple[int, int] | None = None
         self.resize_dims: tuple[int, int] | None = None
 
         self.device = torch.device("cuda")
-        self.model = self.load_model(self.model_path)
+        self.model = self.load_model(str(self.model_path))
         self.warmup()
-
-        self.logger = logging.getLogger("perception")
+        self.logger.info("InstanceSegmentation initialized")
 
     def load_model(self, model_path: str) -> Callable:
         self.logger.info(f"Loading model from {model_path}")

@@ -11,7 +11,7 @@ from app.config.field_filter_config.field_request_config import FieldRequestConf
 from app.config.field_filter_config.point_cloud_field_filter_config import PointCloudFieldFilterConfig
 from app.config.keypoint_config.keypoint_types import KeypointConfig, YoloKeypointConfig
 from app.config.ros_config import RosConfig
-from app.config.segmentation_config.segmentation_types import InstanceSegmentationConfig, SegmentationConfig
+from app.config.segmentation_config.segmentation_types import SegmentationConfig, SemanticSegmentationConfig
 
 
 @dataclass
@@ -20,7 +20,7 @@ class Config:
     camera_topic: CameraTopicConfig = field(default_factory=lambda: CameraTopicConfig("/camera_0", "camera_0"))
     camera: CameraConfig = field(default_factory=NoopCameraConfig)
     ros: RosConfig = field(default_factory=RosConfig)
-    field_segmentation: SegmentationConfig = field(default_factory=InstanceSegmentationConfig)
+    field_segmentation: SegmentationConfig = field(default_factory=SemanticSegmentationConfig)
     robot_keypoint: KeypointConfig = field(default_factory=YoloKeypointConfig)
     field_filter: FieldFilterConfig = field(default_factory=PointCloudFieldFilterConfig)
     field_request: FieldRequestConfig = field(default_factory=FieldRequestConfig)

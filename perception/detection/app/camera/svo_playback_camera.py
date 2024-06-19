@@ -1,4 +1,5 @@
 import logging
+import time
 
 import numpy as np
 import pyzed.sl as sl
@@ -44,11 +45,12 @@ class SvoPlaybackCamera(CameraInterface):
         self.point_cloud = sl.Mat()
         self.header = Header(0.0, self.camera_topic_config.frame_id, 0)
 
-        self.camera_info = zed_to_ros_camera_info(self.camera.get_camera_information())
-
         self.field_data = self.load_field_frame()
+        self.logger.debug("SvoPlaybackCamera initialized")
 
     def open(self, mode: CameraMode) -> bool:
+        if self.mode != mode:
+            self.logger.debug(f"Opening SvoPlaybackCamera in mode: {mode}")
         self.mode = mode
         return True
 
@@ -67,18 +69,20 @@ class SvoPlaybackCamera(CameraInterface):
         color_image_data = self.color_image.get_data()[..., 0:3]
 
         header = self.next_header()
-        self.camera_info.header = header.to_msg()
+        now = time.time()
+        self.logger.debug(f"Frame time: {header.stamp}. Delay: {now - header.stamp}")
+        self.field_data.camera_info.header = header.to_msg()
         image = Image(header, color_image_data)
         point_cloud = PointCloud(header, np.array([]), np.array([]), color_encoding=CloudFieldName.BGRA)
 
         camera_data = CameraData(
             color_image=image,
             point_cloud=point_cloud,
-            camera_info=self.camera_info,
+            camera_info=self.field_data.camera_info,
         )
 
         self.color_image_pub.publish(image.to_msg())
-        self.camera_info_pub.publish(self.camera_info)
+        self.camera_info_pub.publish(self.field_data.camera_info)
 
         return camera_data
 
@@ -100,17 +104,20 @@ class SvoPlaybackCamera(CameraInterface):
         return self.header
 
     def load_field_frame(self) -> CameraData:
+        self.logger.debug("Loading field frame data")
         self._set_field_finder_settings()
         status = self.camera.open(self.init_params)
         if status != sl.ERROR_CODE.SUCCESS:
             raise Exception(f"Error opening camera: {status}")
 
+        self.logger.debug(f"Jumping to frame index: {self.config.field_grab_index}")
         self.camera.set_svo_position(self.config.field_grab_index)
         status = self.camera.grab(self.runtime_parameters)
         if status != sl.ERROR_CODE.SUCCESS:
             raise Exception(
                 f"Error grabbing field frame: {status}. Attempted to get index: {self.config.field_grab_index}"
             )
+        self.logger.debug("Grabbed field frame")
 
         self.camera.retrieve_image(self.color_image, sl.VIEW.LEFT)
         color_image_data = self.color_image.get_data()[..., 0:3]
@@ -121,16 +128,22 @@ class SvoPlaybackCamera(CameraInterface):
         colors = raw_cloud_data[..., 3].view(np.uint32)
 
         header = self.next_header()
+        now = time.time()
+        self.logger.debug(f"Field frame time: {header.stamp}. Delay: {now - header.stamp}")
         image = Image(header, color_image_data)
         point_cloud = PointCloud(header, points, colors, color_encoding=CloudFieldName.BGRA)
-        camera_data = CameraData(color_image=image, point_cloud=point_cloud, camera_info=self.camera_info)
+        camera_info = zed_to_ros_camera_info(self.camera.get_camera_information())
+        camera_data = CameraData(color_image=image, point_cloud=point_cloud, camera_info=camera_info)
 
+        self.logger.debug("Closing camera")
         self.camera.close()
 
         self._set_robot_finder_settings()
+        self.logger.debug("Reopening camera in Robot Finder mode")
         status = self.camera.open(self.init_params)
         if status != sl.ERROR_CODE.SUCCESS:
             raise Exception(f"Error opening camera: {status}")
+        self.logger.debug(f"Jumping to frame index: {self.config.start_index}")
         self.camera.set_svo_position(self.config.start_index)
 
         return camera_data

@@ -1,10 +1,12 @@
 import logging
 import time
 
+import numpy as np
 import torch
 from app.config.segmentation_config.semantic_segmentation_config import SemanticSegmentationConfig
 from app.segmentation.segmentation_interface import SegmentationInterface
 from bw_interfaces.msg import SegmentationInstance, SegmentationInstanceArray
+from perception_tools.data_directory import get_data_directory
 from perception_tools.inference.common import contour_to_msg, get_default_device, load_metadata, mask_to_polygons
 from perception_tools.inference.deeplabv3 import IMAGE_SIZE, DeepLabV3Inference
 from perception_tools.messages.image import Image
@@ -15,17 +17,21 @@ class SemanticSegmentation(SegmentationInterface):
         self.logger = logging.getLogger("perception")
         self.config = config
         self.device = get_default_device()
-        self.model = torch.jit.load(self.config.model_path, map_location=self.device)
+        data_dir = get_data_directory()
+        self.model = torch.jit.load(data_dir / self.config.model_path, map_location=self.device)
         self.inference = DeepLabV3Inference(self.model, self.device)
 
-        self.metadata = load_metadata(self.config.metadata_path)
+        self.metadata = load_metadata(data_dir / self.config.metadata_path)
 
         self.warmup()
+        self.logger.info("SemanticSegmentation initialized")
 
     def process_image(self, msg: Image) -> tuple[SegmentationInstanceArray, Image | None]:
+        self.logger.debug(f"Processing image with shape: {msg.data.shape}")
         height, width = msg.data.shape[:2]
 
         out_mask = self.inference.compute_inference(msg.data)
+        self.logger.debug(f"Field detected: {np.sum(out_mask) > 0}")
         if self.config.debug:
             debug_image = self.inference.draw_debug_image(out_mask, width, height, self.metadata)
             debug_msg = Image(msg.header, data=debug_image)
@@ -57,6 +63,7 @@ class SemanticSegmentation(SegmentationInterface):
                 has_holes=has_holes,
             )
             result.instances.append(segmentation_instance)
+        self.logger.debug(f"Found {len(result.instances)} instances")
         return result, debug_msg
 
     def warmup(self) -> None:

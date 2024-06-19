@@ -149,6 +149,7 @@ class SimulatedSegmentation(SegmentationInterface):
         self.prev_random_sample_time = time.perf_counter()
 
         self.segmentation_manager = segmentation_manager
+        self.logger.info("SimulatedSegmentation initialized")
 
     def process_image(self, rgb_image: Image) -> tuple[SegmentationInstanceArray, Image | None]:
         if len(rgb_image.data) == 0:

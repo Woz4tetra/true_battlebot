@@ -6,15 +6,16 @@ path = "/media/storage/svo/mini_bot_2024-03-02T17-59-26.svo"
 # path = "/media/storage/svo/mini_bot_2024-03-02T19-00-40.svo"
 
 [field_filter]
-# type = "SimulatedFieldFilter"
 type = "PointCloudFieldFilter"
 
 [field_request]
 stale_image_timeout = 2.0
 
 [field_segmentation]
-model_path = "data/models/field_deeplabv3_mbv3_2024-06-17.torchscript"
-metadata_path = "data/models/field_deeplabv3_mbv3_2024-06-17.json"
+type = "SemanticSegmentation"
+debug = true
+model_path = "models/field_deeplabv3_mbv3_2024-06-17.torchscript"
+metadata_path = "models/field_deeplabv3_mbv3_2024-06-17.json"
 
 [ros]
 log = false

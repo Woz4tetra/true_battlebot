@@ -5,8 +5,10 @@ type = "ZedCamera"
 serial_number = 33234316
 
 [field_segmentation]
-model_path = "data/models/field_deeplabv3_mbv3_2024-06-17.torchscript"
-metadata_path = "data/models/field_deeplabv3_mbv3_2024-06-17.json"
+type = "SemanticSegmentation"
+debug = true
+model_path = "models/field_deeplabv3_mbv3_2024-06-17.torchscript"
+metadata_path = "models/field_deeplabv3_mbv3_2024-06-17.json"
 
 [robot_keypoint]
 type = "YoloKeypoint"

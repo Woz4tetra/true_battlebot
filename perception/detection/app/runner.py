@@ -123,10 +123,8 @@ class CommandLineArgs(Protocol):
     config_dir: str
 
 
-logger = logging.getLogger("perception")
-
-
 def make_camera(container: Container) -> None:
+    logger = logging.getLogger("perception")
     config = container.resolve(Config)
     camera = load_camera(config.camera, container)
     container.register(camera, CameraInterface)
@@ -147,6 +145,7 @@ def make_ros_comms(container: Container) -> None:
 
 
 def make_field_segmentation(container: Container) -> None:
+    logger = logging.getLogger("perception")
     config = container.resolve(Config)
     namespace = config.camera_topic.namespace
     field_segmentation = load_segmentation(container, config.field_segmentation)
@@ -159,10 +158,11 @@ def make_field_segmentation(container: Container) -> None:
     container.register(field_debug_image_publisher, "field_debug_image_publisher")
     container.register(point_cloud_publisher, "point_cloud_publisher")
 
-    logger.info(f"Field segmentation: {field_segmentation}")
+    logger.info(f"Field segmentation: {type(field_segmentation)}")
 
 
 def make_robot_keypoint(container: Container) -> None:
+    logger = logging.getLogger("perception")
     config = container.resolve(Config)
     namespace = config.camera_topic.namespace
     robot_keypoint = load_keypoint(container, config.robot_keypoint)
@@ -173,15 +173,16 @@ def make_robot_keypoint(container: Container) -> None:
     container.register(robot_keypoint_publisher, "robot_keypoint_publisher")
     container.register(robot_debug_image_publisher, "robot_debug_image_publisher")
 
-    logger.info(f"Robot segmentation: {robot_keypoint}")
+    logger.info(f"Robot segmentation: {type(robot_keypoint)}")
 
 
 def make_field_interface(container: Container) -> None:
+    logger = logging.getLogger("perception")
     config = container.resolve(Config)
     field_filter = load_field_filter(config.field_filter, container)
     container.register(field_filter, FieldFilterInterface)
 
-    logger.info(f"Field filter: {field_filter}")
+    logger.info(f"Field filter: {type(field_filter)}")
 
 
 def make_field_request_handler(container: Container) -> None:
@@ -204,6 +205,7 @@ def main() -> None:
 
     initialize()
     print()  # Start log on a fresh line
+    logger = logging.getLogger("perception")
     logger.info("Initializing perception")
 
     container = Container()
