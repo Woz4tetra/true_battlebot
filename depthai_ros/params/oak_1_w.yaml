@@ -1,0 +1,4 @@
+/oak:
+    camera_i_nn_type: none
+    rgb_i_resolution: "1080"
+    rgb_i_fps: "60"

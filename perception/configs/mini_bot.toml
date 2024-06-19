@@ -4,11 +4,28 @@ target_tick_rate = 60.0
 type = "ZedCamera"
 serial_number = 33234316
 
+[field_filter]
+type = "PointCloudFieldFilter"
+
 [field_segmentation]
 type = "SemanticSegmentation"
 debug = true
 model_path = "models/field_deeplabv3_mbv3_2024-06-17.torchscript"
 metadata_path = "models/field_deeplabv3_mbv3_2024-06-17.json"
 
+[ros]
+log = false
+exclude_filters = [
+    "/camera_0/simulated_segmentation",
+    "/camera_0/robot/debug_image",
+    "/camera_0/rgb/camera_info",
+    "/camera_0/rgb/image_raw",
+    "/camera_0/layer/image_raw",
+    "/camera_0/depth/depth_registered",
+    "/camera_0/robot/segmentation",
+    "/perception/heartbeat",
+]
+
 [robot_keypoint]
 type = "YoloKeypoint"
+model_name = "yolov8-pose_2024-06-06.pt"

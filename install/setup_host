@@ -12,5 +12,6 @@ sudo chown -R 1000:1000 /media/storage/torch-cache
 sudo chown -R 1000:1000 /media/storage/true-battlebot-media
 
 sudo cp ${BASE_DIR}/99-zed.rules /etc/udev/rules.d
+sudo ${BASE_DIR}/install_depthai
 
 sudo ${BASE_DIR}/install_nodenv

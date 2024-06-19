@@ -53,7 +53,8 @@ services:
             - ${PROJECT_NAME}_perception_build:/opt/${ORGANIZATION}/build:rw
             - ${PROJECT_DIR}:/opt/${ORGANIZATION}/${PROJECT_NAME}:rw
             - ${PROJECT_DIR}/scripts:/opt/${ORGANIZATION}/scripts:rw
-            - /media/storage/torch-cache:/home/bwbots/.torch:rw
+            - /media/storage/true-battlebot-media/cache:/home/bwbots/.cache:rw
+            - /media/storage/true-battlebot-media/torch-cache:/home/bwbots/.torch:rw
             - /media/storage/true-battlebot-media:/media/storage:rw
             - /tmp/.X11-unix:/tmp/.X11-unix
             - /home/${USER}/.Xauthority:/home/${ORGANIZATION}/.Xauthority:rw

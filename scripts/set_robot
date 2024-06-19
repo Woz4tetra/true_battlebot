@@ -74,11 +74,6 @@ def main() -> None:
     args = parser.parse_args()
 
     robot = args.robot
-    if not robot:
-        print(f"Robot name: {env.ROBOT}")
-        print(f"Map name: {env.MAP_NAME}")
-        exit(0)
-
     if robot not in ALL_ROBOTS:
         print(f"Error: Robot {robot} not found")
         exit(1)
