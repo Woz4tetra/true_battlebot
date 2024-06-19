@@ -52,6 +52,11 @@ RUN bash /opt/${ORGANIZATION}/install/install_basic_tools.sh
 # ---
 
 COPY --chown=1000:1000 \
+    ./install/install_python.sh \
+    /opt/${ORGANIZATION}/install/
+RUN bash /opt/${ORGANIZATION}/install/install_python.sh
+
+COPY --chown=1000:1000 \
     ./install/install_python_dependencies.sh \
     ./install/requirements.txt \
     /opt/${ORGANIZATION}/install/

@@ -8,13 +8,12 @@ from app.config.field_filter_config.point_cloud_field_filter_config import (
 from app.config.field_filter_config.simulated_field_filter_config import SimulatedFieldFilterConfig
 from app.container import Container
 from app.field_filter.field_filter_interface import FieldFilterInterface
+from app.field_filter.point_cloud_field_filter import PointCloudFieldFilter
 from app.field_filter.simulated_field_filter import SimulatedFieldFilter
 from app.field_filter.solvers import LeastSquaresSolver, RansacPlaneSolver
 from app.field_filter.solvers.base_plane_solver import BasePlaneSolver
 from bw_interfaces.msg import EstimatedObject
 from perception_tools.rosbridge.ros_poll_subscriber import RosPollSubscriber
-
-from perception.detection.app.field_filter.point_cloud_field_filter import PointCloudFieldFilter
 
 
 def make_solver(field_filter_config: PointCloudFieldFilterConfig) -> BasePlaneSolver:

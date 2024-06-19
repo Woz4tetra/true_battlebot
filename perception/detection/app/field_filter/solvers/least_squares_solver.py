@@ -14,7 +14,6 @@ class LeastSquaresSolver(BasePlaneSolver):
         up_vec = np.array([0.0, 0.0, 1.0])
         plane_tfmat = np.eye(4)
         plane_tfmat[:3, :3] = rotation_matrix_from_vectors(plane_normal, up_vec)
-        plane_tfmat[:3, 3] = np.mean(points, axis=0)
         flattened_points = points_forward_by(points, np.linalg.inv(plane_tfmat))
         z_points = flattened_points[:, 2]
         z_points -= np.mean(z_points)

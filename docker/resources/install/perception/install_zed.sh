@@ -22,3 +22,7 @@ sudo chown -R 1000:1000 /usr/local/zed/
 sudo ln -sf /lib/x86_64-linux-gnu/libusb-1.0.so.0 /usr/lib/x86_64-linux-gnu/libusb-1.0.so 
 sudo rm ZED_SDK_Linux_Ubuntu.run 
 
+sudo chown -R 1000:1000 /usr/local/lib/python${PYTHON_INSTALL_VERSION}/dist-packages
+pip install requests
+cd /usr/local/zed
+python get_python_api.py

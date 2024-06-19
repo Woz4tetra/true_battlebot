@@ -24,8 +24,7 @@ class RansacPlaneSolver(BasePlaneSolver):
         target_y = points[:, 2]
         self.ransac.fit(data_x, target_y)
         a, b = self.ransac.estimator_.coef_
-        c = self.ransac.estimator_.intercept_
-        normal = np.array([a, b, c])
+        normal = np.array([a, b, -1])
         magnitude = np.linalg.norm(normal)
         if magnitude < 1e-6:
             return np.array([0.0, 0.0, -1.0]), self.ransac.inlier_mask_

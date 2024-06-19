@@ -42,23 +42,27 @@ USER ${USER}
 RUN sudo chown -R 1000:1000 /opt/${ORGANIZATION}/
 
 # ---
+# Basic tools
+# ---
+
+COPY --chown=1000:1000 ./install/install_basic_tools.sh /opt/${ORGANIZATION}/install/
+RUN bash /opt/${ORGANIZATION}/install/install_basic_tools.sh
+    
+# ---
 # ZED SDK
 # ---
 
 ENV TZ=America/New_York
 
 COPY --chown=1000:1000 \
+    ./install/install_python.sh \
+    /opt/${ORGANIZATION}/install/
+RUN bash /opt/${ORGANIZATION}/install/install_python.sh
+
+COPY --chown=1000:1000 \
     ./install/perception/install_zed.sh \
     /opt/${ORGANIZATION}/install/
 RUN bash /opt/${ORGANIZATION}/install/install_zed.sh
-
-# ---
-# Basic tools
-# ---
-
-COPY --chown=1000:1000 ./install/install_basic_tools.sh /opt/${ORGANIZATION}/install/
-RUN bash /opt/${ORGANIZATION}/install/install_basic_tools.sh
-
 
 # ---
 # Basic dependencies
@@ -90,8 +94,6 @@ RUN bash /opt/${ORGANIZATION}/install/install_python_perception.sh
 # ---
 # Python extra packages
 # ---
-
-RUN cd /usr/local/zed && python get_python_api.py
 
 COPY --chown=1000:1000 \
     ./install/perception/ros-requirements.txt \
