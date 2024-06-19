@@ -73,15 +73,12 @@ def get_rectangle_angle(rectangle: np.ndarray) -> float:
     Finds the angle of the rectangle with respect to the x-axis
     rectangle is a 4x2 matrix of points
     """
-    root_vertex = int(np.argmin(rectangle[:, 1]))
-    next_vertex = (root_vertex + 1) % len(rectangle)
-    prev_vertex = (root_vertex - 1) % len(rectangle)
-    # distance is distance to the x axis
-    next_distance = rectangle[next_vertex, 1]
-    prev_distance = rectangle[prev_vertex, 1]
-    if next_distance < prev_distance:
-        delta = rectangle[next_vertex] - rectangle[root_vertex]
-    else:
-        delta = rectangle[root_vertex] - rectangle[prev_vertex]
-    angle = np.arctan2(delta[1], delta[0])
-    return angle
+    angles = []
+    for index in range(len(rectangle) - 1):
+        p0 = rectangle[index]
+        p1 = rectangle[index + 1]
+        delta = p1 - p0
+        angle = np.arctan2(delta[1], delta[0])
+        angles.append(angle)
+    angles = np.array(angles)
+    return angles[np.argmin(np.abs(angles))]

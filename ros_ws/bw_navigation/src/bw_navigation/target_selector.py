@@ -181,7 +181,7 @@ class TargetSelector:
 
     def run(self) -> None:
         rate = rospy.Rate(10)
-        while True:
+        while not rospy.is_shutdown():
             rate.sleep()
             self.goal_update()
 

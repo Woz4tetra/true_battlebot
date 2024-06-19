@@ -2,8 +2,16 @@ import numpy as np
 import scipy.linalg
 from app.config.field_filter_config.point_cloud_field_filter_config import LeastSquaresPlaneSolverConfig
 from app.field_filter.solvers.base_plane_solver import BasePlaneSolver
-from bw_shared.geometry.projection_math.points_transform import points_forward_by
 from bw_shared.geometry.projection_math.rotation_matrix_from_vectors import rotation_matrix_from_vectors
+from numba import njit
+
+
+@njit
+def rotate_points(points: np.ndarray, rotation_matrix: np.ndarray) -> np.ndarray:
+    tfd_points = np.zeros_like(points)
+    for i in range(points.shape[0]):
+        tfd_points[i] = np.dot(points[i], rotation_matrix)
+    return tfd_points[:, 0:3]
 
 
 class LeastSquaresSolver(BasePlaneSolver):
@@ -12,9 +20,10 @@ class LeastSquaresSolver(BasePlaneSolver):
 
     def compute_inliers(self, points: np.ndarray, plane_normal: np.ndarray, threshold: float) -> np.ndarray:
         up_vec = np.array([0.0, 0.0, 1.0])
-        plane_tfmat = np.eye(4)
-        plane_tfmat[:3, :3] = rotation_matrix_from_vectors(plane_normal, up_vec)
-        flattened_points = points_forward_by(points, np.linalg.inv(plane_tfmat))
+        flattened_points = rotate_points(
+            points,
+            np.linalg.inv(rotation_matrix_from_vectors(plane_normal, up_vec)),
+        )
         z_points = flattened_points[:, 2]
         z_points -= np.mean(z_points)
         return np.abs(z_points) < threshold
