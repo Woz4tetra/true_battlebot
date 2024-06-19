@@ -46,6 +46,7 @@ class Runner:
         self.field_segmentation_publisher: RosPublisher[SegmentationInstanceArray] = self.container.resolve_by_name(
             "field_segmentation_publisher"
         )
+        self.field_cloud_publisher: RosPublisher[PointCloud2] = self.container.resolve_by_name("field_cloud_publisher")
         self.point_cloud_publisher: RosPublisher[PointCloud2] = self.container.resolve_by_name("point_cloud_publisher")
 
         self.robot_keypoint: KeypointInterface = self.container.resolve_by_name("robot_keypoint")
@@ -97,6 +98,8 @@ class Runner:
             return
         self.prev_image_time = time.time()
 
+        self.point_cloud_publisher.publish(camera_data.point_cloud.to_msg())
+
         image = camera_data.color_image
         field_seg, debug_image = self.field_segmentation.process_image(image)
         self.field_segmentation_publisher.publish(field_seg)
@@ -109,7 +112,7 @@ class Runner:
             self.logger.debug("No debug image to publish")
         if field_point_cloud:
             self.logger.info("Publishing field point cloud")
-            self.point_cloud_publisher.publish(field_point_cloud.to_msg())
+            self.field_cloud_publisher.publish(field_point_cloud.to_msg())
         else:
             self.logger.debug("No field point cloud to publish")
 
@@ -151,11 +154,13 @@ def make_field_segmentation(container: Container) -> None:
     field_segmentation = load_segmentation(container, config.field_segmentation)
     field_debug_image_publisher = RosPublisher(namespace + "/field/debug_image", Image)
     field_segmentation_publisher = RosPublisher(namespace + "/field/segmentation", SegmentationInstanceArray)
-    point_cloud_publisher = RosPublisher(namespace + "/field/point_cloud", PointCloud2)
+    field_cloud_publisher = RosPublisher(namespace + "/field/point_cloud", PointCloud2)
+    point_cloud_publisher = RosPublisher(namespace + "/point_cloud/cloud_registered", PointCloud2)
 
     container.register(field_segmentation, "field_segmentation")
     container.register(field_segmentation_publisher, "field_segmentation_publisher")
     container.register(field_debug_image_publisher, "field_debug_image_publisher")
+    container.register(field_cloud_publisher, "field_cloud_publisher")
     container.register(point_cloud_publisher, "point_cloud_publisher")
 
     logger.info(f"Field segmentation: {type(field_segmentation)}")

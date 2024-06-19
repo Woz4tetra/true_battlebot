@@ -34,6 +34,7 @@ class DeepLabV3Inference:
         self.device = get_default_device() if device is None else device
 
     def compute_inference(self, image: np.ndarray) -> np.ndarray:
+        height, width = image.shape[:2]
         image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         image_resized = cv2.resize(image_rgb, (IMAGE_SIZE, IMAGE_SIZE), interpolation=cv2.INTER_NEAREST)
 
@@ -59,11 +60,11 @@ class DeepLabV3Inference:
             cropped_mask = out_mask[PAD_SIZE:-PAD_SIZE, PAD_SIZE:-PAD_SIZE]
         else:
             cropped_mask = out_mask
-        return cropped_mask
+        resized_mask = cv2.resize(cropped_mask, (width, height), interpolation=cv2.INTER_NEAREST)
+        return resized_mask
 
-    def draw_debug_image(self, out_mask: np.ndarray, width: int, height: int, metadata: ModelMetadata) -> np.ndarray:
-        color_seg = np.zeros((IMAGE_SIZE, IMAGE_SIZE, 3), dtype=np.uint8)
+    def draw_debug_image(self, mask: np.ndarray, metadata: ModelMetadata) -> np.ndarray:
+        color_seg = np.zeros((mask.shape[0], mask.shape[1], 3), dtype=np.uint8)
         for label_index, color in enumerate(metadata.colors):
-            color_seg[out_mask == label_index] = color.to_cv_color()
-        color_seg_resized = cv2.resize(color_seg, (width, height), interpolation=cv2.INTER_NEAREST)
-        return color_seg_resized
+            color_seg[mask == label_index] = color.to_cv_color()
+        return color_seg

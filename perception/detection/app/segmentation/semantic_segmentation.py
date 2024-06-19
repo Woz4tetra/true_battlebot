@@ -33,7 +33,7 @@ class SemanticSegmentation(SegmentationInterface):
         out_mask = self.inference.compute_inference(msg.data)
         self.logger.debug(f"Field detected: {np.sum(out_mask) > 0}")
         if self.config.debug:
-            debug_image = self.inference.draw_debug_image(out_mask, width, height, self.metadata)
+            debug_image = self.inference.draw_debug_image(out_mask, self.metadata)
             debug_msg = Image(msg.header, data=debug_image)
         else:
             debug_msg = None

@@ -77,7 +77,7 @@ class PointCloudFieldFilter(FieldFilterInterface):
             self.logger.error(f"Failed to get field segmentation: {e}")
             return EstimatedObject(), point_cloud
 
-        self.logger.debug("Computing mask")
+        self.logger.debug(f"Computing {segmentations.width}x{segmentations.height} mask")
         mask = msg_to_mask(field.contours, segmentations.width, segmentations.height)
 
         if len(point_cloud.points) == 0:
@@ -92,7 +92,7 @@ class PointCloudFieldFilter(FieldFilterInterface):
             return EstimatedObject(), point_cloud
 
         # assumes the point cloud is same shape as the contour source image
-        self.logger.debug("Applying mask")
+        self.logger.debug(f"Applying mask on cloud with shape {point_cloud.points.shape}")
         filtered_points = point_cloud.filtered_points(mask)
 
         field_centered_plane, extents, inlier_points = self.compute_field_centered_plane(filtered_points)

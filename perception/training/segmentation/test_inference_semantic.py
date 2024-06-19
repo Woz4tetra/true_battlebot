@@ -47,9 +47,7 @@ def main() -> None:
         image = cv2.imread(str(image_path))
 
         out_mask = inference.compute_inference(image)
-        color_seg_resized = inference.draw_debug_image(
-            out_mask, image.shape[1], image.shape[0], FIELD_SEMANTIC_MODEL_METADATA
-        )
+        color_seg_resized = inference.draw_debug_image(out_mask, FIELD_SEMANTIC_MODEL_METADATA)
 
         output_image = cv2.addWeighted(image, 0.5, color_seg_resized, 0.5, 0)
         # output_image = cv2.addWeighted(image_resized, 0.5, color_seg, 0.5, 0)
