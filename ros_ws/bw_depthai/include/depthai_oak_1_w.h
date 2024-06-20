@@ -22,8 +22,8 @@ private:
     std::string _camera_name;
     cv_bridge::CvImage _img_bridge;
     image_transport::ImageTransport _image_transport;
-    image_transport::CameraPublisher _rect_camera_pub;
-    image_transport::CameraPublisher _raw_camera_pub;
+    image_transport::Publisher _rect_image_pub;
+    image_transport::CameraPublisher _camera_pub;
     int _width, _height;
 
     ros::Time getFrameTime(ros::Time rosBaseTime,

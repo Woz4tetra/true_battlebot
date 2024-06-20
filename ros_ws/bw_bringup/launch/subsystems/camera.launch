@@ -10,11 +10,16 @@
     </node>
 
     <group ns="$(arg camera_name)">
+        <node pkg="nodelet" type="nodelet" args="manager" name="$(arg camera_name)_image_proc"
+            output="screen" />
+        <node pkg="nodelet" type="nodelet" name="$(arg camera_name)_image_readout" output="screen"
+            args="load image_proc/rectify $(arg camera_name)_image_proc --no-bond">
+            <remap from="image_mono" to="image_raw" />
+        </node>
+
         <node pkg="apriltag_ros" type="apriltag_ros_continuous_node" name="$(arg camera_name)_apriltag"
             required="false" output="screen">
             <rosparam command="load" file="$(arg tag_config_path)" ns="" />
-            <remap from="image_rect" to="rect/image" />
-            <remap from="camera_info" to="rect/camera_info" />
         </node>
     </group>
 </launch>

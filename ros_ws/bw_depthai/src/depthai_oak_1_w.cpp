@@ -47,8 +47,8 @@ DepthAiOak1W::DepthAiOak1W(ros::NodeHandle *nodehandle) : nh(*nodehandle),
         ros::shutdown();
     }
 
-    _rect_camera_pub = _image_transport.advertiseCamera(_camera_name + "/rect/image", queue_size);
-    _raw_camera_pub = _image_transport.advertiseCamera(_camera_name + "/raw/image", queue_size);
+    _camera_pub = _image_transport.advertiseCamera(_camera_name + "/image_raw", queue_size);
+    _rect_image_pub = _image_transport.advertise(_camera_name + "/image_rect", queue_size);
 }
 
 DepthAiOak1W::~DepthAiOak1W()
@@ -232,17 +232,20 @@ int DepthAiOak1W::run()
         newCameraData.header.stamp = getFrameTime(rosBaseTime, steadyBaseTime, videoIn->getTimestamp());
         cameraData.header.stamp = newCameraData.header.stamp;
         cv::Mat frame = videoIn->getCvFrame();
-        cv::Mat frameRect;
-        cv::remap(frame, frameRect, mapX, mapY, cv::INTER_LINEAR);
         sensor_msgs::Image img_msg;
 
         _img_bridge = cv_bridge::CvImage(cameraData.header, sensor_msgs::image_encodings::BGR8, frame);
         _img_bridge.toImageMsg(img_msg);
-        _raw_camera_pub.publish(img_msg, cameraData, cameraData.header.stamp);
+        _camera_pub.publish(img_msg, cameraData, cameraData.header.stamp);
 
-        _img_bridge = cv_bridge::CvImage(newCameraData.header, sensor_msgs::image_encodings::BGR8, frameRect);
-        _img_bridge.toImageMsg(img_msg);
-        _rect_camera_pub.publish(img_msg, newCameraData, newCameraData.header.stamp);
+        // if (_rect_image_pub.getNumSubscribers() > 0)
+        // {
+        //     cv::Mat frameRect;
+        //     cv::remap(frame, frameRect, mapX, mapY, cv::INTER_LINEAR);
+        //     _img_bridge = cv_bridge::CvImage(cameraData.header, sensor_msgs::image_encodings::BGR8, frameRect);
+        //     _img_bridge.toImageMsg(img_msg);
+        //     _rect_image_pub.publish(img_msg);
+        // }
 
         ros::spinOnce();
     }
