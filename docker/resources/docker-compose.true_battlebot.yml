@@ -61,19 +61,3 @@ services:
         volumes:
             - ${PROJECT_DIR}/webapp:/usr/share/nginx/html:ro
             - ${PROJECT_DIR}/webapp/nginx.conf:/etc/nginx/conf.d/default.conf:ro
-    motion_camera_depthai:
-        image: luxonis/depthai-ros:v2.9.0-noetic
-        container_name: motion_camera_depthai
-        restart: "no"
-        network_mode: "host"
-        privileged: true
-        environment:
-            - DISPLAY=${DISPLAY}
-            - XAUTHORITY=${XAUTHORITY}
-        volumes:
-            - /dev:/dev:rw
-            - /media/storage/true-battlebot-media:/media/storage:rw
-            - ${PROJECT_DIR}/scripts:/scripts:rw
-            - ${PROJECT_DIR}/depthai_ros/params:/params:ro
-            - ${PROJECT_DIR}/depthai_ros/launch-depthai.sh:/launch-depthai.sh:ro
-        command: ["bash", "launch-depthai.sh"]
