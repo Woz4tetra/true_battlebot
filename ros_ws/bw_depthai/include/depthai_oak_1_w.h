@@ -1,3 +1,7 @@
+#include <chrono>
+#include <iostream>
+#include <string>
+
 #include "depthai/depthai.hpp"
 #include <ros/ros.h>
 
@@ -12,11 +16,22 @@ private:
     ros::NodeHandle nh; // ROS node handle
 
     dai::ColorCameraProperties::SensorResolution _resolution;
+    int _fps;
+    double _alpha;
 
     std::string _camera_name;
     cv_bridge::CvImage _img_bridge;
     image_transport::ImageTransport _image_transport;
-    image_transport::CameraPublisher _camera_pub;
+    image_transport::CameraPublisher _rect_camera_pub;
+    image_transport::CameraPublisher _raw_camera_pub;
+    int _width, _height;
+
+    ros::Time getFrameTime(ros::Time rosBaseTime,
+                           std::chrono::time_point<std::chrono::steady_clock> steadyBaseTime,
+                           std::chrono::time_point<std::chrono::steady_clock, std::chrono::steady_clock::duration> currTimePoint);
+    void updateBaseTime(std::chrono::time_point<std::chrono::steady_clock> steadyBaseTime, ros::Time &rosBaseTime);
+    sensor_msgs::CameraInfo createCameraInfo(int width, int height, std::vector<std::vector<float>> camIntrinsics, std::vector<float> distCoeffs);
+    void resizeCameraInfo(sensor_msgs::CameraInfo &cameraInfoMsg, int destinationWidth, int destinationHeight);
 
 public:
     DepthAiOak1W(ros::NodeHandle *nodehandle);

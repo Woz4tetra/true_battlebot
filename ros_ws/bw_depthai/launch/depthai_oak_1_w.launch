@@ -1,0 +1,7 @@
+<launch>
+    <node name="depthai_oak_1_w" pkg="bw_depthai" type="depthai_oak_1_w" output="screen"
+        required="false">
+        <param name="camera_name" value="camera_1" />
+        <param name="fps" value="60" />
+    </node>
+</launch>

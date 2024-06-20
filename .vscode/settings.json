@@ -131,7 +131,8 @@
         "concepts": "cpp",
         "numbers": "cpp",
         "semaphore": "cpp",
-        "stop_token": "cpp"
+        "stop_token": "cpp",
+        "forward_list": "cpp"
     },
     "files.watcherExclude": {
         "**/.git/*/**": true,
