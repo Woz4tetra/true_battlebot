@@ -100,6 +100,7 @@ def draw_pose(
         color,
         line_width,
     )
+    print("Z:", normal_in_camera[2])
     cv2.putText(
         image,
         f"Z: {normal_in_camera[2]:.2f}",

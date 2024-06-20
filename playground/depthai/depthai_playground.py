@@ -1,3 +1,5 @@
+import time
+
 import cv2
 import depthai as dai
 import numpy as np
@@ -72,7 +74,9 @@ def main() -> None:
         rectified_info = rectifier.get_rectified_info()
         bundle_detector = BundleDetector(bundle_config, detector, microsac_params, rectified_info)
 
+        time_samples = []
         while True:
+            time_samples.append(time.perf_counter())
             video_in = video.get()
             frame = video_in.getCvFrame()
             rectified = rectifier.rectify(frame)
@@ -84,6 +88,10 @@ def main() -> None:
 
             if cv2.waitKey(1) == ord("q"):
                 break
+            if len(time_samples) > 100:
+                average_delta = np.mean(np.diff(time_samples))
+                print(f"Average FPS: {1/average_delta}")
+                time_samples = []
 
 
 if __name__ == "__main__":
