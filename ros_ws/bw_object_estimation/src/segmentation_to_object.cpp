@@ -52,7 +52,7 @@ void SegmentationToObject::segmentation_callback(const bw_interfaces::Segmentati
 {
     if (!is_field_received())
     {
-        ROS_WARN_THROTTLE(1.0, "No field received, skipping estimation");
+        ROS_DEBUG_THROTTLE(1.0, "No field received, skipping estimation");
         return;
     }
 

@@ -79,8 +79,7 @@ class DriveKalmanModel:
     def update_pose(self, msg: PoseWithCovariance) -> None:
         self._update_model_pose(msg, self.pose_H)
 
-    def update_position(self, msg: PoseWithCovariance, use_history_for_theta: bool = False) -> None:
-        # TODO: use splines to determine direction
+    def update_position(self, msg: PoseWithCovariance) -> None:
         self._update_model_pose(msg, self.position_H)
 
     def _update_model_pose(self, msg: PoseWithCovariance, observation_model: np.ndarray) -> None:

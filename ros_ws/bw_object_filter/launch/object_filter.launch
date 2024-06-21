@@ -8,10 +8,6 @@
     </node>
     <node pkg="bw_object_filter" type="robot_filter.py" name="robot_filter" output="screen">
         <rosparam command="load" file="$(arg filter_config)" ns="" />
-        <rosparam param="estimation_topics" subst_value="True">[
-            "/camera_0/estimation/robots",
-            "/camera_1/estimation/robots",
-            ]</rosparam>
         <rosparam param="tag_topics" subst_value="True">[
             "/camera_1/tag_detections",
             ]</rosparam>

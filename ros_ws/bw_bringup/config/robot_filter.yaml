@@ -1,7 +1,14 @@
 apriltag_base_covariance_scalar: 0.001
-robot_base_covariance_scalar: 0.001
 cmd_vel_base_covariance_scalar: 0.1
-friction_factor: 0.05
-process_noise: 0.001
+friction_factor: 0.8
+process_noise: 0.005
 robot_min_radius: 0.1
 robot_max_radius: 0.4
+estimation_topics:
+    - topic: "/camera_0/estimation/robots"
+      use_orientation: true
+      position_covariance: 0.001
+      orientation_covariance: 0.001
+    - topic: "/camera_1/estimation/robots"
+      use_orientation: false
+      position_covariance: 0.01
