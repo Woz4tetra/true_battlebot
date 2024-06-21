@@ -11,6 +11,18 @@
                 font: var(--font);
             }
 
+            .number-input {
+                padding: 10px;
+                font-size: 20px;
+                font: var(--font);
+            }
+            
+            .dropdown {
+                padding: 10px;
+                font-size: 20px;
+                font: var(--font);
+            }
+            
             .grid-container {
                 margin-top: 10px;
                 width: 100%;
@@ -73,6 +85,10 @@
                 top: -7px;
             }
 
+            .inline-block-child {
+                display: inline-block;
+            }
+
             /* Computed with https://codepen.io/sosuke/pen/Pjoqqp */
             .filter-green{
                 filter: invert(50%) sepia(94%) saturate(1766%) hue-rotate(77deg) brightness(107%) contrast(115%);
@@ -115,6 +131,9 @@
                     <img id="connection-icon" class="filter-red" width="30" height="30">
                     <span id="connection-status" class="inline-with-icon">Disconnected</span>
                 </div>
+            </div>
+            <button class="button" onclick="reconnectRosBridge()">
+                <div>Reconnect</div>
             </div>
         </div>
         <div class="grid-container">
@@ -184,6 +203,30 @@
             </div>
         </div>
 
+        <!-- Opponent configuration -->
+        <div class="grid-container">
+            <div class="grid-item">
+                <div>Opponent configuration</div>
+            </div>
+
+            <div class="grid-item">
+                <input class="number-input" type="number" id="num-opponents" onkeyup="onSetNumOpponents(this);" onchange="onSetNumOpponents(this);"/>
+            </div>
+
+            <button class="button" onclick="publishOpponentConfiguration()">
+                <div>Send</div>
+            </button>
+
+            <div class="grid-item">
+            </div>
+
+            <div class="grid-item">
+                <div class="grid-container" id="opponent-configuration-grid" style="width: 500px">
+                </div>
+            </div>
+        </div>
+
+
         <!-- Mode -->
         <div class="grid-container">
             <div class="grid-item">
@@ -240,4 +283,13 @@
             </div>
         </div>
     </body>
+
+    <div id="templates">
+        <div class="grid-item" id="opponent-sub-configuration-template">
+            <div class="inline-block-child" id="opponent-config-index">0: </div>
+            <select class="dropdown inline-block-child" id="opponent-config-selector">
+                <option value="default">default</option>
+            </select>
+        </div>
+    </div>
 </html>

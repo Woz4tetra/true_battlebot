@@ -4,6 +4,8 @@ var robotModePub;
 var requestFieldPub;
 var recordService;
 var recordState = false;
+var connection_status;
+var connection_icon;
 
 function initSummarySubscriber() {
     var listener = new ROSLIB.Topic({
@@ -167,8 +169,99 @@ function initCarets() {
     }
 }
 
-window.onload = function () {
+function onSetNumOpponents(number_input) {
+    if (number_input.value == "" || isNaN(number_input.value)) {
+        return;
+    }
+    number_input.value = Math.max(1, Math.min(6, number_input.value));
+
+    updateOpponentConfigurationGrid();
+}
+
+function getNumOpponents() {
+    return document.getElementById("num-opponents").value;
+}
+
+function updateOpponentConfigurationGrid() {
+    num_opponents = getNumOpponents();
+    container = document.getElementById("opponent-configuration-grid");
+    num_nodes = container.children.length;
+    if (num_opponents === num_nodes) {
+        return;
+    }
+    for (var i = num_nodes; i < num_opponents; i++) {
+        var node = document
+            .getElementById("opponent-sub-configuration-template")
+            .cloneNode(true);
+        getOpponentConfigurationSubcomponent(
+            node,
+            "opponent-config-index"
+        ).forEach((element) => {
+            element.innerHTML = i + ": ";
+        });
+        container.appendChild(node);
+    }
+    for (var i = num_nodes; i > num_opponents; i--) {
+        container.removeChild(container.lastChild);
+    }
+}
+
+function getOpponentConfigurationSubcomponent(grid_container, node_id) {
+    subcomponents = [];
+    for (var i = 0; i < grid_container.children.length; i++) {
+        component = grid_container.children[i];
+        if (component.id === node_id) {
+            subcomponents.push(component);
+        }
+    }
+    return subcomponents;
+}
+
+function publishOpponentConfiguration() {
+    container = document.getElementById("opponent-configuration-grid");
+    keys = [];
+    for (
+        var child_index = 0;
+        child_index < container.children.length;
+        child_index++
+    ) {
+        keys.push(
+            getOpponentConfigurationSubcomponent(
+                container.children[child_index],
+                "opponent-config-selector"
+            )[0].value
+        );
+    }
+    console.log(`Publishing opponent configuration: ${keys}`);
+}
+
+function updateOpponentConfiguationOptions(options) {
+    container = document.getElementById("opponent-configuration-grid");
+    for (
+        var child_index = 0;
+        child_index < container.children.length;
+        child_index++
+    ) {
+        selector = getOpponentConfigurationSubcomponent(
+            container.children[child_index],
+            "opponent-config-selector"
+        )[0];
+        selector.innerHTML = "";
+        options.forEach((option) => {
+            var option_element = document.createElement("option");
+            option_element.text = option;
+            option_element.value = option;
+            selector.add(option_element);
+        });
+    }
+}
+
+function reconnectRosBridge() {
+    console.log("Reconnecting to ROS bridge");
     var robot_ip = location.hostname;
+    if (ros) {
+        ros.close();
+    }
     let url = "ws://" + robot_ip + ":9090";
 
     ros = new ROSLIB.Ros({
@@ -176,14 +269,6 @@ window.onload = function () {
     });
     console.log("Connecting to " + url);
     ros.connect(url);
-
-    var connection_status = document.getElementById("connection-status");
-    var connection_icon = document.getElementById("connection-icon");
-    connection_icon.src = "resources/error_black_24dp.svg";
-    connection_icon.className = "filter-red";
-    connection_icon.ondragstart = function () {
-        return false;
-    };
 
     ros.on("connection", function () {
         connection_status.innerHTML = "Connected";
@@ -204,7 +289,6 @@ window.onload = function () {
         connection_status.innerHTML = "Disconnected";
         connection_icon.src = "resources/error_black_24dp.svg";
         connection_icon.className = "filter-red";
-        ros.connect(url);
     });
 
     initSummarySubscriber();
@@ -215,5 +299,22 @@ window.onload = function () {
     initTreeSnapshotSubscriber();
     initCarets();
     initHealthSummarySubscriber();
+}
+
+window.onload = function () {
+    connection_status = document.getElementById("connection-status");
+    connection_icon = document.getElementById("connection-icon");
+    connection_icon.src = "resources/error_black_24dp.svg";
+    connection_icon.className = "filter-red";
+    connection_icon.ondragstart = function () {
+        return false;
+    };
+
+    document.getElementById("num-opponents").value = 1;
+    updateOpponentConfigurationGrid();
+    updateOpponentConfiguationOptions(["default", "small", "large"]);
+
+    reconnectRosBridge();
+
     console.log("App loaded");
 };

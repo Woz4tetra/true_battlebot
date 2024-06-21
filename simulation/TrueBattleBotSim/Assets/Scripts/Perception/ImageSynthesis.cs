@@ -359,7 +359,7 @@ public class ImageSynthesis : MonoBehaviour
 
     private void PublishLabels()
     {
-        if (publishSegmentationLabels)
+        if (publishSegmentationLabels && ros.HasConnectionThread)
         {
             ros.Publish(baseTopic + "/" + segmentationTopic, segmentationMsg);
         }
