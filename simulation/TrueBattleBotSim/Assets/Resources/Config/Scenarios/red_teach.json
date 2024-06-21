@@ -33,7 +33,7 @@
         {
             "label": "Mini bot",
             "name": "mini_bot",
-            "model": "MR STABS A-02",
+            "model": "MR STABS MK2",
             "objective": "auto_red_corner"
         },
         {

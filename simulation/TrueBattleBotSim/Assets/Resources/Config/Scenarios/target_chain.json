@@ -33,13 +33,13 @@
         {
             "label": "Mini bot",
             "name": "mini_bot",
-            "model": "MR STABS A-02",
+            "model": "MR STABS MK2",
             "objective": "target_opponent_blue_corner"
         },
         {
             "label": "Main bot",
             "name": "main_bot",
-            "model": "MRS BUFF B-03",
+            "model": "MRS BUFF MK2",
             "objective": "keyboard_blue_corner"
         },
         {
