@@ -10,9 +10,7 @@ from bw_object_filter.filter_models.drive_kf_model import DriveKalmanModel
 
 
 class RobotMeasurementSorter:
-    def __init__(self, filters: Mapping[str, DriveKalmanModel]) -> None:
-        self.filters = filters
-        self.filter_names = [robot_name for robot_name in self.filters.keys()]
+    def __init__(self) -> None:
         self.cached_permutations: dict[tuple[int, int], np.ndarray] = {}
 
     def get_distance(self, measurement: PoseWithCovariance, filter_model: DriveKalmanModel) -> float:
@@ -62,18 +60,17 @@ class RobotMeasurementSorter:
                 mapping.append((matched_column, matched_row))
         return mapping
 
-    def get_ids(self, measurements: List[PoseWithCovariance]) -> Dict[str, int]:
-        if len(measurements) == 0 or len(self.filters) == 0:
+    def get_ids(self, filters: List[DriveKalmanModel], measurements: List[PoseWithCovariance]) -> Dict[int, int]:
+        if len(measurements) == 0 or len(filters) == 0:
             return {}
         measurement_ids = {}
-        distances = np.zeros((len(measurements), len(self.filters)))
+        distances = np.zeros((len(measurements), len(filters)))
         for measurement_index, measurement in enumerate(measurements):
             measurement_ids[measurement_index] = measurement
-            for filter_index, robot_name in enumerate(self.filter_names):
-                distances[measurement_index, filter_index] = self.get_distance(measurement, self.filters[robot_name])
+            for filter_index in range(len(filters)):
+                distances[measurement_index, filter_index] = self.get_distance(measurement, filters[filter_index])
         assigned_ids = {}
         minimized = self.minimize_permutation(distances)
         for filter_index, measurement_index in minimized:
-            robot_name = self.filter_names[filter_index]
-            assigned_ids[robot_name] = measurement_index
+            assigned_ids[filter_index] = measurement_index
         return assigned_ids

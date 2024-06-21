@@ -3,9 +3,13 @@ from threading import Lock
 from typing import Tuple
 
 import numpy as np
+import rospy
+from bw_interfaces.msg import EstimatedObject
 from bw_shared.geometry.pose2d import Pose2D
 from bw_shared.geometry.xy import XY
-from geometry_msgs.msg import PoseWithCovariance, TwistWithCovariance
+from geometry_msgs.msg import PoseWithCovariance, TwistWithCovariance, Vector3
+from nav_msgs.msg import Odometry
+from std_msgs.msg import Header as RosHeader
 
 from .helpers import (
     NUM_MEASUREMENTS,
@@ -35,18 +39,26 @@ class DriveKalmanModel:
 
     def __init__(
         self,
+        robot_name: str,
         dt: float,
+        map_frame: str,
         process_noise: float = 0.001,
         friction_factor: float = 0.2,
         stale_timeout: float = 1.0,
         significant_distance: float = 0.1,
+        max_robot_size: Vector3 = Vector3(x=0.15, y=0.15, z=0.15),
     ) -> None:
+        self.robot_name = robot_name
         self.dt = dt
         self.friction_factor = friction_factor
         self.process_noise = process_noise
         self.stale_timeout = stale_timeout
         self.significant_distance = significant_distance
         self.lock = Lock()
+        self.robot_size = Vector3()
+        self.max_robot_size = max_robot_size
+        self.map_frame = map_frame
+        self.header = RosHeader()
 
         # measurement function for landmarks. Use only pose.
         self.pose_H = np.zeros((NUM_MEASUREMENTS, NUM_STATES))
@@ -66,6 +78,11 @@ class DriveKalmanModel:
     def _now(self) -> float:
         return time.perf_counter()
 
+    def _next_header(self, frame_id: str) -> None:
+        self.header.seq += 1
+        self.header.frame_id = frame_id
+        self.header.stamp = rospy.Time.now()
+
     def _reset_stale_timer(self) -> None:
         self.stale_timer = self._now()
 
@@ -81,6 +98,13 @@ class DriveKalmanModel:
 
     def update_position(self, msg: PoseWithCovariance) -> None:
         self._update_model_pose(msg, self.position_H)
+
+    def update_size(self, msg: Vector3) -> None:
+        self.robot_size = Vector3(
+            x=min(self.max_robot_size.x, max(0.0, msg.x)),
+            y=min(self.max_robot_size.y, max(0.0, msg.y)),
+            z=min(self.max_robot_size.z, max(0.0, msg.z)),
+        )
 
     def _update_model_pose(self, msg: PoseWithCovariance, observation_model: np.ndarray) -> None:
         if self._is_initialized:
@@ -105,12 +129,33 @@ class DriveKalmanModel:
             )
 
     def get_state(self) -> Tuple[PoseWithCovariance, TwistWithCovariance]:
+        self._next_header(self.map_frame)
         with self.lock:
             pose = measurement_to_pose(self.state, self.covariance)
             return (
                 pose,
                 measurement_to_twist(self.state, self.covariance),
             )
+
+    def get_state_as_odom(self) -> Odometry:
+        pose, twist = self.get_state()
+        odom = Odometry()
+        odom.header = self.header
+        odom.child_frame_id = self.robot_name
+        odom.pose = pose
+        odom.twist = twist
+        return odom
+
+    def get_state_as_estimated_object(self) -> EstimatedObject:
+        odom = self.get_state_as_odom()
+        return EstimatedObject(
+            header=odom.header,
+            child_frame_id=self.robot_name,
+            pose=odom.pose,
+            twist=odom.twist,
+            size=self.robot_size,
+            label=self.robot_name,
+        )
 
     def get_covariance(self) -> StateSquareMatrix:
         return self.covariance

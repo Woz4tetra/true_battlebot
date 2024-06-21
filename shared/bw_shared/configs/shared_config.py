@@ -18,19 +18,25 @@ class SharedConfig:
     maps: MapsConfig
     robots: RobotFleetConfig
     labels: LabelsConfig
+    opponent_templates: RobotFleetConfig
 
     @classmethod
-    def from_files(cls, map_path: str = "", robot_config: str = "", label_config: str = "") -> SharedConfig:
+    def from_files(
+        cls, map_path: str = "", robot_config: str = "", label_config: str = "", opponent_templates: str = ""
+    ) -> SharedConfig:
         if not map_path:
             map_path = os.path.join(get_project_dir(), "shared", "configs", "maps.toml")
         if not robot_config:
             robot_config = os.path.join(get_project_dir(), "shared", "configs", "robots.toml")
         if not label_config:
             label_config = os.path.join(get_project_dir(), "shared", "configs", "labels.toml")
+        if not opponent_templates:
+            opponent_templates = os.path.join(get_project_dir(), "shared", "configs", "opponent_templates.toml")
         return cls(
             maps=MapsConfig.from_dict(cls._read_toml(map_path)),
             robots=RobotFleetConfig.from_dict(cls._read_toml(robot_config)),
             labels=LabelsConfig.from_dict(cls._read_toml(label_config)),
+            opponent_templates=RobotFleetConfig.from_dict(cls._read_toml(opponent_templates)),
         )
 
     @classmethod
@@ -39,10 +45,16 @@ class SharedConfig:
             maps=MapsConfig.from_dict(data["maps"]),
             robots=RobotFleetConfig.from_dict(data["robots"]),
             labels=LabelsConfig.from_dict(data["labels"]),
+            opponent_templates=RobotFleetConfig.from_dict(data["opponent_templates"]),
         )
 
     def to_dict(self) -> dict:
-        return dict(maps=self.maps.to_dict(), robots=self.robots.to_dict(), labels=self.labels.to_dict())
+        return dict(
+            maps=self.maps.to_dict(),
+            robots=self.robots.to_dict(),
+            labels=self.labels.to_dict(),
+            opponent_templates=self.opponent_templates.to_dict(),
+        )
 
     def get_map(self, key: FieldType) -> MapConfig:
         return self.maps.get(key)

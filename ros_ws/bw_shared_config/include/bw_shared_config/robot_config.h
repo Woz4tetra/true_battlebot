@@ -14,35 +14,20 @@ namespace bw_shared_config
     struct RobotConfig
     {
         std::string name;
-        int up_id = -1;
-        int down_id = -1;
+        RobotTeam team;
+        std::vector<int> ids;
         double radius = 0.0;
-        int bridge_id = -1;
-        double base_width = 1.0;
-        double height = 0.025;
-
-        RobotTeam team() const
-        {
-            if (name.find("referee") != std::string::npos)
-            {
-                return RobotTeam::REFEREE;
-            }
-            else
-            {
-                return (up_id >= 0 || down_id >= 0) ? RobotTeam::OUR_TEAM : RobotTeam::THEIR_TEAM;
-            }
-        }
 
         static RobotConfig fromXmlRpc(const XmlRpc::XmlRpcValue &data)
         {
             RobotConfig config;
             config.name = static_cast<std::string>(data["name"]);
-            config.up_id = static_cast<int>(data["up_id"]);
-            config.down_id = static_cast<int>(data["down_id"]);
+            config.team = static_cast<RobotTeam>(static_cast<int>(data["team"]));
+            for (int i = 0; i < data["ids"].size(); ++i)
+            {
+                config.ids.push_back(static_cast<int>(data["ids"][i]));
+            }
             config.radius = static_cast<double>(data["radius"]);
-            config.bridge_id = static_cast<int>(data["bridge_id"]);
-            config.base_width = static_cast<double>(data["base_width"]);
-            config.height = static_cast<double>(data["height"]);
             return config;
         }
     };
