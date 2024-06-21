@@ -4,7 +4,7 @@
     <arg name="tag_config_path" default="$(find bw_bringup)/config/tags.yaml" />
 
 
-    <node name="depthai_oak_1_w" pkg="bw_depthai" type="depthai_oak_1_w" output="screen"
+    <node name="depthai_oak_1_w" pkg="bw_tracking_cam" type="depthai_oak_1_w" output="screen"
         required="false">
         <param name="camera_name" value="$(arg camera_name)" />
     </node>

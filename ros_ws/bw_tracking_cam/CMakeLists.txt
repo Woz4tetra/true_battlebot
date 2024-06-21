@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.2)
-project(bw_depthai)
+project(bw_tracking_cam)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
@@ -116,7 +116,7 @@ ENDIF (${depthai_FOUND})
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
  INCLUDE_DIRS include
-#  LIBRARIES bw_depthai
+#  LIBRARIES bw_tracking_cam
 #  CATKIN_DEPENDS cv_bridge image_geometry image_transport roscpp sensor_msgs std_msgs
 #  DEPENDS system_lib
 )
@@ -134,7 +134,7 @@ include_directories(
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
-#   src/${PROJECT_NAME}/bw_depthai.cpp
+#   src/${PROJECT_NAME}/bw_tracking_cam.cpp
 # )
 
 ## Add cmake target dependencies of the library
@@ -211,7 +211,7 @@ install(TARGETS depthai_oak_1_w
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_bw_depthai.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_bw_tracking_cam.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()
