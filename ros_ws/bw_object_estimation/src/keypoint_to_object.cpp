@@ -118,32 +118,22 @@ geometry_msgs::Pose KeypointToObject::get_pose_from_points(cv::Point3d front_poi
 {
     Eigen::Vector3d eigen_front_point(front_point.x, front_point.y, front_point.z);
     Eigen::Vector3d eigen_back_point(back_point.x, back_point.y, back_point.z);
-    Eigen::Vector3d eigen_plane_normal(plane_normal.x, plane_normal.y, plane_normal.z);
-
-    // Define the rotation matrix for a 90 degree rotation about the y-axis
-    Eigen::Matrix3d rotation_matrix;
-    rotation_matrix << 0, 0, 1,
-        0, 1, 0,
-        -1, 0, 0;
-    Eigen::Vector3d plane_right = rotation_matrix * eigen_plane_normal;
+    Eigen::Vector3d origin_vec(1.0, 0.0, 0.0);
 
     // Calculate the direction vector from front_point to back_point
     Eigen::Vector3d direction = (eigen_front_point - eigen_back_point).normalized();
 
     // Calculate the rotation from the plane normal to the direction vector
-    Eigen::Quaterniond rotation = Eigen::Quaterniond::FromTwoVectors(plane_right, direction);
+    Eigen::Quaterniond rotation = Eigen::Quaterniond::FromTwoVectors(origin_vec, direction);
 
     // Compute center point
     Eigen::Vector3d center = (eigen_front_point + eigen_back_point) / 2.0;
 
-    // The pose is then defined by the front_point and the rotation
-    Eigen::Affine3d pose = Eigen::Translation3d(center) * rotation;
-
     // Convert the pose to a geometry_msgs::Pose and return it
     geometry_msgs::Pose pose_msg;
-    pose_msg.position.x = pose.translation()[0];
-    pose_msg.position.y = pose.translation()[1];
-    pose_msg.position.z = pose.translation()[2];
+    pose_msg.position.x = center[0];
+    pose_msg.position.y = center[1];
+    pose_msg.position.z = center[2];
     pose_msg.orientation.w = rotation.w();
     pose_msg.orientation.x = rotation.x();
     pose_msg.orientation.y = rotation.y();
