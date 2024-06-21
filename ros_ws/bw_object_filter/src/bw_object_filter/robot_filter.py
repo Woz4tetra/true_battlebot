@@ -80,16 +80,21 @@ class RobotFilter:
         self.apriltag_rotate_tf = Transform3D.from_position_and_rpy(Vector3(), RPY((0.0, 0.0, np.pi / 2)))
         self.robot_max_sizes = {robot.name: robot.radius for robot in self.robots.robots}
 
-        self.robot_names = {}
+        self.tag_id_to_name = {}
         for config in self.robots.robots:
             for tag_id in config.ids:
-                self.robot_names[tag_id] = config.name
+                self.tag_id_to_name[tag_id] = config.name
         self.robot_configs = {config.name: config for config in self.robots.robots}
-        self.our_robot_filters: dict[str, DriveKalmanModel] = {
-            robot.name: DriveKalmanModel(self.update_delay, self.process_noise, self.friction_factor)
+        self.our_robot_filters: list[DriveKalmanModel] = [
+            DriveKalmanModel(
+                robot.name,
+                self.update_delay,
+                self.map_frame,
+                self.process_noise,
+                self.friction_factor,
+            )
             for robot in self.robots.robots
-        }
-        self.robot_sizes = {robot.name: robot.radius for robot in self.robots.robots}
+        ]
 
         self.tag_heurstics = ApriltagHeuristics(self.apriltag_base_covariance_scalar)
         self.robot_heuristics = {
@@ -107,19 +112,7 @@ class RobotFilter:
             Label.ROBOT,
         ]
         # which filter to initialize with which label
-        self.initialize_labels: dict[Label, list[str]] = {label: [] for label in Label}
-        for name in self.our_robot_filters.keys():
-            team = self.robot_configs[name].team
-            if name == self.controlled_robot_name:
-                self.initialize_labels[Label.CONTROLLED_ROBOT].append(name)
-            elif team == RobotTeam.OUR_TEAM:
-                self.initialize_labels[Label.FRIENDLY_ROBOT].append(name)
-            elif team == RobotTeam.THEIR_TEAM:
-                self.initialize_labels[Label.ROBOT].append(name)
-            elif team == RobotTeam.REFEREE:
-                self.initialize_labels[Label.REFEREE].append(name)
-            else:
-                raise ValueError(f"Filter doesn't have an initialization label: {name}")
+        self.initialize_labels = self.get_label_to_robot_name_mapping(self.robots.robots)
 
         self.tf_buffer = tf2_ros.Buffer()
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer)
@@ -149,6 +142,23 @@ class RobotFilter:
             for robot in self.robots.robots
             if robot.team == RobotTeam.OUR_TEAM
         ]
+
+    def get_label_to_robot_name_mapping(self, robot_configs: list[RobotConfig]) -> dict[Label, list[str]]:
+        initialize_labels: dict[Label, list[str]] = {label: [] for label in Label}
+        for robot_config in robot_configs:
+            name = robot_config.name
+            team = robot_config.team
+            if name == self.controlled_robot_name:
+                self.initialize_labels[Label.CONTROLLED_ROBOT].append(name)
+            elif team == RobotTeam.OUR_TEAM:
+                self.initialize_labels[Label.FRIENDLY_ROBOT].append(name)
+            elif team == RobotTeam.THEIR_TEAM:
+                self.initialize_labels[Label.ROBOT].append(name)
+            elif team == RobotTeam.REFEREE:
+                self.initialize_labels[Label.REFEREE].append(name)
+            else:
+                raise ValueError(f"Filter doesn't have an initialization label: {name}")
+        return initialize_labels
 
     def check_unique(self, config: RobotFleetConfig) -> None:
         """
@@ -278,7 +288,7 @@ class RobotFilter:
                 rospy.logwarn("Bundle detection not supported")
                 continue
             tag_id = detection.id[0]
-            robot_name = self.robot_names.get(tag_id, "")
+            robot_name = self.tag_id_to_name.get(tag_id, "")
             if robot_name not in self.our_robot_filters:
                 rospy.logwarn(f"Tag id {tag_id} is not a robot")
                 continue
