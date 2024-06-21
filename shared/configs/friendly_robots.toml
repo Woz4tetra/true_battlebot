@@ -1,0 +1,12 @@
+[[robots]]
+name = "mini_bot"
+ids = [41, 76]
+radius = 0.1
+
+[[robots]]
+name = "main_bot"
+radius = 0.15
+
+[[robots]]
+name = "referee"
+radius = 0.25

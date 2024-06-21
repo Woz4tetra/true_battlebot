@@ -1,0 +1,7 @@
+[[robots]]
+name = "opponent_3lb"
+radius = 0.1
+
+[[robots]]
+name = "opponent_1lb"
+radius = 0.1

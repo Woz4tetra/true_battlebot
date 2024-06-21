@@ -79,8 +79,8 @@ class RobotFilter:
         self.filter_bounds = (XY(0.0, 0.0), XY(0.0, 0.0))
         self.robot_names = {}
         for config in self.robots.robots:
-            self.robot_names[config.up_id] = config.name
-            self.robot_names[config.down_id] = config.name
+            for tag_id in config.ids:
+                self.robot_names[tag_id] = config.name
         self.robot_configs = {config.name: config for config in self.robots.robots}
         self.apriltag_rotate_tf = Transform3D.from_position_and_rpy(Vector3(), RPY((0.0, 0.0, np.pi / 2)))
         self.robot_filters: dict[str, DriveKalmanModel] = {
@@ -186,8 +186,7 @@ class RobotFilter:
         ids = []
         for robot in config.robots:
             if robot.team == RobotTeam.OUR_TEAM:
-                ids.append(robot.up_id)
-                ids.append(robot.down_id)
+                ids.extend(robot.ids)
         if len(ids) != len(set(ids)):
             raise ValueError("Robot ids must be unique")
         names = [bot.name for bot in config.robots]
