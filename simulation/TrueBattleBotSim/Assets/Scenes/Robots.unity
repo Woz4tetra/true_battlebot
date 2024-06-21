@@ -216,7 +216,7 @@ Transform:
   - {fileID: 165374310}
   - {fileID: 1424380872}
   m_Father: {fileID: 0}
-  m_RootOrder: 6
+  m_RootOrder: 7
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!171741748 &186224284
 ArticulationBody:
@@ -870,6 +870,14 @@ PrefabInstance:
     - target: {fileID: 2781968299275540374, guid: f677fa178e96533d89b4d813f1e8dccd, type: 3}
       propertyPath: m_ParentAnchorRotation.z
       value: -0.7071068
+      objectReference: {fileID: 0}
+    - target: {fileID: 2901670036089185779, guid: f677fa178e96533d89b4d813f1e8dccd, type: 3}
+      propertyPath: m_RootOrder
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 2901670036089185779, guid: f677fa178e96533d89b4d813f1e8dccd, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -1
       objectReference: {fileID: 0}
     - target: {fileID: 3156601889152518240, guid: f677fa178e96533d89b4d813f1e8dccd, type: 3}
       propertyPath: m_Name
@@ -2600,6 +2608,18 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 695910694575469638, guid: c4c8ea109926e35e0bec215c2ba4efed, type: 3}
+      propertyPath: m_RootOrder
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 695910694575469638, guid: c4c8ea109926e35e0bec215c2ba4efed, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 695910694575469638, guid: c4c8ea109926e35e0bec215c2ba4efed, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 1278621001008975804, guid: c4c8ea109926e35e0bec215c2ba4efed, type: 3}
       propertyPath: m_Name
       value: MR STABS A-02

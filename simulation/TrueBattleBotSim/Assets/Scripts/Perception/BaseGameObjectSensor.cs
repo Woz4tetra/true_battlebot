@@ -75,7 +75,7 @@ public abstract class BaseGameObjectSensor : MonoBehaviour
         {
             return false;
         }
-        Vector3 directionVector = bounds.center - cameraView.transform.position;
+        Vector3 directionVector = obj.transform.position - cameraView.transform.position;
         var measurementStart = rayCastOffset * directionVector + transform.position;
         var measurementRay = new Ray(measurementStart, directionVector.normalized);
         bool containsLayer = layerMask == (layerMask | (1 << obj.layer));
