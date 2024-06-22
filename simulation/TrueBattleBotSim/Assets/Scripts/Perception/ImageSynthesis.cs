@@ -225,6 +225,10 @@ public class ImageSynthesis : MonoBehaviour
         {
             return;
         }
+        if (!ros.HasConnectionThread)
+        {
+            return;
+        }
         PublishRenders();
         PublishLabels();
     }
@@ -359,7 +363,7 @@ public class ImageSynthesis : MonoBehaviour
 
     private void PublishLabels()
     {
-        if (publishSegmentationLabels && ros.HasConnectionThread)
+        if (publishSegmentationLabels)
         {
             ros.Publish(baseTopic + "/" + segmentationTopic, segmentationMsg);
         }

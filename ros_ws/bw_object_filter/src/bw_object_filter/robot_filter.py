@@ -5,8 +5,8 @@ import numpy as np
 import rospy
 import tf2_ros
 from apriltag_ros.msg import AprilTagDetectionArray
-from bw_interfaces.msg import EstimatedObject, EstimatedObjectArray
-from bw_shared.configs.robot_fleet_config import RobotFleetConfig
+from bw_interfaces.msg import EstimatedObject, EstimatedObjectArray, RobotFleetConfigMsg
+from bw_shared.configs.robot_fleet_config import RobotConfig, RobotFleetConfig
 from bw_shared.enums.label import Label
 from bw_shared.enums.robot_team import RobotTeam
 from bw_shared.geometry.rpy import RPY
@@ -44,6 +44,7 @@ from bw_object_filter.robot_measurement_sorter import RobotMeasurementSorter
 class RobotFilter:
     def __init__(self) -> None:
         shared_config = get_shared_config()
+        self.all_robots_config = shared_config.robots
 
         self.update_rate = get_param("~update_rate", 50.0)
         self.update_delay = 1.0 / self.update_rate
@@ -71,7 +72,11 @@ class RobotFilter:
         self.initial_pose = measurement_to_pose(initial_state, initial_covariance)
         self.initial_twist = measurement_to_twist(initial_state, initial_covariance)
 
-        self.check_unique(shared_config.robots)
+        self.check_unique(self.all_robots_config)
+
+        self.non_opponent_robot_configs = [
+            robot for robot in self.all_robots_config.robots if robot.team != RobotTeam.THEIR_TEAM
+        ]
 
         self.field = EstimatedObject()
         self.field_bounds = (XYZ(0.0, 0.0, 0.0), XYZ(0.0, 0.0, 0.0))
@@ -106,7 +111,7 @@ class RobotFilter:
         self.tf_broadcaster = tf2_ros.TransformBroadcaster()
         self.filter_state_array_pub = rospy.Publisher("filtered_states", EstimatedObjectArray, queue_size=50)
 
-        self.initialize(shared_config.robots)
+        self.initialize(self.all_robots_config.robots)
 
         if not self.estimation_topics:
             rospy.logwarn("No estimation topics provided. Will not receive robot estimation data.")
@@ -130,11 +135,14 @@ class RobotFilter:
             for filter in self.robot_filters
             if filter.config.team == RobotTeam.OUR_TEAM
         ]
+        self.opponent_fleet_sub = rospy.Subscriber(
+            "opponent_fleet", RobotFleetConfigMsg, self.opponent_fleet_callback, queue_size=1
+        )
 
-    def initialize(self, robot_fleet_config: RobotFleetConfig) -> None:
+    def initialize(self, robot_fleet: list[RobotConfig]) -> None:
         self.robot_filters = [
             DriveKalmanModel(robot_config, self.update_delay, self.process_noise, self.friction_factor)
-            for robot_config in robot_fleet_config.robots
+            for robot_config in robot_fleet
         ]
 
         self.label_to_filter = {
@@ -171,13 +179,12 @@ class RobotFilter:
             else:
                 raise ValueError(f"Filter doesn't have an initialization label: {filter.config.name}")
 
-        for config in robot_fleet_config.robots:
+        for config in robot_fleet:
             for tag_id in config.ids:
                 self.tag_id_to_filter[tag_id] = filter
 
         self.filter_state_pubs = {
-            robot.name: rospy.Publisher(f"{robot.name}/odom", Odometry, queue_size=10)
-            for robot in robot_fleet_config.robots
+            robot.name: rospy.Publisher(f"{robot.name}/odom", Odometry, queue_size=10) for robot in robot_fleet
         }
 
     def check_unique(self, config: RobotFleetConfig) -> None:
@@ -350,6 +357,16 @@ class RobotFilter:
 
     def field_received(self) -> bool:
         return self.field.header.stamp != rospy.Time(0)
+
+    def opponent_fleet_callback(self, msg: RobotFleetConfigMsg) -> None:
+        opponent_fleet = RobotFleetConfig.from_msg(msg)
+        rospy.loginfo(
+            f"Received opponent fleet. Resetting filters. "
+            f"{len(self.non_opponent_robot_configs)} friendly robots. "
+            f"{len(opponent_fleet.robots)} opponents."
+        )
+        robot_fleet = self.non_opponent_robot_configs + opponent_fleet.robots
+        self.initialize(robot_fleet)
 
     def is_in_field_bounds(self, position: Point) -> bool:
         if not self.field_received():
