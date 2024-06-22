@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from ctypes import c_byte, c_uint16
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 
-from dacite import from_dict
+from bw_shared.messages.dataclass_utils import from_dict, to_dict
 
 from bw_tools.structs.teleop_bridge.header import Header
 from bw_tools.structs.teleop_bridge.packet import Packet, build_struct
@@ -68,10 +68,10 @@ class Config:
 
     @classmethod
     def from_dict(cls, data: dict) -> Config:
-        return from_dict(data_class=cls, data=data)
+        return from_dict(cls, data)
 
     def to_dict(self) -> dict:
-        return asdict(self)
+        return to_dict(self)
 
     def to_bytes(self) -> bytes:
         return ConfigPacket.from_values(self.device_id, self.port, self.ssid, self.password).to_bytes()

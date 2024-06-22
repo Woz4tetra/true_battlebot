@@ -3,9 +3,10 @@ from threading import Lock
 from typing import Tuple
 
 import numpy as np
+from bw_shared.configs.robot_fleet_config import RobotConfig
 from bw_shared.geometry.pose2d import Pose2D
 from bw_shared.geometry.xy import XY
-from geometry_msgs.msg import PoseWithCovariance, TwistWithCovariance
+from geometry_msgs.msg import PoseWithCovariance, TwistWithCovariance, Vector3
 
 from .helpers import (
     NUM_MEASUREMENTS,
@@ -35,19 +36,24 @@ class DriveKalmanModel:
 
     def __init__(
         self,
-        name: str,
+        config: RobotConfig,
         dt: float,
         process_noise: float = 0.001,
         friction_factor: float = 0.2,
         stale_timeout: float = 1.0,
         significant_distance: float = 0.1,
+        robot_min_radius: float = 0.05,
+        robot_max_radius: float = 0.15,
     ) -> None:
-        self.name = name
+        self.config = config
         self.dt = dt
         self.friction_factor = friction_factor
         self.process_noise = process_noise
         self.stale_timeout = stale_timeout
         self.significant_distance = significant_distance
+        self.object_radius = 0.0
+        self.robot_min_radius = robot_min_radius
+        self.robot_max_radius = robot_max_radius
         self.lock = Lock()
 
         # measurement function for landmarks. Use only pose.
@@ -104,6 +110,17 @@ class DriveKalmanModel:
             measurement, noise = twist_to_measurement(msg)
             self.state, self.covariance = jit_update(
                 self.state, self.covariance, self.cmd_vel_H, measurement, noise, tuple()
+            )
+
+    def update_radius(self, size: Vector3) -> None:
+        with self.lock:
+            measured_radius = max(size.x, size.y, size.z) / 2.0
+            self.object_radius = min(
+                max(
+                    measured_radius,
+                    self.robot_min_radius,
+                ),
+                self.robot_max_radius,
             )
 
     def get_state(self) -> Tuple[PoseWithCovariance, TwistWithCovariance]:

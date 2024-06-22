@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass, field
+from dataclasses import dataclass, field
 
-import dacite
 from app.config.camera_config.camera_types import CameraConfig
 from app.config.camera_config.noop_camera_config import NoopCameraConfig
 from app.config.camera_topic_config import CameraTopicConfig
@@ -12,6 +11,7 @@ from app.config.field_filter_config.point_cloud_field_filter_config import Point
 from app.config.keypoint_config.keypoint_types import KeypointConfig, YoloKeypointConfig
 from app.config.ros_config import RosConfig
 from app.config.segmentation_config.segmentation_types import SegmentationConfig, SemanticSegmentationConfig
+from bw_shared.messages.dataclass_utils import from_dict, to_dict
 
 
 @dataclass
@@ -27,7 +27,7 @@ class Config:
 
     @classmethod
     def from_dict(cls, data: dict) -> Config:
-        return dacite.from_dict(data_class=cls, data=data)
+        return from_dict(cls, data)
 
     def to_dict(self) -> dict:
-        return asdict(self)
+        return to_dict(self)

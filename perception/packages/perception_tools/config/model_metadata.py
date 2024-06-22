@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass, field
-from enum import Enum
+from dataclasses import dataclass, field
 from functools import cached_property
 
 from bw_shared.enums.label import Label
-from dacite import Config, from_dict
+from bw_shared.messages.dataclass_utils import from_dict, to_dict
 
 
 @dataclass
@@ -40,10 +39,10 @@ class ModelMetadata:
 
     @classmethod
     def from_dict(cls, data: dict) -> ModelMetadata:
-        return from_dict(data_class=cls, data=data, config=Config(cast=[Enum]))
+        return from_dict(cls, data)
 
     def to_dict(self) -> dict:
-        return asdict(self)
+        return to_dict(self)
 
     @cached_property
     def color_map(self) -> dict[Label, LabelColor]:

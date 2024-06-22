@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 
-from dacite import from_dict
+from bw_shared.messages.dataclass_utils import from_dict, to_dict
 
 
 @dataclass
@@ -14,7 +14,7 @@ class EstimationTopicMetadata:
 
     @classmethod
     def from_dict(cls, data: dict) -> EstimationTopicMetadata:
-        return from_dict(data_class=cls, data=data)
+        return from_dict(cls, data)
 
     def to_dict(self) -> dict:
-        return asdict(self)
+        return to_dict(self)

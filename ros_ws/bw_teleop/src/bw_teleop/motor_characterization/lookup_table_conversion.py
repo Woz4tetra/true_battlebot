@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass, field
+from dataclasses import dataclass, field
 
 import numpy as np
-from dacite import from_dict
+from bw_shared.messages.dataclass_utils import from_dict, to_dict
 
 
 @dataclass
@@ -20,10 +20,10 @@ class LookupTable:
 
     @classmethod
     def from_dict(cls, data: dict) -> LookupTable:
-        return from_dict(data_class=cls, data=data)
+        return from_dict(cls, data)
 
     def to_dict(self) -> dict:
-        return asdict(self)
+        return to_dict(self)
 
     def frequency_to_command(self, frequency: float) -> float:
         return float(self.velocities[np.argmin(np.abs(self.freq_array - frequency))])

@@ -1,13 +1,12 @@
 # When adding fields to this file, make sure to update the bw_shared_config C++ module as well
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass, field
-from enum import Enum
+from dataclasses import dataclass, field
 
 from bw_interfaces.msg import RobotConfigMsg, RobotFleetConfigMsg
-from dacite import Config, from_dict
 
 from bw_shared.enums.robot_team import RobotTeam
+from bw_shared.messages.dataclass_utils import from_dict, to_dict
 
 
 @dataclass
@@ -23,10 +22,10 @@ class RobotConfig:
 
     @classmethod
     def from_dict(cls, data: dict) -> RobotConfig:
-        return from_dict(data_class=cls, data=data, config=Config(cast=[Enum]))
+        return from_dict(cls, data)
 
     def to_dict(self) -> dict:
-        return asdict(self)
+        return to_dict(self)
 
     @classmethod
     def from_msg(cls, msg: RobotConfigMsg) -> RobotConfig:
@@ -42,10 +41,10 @@ class RobotFleetConfig:
 
     @classmethod
     def from_dict(cls, data: dict) -> RobotFleetConfig:
-        return from_dict(data_class=cls, data=data)
+        return from_dict(cls, data)
 
     def to_dict(self) -> dict:
-        return asdict(self)
+        return to_dict(self)
 
     @classmethod
     def from_msg(cls, msg: RobotFleetConfigMsg) -> RobotFleetConfig:

@@ -1,6 +1,7 @@
 from ._BehaviorMode import *
 from ._CageCorner import *
 from ._CollisionInfo import *
+from ._ConfiguredOpponents import *
 from ._Contour import *
 from ._EstimatedObject import *
 from ._EstimatedObjectArray import *
@@ -10,6 +11,8 @@ from ._KeypointInstanceArray import *
 from ._Labels import *
 from ._MotorCharacterizationSample import *
 from ._MotorVelocities import *
+from ._RobotConfigMsg import *
+from ._RobotFleetConfigMsg import *
 from ._SegmentationInstance import *
 from ._SegmentationInstanceArray import *
 from ._SystemSummary import *

@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import datetime
 import warnings
-from dataclasses import asdict, dataclass, field
+from dataclasses import dataclass, field
 from functools import cached_property
 from typing import Dict, List
 
-from dacite import from_dict
+from bw_shared.messages.dataclass_utils import from_dict, to_dict
 
 
 @dataclass
@@ -155,4 +155,4 @@ class CocoMetaDataset:
         return CocoMetaDataset(from_dict(CocoDataset, d))
 
     def to_json(self) -> Dict:
-        return asdict(self.dataset)
+        return to_dict(self.dataset)

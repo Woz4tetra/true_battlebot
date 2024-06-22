@@ -71,24 +71,12 @@ class RobotFilter:
         self.initial_pose = measurement_to_pose(initial_state, initial_covariance)
         self.initial_twist = measurement_to_twist(initial_state, initial_covariance)
 
-        self.robots = shared_config.robots
-        self.check_unique(self.robots)
+        self.check_unique(shared_config.robots)
 
         self.field = EstimatedObject()
         self.field_bounds = (XYZ(0.0, 0.0, 0.0), XYZ(0.0, 0.0, 0.0))
         self.filter_bounds = (XY(0.0, 0.0), XY(0.0, 0.0))
-        self.robot_names = {}
-        for config in self.robots.robots:
-            for tag_id in config.ids:
-                self.robot_names[tag_id] = config.name
-        self.robot_configs = {config.name: config for config in self.robots.robots}
         self.apriltag_rotate_tf = Transform3D.from_position_and_rpy(Vector3(), RPY((0.0, 0.0, np.pi / 2)))
-        self.robot_filters: list[DriveKalmanModel] = [
-            DriveKalmanModel(robot.name, self.update_delay, self.process_noise, self.friction_factor)
-            for robot in self.robots.robots
-        ]
-        self.robot_sizes = {robot.name: robot.radius for robot in self.robots.robots}
-        self.robot_max_sizes = {robot.name: robot.radius for robot in self.robots.robots}
 
         self.tag_heurstics = ApriltagHeuristics(self.apriltag_base_covariance_scalar)
         self.robot_heuristics = {
@@ -97,38 +85,6 @@ class RobotFilter:
         }
         self.robot_cmd_vel_heuristics = CmdVelHeuristics(self.cmd_vel_base_covariance_scalar)
 
-        self.label_to_filter = {
-            Label.ROBOT: [
-                filter for filter in self.robot_filters if self.robot_configs[filter.name].team != RobotTeam.REFEREE
-            ],
-            Label.FRIENDLY_ROBOT: [
-                filter
-                for filter in self.robot_filters
-                if self.robot_configs[filter.name].team == RobotTeam.OUR_TEAM
-                and self.robot_configs[filter.name].name != self.controlled_robot_name
-            ],
-            Label.CONTROLLED_ROBOT: [
-                filter
-                for filter in self.robot_filters
-                if self.robot_configs[filter.name].name == self.controlled_robot_name
-            ],
-            Label.REFEREE: [
-                filter for filter in self.robot_filters if self.robot_configs[filter.name].team == RobotTeam.REFEREE
-            ],
-        }
-        self.team_to_filter = {
-            RobotTeam.OUR_TEAM: [
-                filter for filter in self.robot_filters if self.robot_configs[filter.name].team == RobotTeam.OUR_TEAM
-            ],
-            RobotTeam.THEIR_TEAM: [
-                filter for filter in self.robot_filters if self.robot_configs[filter.name].team == RobotTeam.THEIR_TEAM
-            ],
-            RobotTeam.REFEREE: [
-                filter for filter in self.robot_filters if self.robot_configs[filter.name].team == RobotTeam.REFEREE
-            ],
-        }
-        self.measurement_sorter = RobotMeasurementSorter()
-
         # measurements labels are checked and applied in this order
         self.measurement_sorters_priority = [
             Label.REFEREE,
@@ -136,28 +92,21 @@ class RobotFilter:
             Label.FRIENDLY_ROBOT,
             Label.ROBOT,
         ]
-        self.initialize_labels: dict[Label, list[DriveKalmanModel]] = {label: [] for label in Label}
-        for filter in self.robot_filters:
-            team = self.robot_configs[filter.name].team
-            if filter.name == self.controlled_robot_name:
-                self.initialize_labels[Label.CONTROLLED_ROBOT].append(filter)
-            elif team == RobotTeam.OUR_TEAM:
-                self.initialize_labels[Label.FRIENDLY_ROBOT].append(filter)
-            elif team == RobotTeam.THEIR_TEAM:
-                self.initialize_labels[Label.ROBOT].append(filter)
-            elif team == RobotTeam.REFEREE:
-                self.initialize_labels[Label.REFEREE].append(filter)
-            else:
-                raise ValueError(f"Filter doesn't have an initialization label: {filter.name}")
 
+        self.robot_filters: list[DriveKalmanModel] = []
+        self.label_to_filter: dict[Label, list[DriveKalmanModel]] = {}
+        self.team_to_filter: dict[RobotTeam, list[DriveKalmanModel]] = {}
+        self.label_to_filter_initialization: dict[Label, list[DriveKalmanModel]] = {}
+        self.tag_id_to_filter: dict[int, DriveKalmanModel] = {}
+        self.filter_state_pubs: dict[str, rospy.Publisher] = {}
+
+        self.measurement_sorter = RobotMeasurementSorter()
         self.tf_buffer = tf2_ros.Buffer()
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer)
         self.tf_broadcaster = tf2_ros.TransformBroadcaster()
-
-        self.filter_state_pubs = {
-            robot.name: rospy.Publisher(f"{robot.name}/odom", Odometry, queue_size=10) for robot in self.robots.robots
-        }
         self.filter_state_array_pub = rospy.Publisher("filtered_states", EstimatedObjectArray, queue_size=50)
+
+        self.initialize(shared_config.robots)
 
         if not self.estimation_topics:
             rospy.logwarn("No estimation topics provided. Will not receive robot estimation data.")
@@ -169,16 +118,67 @@ class RobotFilter:
                 lambda msg, data=topic_info: self.robot_estimation_callback(data, msg),
                 queue_size=50,
             )
+
         self.field_sub = rospy.Subscriber("filter/field", EstimatedObject, self.field_callback, queue_size=1)
         self.tags_subs: dict[str, rospy.Subscriber] = {}
         for topic in self.tag_topics:
             self.tags_subs[topic] = rospy.Subscriber(topic, AprilTagDetectionArray, self.tags_callback, queue_size=25)
         self.cmd_vel_subs = [
             rospy.Subscriber(
-                f"{filter.name}/cmd_vel", Twist, self.cmd_vel_callback, callback_args=filter, queue_size=10
+                f"{filter.config.name}/cmd_vel", Twist, self.cmd_vel_callback, callback_args=filter, queue_size=10
             )
-            for filter in self.team_to_filter[RobotTeam.OUR_TEAM]
+            for filter in self.robot_filters
+            if filter.config.team == RobotTeam.OUR_TEAM
         ]
+
+    def initialize(self, robot_fleet_config: RobotFleetConfig) -> None:
+        self.robot_filters = [
+            DriveKalmanModel(robot_config, self.update_delay, self.process_noise, self.friction_factor)
+            for robot_config in robot_fleet_config.robots
+        ]
+
+        self.label_to_filter = {
+            Label.ROBOT: [filter for filter in self.robot_filters if filter.config.team != RobotTeam.REFEREE],
+            Label.FRIENDLY_ROBOT: [
+                filter
+                for filter in self.robot_filters
+                if filter.config.team == RobotTeam.OUR_TEAM and filter.config.name != self.controlled_robot_name
+            ],
+            Label.CONTROLLED_ROBOT: [
+                filter for filter in self.robot_filters if filter.config.name == self.controlled_robot_name
+            ],
+            Label.REFEREE: [filter for filter in self.robot_filters if filter.config.team == RobotTeam.REFEREE],
+        }
+        self.team_to_filter = {
+            RobotTeam.OUR_TEAM: [filter for filter in self.robot_filters if filter.config.team == RobotTeam.OUR_TEAM],
+            RobotTeam.THEIR_TEAM: [
+                filter for filter in self.robot_filters if filter.config.team == RobotTeam.THEIR_TEAM
+            ],
+            RobotTeam.REFEREE: [filter for filter in self.robot_filters if filter.config.team == RobotTeam.REFEREE],
+        }
+
+        self.label_to_filter_initialization = {label: [] for label in self.label_to_filter.keys()}
+        for filter in self.robot_filters:
+            team = filter.config.team
+            if filter.config.name == self.controlled_robot_name:
+                self.label_to_filter_initialization[Label.CONTROLLED_ROBOT].append(filter)
+            elif team == RobotTeam.OUR_TEAM:
+                self.label_to_filter_initialization[Label.FRIENDLY_ROBOT].append(filter)
+            elif team == RobotTeam.THEIR_TEAM:
+                self.label_to_filter_initialization[Label.ROBOT].append(filter)
+            elif team == RobotTeam.REFEREE:
+                self.label_to_filter_initialization[Label.REFEREE].append(filter)
+            else:
+                raise ValueError(f"Filter doesn't have an initialization label: {filter.config.name}")
+
+        for config in robot_fleet_config.robots:
+            for tag_id in config.ids:
+                self.tag_id_to_filter[tag_id] = filter
+
+        self.filter_state_pubs = {
+            robot.name: rospy.Publisher(f"{robot.name}/odom", Odometry, queue_size=10)
+            for robot in robot_fleet_config.robots
+        }
 
     def check_unique(self, config: RobotFleetConfig) -> None:
         """
@@ -208,13 +208,13 @@ class RobotFilter:
             if all([c == 0 for c in robot.pose.covariance]):
                 robot.pose.covariance = self.robot_heuristics[metadata.topic].compute_covariance(robot)  # type: ignore
             measurements[label].append(robot)
-        for label, robot_filters in self.initialize_labels.items():
+        for label, robot_filters in self.label_to_filter_initialization.items():
             for robot_filter in robot_filters:
                 if not robot_filter.is_initialized and len(measurements[label]) > 0:
                     measurement = measurements[label].pop()
                     measurement.pose.covariance = self.initial_pose.covariance
                     robot_filter.teleport(measurement.pose, self.initial_twist)
-                    rospy.loginfo(f"Initialized {robot_filter.name} from {label} measurement.")
+                    rospy.loginfo(f"Initialized {robot_filter.config.name} from {label} measurement.")
         for label in self.measurement_sorters_priority:
             if len(measurements[label]) == 0:
                 continue
@@ -225,10 +225,13 @@ class RobotFilter:
             )
 
     def apply_update_with_sorter(
-        self, available_filters: list[DriveKalmanModel], robots: list[EstimatedObject], use_orientation: bool
+        self,
+        available_filters: list[DriveKalmanModel],
+        robot_measurements: list[EstimatedObject],
+        use_orientation: bool,
     ) -> None:
         map_measurements: list[PoseWithCovariance] = []
-        for measurement in robots:
+        for measurement in robot_measurements:
             map_pose = self.transform_to_map(measurement.header, measurement.pose.pose)
             if map_pose is None:
                 rospy.logwarn(f"Could not transform pose for measurement {measurement}")
@@ -245,7 +248,7 @@ class RobotFilter:
 
         assigned = self.measurement_sorter.get_ids(available_filters, map_measurements)
         for filter_index, measurement_index in assigned.items():
-            camera_measurement = robots[measurement_index]
+            camera_measurement = robot_measurements[measurement_index]
             map_measurement = map_measurements[measurement_index]
             self.apply_sorted_measurement(
                 available_filters[filter_index], map_measurement, camera_measurement, use_orientation
@@ -258,7 +261,7 @@ class RobotFilter:
         camera_measurement: EstimatedObject,
         use_orientation: bool,
     ) -> None:
-        self.robot_sizes[robot_filter.name] = self.get_object_radius(robot_filter.name, camera_measurement)
+        robot_filter.update_radius(camera_measurement.size)
 
         try:
             if use_orientation:
@@ -268,23 +271,6 @@ class RobotFilter:
         except np.linalg.LinAlgError as e:
             rospy.logwarn(f"Failed to update from robot measurement. Resetting filter. {e}")
             robot_filter.reset()
-
-    def get_object_radius(self, robot_name: str, object_estimate: EstimatedObject) -> float:
-        measured_radius = (
-            max(
-                object_estimate.size.x,
-                object_estimate.size.y,
-                object_estimate.size.z,
-            )
-            / 2.0
-        )
-        return min(
-            max(
-                measured_radius,
-                self.robot_min_radius,
-            ),
-            self.robot_max_sizes[robot_name],
-        )
 
     def tags_callback(self, msg: AprilTagDetectionArray) -> None:
         if not self.field_received():
@@ -315,18 +301,14 @@ class RobotFilter:
                 rospy.logwarn("Bundle detection not supported")
                 continue
             tag_id = detection.id[0]
-            robot_name = self.robot_names.get(tag_id, "")
-            if robot_name not in self.robot_filters:
-                rospy.logwarn(f"Tag id {tag_id} is not a robot")
-                continue
-            robot_filter = self.robot_filters[robot_name]
-            tag_pose = detection.pose.pose
-            try:
-                robot_filter.update_pose(tag_pose)
-            except np.linalg.LinAlgError as e:
-                rospy.logwarn(f"Failed to update from tag. Resetting filter. {e}")
-                robot_filter.reset()
-                continue
+            if robot_filter := self.tag_id_to_filter.get(tag_id, None):
+                tag_pose = detection.pose.pose
+                try:
+                    robot_filter.update_pose(tag_pose)
+                except np.linalg.LinAlgError as e:
+                    rospy.logwarn(f"Failed to update from tag. Resetting filter. {e}")
+                    robot_filter.reset()
+                    continue
 
     def rotate_tag_orientation(
         self,
@@ -421,8 +403,8 @@ class RobotFilter:
         filtered_states = EstimatedObjectArray()
         for robot_filter in self.robot_filters:
             pose, twist = robot_filter.get_state()
-            robot_name = robot_filter.name
-            diameter = self.robot_sizes[robot_name] * 2
+            robot_name = robot_filter.config.name
+            diameter = robot_filter.object_radius * 2
 
             state_msg = EstimatedObject(
                 header=RosHeader(frame_id=self.map_frame, stamp=now),
