@@ -7,8 +7,8 @@ robot_max_radius: 0.4
 estimation_topics:
     - topic: "/camera_0/estimation/robots"
       use_orientation: true
-      position_covariance: 0.001
-      orientation_covariance: 0.001
+      position_covariance: 0.01
+      orientation_covariance: 0.01
     - topic: "/camera_1/estimation/robots"
       use_orientation: false
-      position_covariance: 0.01
+      position_covariance: 0.05

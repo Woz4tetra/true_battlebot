@@ -6,6 +6,7 @@ var recordService;
 var recordState = false;
 var connection_status;
 var connection_icon;
+var opponent_template_names = [];
 
 function initSummarySubscriber() {
     var listener = new ROSLIB.Topic({
@@ -154,6 +155,27 @@ function initHealthSummarySubscriber() {
     });
 }
 
+function initOpponentConfigurationPublisher() {
+    opponentConfigurationPub = new ROSLIB.Topic({
+        ros: ros,
+        name: "/configured_opponents",
+        messageType: "bw_interfaces/ConfiguredOpponents",
+    });
+    opponentConfigurationPub.advertise();
+}
+
+function initOpponentTemplateSubscriber() {
+    opponentTemplateSub = new ROSLIB.Topic({
+        ros: ros,
+        name: "/opponent_templates",
+        messageType: "bw_interfaces/ConfiguredOpponents",
+    });
+
+    opponentTemplateSub.subscribe(function (message) {
+        updateOpponentConfiguationOptions(message.names);
+    });
+}
+
 function initCarets() {
     var toggler = document.getElementsByClassName("caret");
     console.log(`Found ${toggler.length} carets`);
@@ -189,6 +211,7 @@ function updateOpponentConfigurationGrid() {
     if (num_opponents === num_nodes) {
         return;
     }
+    console.log(`Updating opponent configuration grid to ${num_opponents}`);
     for (var i = num_nodes; i < num_opponents; i++) {
         var node = document
             .getElementById("opponent-sub-configuration-template")
@@ -233,9 +256,15 @@ function publishOpponentConfiguration() {
         );
     }
     console.log(`Publishing opponent configuration: ${keys}`);
+    opponentConfigurationPub.publish({ names: keys });
 }
 
 function updateOpponentConfiguationOptions(options) {
+    if (opponent_template_names.toString() === options.toString()) {
+        return;
+    }
+    console.log(`Updating opponent configuration options: ${options}`);
+    opponent_template_names = options;
     container = document.getElementById("opponent-configuration-grid");
     for (
         var child_index = 0;
@@ -299,6 +328,8 @@ function reconnectRosBridge() {
     initTreeSnapshotSubscriber();
     initCarets();
     initHealthSummarySubscriber();
+    initOpponentConfigurationPublisher();
+    initOpponentTemplateSubscriber();
 }
 
 window.onload = function () {
@@ -312,7 +343,7 @@ window.onload = function () {
 
     document.getElementById("num-opponents").value = 1;
     updateOpponentConfigurationGrid();
-    updateOpponentConfiguationOptions(["default", "small", "large"]);
+    updateOpponentConfiguationOptions(["default"]);
 
     reconnectRosBridge();
 

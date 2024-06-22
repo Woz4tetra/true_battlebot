@@ -140,33 +140,40 @@ class RobotFilter:
         )
 
     def initialize(self, robot_fleet: list[RobotConfig]) -> None:
-        self.robot_filters = [
+        self.robot_filters = self._init_filters(robot_fleet)
+        self._init_label_to_filter(self.robot_filters)
+        self._init_label_to_filter_initialization(self.robot_filters)
+        self._tag_id_to_filter(self.robot_filters)
+        self._init_filter_state_pubs(robot_fleet)
+
+    def _init_filters(self, robot_fleet: list[RobotConfig]) -> list[DriveKalmanModel]:
+        return [
             DriveKalmanModel(robot_config, self.update_delay, self.process_noise, self.friction_factor)
             for robot_config in robot_fleet
         ]
 
+    def _init_label_to_filter(self, robot_filters: list[DriveKalmanModel]) -> None:
         self.label_to_filter = {
-            Label.ROBOT: [filter for filter in self.robot_filters if filter.config.team != RobotTeam.REFEREE],
+            Label.ROBOT: [filter for filter in robot_filters if filter.config.team != RobotTeam.REFEREE],
             Label.FRIENDLY_ROBOT: [
                 filter
-                for filter in self.robot_filters
+                for filter in robot_filters
                 if filter.config.team == RobotTeam.OUR_TEAM and filter.config.name != self.controlled_robot_name
             ],
             Label.CONTROLLED_ROBOT: [
-                filter for filter in self.robot_filters if filter.config.name == self.controlled_robot_name
+                filter for filter in robot_filters if filter.config.name == self.controlled_robot_name
             ],
-            Label.REFEREE: [filter for filter in self.robot_filters if filter.config.team == RobotTeam.REFEREE],
+            Label.REFEREE: [filter for filter in robot_filters if filter.config.team == RobotTeam.REFEREE],
         }
         self.team_to_filter = {
-            RobotTeam.OUR_TEAM: [filter for filter in self.robot_filters if filter.config.team == RobotTeam.OUR_TEAM],
-            RobotTeam.THEIR_TEAM: [
-                filter for filter in self.robot_filters if filter.config.team == RobotTeam.THEIR_TEAM
-            ],
-            RobotTeam.REFEREE: [filter for filter in self.robot_filters if filter.config.team == RobotTeam.REFEREE],
+            RobotTeam.OUR_TEAM: [filter for filter in robot_filters if filter.config.team == RobotTeam.OUR_TEAM],
+            RobotTeam.THEIR_TEAM: [filter for filter in robot_filters if filter.config.team == RobotTeam.THEIR_TEAM],
+            RobotTeam.REFEREE: [filter for filter in robot_filters if filter.config.team == RobotTeam.REFEREE],
         }
 
+    def _init_label_to_filter_initialization(self, robot_filters: list[DriveKalmanModel]) -> None:
         self.label_to_filter_initialization = {label: [] for label in self.label_to_filter.keys()}
-        for filter in self.robot_filters:
+        for filter in robot_filters:
             team = filter.config.team
             if filter.config.name == self.controlled_robot_name:
                 self.label_to_filter_initialization[Label.CONTROLLED_ROBOT].append(filter)
@@ -179,10 +186,14 @@ class RobotFilter:
             else:
                 raise ValueError(f"Filter doesn't have an initialization label: {filter.config.name}")
 
-        for config in robot_fleet:
+    def _tag_id_to_filter(self, robot_filters: list[DriveKalmanModel]) -> None:
+        self.tag_id_to_filter = {}
+        for robot_filter in robot_filters:
+            config = robot_filter.config
             for tag_id in config.ids:
-                self.tag_id_to_filter[tag_id] = filter
+                self.tag_id_to_filter[tag_id] = robot_filter
 
+    def _init_filter_state_pubs(self, robot_fleet: list[RobotConfig]) -> None:
         self.filter_state_pubs = {
             robot.name: rospy.Publisher(f"{robot.name}/odom", Odometry, queue_size=10) for robot in robot_fleet
         }

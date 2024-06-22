@@ -509,7 +509,7 @@ Transform:
   m_Children:
   - {fileID: 991301880}
   m_Father: {fileID: 0}
-  m_RootOrder: 9
+  m_RootOrder: 10
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!4 &991301880 stripped
 Transform:
@@ -797,7 +797,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 10
+  m_RootOrder: 11
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1915377010
 GameObject:
@@ -1014,7 +1014,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5290591740318533916, guid: 5bd45563ec35d1d669fbeb2538f27a1c, type: 3}
       propertyPath: m_RootOrder
-      value: 11
+      value: 7
       objectReference: {fileID: 0}
     - target: {fileID: 5290591740318533916, guid: 5bd45563ec35d1d669fbeb2538f27a1c, type: 3}
       propertyPath: m_LocalPosition.x
@@ -1099,7 +1099,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 6146308370188820698, guid: d32c2ae636ebfd81caf7087eb698780b, type: 3}
       propertyPath: m_RootOrder
-      value: 8
+      value: 9
       objectReference: {fileID: 0}
     - target: {fileID: 6146308370188820698, guid: d32c2ae636ebfd81caf7087eb698780b, type: 3}
       propertyPath: m_LocalPosition.x
@@ -1696,6 +1696,10 @@ PrefabInstance:
     - target: {fileID: 6723404183405638390, guid: 250d37cd9e31845e88b5989a64f48e32, type: 3}
       propertyPath: m_Name
       value: MR STABS MK2
+      objectReference: {fileID: 0}
+    - target: {fileID: 8398510442899822929, guid: 250d37cd9e31845e88b5989a64f48e32, type: 3}
+      propertyPath: m_RootOrder
+      value: 8
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

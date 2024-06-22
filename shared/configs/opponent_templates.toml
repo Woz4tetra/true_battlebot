@@ -1,7 +1,9 @@
 [[robots]]
 name = "opponent_3lb"
+team = "their_team"
 radius = 0.1
 
 [[robots]]
 name = "opponent_1lb"
+team = "their_team"
 radius = 0.1

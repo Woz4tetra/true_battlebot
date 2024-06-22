@@ -9,4 +9,10 @@ radius = 0.15
 
 [[robots]]
 name = "referee"
+team = "referee"
 radius = 0.25
+
+[[robots]]
+name = "opponent_3lb"
+team = "their_team"
+radius = 0.1
