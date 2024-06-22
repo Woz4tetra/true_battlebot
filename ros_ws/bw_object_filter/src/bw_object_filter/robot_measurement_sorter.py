@@ -1,6 +1,6 @@
 import itertools
 import math
-from typing import Dict, List, Mapping, Tuple
+from typing import Dict, List, Tuple
 
 import numpy as np
 from bw_shared.geometry.pose2d import Pose2D
