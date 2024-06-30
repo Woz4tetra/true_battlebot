@@ -9,15 +9,15 @@ import struct
 import genpy
 
 class CageCorner(genpy.Message):
-  _md5sum: str = "3958533281df6e9cc0a725a386f3b5df"
+  _md5sum: str = "bda37decd5e3814bcc042f341d2e60a1"
   _type: str = "bw_interfaces/CageCorner"
   _has_header: bool = False  # flag to mark the presence of a Header object
-  _full_text: str = """uint8 type
+  _full_text: str = """int32 type
 """
   __slots__: List[str] = ['type']
-  _slot_types: List[str] = ['uint8']
+  _slot_types: List[str] = ['int32']
 
-  def __init__(self, type: bytes = None):
+  def __init__(self, type: int = None):
     """
     Constructor. Any message fields that are implicitly/explicitly
     set to None will be assigned a default value. The recommend
@@ -33,7 +33,7 @@ class CageCorner(genpy.Message):
     """
     super(CageCorner, self).__init__(**{'type': type})
     if self.type is None:
-      self.type: bytes = 0
+      self.type: int = 0
     else:
       self.type = type
 
@@ -50,7 +50,7 @@ class CageCorner(genpy.Message):
     """
     try:
       _x = self.type
-      buff.write(_get_struct_B().pack(_x))
+      buff.write(_get_struct_i().pack(_x))
     except struct.error as se: self._check_types(struct.error("%s: '%s' when writing '%s'" % (type(se), str(se), str(locals().get('_x', self)))))
     except TypeError as te: self._check_types(ValueError("%s: '%s' when writing '%s'" % (type(te), str(te), str(locals().get('_x', self)))))
 
@@ -64,8 +64,8 @@ class CageCorner(genpy.Message):
     try:
       end = 0
       start = end
-      end += 1
-      (self.type,) = _get_struct_B().unpack(bytes_[start:end])
+      end += 4
+      (self.type,) = _get_struct_i().unpack(bytes_[start:end])
       return self
     except struct.error as e:
       raise genpy.DeserializationError(e)  # most likely buffer underfill
@@ -79,7 +79,7 @@ class CageCorner(genpy.Message):
     """
     try:
       _x = self.type
-      buff.write(_get_struct_B().pack(_x))
+      buff.write(_get_struct_i().pack(_x))
     except struct.error as se: self._check_types(struct.error("%s: '%s' when writing '%s'" % (type(se), str(se), str(locals().get('_x', self)))))
     except TypeError as te: self._check_types(ValueError("%s: '%s' when writing '%s'" % (type(te), str(te), str(locals().get('_x', self)))))
 
@@ -94,8 +94,8 @@ class CageCorner(genpy.Message):
     try:
       end = 0
       start = end
-      end += 1
-      (self.type,) = _get_struct_B().unpack(bytes_[start:end])
+      end += 4
+      (self.type,) = _get_struct_i().unpack(bytes_[start:end])
       return self
     except struct.error as e:
       raise genpy.DeserializationError(e)  # most likely buffer underfill
@@ -104,9 +104,9 @@ _struct_I = genpy.struct_I
 def _get_struct_I():
     global _struct_I
     return _struct_I
-_struct_B = None
-def _get_struct_B():
-    global _struct_B
-    if _struct_B is None:
-        _struct_B = struct.Struct("<B")
-    return _struct_B
+_struct_i = None
+def _get_struct_i():
+    global _struct_i
+    if _struct_i is None:
+        _struct_i = struct.Struct("<i")
+    return _struct_i

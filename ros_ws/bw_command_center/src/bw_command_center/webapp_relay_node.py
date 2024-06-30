@@ -27,7 +27,7 @@ class WebappRelay:
         self.callback_event = Event()
 
         self.cage_corner_pub = rospy.Publisher("set_cage_corner", RosCageCorner, queue_size=1, latch=True)
-        self.cage_corner_pub.publish(CageCorner.DOOR_SIDE.to_msg())
+        self.cage_corner_pub.publish(CageCorner.BLUE_SIDE.to_msg())
 
     def publish_system_summary(self) -> None:
         self.system_summary_pub.publish(get_system_info())

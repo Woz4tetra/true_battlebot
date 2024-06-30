@@ -48,16 +48,16 @@ public abstract class BaseGameObjectSensor : MonoBehaviour
     }
 
 
-    public Matrix4x4 GetObjectPoseInCamera(Transform tagTransform)
+    public Matrix4x4 GetObjectPoseInCamera(Transform tfWorldFromObject)
     {
-        Matrix4x4 tagMatrix = Matrix4x4.TRS(tagTransform.position, tagTransform.rotation, Vector3.one);
-        Matrix4x4 thisMatrix = Matrix4x4.TRS(transform.position, transform.rotation, Vector3.one);
-        Matrix4x4 cameraRotateMatrix = Matrix4x4.TRS(Vector3.zero, Quaternion.Euler(-90.0f, 0.0f, -90.0f), Vector3.one);
-        Matrix4x4 relativeMatrix = thisMatrix.inverse * tagMatrix;
-        relativeMatrix = cameraRotateMatrix * relativeMatrix;
-        Vector3 relativePoint = relativeMatrix.GetT();
-        Quaternion localRotation = relativeMatrix.GetR();
-        return Matrix4x4.TRS(relativePoint, localRotation, Vector3.one);
+        Matrix4x4 matWorldFromObject = Matrix4x4.TRS(tfWorldFromObject.position, tfWorldFromObject.rotation, Vector3.one);
+        Matrix4x4 matWorldFromCameraRotated = Matrix4x4.TRS(transform.position, transform.rotation, Vector3.one);
+        Matrix4x4 matCameraFromCameraRotated = Matrix4x4.TRS(Vector3.zero, Quaternion.Euler(-90.0f, 0.0f, -90.0f), Vector3.one);
+        Matrix4x4 matCameraRotatedFromWorld = matWorldFromCameraRotated.inverse;
+        Matrix4x4 matCameraFromObject = matCameraFromCameraRotated * (matCameraRotatedFromWorld * matWorldFromObject);
+        Vector3 posCameraToObject = matCameraFromObject.GetT();
+        Quaternion quatCameraToObject = matCameraFromObject.GetR();
+        return Matrix4x4.TRS(posCameraToObject, quatCameraToObject, Vector3.one);
     }
 
     protected bool IsVisible(GameObject obj, Bounds bounds)

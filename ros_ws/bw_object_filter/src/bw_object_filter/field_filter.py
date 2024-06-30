@@ -38,11 +38,11 @@ class FieldFilter:
 
         self.cage_corner: Optional[CageCorner] = None
         self.field_rotations = {
-            CageCorner.DOOR_SIDE: Transform3D.from_position_and_rpy(Vector3(), RPY((0, 0, 0))),
-            CageCorner.FAR_SIDE: Transform3D.from_position_and_rpy(Vector3(), RPY((0, 0, math.pi))),
+            CageCorner.BLUE_SIDE: Transform3D.from_position_and_rpy(Vector3(), RPY((0, 0, 0))),
+            CageCorner.RED_SIDE: Transform3D.from_position_and_rpy(Vector3(), RPY((0, 0, math.pi))),
         }
         self.estimated_field = EstimatedObject()
-        self.field_rotate_tf = self.field_rotations[CageCorner.DOOR_SIDE]
+        self.field_rotate_tf = self.field_rotations[CageCorner.BLUE_SIDE]
 
         self.tf_broadcaster = tf2_ros.TransformBroadcaster()
 
@@ -92,8 +92,8 @@ class FieldFilter:
 
     def get_cage_aligned_transform(self) -> Transform3D:
         if self.cage_corner is None:
-            rospy.logwarn("No cage corner received. Assuming our team's corner is on the door side.")
-            cage_corner = CageCorner.DOOR_SIDE
+            rospy.loginfo("No cage corner received. Assuming our team's corner is on the blue side.")
+            cage_corner = CageCorner.BLUE_SIDE
         else:
             cage_corner = self.cage_corner
         return self.field_rotations[cage_corner]
@@ -132,8 +132,8 @@ class FieldFilter:
     def publish_field_markers(self, estimated_field: EstimatedObject) -> None:
         markers = [
             self.estimated_object_to_plane_marker(estimated_field, ColorRGBA(0, 1, 0.5, 0.25), 0),
-            self.estimated_object_to_text_marker(estimated_field, "door side", ColorRGBA(1, 1, 1, 1), 1, (0, 1)),
-            self.estimated_object_to_text_marker(estimated_field, "far side", ColorRGBA(1, 1, 1, 1), 2, (0, -1)),
+            self.estimated_object_to_text_marker(estimated_field, "blue", ColorRGBA(0, 0, 1, 1), 1, (-1, 1)),
+            self.estimated_object_to_text_marker(estimated_field, "red", ColorRGBA(1, 0, 0, 1), 2, (1, -1)),
         ]
         self.estimated_field_marker_pub.publish(MarkerArray(markers=markers))
 

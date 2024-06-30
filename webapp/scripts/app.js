@@ -7,6 +7,10 @@ var recordState = false;
 var connection_status;
 var connection_icon;
 var opponent_template_names = [];
+var connection_icons = {
+    connected: "resources/check_circle_black_24dp.svg",
+    disconnected: "resources/error_black_24dp.svg",
+};
 
 function initSummarySubscriber() {
     var listener = new ROSLIB.Topic({
@@ -285,7 +289,29 @@ function updateOpponentConfiguationOptions(options) {
     }
 }
 
+function preloadImages(array) {
+    if (!preloadImages.list) {
+        preloadImages.list = [];
+    }
+    var list = preloadImages.list;
+    for (var i = 0; i < array.length; i++) {
+        var img = new Image();
+        img.onload = function () {
+            var index = list.indexOf(this);
+            if (index !== -1) {
+                // remove image from the array once it's loaded
+                // for memory consumption reasons
+                list.splice(index, 1);
+            }
+        };
+        list.push(img);
+        img.src = array[i];
+    }
+}
+
 function reconnectRosBridge() {
+    preloadImages(Object.values(connection_icons));
+
     console.log("Reconnecting to ROS bridge");
     var robot_ip = location.hostname;
     if (ros) {
@@ -301,7 +327,7 @@ function reconnectRosBridge() {
 
     ros.on("connection", function () {
         connection_status.innerHTML = "Connected";
-        connection_icon.src = "resources/check_circle_black_24dp.svg";
+        connection_icon.src = connection_icons.connected;
         connection_icon.className = "filter-green";
         console.log("Connected to websocket server.");
     });
@@ -309,14 +335,14 @@ function reconnectRosBridge() {
     ros.on("error", function (error) {
         console.log("Error connecting to websocket server: ", error);
         connection_status.innerHTML = "Error: " + error;
-        connection_icon.src = "resources/error_black_24dp.svg";
+        connection_icon.src = connection_icons.disconnected;
         connection_icon.className = "filter-red";
     });
 
     ros.on("close", function () {
         console.log("Connection to websocket server closed.");
         connection_status.innerHTML = "Disconnected";
-        connection_icon.src = "resources/error_black_24dp.svg";
+        connection_icon.src = connection_icons.disconnected;
         connection_icon.className = "filter-red";
     });
 

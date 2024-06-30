@@ -34,19 +34,19 @@
             "label": "Mini bot",
             "name": "mini_bot",
             "model": "MR STABS MK2",
-            "objective": "auto_red_corner"
+            "objective": "auto_blue_corner"
         },
         {
             "label": "Main bot",
             "name": "main_bot",
             "model": "MRS BUFF MK2",
-            "objective": "keyboard_red_corner"
+            "objective": "keyboard_blue_corner"
         },
         {
             "label": "Enemy bot",
             "name": "opponent_1",
             "model": "MRS BUFF B-03 Bizarro",
-            "objective": "test_path_1"
+            "objective": "test_path_2"
         },
         {
             "label": "Referee",

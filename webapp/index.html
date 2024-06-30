@@ -196,10 +196,11 @@
             </div>
 
             <div class="grid-item" id="radio-group">
-                <input type="radio" id="door-side" name="cage-corner" onclick="publishCageCorner(0)">
-                <label for="door-side" class="inline-with-icon">Door side</label><br>
-                <input type="radio" id="far-side" name="cage-corner" onclick="publishCageCorner(1)">
-                <label for="far-side" class="inline-with-icon">Far side</label><br>
+                <!-- Matches values found in ros_ws/bw_tools/bw_tools/structs/cage_corner.py -->
+                <input type="radio" id="blue-side" name="cage-corner" onclick="publishCageCorner(0)">
+                <label for="blue-side" class="inline-with-icon">Blue side</label><br>
+                <input type="radio" id="red-side" name="cage-corner" onclick="publishCageCorner(1)">
+                <label for="red-side" class="inline-with-icon">Red side</label><br>
             </div>
         </div>
 

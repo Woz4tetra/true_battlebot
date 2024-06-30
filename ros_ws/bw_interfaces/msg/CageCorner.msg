@@ -1,1 +1,1 @@
-uint8 type
+int32 type

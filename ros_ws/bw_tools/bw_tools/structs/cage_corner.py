@@ -6,8 +6,8 @@ from bw_interfaces.msg import CageCorner as RosCageCorner
 
 
 class CageCorner(IntEnum):
-    DOOR_SIDE = 0
-    FAR_SIDE = 1
+    BLUE_SIDE = 0
+    RED_SIDE = 1
 
     def to_msg(self) -> RosCageCorner:
         return RosCageCorner(self.value)
