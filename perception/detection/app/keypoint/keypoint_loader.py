@@ -9,7 +9,6 @@ from app.container import Container
 from app.keypoint.ground_truth_manager import GroundTruthManager
 from bw_interfaces.msg import EstimatedObjectArray
 from perception_tools.rosbridge.ros_poll_subscriber import RosPollSubscriber
-from sensor_msgs.msg import CameraInfo
 
 from .noop_keypoint import NoopKeypoint
 from .simulated_keypoint import SimulatedKeypoint
@@ -18,12 +17,11 @@ from .yolo_keypoint import YoloKeypoint
 KeypointImplementation = Union[NoopKeypoint, YoloKeypoint, SimulatedKeypoint]
 
 
-def load_ground_truth_manager(container: Container, config: SimulatedKeypointConfig) -> GroundTruthManager:
+def load_ground_truth_manager(container: Container) -> GroundTruthManager:
     main_config = container.resolve(Config)
     ns = main_config.camera_topic.namespace
-    camera_info_sub = RosPollSubscriber(ns + "/rgb/camera_info", CameraInfo)
-    robots_sub = RosPollSubscriber("/camera_0/ground_truth/robots", EstimatedObjectArray)
-    return GroundTruthManager(robots_sub, camera_info_sub)
+    robots_sub = RosPollSubscriber(ns + "/ground_truth/robots", EstimatedObjectArray)
+    return GroundTruthManager(robots_sub)
 
 
 def load_keypoint(container: Container, config: KeypointConfig) -> KeypointImplementation:
@@ -35,7 +33,7 @@ def load_keypoint(container: Container, config: KeypointConfig) -> KeypointImple
         if container.is_registered(GroundTruthManager):
             manager = container.resolve(GroundTruthManager)
         else:
-            manager = load_ground_truth_manager(container, config)
+            manager = load_ground_truth_manager(container)
             container.register(manager)
         return SimulatedKeypoint(config, manager)
     else:

@@ -78,7 +78,7 @@ class Runner:
         if camera_data is None or camera_data.color_image.data.size == 0:
             return
         self.prev_image_time = time.time()
-        robot_points, debug_image = self.robot_keypoint.process_image(camera_data.color_image)
+        robot_points, debug_image = self.robot_keypoint.process_image(camera_data.camera_info, camera_data.color_image)
         if debug_image:
             self.robot_debug_image_publisher.publish(debug_image.to_msg())
         self.robot_keypoint_publisher.publish(robot_points)

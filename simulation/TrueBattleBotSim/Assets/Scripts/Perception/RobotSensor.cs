@@ -28,7 +28,6 @@ public class RobotSensor : BaseGameObjectSensor
     private VisibleTarget[] ProcessObjects(RobotTracker[] robot_trackers)
     {
         List<VisibleTarget> targetList = new List<VisibleTarget>();
-        Debug.Log($"{gameObject.name}, cam pose: {transform.position}");
         foreach (RobotTracker robot in robot_trackers)
         {
             GameObject obj = robot.gameObject;
@@ -49,7 +48,6 @@ public class RobotSensor : BaseGameObjectSensor
                 cameraRelativePose = GetObjectPoseInCamera(obj.transform),
                 frame = robot.GetFrame()
             };
-            Debug.Log($"{obj.name}, obj pose: {obj.transform.position}");
             targetList.Add(tagMsg);
         }
         IncrementMessageCount();

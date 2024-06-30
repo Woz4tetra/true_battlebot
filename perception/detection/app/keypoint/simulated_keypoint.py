@@ -21,7 +21,6 @@ class SimulatedKeypoint(KeypointInterface):
         self.logger = logging.getLogger("perception")
         self.debug = self.config.debug
         self.model: PinholeCameraModel | None = None
-        self.camera_info = CameraInfo()
         self.keypoint_names = [name.value for name in RobotKeypointsNames]
 
         self.simulated_to_real_labels = {
@@ -32,18 +31,16 @@ class SimulatedKeypoint(KeypointInterface):
         self.logger.info(f"Simulated to real label mapping: {self.simulated_to_real_labels}")
         self.real_model_labels = tuple(Label)
 
-    def process_image(self, rgb_image: Image) -> tuple[KeypointInstanceArray, Image | None]:
+    def process_image(self, camera_info: CameraInfo, rgb_image: Image) -> tuple[KeypointInstanceArray, Image | None]:
         robots = self.ground_truth_manager.get_robots()
-        if self.model is None and (camera_info := self.ground_truth_manager.get_camera_info()):
+        if self.model is None:
             self.model = PinholeCameraModel()
             self.model.fromCameraInfo(camera_info)
-            self.camera_info = camera_info
+            self.logger.info("Camera model loaded")
         if robots is None or self.model is None:
             return KeypointInstanceArray(), None
 
-        array = KeypointInstanceArray(
-            header=self.camera_info.header, height=self.camera_info.height, width=self.camera_info.width
-        )
+        array = KeypointInstanceArray(header=camera_info.header, height=camera_info.height, width=camera_info.width)
         debug_image = Image.from_other(rgb_image) if self.debug else None
         object_counts = {label: 0 for label in self.real_model_labels}
         for robot in robots:
@@ -70,11 +67,11 @@ class SimulatedKeypoint(KeypointInterface):
         """
         label = self.simulated_to_real_labels[robot.child_frame_id]
         radius = max(robot.size.x, robot.size.y) / 2
-        transform = Transform3D.from_pose_msg(robot.pose.pose)
-        forward_robot_point = np.array([0, radius, 0, 1])
-        backward_robot_point = np.array([0, -radius, 0, 1])
-        forward_pixel = self.robot_point_to_camera_pixel(transform, forward_robot_point, model)
-        backward_pixel = self.robot_point_to_camera_pixel(transform, backward_robot_point, model)
+        tf_camera_from_robot = Transform3D.from_pose_msg(robot.pose.pose)
+        pos_robotcenter_to_robotfront = np.array([0, radius, 0, 1])
+        pos_robotcenter_to_robotback = np.array([0, -radius, 0, 1])
+        forward_pixel = self.robot_point_to_camera_pixel(tf_camera_from_robot, pos_robotcenter_to_robotfront, model)
+        backward_pixel = self.robot_point_to_camera_pixel(tf_camera_from_robot, pos_robotcenter_to_robotback, model)
         object_index = object_counts[label]
         object_counts[label] += 1
         if forward_pixel is None or backward_pixel is None:
@@ -110,10 +107,10 @@ class SimulatedKeypoint(KeypointInterface):
         )
 
     def robot_point_to_camera_pixel(
-        self, camera_to_robot: Transform3D, robot_point: np.ndarray, model: PinholeCameraModel
+        self, tf_camera_from_robot: Transform3D, pos_robotcenter_to_robotpoint: np.ndarray, model: PinholeCameraModel
     ) -> UVKeypoint | None:
-        camera_point = np.dot(camera_to_robot.tfmat, robot_point)
-        pixel = model.project3dToPixel(camera_point[:3])
-        if np.any(np.isnan(pixel)):
+        pos_camera_to_robotpoint = np.dot(tf_camera_from_robot.tfmat, pos_robotcenter_to_robotpoint)
+        pixel_robot_point = model.project3dToPixel(pos_camera_to_robotpoint[:3])
+        if np.any(np.isnan(pixel_robot_point)):
             return None
-        return UVKeypoint(x=pixel[0], y=pixel[1])
+        return UVKeypoint(x=pixel_robot_point[0], y=pixel_robot_point[1])
