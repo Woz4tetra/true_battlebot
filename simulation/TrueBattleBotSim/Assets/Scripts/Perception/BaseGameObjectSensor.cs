@@ -1,21 +1,26 @@
 using UnityEngine;
 using Unity.Robotics.ROSTCPConnector;
 using MathExtensions;
+using System.Collections;
+using System.Collections.Generic;
 
 public abstract class BaseGameObjectSensor : MonoBehaviour
 {
-    public class TrackedDebugRayCast {
+    public class TrackedDebugRayCast
+    {
         private Vector3 debugRayCastStart;
         private Vector3 debugRayCastDirection;
         private Color debugRayCastColor;
 
-        public TrackedDebugRayCast(Vector3 start, Vector3 direction, Color color) {
+        public TrackedDebugRayCast(Vector3 start, Vector3 direction, Color color)
+        {
             debugRayCastStart = start;
             debugRayCastDirection = direction;
             debugRayCastColor = color;
         }
 
-        public void Draw() {
+        public void Draw()
+        {
             Debug.DrawRay(debugRayCastStart, debugRayCastDirection, debugRayCastColor);
         }
     }
@@ -30,6 +35,7 @@ public abstract class BaseGameObjectSensor : MonoBehaviour
     [SerializeField] private bool debugRayCast = false;
     [SerializeField] private float publishRate = 0.0f;
     [SerializeField] private float viewAngleThreshold = 70.0f;
+    [SerializeField] private bool debugVisibilityReason = false;
     private float prevPublishTime = 0.0f;
 
     private Dictionary<string, TrackedDebugRayCast> debugRayCasts = new Dictionary<string, TrackedDebugRayCast>();
@@ -46,8 +52,10 @@ public abstract class BaseGameObjectSensor : MonoBehaviour
 
     void Update()
     {
-        if (debugRayCast) {
-            foreach (var entry in debugRayCasts) {
+        if (debugRayCast)
+        {
+            foreach (var entry in debugRayCasts)
+            {
                 entry.Value.Draw();
             }
         }
@@ -88,7 +96,7 @@ public abstract class BaseGameObjectSensor : MonoBehaviour
         Plane[] planes = GeometryUtility.CalculateFrustumPlanes(cameraView);
         if (!GeometryUtility.TestPlanesAABB(planes, bounds))
         {
-            if (debugVisibilityReason)  Debug.Log($"Object {obj.name} is not in camera view");
+            if (debugVisibilityReason) Debug.Log($"Object {obj.name} is not in camera view");
             return false;
         }
         RaycastHit hit;
@@ -97,7 +105,7 @@ public abstract class BaseGameObjectSensor : MonoBehaviour
         float tagAngle = Vector3.Angle(tagNormal, cameraNormal);
         if (tagAngle > viewAngleThreshold)
         {
-            if (debugVisibilityReason)  Debug.Log($"Object {obj.name} is outside view angle threshold. Angle: {tagAngle} Threshold: {viewAngleThreshold}");
+            if (debugVisibilityReason) Debug.Log($"Object {obj.name} is outside view angle threshold. Angle: {tagAngle} Threshold: {viewAngleThreshold}");
             return false;
         }
         Vector3 directionVector = obj.transform.position - cameraView.transform.position;
@@ -106,12 +114,12 @@ public abstract class BaseGameObjectSensor : MonoBehaviour
         bool containsLayer = layerMask == (layerMask | (1 << obj.layer));
         if (!containsLayer)
         {
-            if (debugVisibilityReason)  Debug.Log($"Object {obj.name} is not in the layer mask. Layer name: {LayerMask.LayerToName(obj.layer)}");
+            if (debugVisibilityReason) Debug.Log($"Object {obj.name} is not in the layer mask. Layer name: {LayerMask.LayerToName(obj.layer)}");
             return false;
         }
         if (!Physics.Raycast(measurementRay, out hit, maxDistance, layerMask))
         {
-            if (debugVisibilityReason)  Debug.Log($"Object {obj.name} is obstructed by something");
+            if (debugVisibilityReason) Debug.Log($"Object {obj.name} is obstructed by something");
             return false;
         }
         GameObject toplevelObj = ObjectUtils.GetTopLevelObject(hit.transform.gameObject);
