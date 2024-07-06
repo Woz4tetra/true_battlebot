@@ -4,6 +4,22 @@ using MathExtensions;
 
 public abstract class BaseGameObjectSensor : MonoBehaviour
 {
+    public class TrackedDebugRayCast {
+        private Vector3 debugRayCastStart;
+        private Vector3 debugRayCastDirection;
+        private Color debugRayCastColor;
+
+        public TrackedDebugRayCast(Vector3 start, Vector3 direction, Color color) {
+            debugRayCastStart = start;
+            debugRayCastDirection = direction;
+            debugRayCastColor = color;
+        }
+
+        public void Draw() {
+            Debug.DrawRay(debugRayCastStart, debugRayCastDirection, debugRayCastColor);
+        }
+    }
+
     protected TransformFrame frame;
     private Camera cameraView;
     private uint sentMessageCount = 0;
@@ -15,6 +31,8 @@ public abstract class BaseGameObjectSensor : MonoBehaviour
     [SerializeField] private float publishRate = 0.0f;
     [SerializeField] private float viewAngleThreshold = 70.0f;
     private float prevPublishTime = 0.0f;
+
+    private Dictionary<string, TrackedDebugRayCast> debugRayCasts = new Dictionary<string, TrackedDebugRayCast>();
 
     abstract protected void BaseGameObjectSensorStart();
     void Start()
@@ -28,6 +46,11 @@ public abstract class BaseGameObjectSensor : MonoBehaviour
 
     void Update()
     {
+        if (debugRayCast) {
+            foreach (var entry in debugRayCasts) {
+                entry.Value.Draw();
+            }
+        }
         if (publishRate <= 0 || Time.unscaledTime - prevPublishTime > 1.0f / publishRate)
         {
             PublishTargets();
@@ -65,6 +88,7 @@ public abstract class BaseGameObjectSensor : MonoBehaviour
         Plane[] planes = GeometryUtility.CalculateFrustumPlanes(cameraView);
         if (!GeometryUtility.TestPlanesAABB(planes, bounds))
         {
+            if (debugVisibilityReason)  Debug.Log($"Object {obj.name} is not in camera view");
             return false;
         }
         RaycastHit hit;
@@ -73,6 +97,7 @@ public abstract class BaseGameObjectSensor : MonoBehaviour
         float tagAngle = Vector3.Angle(tagNormal, cameraNormal);
         if (tagAngle > viewAngleThreshold)
         {
+            if (debugVisibilityReason)  Debug.Log($"Object {obj.name} is outside view angle threshold. Angle: {tagAngle} Threshold: {viewAngleThreshold}");
             return false;
         }
         Vector3 directionVector = obj.transform.position - cameraView.transform.position;
@@ -81,17 +106,23 @@ public abstract class BaseGameObjectSensor : MonoBehaviour
         bool containsLayer = layerMask == (layerMask | (1 << obj.layer));
         if (!containsLayer)
         {
+            if (debugVisibilityReason)  Debug.Log($"Object {obj.name} is not in the layer mask. Layer name: {LayerMask.LayerToName(obj.layer)}");
             return false;
         }
         if (!Physics.Raycast(measurementRay, out hit, maxDistance, layerMask))
         {
+            if (debugVisibilityReason)  Debug.Log($"Object {obj.name} is obstructed by something");
             return false;
         }
         GameObject toplevelObj = ObjectUtils.GetTopLevelObject(hit.transform.gameObject);
         bool isUnObstructed = ObjectUtils.IsChild(toplevelObj, obj);
         if (debugRayCast)
         {
-            Debug.DrawRay(measurementStart, directionVector.normalized * hit.distance, isUnObstructed ? Color.green : Color.yellow);
+            debugRayCasts[obj.name] = new TrackedDebugRayCast(
+                measurementStart,
+                directionVector.normalized * hit.distance,
+                isUnObstructed ? Color.green : Color.yellow
+            );
         }
         return isUnObstructed;
     }

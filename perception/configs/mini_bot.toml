@@ -29,3 +29,11 @@ exclude_filters = [
 [robot_keypoint]
 type = "YoloKeypoint"
 model_name = "yolov8-pose_2024-06-06.pt"
+
+[robot_keypoint.model_to_system_labels]
+"mr_stabs_mk1" = "controlled_robot"
+"mr_stabs_mk2" = "controlled_robot"
+"mrs_buff_mk1" = "friendly_robot"
+"mrs_buff_mk2" = "friendly_robot"
+"robot" = "robot"
+"referee" = "referee"

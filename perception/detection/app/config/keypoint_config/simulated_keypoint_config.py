@@ -6,4 +6,4 @@ from typing import Literal
 class SimulatedKeypointConfig:
     type: Literal["SimulatedKeypoint"] = "SimulatedKeypoint"
     debug: bool = True
-    simulated_to_real_labels: dict[str, str] = field(default_factory=dict)
+    model_to_system_labels: dict[str, str] = field(default_factory=dict)

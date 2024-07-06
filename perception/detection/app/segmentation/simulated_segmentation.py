@@ -126,12 +126,12 @@ class SimulatedSegmentation(SegmentationInterface):
         self.debug = config.debug
         self.error_range = self.config.compression_error_tolerance
 
-        self.simulated_to_real_labels = {
-            sim_label: Label(real_label) for sim_label, real_label in self.config.simulated_to_real_labels.items()
+        self.model_to_system_labels = {
+            model_label: Label(real_label) for model_label, real_label in self.config.model_to_system_labels.items()
         }
-        if len(self.simulated_to_real_labels) == 0:
+        if len(self.model_to_system_labels) == 0:
             self.logger.warning("No simulated to real label mapping provided")
-        self.logger.info(f"Simulated to real label mapping: {self.simulated_to_real_labels}")
+        self.logger.info(f"Simulated to real label mapping: {self.model_to_system_labels}")
         self.real_model_labels = tuple(Label)
         self.simulated_segmentations: dict[int, Label] = {}
         self.noise_grid: NoiseGrid | None = None
@@ -222,10 +222,10 @@ class SimulatedSegmentation(SegmentationInterface):
     def process_segmentation(self, msg: SegmentationInstanceArray) -> dict[int, Label]:
         simulated_segmentations = {}
         for instant in msg.instances:
-            if instant.label not in self.simulated_to_real_labels:
+            if instant.label not in self.model_to_system_labels:
                 continue
             color = instant.class_index
-            label = self.simulated_to_real_labels[instant.label]
+            label = self.model_to_system_labels[instant.label]
             simulated_segmentations[color] = label
         return simulated_segmentations
 

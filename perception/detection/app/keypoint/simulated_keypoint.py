@@ -23,12 +23,12 @@ class SimulatedKeypoint(KeypointInterface):
         self.model: PinholeCameraModel | None = None
         self.keypoint_names = [name.value for name in RobotKeypointsNames]
 
-        self.simulated_to_real_labels = {
-            sim_label: Label(real_label) for sim_label, real_label in self.config.simulated_to_real_labels.items()
+        self.model_to_system_labels = {
+            model_label: Label(real_label) for model_label, real_label in self.config.model_to_system_labels.items()
         }
-        if len(self.simulated_to_real_labels) == 0:
+        if len(self.model_to_system_labels) == 0:
             self.logger.warning("No simulated to real label mapping provided")
-        self.logger.info(f"Simulated to real label mapping: {self.simulated_to_real_labels}")
+        self.logger.info(f"Simulated to real label mapping: {self.model_to_system_labels}")
         self.real_model_labels = tuple(Label)
 
     def process_image(self, camera_info: CameraInfo, rgb_image: Image) -> tuple[KeypointInstanceArray, Image | None]:
@@ -65,7 +65,7 @@ class SimulatedKeypoint(KeypointInterface):
         Project these two points to pixel space.
         Fill the keypoint instance with the pixel coordinates.
         """
-        label = self.simulated_to_real_labels[robot.child_frame_id]
+        label = self.model_to_system_labels[robot.child_frame_id]
         radius = max(robot.size.x, robot.size.y) / 2
         tf_camera_from_robot = Transform3D.from_pose_msg(robot.pose.pose)
         pos_robotcenter_to_robotfront = np.array([0, radius, 0, 1])

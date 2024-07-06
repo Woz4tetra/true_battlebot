@@ -21,6 +21,10 @@ class YoloKeypoint(KeypointInterface):
         data_dir = get_data_directory()
         model_path = data_dir / "models" / config.model_name
 
+        self.model_to_system_labels = {
+            model_label: Label(real_label) for model_label, real_label in self.config.model_to_system_labels.items()
+        }
+
         self.logger.info(f"Loading model from {model_path}")
         self.model = YOLO(str(model_path))
         self.logger.info("Model loaded")
@@ -42,7 +46,7 @@ class YoloKeypoint(KeypointInterface):
 
         ids = result.boxes.cpu().cls.int().numpy()  # get the class ids
         keypoints = result.keypoints.cpu().xy.int().numpy()  # get the keypoints
-        labels = [Label(result.names[index]) for index in ids]
+        labels = [self.model_to_system_labels.get(result.names[index], Label.BACKGROUND) for index in ids]
 
         if self.config.debug:
             img_array = result.plot(kpt_line=True, kpt_radius=6)  # plot a BGR array of predictions
@@ -53,6 +57,8 @@ class YoloKeypoint(KeypointInterface):
         keypoint_instances = []
         object_counts = {label: 0 for label in Label}
         for keypoint, label, class_idx in zip(keypoints, labels, ids):
+            if label == Label.BACKGROUND:
+                continue
             if len(keypoint) != len(RobotKeypointsNames):
                 raise ValueError(f"Expected {len(RobotKeypointsNames)} keypoints, but got {len(keypoint)}")
             kp_front = UVKeypoint(x=keypoint[0][0], y=keypoint[0][1])
