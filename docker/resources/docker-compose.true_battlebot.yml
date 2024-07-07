@@ -31,6 +31,9 @@ services:
             - ${PROJECT_DIR}/scripts:/opt/${ORGANIZATION}/scripts:rw
             - /media/storage/true-battlebot-media:/media/storage:rw
             - /media/storage/true-battlebot-media/cache:/home/bwbots/.cache:rw
+            - /tmp/.X11-unix:/tmp/.X11-unix
+            - /home/${USER}/.Xauthority:/home/${ORGANIZATION}/.Xauthority:rw
+            - /dev:/dev:rw
         command: ["/opt/${ORGANIZATION}/launch.sh"]
     true_battlebot_perception:
         image: ${PERCEPTION_IMAGE_VERSION}
@@ -52,6 +55,9 @@ services:
             - /media/storage/true-battlebot-media:/media/storage:rw
             - /media/storage/true-battlebot-media/cache:/home/bwbots/.cache:rw
             - /media/storage/true-battlebot-media/torch-cache:/home/bwbots/.torch:rw
+            - /tmp/.X11-unix:/tmp/.X11-unix
+            - /home/${USER}/.Xauthority:/home/${ORGANIZATION}/.Xauthority:rw
+            - /dev:/dev:rw
         command: ["/opt/${ORGANIZATION}/perception.sh"]
     true_battlebot_webapp:
         image: nginx
