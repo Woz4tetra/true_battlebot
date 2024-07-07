@@ -4628,7 +4628,7 @@ MonoBehaviour:
   publishRate: 4
   viewAngleThreshold: 50
   debugVisibilityReason: 0
-  topic: /camera_1/simulated_detections
+  topic: /camera_1/tag_detections
 --- !u!114 &867903856
 MonoBehaviour:
   m_ObjectHideFlags: 0

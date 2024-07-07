@@ -6,7 +6,7 @@ from typing import List
 
 from bw_interfaces.msg import RobotConfigMsg, RobotFleetConfigMsg
 
-from bw_shared.configs.tag_config import BundleConfig, TagConfig
+from bw_shared.configs.tag_config import TagConfig
 from bw_shared.enums.robot_team import RobotTeam
 from bw_shared.messages.dataclass_utils import from_dict, to_dict
 
