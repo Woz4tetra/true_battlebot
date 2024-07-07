@@ -37,7 +37,7 @@ for plugin in nodenv-update node-build nodenv-default-packages nodenv-package-re
 	fi
 done
 
-export PATH="${NODENV_ROOT}/shims:${PATH}"
+export PATH="${HOME}/.nodenv/bin:${NODENV_ROOT}/shims:${PATH}"
 
 echo "done installing nodenv."
 
