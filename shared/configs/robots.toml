@@ -1,7 +1,15 @@
 [[robots]]
 name = "mini_bot"
-ids = [41, 76]
 radius = 0.1
+
+[[robots.tags]]
+tag_id = 41
+tag_size = 0.1
+
+[[robots.tags]]
+tag_id = 76
+tag_size = 0.1
+
 
 [[robots]]
 name = "main_bot"

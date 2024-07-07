@@ -1,6 +1,7 @@
 #pragma once
 #include <ros/ros.h>
 #include <XmlRpcValue.h>
+#include <bw_shared_config/tag_config.h>
 
 namespace bw_shared_config
 {
@@ -38,7 +39,7 @@ namespace bw_shared_config
     {
         std::string name;
         RobotTeam::Value team;
-        std::vector<int> ids;
+        std::vector<TagConfig> tags;
         double radius = 0.0;
 
         static RobotConfig fromXmlRpc(const XmlRpc::XmlRpcValue &data)
@@ -46,9 +47,9 @@ namespace bw_shared_config
             RobotConfig config;
             config.name = static_cast<std::string>(data["name"]);
             config.team = RobotTeam::fromString(static_cast<std::string>(data["team"]));
-            for (int i = 0; i < data["ids"].size(); ++i)
+            for (int i = 0; i < data["tags"].size(); ++i)
             {
-                config.ids.push_back(static_cast<int>(data["ids"][i]));
+                config.tags.push_back(TagConfig::fromXmlRpc(data["tags"][i]));
             }
             config.radius = static_cast<double>(data["radius"]);
             return config;

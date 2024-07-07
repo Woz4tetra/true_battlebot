@@ -2,9 +2,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from typing import List
 
 from bw_interfaces.msg import RobotConfigMsg, RobotFleetConfigMsg
 
+from bw_shared.configs.tag_config import BundleConfig, TagConfig
 from bw_shared.enums.robot_team import RobotTeam
 from bw_shared.messages.dataclass_utils import from_dict, to_dict
 
@@ -17,7 +19,7 @@ class RobotConfig:
 
     name: str
     team: RobotTeam = RobotTeam.OUR_TEAM
-    ids: list[int] = field(default_factory=lambda: [])
+    tags: List[TagConfig] = field(default_factory=list)
     radius: float = 0.15  # max outer radius of the robot in meters
 
     @classmethod
@@ -29,10 +31,20 @@ class RobotConfig:
 
     @classmethod
     def from_msg(cls, msg: RobotConfigMsg) -> RobotConfig:
-        return cls(name=msg.name, team=RobotTeam(msg.team), ids=msg.ids, radius=msg.radius)
+        return cls(
+            name=msg.name,
+            team=RobotTeam(msg.team),
+            tags=[TagConfig.from_msg(tag) for tag in msg.tags],
+            radius=msg.radius,
+        )
 
     def to_msg(self) -> RobotConfigMsg:
-        return RobotConfigMsg(name=self.name, team=self.team.value, ids=self.ids, radius=self.radius)
+        return RobotConfigMsg(
+            name=self.name,
+            team=self.team.value,
+            tags=[tag.to_msg() for tag in self.tags],
+            radius=self.radius,
+        )
 
 
 @dataclass

@@ -76,9 +76,11 @@ def main() -> None:
 
         time_samples = []
         while True:
-            time_samples.append(time.perf_counter())
             video_in = video.get()
             frame = video_in.getCvFrame()
+            timestamp = video_in.getTimestamp().total_seconds()
+            # timestamp = time.perf_counter()
+            time_samples.append(timestamp)
             rectified = rectifier.rectify(frame)
             gray = cv2.cvtColor(rectified, cv2.COLOR_BGR2GRAY)
             result = bundle_detector.detect(gray)

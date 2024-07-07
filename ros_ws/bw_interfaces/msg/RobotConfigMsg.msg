@@ -1,4 +1,4 @@
 string name
 string team
-int32[] ids
+bw_interfaces/TagConfigMsg[] tags
 float64 radius

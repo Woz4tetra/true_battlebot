@@ -4,12 +4,10 @@ from typing import Optional
 import numpy as np
 import rospy
 import tf2_ros
-from apriltag_ros.msg import AprilTagDetectionArray
 from bw_interfaces.msg import EstimatedObject, EstimatedObjectArray, RobotFleetConfigMsg
 from bw_shared.configs.robot_fleet_config import RobotConfig, RobotFleetConfig
 from bw_shared.enums.label import Label
 from bw_shared.enums.robot_team import RobotTeam
-from bw_shared.geometry.rpy import RPY
 from bw_shared.geometry.transform3d import Transform3D
 from bw_shared.geometry.xy import XY
 from bw_shared.geometry.xyz import XYZ
@@ -81,7 +79,6 @@ class RobotFilter:
         self.field = EstimatedObject()
         self.field_bounds = (XYZ(0.0, 0.0, 0.0), XYZ(0.0, 0.0, 0.0))
         self.filter_bounds = (XY(0.0, 0.0), XY(0.0, 0.0))
-        self.apriltag_rotate_tf = Transform3D.from_position_and_rpy(Vector3(), RPY((0.0, 0.0, np.pi / 2)))
 
         self.tag_heurstics = ApriltagHeuristics(self.apriltag_base_covariance_scalar)
         self.robot_heuristics = {
@@ -102,7 +99,7 @@ class RobotFilter:
         self.label_to_filter: dict[Label, list[DriveKalmanModel]] = {}
         self.team_to_filter: dict[RobotTeam, list[DriveKalmanModel]] = {}
         self.label_to_filter_initialization: dict[Label, list[DriveKalmanModel]] = {}
-        self.tag_id_to_filter: dict[int, DriveKalmanModel] = {}
+        self.name_to_filter: dict[str, DriveKalmanModel] = {}
         self.filter_state_pubs: dict[str, rospy.Publisher] = {}
 
         self.measurement_sorter = RobotMeasurementSorter()
@@ -127,7 +124,7 @@ class RobotFilter:
         self.field_sub = rospy.Subscriber("filter/field", EstimatedObject, self.field_callback, queue_size=1)
         self.tags_subs: dict[str, rospy.Subscriber] = {}
         for topic in self.tag_topics:
-            self.tags_subs[topic] = rospy.Subscriber(topic, AprilTagDetectionArray, self.tags_callback, queue_size=25)
+            self.tags_subs[topic] = rospy.Subscriber(topic, EstimatedObjectArray, self.tags_callback, queue_size=25)
         self.cmd_vel_subs = [
             rospy.Subscriber(
                 f"{filter.config.name}/cmd_vel", Twist, self.cmd_vel_callback, callback_args=filter, queue_size=10
@@ -143,7 +140,7 @@ class RobotFilter:
         self.robot_filters = self._init_filters(robot_fleet)
         self._init_label_to_filter(self.robot_filters)
         self._init_label_to_filter_initialization(self.robot_filters)
-        self._tag_id_to_filter(self.robot_filters)
+        self._init_name_to_filter(self.robot_filters)
         self._init_filter_state_pubs(robot_fleet)
 
     def _init_filters(self, robot_fleet: list[RobotConfig]) -> list[DriveKalmanModel]:
@@ -186,12 +183,10 @@ class RobotFilter:
             else:
                 raise ValueError(f"Filter doesn't have an initialization label: {filter.config.name}")
 
-    def _tag_id_to_filter(self, robot_filters: list[DriveKalmanModel]) -> None:
-        self.tag_id_to_filter = {}
+    def _init_name_to_filter(self, robot_filters: list[DriveKalmanModel]) -> None:
+        self.name_to_filter = {}
         for robot_filter in robot_filters:
-            config = robot_filter.config
-            for tag_id in config.ids:
-                self.tag_id_to_filter[tag_id] = robot_filter
+            self.name_to_filter[robot_filter.config.name] = robot_filter
 
     def _init_filter_state_pubs(self, robot_fleet: list[RobotConfig]) -> None:
         self.filter_state_pubs = {
@@ -205,7 +200,7 @@ class RobotFilter:
         ids = []
         for robot in config.robots:
             if robot.team == RobotTeam.OUR_TEAM:
-                ids.extend(robot.ids)
+                ids.extend([tag.tag_id for tag in robot.tags])
         if len(ids) != len(set(ids)):
             raise ValueError("Robot ids must be unique")
         names = [bot.name for bot in config.robots]
@@ -290,43 +285,29 @@ class RobotFilter:
             rospy.logwarn(f"Failed to update from robot measurement. Resetting filter. {e}")
             robot_filter.reset()
 
-    def tags_callback(self, msg: AprilTagDetectionArray) -> None:
+    def tags_callback(self, msg: EstimatedObjectArray) -> None:
         if not self.field_received():
             rospy.logdebug("Field not received. Skipping tag callback.")
             return
-        self.transform_tags_to_map(msg)
         self.apply_tag_measurement(msg)
 
-    def transform_tags_to_map(self, msg: AprilTagDetectionArray) -> None:
-        for detection in msg.detections:
-            pose = detection.pose.pose.pose
-            pose.orientation = self.rotate_tag_orientation(pose.orientation, self.apriltag_rotate_tf)
-            covariance = self.tag_heurstics.compute_covariance(detection)
-            detection.pose.pose.covariance = covariance  # type: ignore
-            map_pose = self.transform_to_map(detection.pose.header, detection.pose.pose.pose)
-            if map_pose is None:
-                rospy.logwarn(f"Could not transform pose for tag {detection}")
-                continue
-            detection.pose.pose.pose = map_pose
-
-    def apply_tag_measurement(self, msg: AprilTagDetectionArray) -> None:
-        for detection in msg.detections:
-            pose = detection.pose.pose.pose
+    def apply_tag_measurement(self, msg: EstimatedObjectArray) -> None:
+        for detection in msg.robots:
+            pose = detection.pose.pose
             if not self.is_in_field_bounds(pose.position):
-                rospy.logdebug(f"Tag {detection.id} is out of bounds. Skipping.")
+                rospy.logdebug(f"Tag for {detection.label} is out of bounds. Skipping.")
                 continue
-            if len(detection.id) != 1:
-                rospy.logwarn("Bundle detection not supported")
-                continue
-            tag_id = detection.id[0]
-            if robot_filter := self.tag_id_to_filter.get(tag_id, None):
-                tag_pose = detection.pose.pose
+            covariance = self.tag_heurstics.compute_covariance(detection)
+            detection.pose.covariance = covariance  # type: ignore
+            if robot_filter := self.name_to_filter.get(detection.label, None):
                 try:
-                    robot_filter.update_pose(tag_pose)
+                    robot_filter.update_pose(detection.pose)
                 except np.linalg.LinAlgError as e:
                     rospy.logwarn(f"Failed to update from tag. Resetting filter. {e}")
                     robot_filter.reset()
                     continue
+            else:
+                rospy.logwarn(f"Tag for {detection.label} not found in filters.")
 
     def rotate_tag_orientation(
         self,

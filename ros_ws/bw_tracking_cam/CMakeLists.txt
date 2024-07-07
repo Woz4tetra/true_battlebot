@@ -4,35 +4,21 @@ project(bw_tracking_cam)
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
 
-# add this to launch node fields:  launch-prefix="gdb -ex run --args"
-# set(CMAKE_BUILD_TYPE Debug)
-
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  cv_bridge
-  image_geometry
-  image_transport
-  roscpp
-  sensor_msgs
-  std_msgs
+  rospy
 )
 
 ## System dependencies are found with CMake's conventions
-find_package(OpenCV REQUIRED)
-find_package(depthai REQUIRED)
+# find_package(Boost REQUIRED COMPONENTS system)
 
-IF (${depthai_FOUND})
-   MESSAGE(STATUS "Found depthai.")
-ELSE (${depthai_FOUND})
-   MESSAGE(STATUS "Could not locate depthai.")
-ENDIF (${depthai_FOUND})
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
 ## See http://ros.org/doc/api/catkin/html/user_guide/setup_dot_py.html
-# catkin_python_setup()
+catkin_python_setup()
 
 ################################################
 ## Declare ROS messages, services and actions ##
@@ -82,7 +68,7 @@ ENDIF (${depthai_FOUND})
 ## Generate added messages and services with any dependencies listed here
 # generate_messages(
 #   DEPENDENCIES
-#   sensor_msgs#   std_msgs
+#   std_msgs  # Or other packages containing msgs
 # )
 
 ################################################
@@ -115,9 +101,9 @@ ENDIF (${depthai_FOUND})
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
- INCLUDE_DIRS include
+#  INCLUDE_DIRS include
 #  LIBRARIES bw_tracking_cam
-#  CATKIN_DEPENDS cv_bridge image_geometry image_transport roscpp sensor_msgs std_msgs
+#  CATKIN_DEPENDS rospy
 #  DEPENDS system_lib
 )
 
@@ -128,7 +114,7 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
-  include
+# include
   ${catkin_INCLUDE_DIRS}
 )
 
@@ -145,24 +131,22 @@ include_directories(
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-add_executable(depthai_oak_1_w src/depthai_oak_1_w.cpp)
+# add_executable(${PROJECT_NAME}_node src/bw_tracking_cam_node.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
 ## target back to the shorter version for ease of user use
 ## e.g. "rosrun someones_pkg node" instead of "rosrun someones_pkg someones_pkg_node"
-# set_target_properties(depthai_oak_1_w PROPERTIES OUTPUT_NAME node PREFIX "")
+# set_target_properties(${PROJECT_NAME}_node PROPERTIES OUTPUT_NAME node PREFIX "")
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
-add_dependencies(depthai_oak_1_w ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+# add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(depthai_oak_1_w
-  ${catkin_LIBRARIES}
-  ${OpenCV_LIBS}
-  depthai::opencv
-)
+# target_link_libraries(${PROJECT_NAME}_node
+#   ${catkin_LIBRARIES}
+# )
 
 #############
 ## Install ##
@@ -180,9 +164,9 @@ target_link_libraries(depthai_oak_1_w
 
 ## Mark executables for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_executables.html
-install(TARGETS depthai_oak_1_w
-  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
+# install(TARGETS ${PROJECT_NAME}_node
+#   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+# )
 
 ## Mark libraries for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_libraries.html
