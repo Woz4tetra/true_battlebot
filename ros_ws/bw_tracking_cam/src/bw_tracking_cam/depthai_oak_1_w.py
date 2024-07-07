@@ -5,55 +5,21 @@ import cv2
 import depthai as dai
 import numpy as np
 import rospy
-from bw_interfaces.msg import EstimatedObject, EstimatedObjectArray
-from bw_shared.enums.enum_auto_lower import EnumAutoLowerStr, auto
+from apriltag_ros.msg import AprilTagDetectionArray
+from bw_interfaces.msg import EstimatedObjectArray
 from bw_tools.configs.rosparam_client import get_shared_config
 from bw_tools.get_param import get_param
 from bw_tools.tag_detection.apriltag_detector import ApriltagDetector, ApriltagDetectorConfig
-from bw_tools.tag_detection.bundle_detector import BundleDetectorInterface, BundleResult, RansacBundleDetector
+from bw_tools.tag_detection.bundle_detector import BundleDetectorInterface, RansacBundleDetector
 from bw_tools.tag_detection.draw_helpers import draw_bundle
 from bw_tools.tag_detection.image_rectifier import ImageRectifier
 from bw_tools.tag_detection.tag_family import TagFamily
+from bw_tracking_cam.bundle_result_to_object import bundle_result_to_apriltag_ros, bundle_result_to_object
+from bw_tracking_cam.oak_1_resolution_mode import Oak1ResolutionMode
+from bw_tracking_cam.oak_time_helpers import get_frame_time, ros_time_from_nsec
 from cv_bridge import CvBridge, CvBridgeError
 from sensor_msgs.msg import CameraInfo, Image
 from std_msgs.msg import Header
-
-
-class ResolutionMode(EnumAutoLowerStr):
-    MODE_1080_P = auto()
-    MODE_4_K = auto()
-    MODE_12_MP = auto()
-    MODE_1352X1012 = auto()
-    MODE_2024X1520 = auto()
-
-    def to_dai(self) -> dai.ColorCameraProperties.SensorResolution:
-        return {
-            ResolutionMode.MODE_1080_P: dai.ColorCameraProperties.SensorResolution.THE_1080_P,
-            ResolutionMode.MODE_4_K: dai.ColorCameraProperties.SensorResolution.THE_4_K,
-            ResolutionMode.MODE_12_MP: dai.ColorCameraProperties.SensorResolution.THE_12_MP,
-            ResolutionMode.MODE_1352X1012: dai.ColorCameraProperties.SensorResolution.THE_1352X1012,
-            ResolutionMode.MODE_2024X1520: dai.ColorCameraProperties.SensorResolution.THE_2024X1520,
-        }[self]
-
-
-def ros_time_from_nsec(nsec: int) -> rospy.Time:
-    sec = int(nsec // 1e9)
-    nsec = int(nsec % 1e9)
-    return rospy.Time(sec, nsec)
-
-
-def get_frame_time(ros_base_time: rospy.Time, steady_base_time: int, curr_time_point: int):
-    # Calculate elapsed time in nanoseconds
-    elapsed_time_nsec = curr_time_point - steady_base_time
-
-    # Convert ros_base_time to seconds
-    ros_base_time_nsec = ros_base_time.to_nsec()
-
-    # Calculate new time in seconds
-    new_time_nsec = ros_base_time_nsec + elapsed_time_nsec
-
-    # Convert back to ROS Time
-    return ros_time_from_nsec(new_time_nsec)
 
 
 class DepthAiOak1W:
@@ -66,7 +32,7 @@ class DepthAiOak1W:
         self.width = get_param("~width", 1920)
         self.height = get_param("~height", 1080)
         self.fps = get_param("~fps", 60.0)
-        self.resolution_mode = ResolutionMode("mode_" + get_param("~resolution_mode", "1080_p"))
+        self.resolution_mode = Oak1ResolutionMode("mode_" + get_param("~resolution_mode", "1080_p"))
         self.debug_image = get_param("~debug_image", False)
         self.camera_matrix_alpha = get_param("~camera_matrix_alpha", 0.0)
 
@@ -80,9 +46,10 @@ class DepthAiOak1W:
         self.bridge = CvBridge()
 
         self.camera_info_pub = rospy.Publisher(f"{self.camera_name}/camera_info", CameraInfo, queue_size=1)
-        self.camera_image_pub = rospy.Publisher(f"{self.camera_name}/image_raw", Image, queue_size=1)
+        self.camera_image_pub = rospy.Publisher(f"{self.camera_name}/image_rect", Image, queue_size=1)
         self.debug_image_pub = rospy.Publisher(f"{self.camera_name}/debug_image", Image, queue_size=1)
-        self.tag_pub = rospy.Publisher(f"{self.camera_name}/tag_detections", EstimatedObjectArray, queue_size=1)
+        self.robot_tag_pub = rospy.Publisher(f"{self.camera_name}/robot_tags", EstimatedObjectArray, queue_size=1)
+        self.april_tag_pub = rospy.Publisher(f"{self.camera_name}/tag_detections", AprilTagDetectionArray, queue_size=1)
 
     def update_base_time(self, steady_base_time_ns: int) -> None:
         current_ros_time = rospy.Time.now()
@@ -186,13 +153,17 @@ class DepthAiOak1W:
             draw_image = draw_bundle(rectified_info, draw_image, result) if (draw_image is not None) else None
             results[name] = result
 
-        obj_msg = self.bundle_result_to_msg(header, results)
+        obj_msg = bundle_result_to_object(header, results)
+        self.robot_tag_pub.publish(obj_msg)
+
+        apriltag_msg = bundle_result_to_apriltag_ros(header, results.values())
+        self.april_tag_pub.publish(apriltag_msg)
+
         self.camera_info_pub.publish(rectified_info)
         try:
             self.camera_image_pub.publish(self.bridge.cv2_to_imgmsg(rectified, "bgr8", header=header))
         except CvBridgeError as e:
             rospy.logerr(e)
-        self.tag_pub.publish(obj_msg)
         if draw_image is not None:
             try:
                 self.debug_image_pub.publish(self.bridge.cv2_to_imgmsg(draw_image, "bgr8", header=header))
@@ -200,18 +171,6 @@ class DepthAiOak1W:
                 rospy.logerr(e)
 
         self.frame_num += 1
-
-    def bundle_result_to_msg(self, header: Header, results: dict[str, BundleResult]) -> EstimatedObjectArray:
-        msg = EstimatedObjectArray()
-        for name, result in results.items():
-            if result.bundle_pose is None:
-                continue
-            obj = EstimatedObject()
-            obj.header = header
-            obj.label = name
-            obj.pose.pose = result.bundle_pose.to_pose_msg()
-            msg.robots.append(obj)
-        return msg
 
     def run(self):
         cam_key = dai.CameraBoardSocket.CAM_A
@@ -239,8 +198,6 @@ class DepthAiOak1W:
 
             while not rospy.is_shutdown():
                 self.tick(video, rectifier, self.tag_detector, bundle_detectors, rectified_info)
-
-        rospy.spin()
 
 
 if __name__ == "__main__":

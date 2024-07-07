@@ -8,6 +8,7 @@ from bw_interfaces.msg import EstimatedObject, EstimatedObjectArray, RobotFleetC
 from bw_shared.configs.robot_fleet_config import RobotConfig, RobotFleetConfig
 from bw_shared.enums.label import Label
 from bw_shared.enums.robot_team import RobotTeam
+from bw_shared.geometry.rpy import RPY
 from bw_shared.geometry.transform3d import Transform3D
 from bw_shared.geometry.xy import XY
 from bw_shared.geometry.xyz import XYZ
@@ -79,6 +80,7 @@ class RobotFilter:
         self.field = EstimatedObject()
         self.field_bounds = (XYZ(0.0, 0.0, 0.0), XYZ(0.0, 0.0, 0.0))
         self.filter_bounds = (XY(0.0, 0.0), XY(0.0, 0.0))
+        self.apriltag_rotate_tf = Transform3D.from_position_and_rpy(Vector3(), RPY((0.0, 0.0, np.pi / 2)))
 
         self.tag_heurstics = ApriltagHeuristics(self.apriltag_base_covariance_scalar)
         self.robot_heuristics = {
@@ -289,7 +291,20 @@ class RobotFilter:
         if not self.field_received():
             rospy.logdebug("Field not received. Skipping tag callback.")
             return
+        self.transform_tags_to_map(msg)
         self.apply_tag_measurement(msg)
+
+    def transform_tags_to_map(self, msg: EstimatedObjectArray) -> None:
+        for detection in msg.robots:
+            pose = detection.pose.pose
+            pose.orientation = self.rotate_tag_orientation(pose.orientation, self.apriltag_rotate_tf)
+            covariance = self.tag_heurstics.compute_covariance(detection)
+            detection.pose.pose.covariance = covariance  # type: ignore
+            map_pose = self.transform_to_map(detection.header, detection.pose.pose)
+            if map_pose is None:
+                rospy.logwarn(f"Could not transform pose for tag {detection}")
+                continue
+            detection.pose.pose = map_pose
 
     def apply_tag_measurement(self, msg: EstimatedObjectArray) -> None:
         for detection in msg.robots:

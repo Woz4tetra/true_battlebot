@@ -3,7 +3,7 @@
     <arg name="robot" default="$(env ROBOT)" />
 
     <include file="$(find bw_bringup)/launch/subsystems/common.launch" />
-    <include file="$(find bw_bringup)/launch/subsystems/camera.launch">
+    <include file="$(find bw_tracking_cam)/launch/depthai_oak_1_w.launch">
         <arg name="camera_name" value="camera_1" />
     </include>
     <group ns="mini_bot">

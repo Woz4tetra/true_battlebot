@@ -4627,7 +4627,8 @@ MonoBehaviour:
   debugRayCast: 0
   publishRate: 4
   viewAngleThreshold: 50
-  topic: /camera_1/tag_detections
+  debugVisibilityReason: 0
+  topic: /camera_1/simulated_detections
 --- !u!114 &867903856
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -13432,6 +13433,7 @@ MonoBehaviour:
   debugRayCast: 0
   publishRate: 4
   viewAngleThreshold: 55
+  debugVisibilityReason: 0
   topic: /camera_0/tag_detections
 --- !u!1 &6105163997810151798
 GameObject:
@@ -15086,6 +15088,7 @@ MonoBehaviour:
   debugRayCast: 0
   publishRate: 0
   viewAngleThreshold: 70
+  debugVisibilityReason: 0
   plane_request_topic: camera_0/plane_request
   plane_response_topic: camera_0/plane_response
 --- !u!114 &8809695232415556565
@@ -15107,6 +15110,7 @@ MonoBehaviour:
   debugRayCast: 0
   publishRate: 1
   viewAngleThreshold: 70
+  debugVisibilityReason: 0
   topic: /camera_0/simulated_field_result
   child_frame_id: map_relative
   label: field
@@ -15144,6 +15148,7 @@ MonoBehaviour:
   debugRayCast: 0
   publishRate: 10
   viewAngleThreshold: 180
+  debugVisibilityReason: 0
   topic: /camera_0/ground_truth/robots
 --- !u!1 &8843940501417694363
 GameObject:

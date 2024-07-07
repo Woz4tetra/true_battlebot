@@ -8,39 +8,40 @@ using Unity.Robotics.ROSTCPConnector.MessageGeneration;
 namespace RosMessageTypes.BwInterfaces
 {
     [Serializable]
-    public class CageCornerMsg : Message
+    public class ConfiguredOpponentsMsg : Message
     {
-        public const string k_RosMessageName = "bw_interfaces/CageCorner";
+        public const string k_RosMessageName = "bw_interfaces/ConfiguredOpponents";
         public override string RosMessageName => k_RosMessageName;
 
-        public int type;
+        public string[] names;
 
-        public CageCornerMsg()
+        public ConfiguredOpponentsMsg()
         {
-            this.type = 0;
+            this.names = new string[0];
         }
 
-        public CageCornerMsg(int type)
+        public ConfiguredOpponentsMsg(string[] names)
         {
-            this.type = type;
+            this.names = names;
         }
 
-        public static CageCornerMsg Deserialize(MessageDeserializer deserializer) => new CageCornerMsg(deserializer);
+        public static ConfiguredOpponentsMsg Deserialize(MessageDeserializer deserializer) => new ConfiguredOpponentsMsg(deserializer);
 
-        private CageCornerMsg(MessageDeserializer deserializer)
+        private ConfiguredOpponentsMsg(MessageDeserializer deserializer)
         {
-            deserializer.Read(out this.type);
+            deserializer.Read(out this.names, deserializer.ReadLength());
         }
 
         public override void SerializeTo(MessageSerializer serializer)
         {
-            serializer.Write(this.type);
+            serializer.WriteLength(this.names);
+            serializer.Write(this.names);
         }
 
         public override string ToString()
         {
-            return "CageCornerMsg: " +
-            "\ntype: " + type.ToString();
+            return "ConfiguredOpponentsMsg: " +
+            "\nnames: " + System.String.Join(", ", names.ToList());
         }
 
 #if UNITY_EDITOR

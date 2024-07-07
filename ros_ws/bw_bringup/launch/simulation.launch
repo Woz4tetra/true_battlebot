@@ -2,6 +2,9 @@
     <include file="$(find bw_bringup)/launch/subsystems/common.launch">
         <arg name="auto_initialize" value="true" />
     </include>
+    <include file="$(find bw_tracking_cam)/launch/simulated_tracking_cam.launch">
+        <arg name="camera_name" value="camera_1" />
+    </include>
     <include file="$(find ros_tcp_endpoint)/launch/endpoint.launch" />
     <group ns="camera_0">
         <include file="$(find bw_bringup)/launch/subsystems/synthetic_camera_conversion.launch" />

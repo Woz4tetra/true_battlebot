@@ -1,0 +1,7 @@
+<launch>
+    <arg name="camera_name" default="camera_1" />
+    <node name="simulated_tracking_cam" pkg="bw_tracking_cam" type="simulated_cam.py" output="screen"
+        required="false">
+        <param name="camera_name" value="$(arg camera_name)" />
+    </node>
+</launch>
