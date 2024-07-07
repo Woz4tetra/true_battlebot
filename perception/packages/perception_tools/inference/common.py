@@ -17,7 +17,7 @@ def load_metadata(metadata_path: str | Path) -> ModelMetadata:
     return metadata
 
 
-def mask_to_polygons(mask: np.ndarray, metadata: ModelMetadata) -> dict[Label, tuple[np.ndarray, bool]]:
+def mask_to_polygons(mask: np.ndarray, metadata: ModelMetadata) -> dict[Label, tuple[list[np.ndarray], bool]]:
     # from detectron2 module.
     # cv2.RETR_CCOMP flag retrieves all the contours and arranges them to a 2-level
     # hierarchy. External contours (boundary) of the object are placed in hierarchy-1.
@@ -39,10 +39,7 @@ def mask_to_polygons(mask: np.ndarray, metadata: ModelMetadata) -> dict[Label, t
         # These coordinates from OpenCV are integers in range [0, W-1 or H-1].
         # We add 0.5 to turn them into real-value coordinate space. A better solution
         # would be to first +0.5 and then dilate the returned polygon by 0.5.
-        layer_result = np.array(
-            [x + 0.5 for x in layer_result if len(x) >= 6],
-            dtype=np.int32,
-        ).reshape(-1, 2)
+        layer_result = [(x + 0.5).reshape(-1, 2) for x in layer_result if len(x) >= 6]
 
         result[label] = (layer_result, has_holes)
     return result
@@ -56,7 +53,7 @@ def contour_to_msg(contours: list[np.ndarray]) -> list[Contour]:
     contour_msgs = []
     for contour in contours:
         points = [UVKeypoint(x, y) for x, y in contour]
-        area = cv2.contourArea(contour)
+        area = cv2.contourArea(contour.astype(np.int32))
         contour_msg = Contour(points=points, area=area)
         contour_msgs.append(contour_msg)
     return contour_msgs

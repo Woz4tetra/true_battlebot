@@ -55,7 +55,7 @@ class SemanticSegmentation(SegmentationInterface):
             object_indices[class_idx] += 1
 
             segmentation_instance = SegmentationInstance(
-                contours=contour_to_msg([contours]),
+                contours=contour_to_msg(contours),
                 score=1.0,
                 label=label,
                 class_index=class_idx,

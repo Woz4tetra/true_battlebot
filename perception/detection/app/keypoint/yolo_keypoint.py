@@ -9,6 +9,7 @@ from bw_shared.enums.keypoint_name import RobotKeypointsNames
 from bw_shared.enums.label import Label
 from perception_tools.data_directory import get_data_directory
 from perception_tools.messages.image import Image
+from sensor_msgs.msg import CameraInfo
 
 logging.setLoggerClass(logging.Logger)  # fix rospy breaking logs
 from ultralytics import YOLO
@@ -41,7 +42,7 @@ class YoloKeypoint(KeypointInterface):
         t1 = time.perf_counter()
         self.logger.info(f"Model warmed up in {t1 - t0} seconds")
 
-    def process_image(self, msg: Image) -> tuple[KeypointInstanceArray, Image | None]:
+    def process_image(self, camera_info: CameraInfo, msg: Image) -> tuple[KeypointInstanceArray, Image | None]:
         result = self.model(msg.data, verbose=self.config.debug)[0]
 
         ids = result.boxes.cpu().cls.int().numpy()  # get the class ids
