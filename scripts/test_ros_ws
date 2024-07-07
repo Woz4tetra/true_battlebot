@@ -1,0 +1,13 @@
+#!/bin/bash
+
+# run the whole script from the project directory
+BASE_DIR=$(realpath "$(dirname $0)")
+
+CHECK_DIRS=$(${BASE_DIR}/lib/get_ros_ws_check_dirs.sh $1)
+
+for dir in ${CHECK_DIRS}; do
+    cd ${dir}
+    printf "\n\nTesting ${dir}\n"
+
+    pytest
+done

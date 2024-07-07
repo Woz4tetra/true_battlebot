@@ -80,5 +80,5 @@ def get_rectangle_angle(rectangle: np.ndarray) -> float:
         delta = p1 - p0
         angle = np.arctan2(delta[1], delta[0])
         angles.append(angle)
-    angles = np.array(angles)
-    return angles[np.argmin(np.abs(angles))]
+    angles_array = np.array(angles)
+    return angles_array[np.argmin(np.abs(angles_array))]

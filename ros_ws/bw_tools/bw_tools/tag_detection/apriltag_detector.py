@@ -36,8 +36,8 @@ class ApriltagDetector:
         if ids is None or len(all_corners) == 0:
             return []
         detections = []
-        for all_corners, tag_ids in zip(all_corners, ids):
-            corners = all_corners[0]
+        for corners_sample, tag_ids in zip(all_corners, ids):
+            corners = corners_sample[0]
             center = corners.mean(axis=0)
             detections.append(
                 TagDetection(

@@ -56,8 +56,6 @@ def test_points_transform(points: np.ndarray, transform: np.ndarray) -> None:
         expected_points.append(
             tf3d.transform_by(Transform3D.from_position_and_quaternion(Vector3(*point), Quaternion(w=1))).position_array
         )
-    expected_points = np.array(expected_points)
+    expected_points_array = np.array(expected_points)
     transformed_points = points_transform_by(points, transform)
-    print(transformed_points)
-    print(expected_points)
-    assert np.allclose(transformed_points, expected_points)
+    assert np.allclose(transformed_points, expected_points_array)

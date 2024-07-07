@@ -14,12 +14,13 @@ from bw_tools.tag_detection.bundle_detector import BundleDetectorInterface, Rans
 from bw_tools.tag_detection.draw_helpers import draw_bundle
 from bw_tools.tag_detection.image_rectifier import ImageRectifier
 from bw_tools.tag_detection.tag_family import TagFamily
-from bw_tracking_cam.bundle_result_to_object import bundle_result_to_apriltag_ros, bundle_result_to_object
-from bw_tracking_cam.oak_1_resolution_mode import Oak1ResolutionMode
-from bw_tracking_cam.oak_time_helpers import get_frame_time, ros_time_from_nsec
 from cv_bridge import CvBridge, CvBridgeError
 from sensor_msgs.msg import CameraInfo, Image
 from std_msgs.msg import Header
+
+from bw_tracking_cam.bundle_result_helpers import bundle_result_to_apriltag_ros, bundle_result_to_object
+from bw_tracking_cam.oak_1_resolution_mode import Oak1ResolutionMode
+from bw_tracking_cam.oak_time_helpers import get_frame_time, ros_time_from_nsec
 
 
 class DepthAiOak1W:
@@ -83,11 +84,11 @@ class DepthAiOak1W:
         camera_info.header.frame_id = self.camera_name
         camera_info.width = info_width
         camera_info.height = info_height
-        instrinsics = np.array(instrinsics)
+        instrinsics_array = np.array(instrinsics)
         projection = np.zeros((3, 4))
-        camera_info.K = instrinsics.reshape(9).tolist()
+        camera_info.K = instrinsics_array.reshape(9).tolist()
         camera_info.D = np.array(calib_data.getDistortionCoefficients(cam_key)).tolist()
-        projection[:3, :3] = instrinsics[:3, :3]
+        projection[:3, :3] = instrinsics_array[:3, :3]
         camera_info.P = projection.reshape(12).tolist()
 
         return camera_info

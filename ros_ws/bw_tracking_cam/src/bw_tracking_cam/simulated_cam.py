@@ -7,11 +7,12 @@ from bw_shared.geometry.transform3d import Transform3D
 from bw_tools.configs.rosparam_client import get_shared_config
 from bw_tools.get_param import get_param
 from bw_tools.tag_detection.bundle_detector import BundleResult
-from bw_tracking_cam.bundle_result_to_object import bundle_result_to_object
+
+from bw_tracking_cam.bundle_result_helpers import bundle_result_to_object
 
 
 class SimulatedCam:
-    def __init__(self):
+    def __init__(self) -> None:
         shared_config = get_shared_config()
         self.ids_to_configs: dict[frozenset[int], RobotConfig] = {}
         for robot_config in shared_config.robots.robots:
