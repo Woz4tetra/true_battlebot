@@ -1,4 +1,6 @@
+import argparse
 import time
+from typing import Optional
 
 import cv2
 import depthai as dai
@@ -10,6 +12,13 @@ from sensor_msgs.msg import CameraInfo
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-s", "--save-directory", default=".", type=str, help="Directory to save images")
+    parser.add_argument("-v", "--video", action="store_true", help="Save video to file")
+    args = parser.parse_args()
+
+    save_directory = args.save_directory
+
     # Create pipeline
     pipeline = dai.Pipeline()
 
@@ -21,18 +30,25 @@ def main() -> None:
 
     width = 1920
     height = 1080
+    fps = 30
 
     # Properties
     cam_key = dai.CameraBoardSocket.CAM_A
     cam_rgb.setBoardSocket(cam_key)
     cam_rgb.setResolution(dai.ColorCameraProperties.SensorResolution.THE_1080_P)
-    cam_rgb.setFps(30)
+    cam_rgb.setFps(fps)
 
     xout_video.input.setBlocking(False)
     xout_video.input.setQueueSize(1)
 
     # Linking
     cam_rgb.video.link(xout_video.input)
+
+    video_filename = f"{time.time()}.avi"
+    video_path = f"{save_directory}/{video_filename}"
+    video_writer: Optional[cv2.VideoWriter] = (
+        cv2.VideoWriter(video_path, cv2.VideoWriter_fourcc(*"MJPG"), fps, (width, height)) if args.video else None
+    )
 
     # Connect to device and start pipeline
     with dai.Device(pipeline) as device:
@@ -46,7 +62,7 @@ def main() -> None:
             height = info_height
 
         camera_info = CameraInfo()
-        camera_info.header.frame_id = "camera_link"
+        camera_info.header.frame_id = "camera_1"
         camera_info.width = info_width
         camera_info.height = info_height
         instrinsics = np.array(instrinsics)
@@ -78,8 +94,9 @@ def main() -> None:
         while True:
             video_in = video.get()
             frame = video_in.getCvFrame()
-            timestamp = video_in.getTimestamp().total_seconds()
+            # timestamp = video_in.getTimestamp().total_seconds()
             # timestamp = time.perf_counter()
+            timestamp = time.time()
             time_samples.append(timestamp)
             rectified = rectifier.rectify(frame)
             gray = cv2.cvtColor(rectified, cv2.COLOR_BGR2GRAY)
@@ -88,12 +105,23 @@ def main() -> None:
 
             cv2.imshow("video", draw_image)
 
-            if cv2.waitKey(1) == ord("q"):
+            key = chr(cv2.waitKey(1) & 0xFF)
+            if key == "q":
                 break
+            elif key == "p":
+                path = f"{save_directory}/image_{timestamp}.png"
+                print(f"Saving photo to {path}")
+                cv2.imwrite(path, frame)
+
+            if video_writer is not None:
+                video_writer.write(frame)
+
             if len(time_samples) > 100:
                 average_delta = np.mean(np.diff(time_samples))
                 print(f"Average FPS: {1/average_delta}")
                 time_samples = []
+    if video_writer is not None:
+        video_writer.release()
 
 
 if __name__ == "__main__":
