@@ -6,6 +6,7 @@ from bw_interfaces.msg import EstimatedObject
 from bw_shared.geometry.pose2d import Pose2D
 from bw_shared.geometry.pose2d_stamped import Pose2DStamped
 from bw_shared.messages.header import Header
+from geometry_msgs.msg import PoseStamped
 
 
 class CornerManager:
@@ -21,7 +22,7 @@ class CornerManager:
     def field_callback(self, field: EstimatedObject) -> None:
         self.field = field
 
-    def get_goal(self) -> Optional[Pose2DStamped]:
+    def get_goal(self) -> Optional[PoseStamped]:
         if len(self.field.header.frame_id) == 0:
             rospy.logwarn("No field received yet")
             return None
@@ -31,4 +32,4 @@ class CornerManager:
         goal = Pose2D(-x, y, 0.0)
         goal.theta = goal.heading() + math.pi
 
-        return Pose2DStamped(Header.auto("map"), goal)
+        return Pose2DStamped(Header.auto("map"), goal).to_msg()
