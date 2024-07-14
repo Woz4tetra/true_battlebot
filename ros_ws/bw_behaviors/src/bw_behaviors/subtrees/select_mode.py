@@ -1,6 +1,6 @@
 from typing import Callable, Dict, List
 
-from bw_tools.structs.behavior_mode import BehaviorMode
+from bw_tools.messages.behavior_mode import BehaviorMode
 from py_trees.behaviour import Behaviour
 from py_trees.composites import Selector, Sequence
 

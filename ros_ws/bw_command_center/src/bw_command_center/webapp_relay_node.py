@@ -7,7 +7,7 @@ from bw_interfaces.msg import CageCorner as RosCageCorner
 from bw_interfaces.msg import SystemSummary
 from bw_shared.environment import get_robot
 from bw_tools.get_param import get_param
-from bw_tools.structs.cage_corner import CageCorner
+from bw_tools.messages.cage_corner import CageCorner
 from bw_tools.system_info import get_system_info
 from std_srvs.srv import SetBool, SetBoolRequest, SetBoolResponse
 

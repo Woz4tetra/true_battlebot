@@ -21,6 +21,7 @@ class RobotConfig:
     team: RobotTeam = RobotTeam.OUR_TEAM
     tags: List[TagConfig] = field(default_factory=list)
     radius: float = 0.15  # max outer radius of the robot in meters
+    is_controlled: bool = False
 
     @classmethod
     def from_dict(cls, data: dict) -> RobotConfig:
@@ -36,6 +37,7 @@ class RobotConfig:
             team=RobotTeam(msg.team),
             tags=[TagConfig.from_msg(tag) for tag in msg.tags],
             radius=msg.radius,
+            is_controlled=msg.is_controlled,
         )
 
     def to_msg(self) -> RobotConfigMsg:
@@ -44,6 +46,7 @@ class RobotConfig:
             team=self.team.value,
             tags=[tag.to_msg() for tag in self.tags],
             radius=self.radius,
+            is_controlled=self.is_controlled,
         )
 
 

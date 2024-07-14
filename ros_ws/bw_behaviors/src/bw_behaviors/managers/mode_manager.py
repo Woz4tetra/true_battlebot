@@ -1,6 +1,6 @@
 import rospy
 from bw_interfaces.msg import BehaviorMode as RosBehaviorMode
-from bw_tools.structs.behavior_mode import BehaviorMode
+from bw_tools.messages.behavior_mode import BehaviorMode
 
 
 class ModeManager:

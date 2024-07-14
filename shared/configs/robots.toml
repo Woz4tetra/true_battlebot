@@ -1,6 +1,7 @@
 [[robots]]
 name = "mini_bot"
 radius = 0.1
+is_controlled = true
 
 [[robots.tags]]
 tag_id = 41

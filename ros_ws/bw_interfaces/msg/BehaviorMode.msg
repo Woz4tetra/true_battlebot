@@ -1,1 +1,1 @@
-uint8 mode
+uint32 mode

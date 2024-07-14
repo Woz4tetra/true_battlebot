@@ -3,6 +3,6 @@ from bw_shared.enums.enum_auto_lower import EnumAutoLowerStr, auto
 
 
 class RobotTeam(str, EnumAutoLowerStr):
-    OUR_TEAM = auto()  # our team
-    THEIR_TEAM = auto()  # their team
+    OUR_TEAM = auto()
+    THEIR_TEAM = auto()
     REFEREE = auto()

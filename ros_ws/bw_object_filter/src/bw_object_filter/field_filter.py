@@ -14,7 +14,7 @@ from bw_shared.geometry.transform3d import Transform3D
 from bw_shared.geometry.xyz import XYZ
 from bw_tools.configs.rosparam_client import get_shared_config
 from bw_tools.get_param import get_param
-from bw_tools.structs.cage_corner import CageCorner
+from bw_tools.messages.cage_corner import CageCorner
 from geometry_msgs.msg import Vector3
 from std_msgs.msg import ColorRGBA, Empty, Header
 from visualization_msgs.msg import Marker, MarkerArray

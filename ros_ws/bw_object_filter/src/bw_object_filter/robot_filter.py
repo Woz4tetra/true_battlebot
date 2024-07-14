@@ -49,7 +49,6 @@ class RobotFilter:
         self.update_delay = 1.0 / self.update_rate
 
         self.map_frame = get_param("~map_frame", "map")
-        self.controlled_robot_name = get_param("~controlled_robot_name", "mini_bot")
         self.estimation_topics = [EstimationTopicMetadata.from_dict(d) for d in get_param("~estimation_topics", [])]
         self.tag_topics = get_param("~tag_topics", [])
 
@@ -157,11 +156,9 @@ class RobotFilter:
             Label.FRIENDLY_ROBOT: [
                 filter
                 for filter in robot_filters
-                if filter.config.team == RobotTeam.OUR_TEAM and filter.config.name != self.controlled_robot_name
+                if filter.config.team == RobotTeam.OUR_TEAM and not filter.config.is_controlled
             ],
-            Label.CONTROLLED_ROBOT: [
-                filter for filter in robot_filters if filter.config.name == self.controlled_robot_name
-            ],
+            Label.CONTROLLED_ROBOT: [filter for filter in robot_filters if filter.config.is_controlled],
             Label.REFEREE: [filter for filter in robot_filters if filter.config.team == RobotTeam.REFEREE],
         }
         self.team_to_filter = {
@@ -174,7 +171,7 @@ class RobotFilter:
         self.label_to_filter_initialization = {label: [] for label in self.label_to_filter.keys()}
         for filter in robot_filters:
             team = filter.config.team
-            if filter.config.name == self.controlled_robot_name:
+            if filter.config.is_controlled:
                 self.label_to_filter_initialization[Label.CONTROLLED_ROBOT].append(filter)
             elif team == RobotTeam.OUR_TEAM:
                 self.label_to_filter_initialization[Label.FRIENDLY_ROBOT].append(filter)

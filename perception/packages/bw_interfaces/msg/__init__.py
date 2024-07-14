@@ -6,6 +6,13 @@ from ._ConfiguredOpponents import *
 from ._Contour import *
 from ._EstimatedObject import *
 from ._EstimatedObjectArray import *
+from ._GoToGoalAction import *
+from ._GoToGoalActionFeedback import *
+from ._GoToGoalActionGoal import *
+from ._GoToGoalActionResult import *
+from ._GoToGoalFeedback import *
+from ._GoToGoalGoal import *
+from ._GoToGoalResult import *
 from ._HealthSummary import *
 from ._KeypointInstance import *
 from ._KeypointInstanceArray import *

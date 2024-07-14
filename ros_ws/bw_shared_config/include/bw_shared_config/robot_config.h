@@ -41,6 +41,7 @@ namespace bw_shared_config
         RobotTeam::Value team;
         std::vector<TagConfig> tags;
         double radius = 0.0;
+        bool is_controlled = false;
 
         static RobotConfig fromXmlRpc(const XmlRpc::XmlRpcValue &data)
         {
@@ -52,6 +53,7 @@ namespace bw_shared_config
                 config.tags.push_back(TagConfig::fromXmlRpc(data["tags"][i]));
             }
             config.radius = static_cast<double>(data["radius"]);
+            config.is_controlled = static_cast<bool>(data["is_controlled"]);
             return config;
         }
     };

@@ -7,12 +7,11 @@ from typing import List, Tuple, Optional
 python3 = True if sys.hexversion > 0x03000000 else False
 import struct
 import genpy
-from bw_interfaces.msg._BundleConfigMsg import BundleConfigMsg as bw_interfaces_msg_BundleConfigMsg
 from bw_interfaces.msg._RobotConfigMsg import RobotConfigMsg as bw_interfaces_msg_RobotConfigMsg
 from bw_interfaces.msg._TagConfigMsg import TagConfigMsg as bw_interfaces_msg_TagConfigMsg
 
 class RobotFleetConfigMsg(genpy.Message):
-  _md5sum: str = "445b76b32261c06fe3411be0c3ef5d28"
+  _md5sum: str = "b1a5f7a4322381ffcdfd09cdd5da93f8"
   _type: str = "bw_interfaces/RobotFleetConfigMsg"
   _has_header: bool = False  # flag to mark the presence of a Header object
   _full_text: str = """bw_interfaces/RobotConfigMsg[] robots
@@ -21,13 +20,8 @@ class RobotFleetConfigMsg(genpy.Message):
 MSG: bw_interfaces/RobotConfigMsg
 string name
 string team
-bw_interfaces/BundleConfigMsg tags
-float64 radius
-
-================================================================================
-MSG: bw_interfaces/BundleConfigMsg
-string name
 bw_interfaces/TagConfigMsg[] tags
+float64 radius
 
 ================================================================================
 MSG: bw_interfaces/TagConfigMsg
@@ -90,17 +84,10 @@ float64 yaw  # degrees
           _x = _x.encode('utf-8')
           length = len(_x)
         buff.write(struct.Struct('<I%ss'%length).pack(length, _x))
-        _v45 = val1.tags
-        _x = _v45.name
-        length = len(_x)
-        if python3 or type(_x) == unicode:
-          _x = _x.encode('utf-8')
-          length = len(_x)
-        buff.write(struct.Struct('<I%ss'%length).pack(length, _x))
-        length = len(_v45.tags)
+        length = len(val1.tags)
         buff.write(_struct_I.pack(length))
-        for val3 in _v45.tags:
-          _x = val3
+        for val2 in val1.tags:
+          _x = val2
           buff.write(_get_struct_i7d().pack(_x.tag_id, _x.tag_size, _x.x, _x.y, _x.z, _x.roll, _x.pitch, _x.yaw))
         _x = val1.radius
         buff.write(_get_struct_d().pack(_x))
@@ -142,27 +129,17 @@ float64 yaw  # degrees
           val1.team = bytes_[start:end].decode('utf-8', 'rosmsg')
         else:
           val1.team = bytes_[start:end]
-        _v46 = val1.tags
         start = end
         end += 4
         (length,) = _struct_I.unpack(bytes_[start:end])
-        start = end
-        end += length
-        if python3:
-          _v46.name = bytes_[start:end].decode('utf-8', 'rosmsg')
-        else:
-          _v46.name = bytes_[start:end]
-        start = end
-        end += 4
-        (length,) = _struct_I.unpack(bytes_[start:end])
-        _v46.tags = []
+        val1.tags = []
         for i in range(0, length):
-          val3 = bw_interfaces_msg_TagConfigMsg()
-          _x = val3
+          val2 = bw_interfaces_msg_TagConfigMsg()
+          _x = val2
           start = end
           end += 60
           (_x.tag_id, _x.tag_size, _x.x, _x.y, _x.z, _x.roll, _x.pitch, _x.yaw,) = _get_struct_i7d().unpack(bytes_[start:end])
-          _v46.tags.append(val3)
+          val1.tags.append(val2)
         start = end
         end += 8
         (val1.radius,) = _get_struct_d().unpack(bytes_[start:end])
@@ -194,17 +171,10 @@ float64 yaw  # degrees
           _x = _x.encode('utf-8')
           length = len(_x)
         buff.write(struct.Struct('<I%ss'%length).pack(length, _x))
-        _v47 = val1.tags
-        _x = _v47.name
-        length = len(_x)
-        if python3 or type(_x) == unicode:
-          _x = _x.encode('utf-8')
-          length = len(_x)
-        buff.write(struct.Struct('<I%ss'%length).pack(length, _x))
-        length = len(_v47.tags)
+        length = len(val1.tags)
         buff.write(_struct_I.pack(length))
-        for val3 in _v47.tags:
-          _x = val3
+        for val2 in val1.tags:
+          _x = val2
           buff.write(_get_struct_i7d().pack(_x.tag_id, _x.tag_size, _x.x, _x.y, _x.z, _x.roll, _x.pitch, _x.yaw))
         _x = val1.radius
         buff.write(_get_struct_d().pack(_x))
@@ -247,27 +217,17 @@ float64 yaw  # degrees
           val1.team = bytes_[start:end].decode('utf-8', 'rosmsg')
         else:
           val1.team = bytes_[start:end]
-        _v48 = val1.tags
         start = end
         end += 4
         (length,) = _struct_I.unpack(bytes_[start:end])
-        start = end
-        end += length
-        if python3:
-          _v48.name = bytes_[start:end].decode('utf-8', 'rosmsg')
-        else:
-          _v48.name = bytes_[start:end]
-        start = end
-        end += 4
-        (length,) = _struct_I.unpack(bytes_[start:end])
-        _v48.tags = []
+        val1.tags = []
         for i in range(0, length):
-          val3 = bw_interfaces_msg_TagConfigMsg()
-          _x = val3
+          val2 = bw_interfaces_msg_TagConfigMsg()
+          _x = val2
           start = end
           end += 60
           (_x.tag_id, _x.tag_size, _x.x, _x.y, _x.z, _x.roll, _x.pitch, _x.yaw,) = _get_struct_i7d().unpack(bytes_[start:end])
-          _v48.tags.append(val3)
+          val1.tags.append(val2)
         start = end
         end += 8
         (val1.radius,) = _get_struct_d().unpack(bytes_[start:end])

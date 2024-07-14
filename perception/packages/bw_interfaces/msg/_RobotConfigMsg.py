@@ -7,22 +7,16 @@ from typing import List, Tuple, Optional
 python3 = True if sys.hexversion > 0x03000000 else False
 import struct
 import genpy
-from bw_interfaces.msg._BundleConfigMsg import BundleConfigMsg as bw_interfaces_msg_BundleConfigMsg
 from bw_interfaces.msg._TagConfigMsg import TagConfigMsg as bw_interfaces_msg_TagConfigMsg
 
 class RobotConfigMsg(genpy.Message):
-  _md5sum: str = "19abea3067f3f3b27ea9d491f77b0359"
+  _md5sum: str = "20c21506aaf769cf9d9e6834ebd169a2"
   _type: str = "bw_interfaces/RobotConfigMsg"
   _has_header: bool = False  # flag to mark the presence of a Header object
   _full_text: str = """string name
 string team
-bw_interfaces/BundleConfigMsg tags
-float64 radius
-
-================================================================================
-MSG: bw_interfaces/BundleConfigMsg
-string name
 bw_interfaces/TagConfigMsg[] tags
+float64 radius
 
 ================================================================================
 MSG: bw_interfaces/TagConfigMsg
@@ -36,11 +30,11 @@ float64 pitch  # degrees
 float64 yaw  # degrees
 """
   __slots__: List[str] = ['name','team','tags','radius']
-  _slot_types: List[str] = ['string','string','bw_interfaces/BundleConfigMsg','float64']
+  _slot_types: List[str] = ['string','string','bw_interfaces/TagConfigMsg[]','float64']
 
   def __init__(self, name: str = None,
     team: str = None,
-    tags: bw_interfaces_msg_BundleConfigMsg = None,
+    tags: List[bw_interfaces_msg_TagConfigMsg] = None,
     radius: float = None):
     """
     Constructor. Any message fields that are implicitly/explicitly
@@ -65,7 +59,7 @@ float64 yaw  # degrees
     else:
       self.team = team
     if self.tags is None:
-      self.tags: bw_interfaces_msg_BundleConfigMsg = bw_interfaces_msg_BundleConfigMsg()
+      self.tags: List[bw_interfaces_msg_TagConfigMsg] = []
     else:
       self.tags = tags
     if self.radius is None:
@@ -97,15 +91,9 @@ float64 yaw  # degrees
         _x = _x.encode('utf-8')
         length = len(_x)
       buff.write(struct.Struct('<I%ss'%length).pack(length, _x))
-      _x = self.tags.name
-      length = len(_x)
-      if python3 or type(_x) == unicode:
-        _x = _x.encode('utf-8')
-        length = len(_x)
-      buff.write(struct.Struct('<I%ss'%length).pack(length, _x))
-      length = len(self.tags.tags)
+      length = len(self.tags)
       buff.write(_struct_I.pack(length))
-      for val1 in self.tags.tags:
+      for val1 in self.tags:
         _x = val1
         buff.write(_get_struct_i7d().pack(_x.tag_id, _x.tag_size, _x.x, _x.y, _x.z, _x.roll, _x.pitch, _x.yaw))
       _x = self.radius
@@ -122,7 +110,7 @@ float64 yaw  # degrees
       codecs.lookup_error("rosmsg").msg_type = self._type
     try:
       if self.tags is None:
-        self.tags = bw_interfaces_msg_BundleConfigMsg()
+        self.tags = None
       end = 0
       start = end
       end += 4
@@ -145,23 +133,14 @@ float64 yaw  # degrees
       start = end
       end += 4
       (length,) = _struct_I.unpack(bytes_[start:end])
-      start = end
-      end += length
-      if python3:
-        self.tags.name = bytes_[start:end].decode('utf-8', 'rosmsg')
-      else:
-        self.tags.name = bytes_[start:end]
-      start = end
-      end += 4
-      (length,) = _struct_I.unpack(bytes_[start:end])
-      self.tags.tags = []
+      self.tags = []
       for i in range(0, length):
         val1 = bw_interfaces_msg_TagConfigMsg()
         _x = val1
         start = end
         end += 60
         (_x.tag_id, _x.tag_size, _x.x, _x.y, _x.z, _x.roll, _x.pitch, _x.yaw,) = _get_struct_i7d().unpack(bytes_[start:end])
-        self.tags.tags.append(val1)
+        self.tags.append(val1)
       start = end
       end += 8
       (self.radius,) = _get_struct_d().unpack(bytes_[start:end])
@@ -189,15 +168,9 @@ float64 yaw  # degrees
         _x = _x.encode('utf-8')
         length = len(_x)
       buff.write(struct.Struct('<I%ss'%length).pack(length, _x))
-      _x = self.tags.name
-      length = len(_x)
-      if python3 or type(_x) == unicode:
-        _x = _x.encode('utf-8')
-        length = len(_x)
-      buff.write(struct.Struct('<I%ss'%length).pack(length, _x))
-      length = len(self.tags.tags)
+      length = len(self.tags)
       buff.write(_struct_I.pack(length))
-      for val1 in self.tags.tags:
+      for val1 in self.tags:
         _x = val1
         buff.write(_get_struct_i7d().pack(_x.tag_id, _x.tag_size, _x.x, _x.y, _x.z, _x.roll, _x.pitch, _x.yaw))
       _x = self.radius
@@ -215,7 +188,7 @@ float64 yaw  # degrees
       codecs.lookup_error("rosmsg").msg_type = self._type
     try:
       if self.tags is None:
-        self.tags = bw_interfaces_msg_BundleConfigMsg()
+        self.tags = None
       end = 0
       start = end
       end += 4
@@ -238,23 +211,14 @@ float64 yaw  # degrees
       start = end
       end += 4
       (length,) = _struct_I.unpack(bytes_[start:end])
-      start = end
-      end += length
-      if python3:
-        self.tags.name = bytes_[start:end].decode('utf-8', 'rosmsg')
-      else:
-        self.tags.name = bytes_[start:end]
-      start = end
-      end += 4
-      (length,) = _struct_I.unpack(bytes_[start:end])
-      self.tags.tags = []
+      self.tags = []
       for i in range(0, length):
         val1 = bw_interfaces_msg_TagConfigMsg()
         _x = val1
         start = end
         end += 60
         (_x.tag_id, _x.tag_size, _x.x, _x.y, _x.z, _x.roll, _x.pitch, _x.yaw,) = _get_struct_i7d().unpack(bytes_[start:end])
-        self.tags.tags.append(val1)
+        self.tags.append(val1)
       start = end
       end += 8
       (self.radius,) = _get_struct_d().unpack(bytes_[start:end])
