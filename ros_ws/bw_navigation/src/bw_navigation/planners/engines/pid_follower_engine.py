@@ -1,5 +1,3 @@
-import math
-
 from bw_shared.geometry.pose2d import Pose2D
 from bw_shared.pid.config import PidConfig
 from bw_shared.pid.pid import PID
@@ -13,9 +11,7 @@ class PidFollowerEngine:
 
     def compute(self, dt: float, current_pose: Pose2D, goal_pose: Pose2D) -> Twist:
         relative_goal = goal_pose.relative_to(current_pose)
-        relative_angle = relative_goal.theta
-        if relative_angle > math.pi:
-            relative_angle -= 2 * math.pi
+        heading = relative_goal.heading()
         linear_velocity = self.linear_pid.update(relative_goal.x, 0.0, dt)
-        angular_velocity = self.angular_pid.update(relative_angle, 0.0, dt)
+        angular_velocity = self.angular_pid.update(heading, 0.0, dt)
         return Twist(linear=Vector3(x=linear_velocity), angular=Vector3(z=angular_velocity))

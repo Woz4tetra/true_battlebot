@@ -19,7 +19,7 @@ from bw_tools.configs.rosparam_client import get_shared_config
 from bw_tools.get_param import get_param
 from bw_tools.messages.goal_strategy import GoalStrategy
 from bw_tools.messages.goal_type import GoalType
-from geometry_msgs.msg import Twist
+from geometry_msgs.msg import PoseStamped, Twist
 
 from bw_navigation.exceptions import NavigationError
 from bw_navigation.goal_supplier import (
@@ -63,6 +63,7 @@ class BwNavigationNode:
         }
 
         self.twist_pub = rospy.Publisher(f"{self.controlled_robot}/cmd_vel/navigation", Twist, queue_size=1)
+        self.goal_pose_pub = rospy.Publisher(f"{self.controlled_robot}/goal_pose", PoseStamped, queue_size=1)
 
         self.estimated_field_sub = rospy.Subscriber(
             "filter/field", EstimatedObject, queue_size=1, callback=self.estimated_field_callback
@@ -103,6 +104,8 @@ class BwNavigationNode:
 
         planner = self.planners[goal_strategy]
 
+        goal_feedback = PoseStamped(header=self.field.header)
+
         for dt in regulate_tick(self.tick_rate):
             if self.goal_server.is_preempt_requested():
                 rospy.loginfo("Preempted")
@@ -123,6 +126,9 @@ class BwNavigationNode:
             if goal_pose is None:
                 rospy.logwarn_throttle(1, f"No goal found. Available robots: {self.robots.keys()}")
                 continue
+
+            goal_feedback.pose = goal_pose.to_msg()
+            self.goal_pose_pub.publish(goal_feedback)
 
             try:
                 twist, is_done = planner.go_to_goal(dt, goal_pose, self.robots, self.field)
