@@ -10,14 +10,14 @@ import genpy
 from bw_interfaces.msg._TagConfigMsg import TagConfigMsg as bw_interfaces_msg_TagConfigMsg
 
 class RobotConfigMsg(genpy.Message):
-  _md5sum: str = "20c21506aaf769cf9d9e6834ebd169a2"
+  _md5sum: str = "d1faf073b864cbae8727a8372b0aef6e"
   _type: str = "bw_interfaces/RobotConfigMsg"
   _has_header: bool = False  # flag to mark the presence of a Header object
   _full_text: str = """string name
 string team
 bw_interfaces/TagConfigMsg[] tags
 float64 radius
-
+bool is_controlled
 ================================================================================
 MSG: bw_interfaces/TagConfigMsg
 int32 tag_id
@@ -29,13 +29,14 @@ float64 roll  # degrees
 float64 pitch  # degrees
 float64 yaw  # degrees
 """
-  __slots__: List[str] = ['name','team','tags','radius']
-  _slot_types: List[str] = ['string','string','bw_interfaces/TagConfigMsg[]','float64']
+  __slots__: List[str] = ['name','team','tags','radius','is_controlled']
+  _slot_types: List[str] = ['string','string','bw_interfaces/TagConfigMsg[]','float64','bool']
 
   def __init__(self, name: str = None,
     team: str = None,
     tags: List[bw_interfaces_msg_TagConfigMsg] = None,
-    radius: float = None):
+    radius: float = None,
+    is_controlled: bool = None):
     """
     Constructor. Any message fields that are implicitly/explicitly
     set to None will be assigned a default value. The recommend
@@ -43,13 +44,13 @@ float64 yaw  # degrees
     changes.  You cannot mix in-order arguments and keyword arguments.
 
     The available fields are:
-      name,team,tags,radius
+      name,team,tags,radius,is_controlled
 
     :param args: complete set of field values, in .msg order
     :param kwds: use keyword arguments corresponding to message field names
     to set specific fields.
     """
-    super(RobotConfigMsg, self).__init__(**{'name': name, 'team': team, 'tags': tags, 'radius': radius})
+    super(RobotConfigMsg, self).__init__(**{'name': name, 'team': team, 'tags': tags, 'radius': radius, 'is_controlled': is_controlled})
     if self.name is None:
       self.name: str = ''
     else:
@@ -66,6 +67,10 @@ float64 yaw  # degrees
       self.radius: float = 0.
     else:
       self.radius = radius
+    if self.is_controlled is None:
+      self.is_controlled: bool = False
+    else:
+      self.is_controlled = is_controlled
 
   def _get_types(self):
     """
@@ -96,8 +101,8 @@ float64 yaw  # degrees
       for val1 in self.tags:
         _x = val1
         buff.write(_get_struct_i7d().pack(_x.tag_id, _x.tag_size, _x.x, _x.y, _x.z, _x.roll, _x.pitch, _x.yaw))
-      _x = self.radius
-      buff.write(_get_struct_d().pack(_x))
+      _x = self
+      buff.write(_get_struct_dB().pack(_x.radius, _x.is_controlled))
     except struct.error as se: self._check_types(struct.error("%s: '%s' when writing '%s'" % (type(se), str(se), str(locals().get('_x', self)))))
     except TypeError as te: self._check_types(ValueError("%s: '%s' when writing '%s'" % (type(te), str(te), str(locals().get('_x', self)))))
 
@@ -141,9 +146,11 @@ float64 yaw  # degrees
         end += 60
         (_x.tag_id, _x.tag_size, _x.x, _x.y, _x.z, _x.roll, _x.pitch, _x.yaw,) = _get_struct_i7d().unpack(bytes_[start:end])
         self.tags.append(val1)
+      _x = self
       start = end
-      end += 8
-      (self.radius,) = _get_struct_d().unpack(bytes_[start:end])
+      end += 9
+      (_x.radius, _x.is_controlled,) = _get_struct_dB().unpack(bytes_[start:end])
+      self.is_controlled = bool(self.is_controlled)
       return self
     except struct.error as e:
       raise genpy.DeserializationError(e)  # most likely buffer underfill
@@ -173,8 +180,8 @@ float64 yaw  # degrees
       for val1 in self.tags:
         _x = val1
         buff.write(_get_struct_i7d().pack(_x.tag_id, _x.tag_size, _x.x, _x.y, _x.z, _x.roll, _x.pitch, _x.yaw))
-      _x = self.radius
-      buff.write(_get_struct_d().pack(_x))
+      _x = self
+      buff.write(_get_struct_dB().pack(_x.radius, _x.is_controlled))
     except struct.error as se: self._check_types(struct.error("%s: '%s' when writing '%s'" % (type(se), str(se), str(locals().get('_x', self)))))
     except TypeError as te: self._check_types(ValueError("%s: '%s' when writing '%s'" % (type(te), str(te), str(locals().get('_x', self)))))
 
@@ -219,9 +226,11 @@ float64 yaw  # degrees
         end += 60
         (_x.tag_id, _x.tag_size, _x.x, _x.y, _x.z, _x.roll, _x.pitch, _x.yaw,) = _get_struct_i7d().unpack(bytes_[start:end])
         self.tags.append(val1)
+      _x = self
       start = end
-      end += 8
-      (self.radius,) = _get_struct_d().unpack(bytes_[start:end])
+      end += 9
+      (_x.radius, _x.is_controlled,) = _get_struct_dB().unpack(bytes_[start:end])
+      self.is_controlled = bool(self.is_controlled)
       return self
     except struct.error as e:
       raise genpy.DeserializationError(e)  # most likely buffer underfill
@@ -230,12 +239,12 @@ _struct_I = genpy.struct_I
 def _get_struct_I():
     global _struct_I
     return _struct_I
-_struct_d = None
-def _get_struct_d():
-    global _struct_d
-    if _struct_d is None:
-        _struct_d = struct.Struct("<d")
-    return _struct_d
+_struct_dB = None
+def _get_struct_dB():
+    global _struct_dB
+    if _struct_dB is None:
+        _struct_dB = struct.Struct("<dB")
+    return _struct_dB
 _struct_i7d = None
 def _get_struct_i7d():
     global _struct_i7d

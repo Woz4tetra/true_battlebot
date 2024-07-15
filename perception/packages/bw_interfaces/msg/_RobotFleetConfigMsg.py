@@ -11,7 +11,7 @@ from bw_interfaces.msg._RobotConfigMsg import RobotConfigMsg as bw_interfaces_ms
 from bw_interfaces.msg._TagConfigMsg import TagConfigMsg as bw_interfaces_msg_TagConfigMsg
 
 class RobotFleetConfigMsg(genpy.Message):
-  _md5sum: str = "b1a5f7a4322381ffcdfd09cdd5da93f8"
+  _md5sum: str = "2480d88306da87fe1d61e452db5b3912"
   _type: str = "bw_interfaces/RobotFleetConfigMsg"
   _has_header: bool = False  # flag to mark the presence of a Header object
   _full_text: str = """bw_interfaces/RobotConfigMsg[] robots
@@ -22,7 +22,7 @@ string name
 string team
 bw_interfaces/TagConfigMsg[] tags
 float64 radius
-
+bool is_controlled
 ================================================================================
 MSG: bw_interfaces/TagConfigMsg
 int32 tag_id
@@ -89,8 +89,8 @@ float64 yaw  # degrees
         for val2 in val1.tags:
           _x = val2
           buff.write(_get_struct_i7d().pack(_x.tag_id, _x.tag_size, _x.x, _x.y, _x.z, _x.roll, _x.pitch, _x.yaw))
-        _x = val1.radius
-        buff.write(_get_struct_d().pack(_x))
+        _x = val1
+        buff.write(_get_struct_dB().pack(_x.radius, _x.is_controlled))
     except struct.error as se: self._check_types(struct.error("%s: '%s' when writing '%s'" % (type(se), str(se), str(locals().get('_x', self)))))
     except TypeError as te: self._check_types(ValueError("%s: '%s' when writing '%s'" % (type(te), str(te), str(locals().get('_x', self)))))
 
@@ -140,9 +140,11 @@ float64 yaw  # degrees
           end += 60
           (_x.tag_id, _x.tag_size, _x.x, _x.y, _x.z, _x.roll, _x.pitch, _x.yaw,) = _get_struct_i7d().unpack(bytes_[start:end])
           val1.tags.append(val2)
+        _x = val1
         start = end
-        end += 8
-        (val1.radius,) = _get_struct_d().unpack(bytes_[start:end])
+        end += 9
+        (_x.radius, _x.is_controlled,) = _get_struct_dB().unpack(bytes_[start:end])
+        val1.is_controlled = bool(val1.is_controlled)
         self.robots.append(val1)
       return self
     except struct.error as e:
@@ -176,8 +178,8 @@ float64 yaw  # degrees
         for val2 in val1.tags:
           _x = val2
           buff.write(_get_struct_i7d().pack(_x.tag_id, _x.tag_size, _x.x, _x.y, _x.z, _x.roll, _x.pitch, _x.yaw))
-        _x = val1.radius
-        buff.write(_get_struct_d().pack(_x))
+        _x = val1
+        buff.write(_get_struct_dB().pack(_x.radius, _x.is_controlled))
     except struct.error as se: self._check_types(struct.error("%s: '%s' when writing '%s'" % (type(se), str(se), str(locals().get('_x', self)))))
     except TypeError as te: self._check_types(ValueError("%s: '%s' when writing '%s'" % (type(te), str(te), str(locals().get('_x', self)))))
 
@@ -228,9 +230,11 @@ float64 yaw  # degrees
           end += 60
           (_x.tag_id, _x.tag_size, _x.x, _x.y, _x.z, _x.roll, _x.pitch, _x.yaw,) = _get_struct_i7d().unpack(bytes_[start:end])
           val1.tags.append(val2)
+        _x = val1
         start = end
-        end += 8
-        (val1.radius,) = _get_struct_d().unpack(bytes_[start:end])
+        end += 9
+        (_x.radius, _x.is_controlled,) = _get_struct_dB().unpack(bytes_[start:end])
+        val1.is_controlled = bool(val1.is_controlled)
         self.robots.append(val1)
       return self
     except struct.error as e:
@@ -240,12 +244,12 @@ _struct_I = genpy.struct_I
 def _get_struct_I():
     global _struct_I
     return _struct_I
-_struct_d = None
-def _get_struct_d():
-    global _struct_d
-    if _struct_d is None:
-        _struct_d = struct.Struct("<d")
-    return _struct_d
+_struct_dB = None
+def _get_struct_dB():
+    global _struct_dB
+    if _struct_dB is None:
+        _struct_dB = struct.Struct("<dB")
+    return _struct_dB
 _struct_i7d = None
 def _get_struct_i7d():
     global _struct_i7d

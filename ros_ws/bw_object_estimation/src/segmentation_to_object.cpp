@@ -126,7 +126,7 @@ bool SegmentationToObject::find_object(bw_interfaces::EstimatedObject &robot_msg
     cv::Point3d center;
     if (!project_to_field(centroid, plane_center, plane_normal, center))
     {
-        ROS_WARN("Failed to project centroid to field");
+        ROS_WARN_THROTTLE(1.0, "Failed to project centroid to field");
         return false;
     }
     center -= normal_offset;

@@ -12,7 +12,9 @@ from bw_interfaces.msg import (
     GoToGoalGoal,
     GoToGoalResult,
 )
+from bw_shared.enums.robot_team import RobotTeam
 from bw_shared.geometry.pose2d import Pose2D
+from bw_shared.tick_regulator import regulate_tick
 from bw_tools.configs.rosparam_client import get_shared_config
 from bw_tools.get_param import get_param
 from bw_tools.messages.goal_strategy import GoalStrategy
@@ -20,13 +22,12 @@ from bw_tools.messages.goal_type import GoalType
 from geometry_msgs.msg import Twist
 
 from bw_navigation.exceptions import NavigationError
-from bw_navigation.planners import CrashOpponent, CrashOpponentAvoidFriendly, PlannerInterface
-from perception.detection.app.tick_regulator import regulate_tick
-from ros_ws.bw_navigation.src.bw_navigation.goal_supplier import (
+from bw_navigation.goal_supplier import (
     FixedPoseSupplier,
     GoalSupplierInterface,
     TrackedTargetSupplier,
 )
+from bw_navigation.planners import CrashOpponent, CrashOpponentAvoidFriendly, PlannerInterface
 
 
 class BwNavigationNode:
@@ -50,16 +51,18 @@ class BwNavigationNode:
         self.field = EstimatedObject()
         self.robots: dict[str, EstimatedObject] = {}
 
+        opponent_names = [robot.name for robot in shared_config.robots.robots if robot.team == RobotTeam.THEIR_TEAM]
+
         self.goal_suppliers: Dict[GoalType, GoalSupplierInterface] = {
             GoalType.FIXED_POSE: FixedPoseSupplier(),
-            GoalType.TRACKED_TARGET: TrackedTargetSupplier(),
+            GoalType.TRACKED_TARGET: TrackedTargetSupplier(self.controlled_robot, opponent_names),
         }
         self.planners: Dict[GoalStrategy, PlannerInterface] = {
             GoalStrategy.CRASH_OPPONENT: CrashOpponent(self.controlled_robot),
             GoalStrategy.CRASH_OPPONENT_AVOID_FRIENDLY: CrashOpponentAvoidFriendly(),
         }
 
-        self.twist_pub = rospy.Publisher(f"{self.controlled_robot}/cmd_vel", Twist, queue_size=1)
+        self.twist_pub = rospy.Publisher(f"{self.controlled_robot}/cmd_vel/navigation", Twist, queue_size=1)
 
         self.estimated_field_sub = rospy.Subscriber(
             "filter/field", EstimatedObject, queue_size=1, callback=self.estimated_field_callback
@@ -67,6 +70,8 @@ class BwNavigationNode:
         self.robot_states_sub = rospy.Subscriber(
             "filtered_states", EstimatedObjectArray, queue_size=1, callback=self.robot_states_callback
         )
+        self.goal_server.start()
+        rospy.loginfo("Navigation is ready")
 
     def estimated_field_callback(self, estimated_field: EstimatedObject) -> None:
         self.field = estimated_field
@@ -79,6 +84,7 @@ class BwNavigationNode:
         return goal_pose.relative_to(robot_pose).magnitude()
 
     def go_to_goal_callback(self, goal: GoToGoalGoal) -> None:
+        rospy.loginfo("Received goal")
         if not self.field.header.frame_id:
             rospy.logwarn("No field found, cannot go to goal")
             self.goal_server.set_aborted()
@@ -150,5 +156,5 @@ class BwNavigationNode:
 
 
 if __name__ == "__main__":
-    rospy.init_node("bw_navigation_node")
+    rospy.init_node("bw_navigation_node", log_level=rospy.DEBUG)
     BwNavigationNode().run()

@@ -17,7 +17,7 @@ from std_msgs.msg._Header import Header as std_msgs_msg_Header
 import genpy
 
 class GoToGoalActionGoal(genpy.Message):
-  _md5sum: str = "7b3e99fb4efeac47e362330e88b86b16"
+  _md5sum: str = "260b136d446423e261b93d1908b5f0dc"
   _type: str = "bw_interfaces/GoToGoalActionGoal"
   _has_header: bool = True  # flag to mark the presence of a Header object
   _full_text: str = """Header header
@@ -57,7 +57,7 @@ string id
 MSG: bw_interfaces/GoToGoalGoal
 string goal_type
 geometry_msgs/PoseStamped goal
-string target_name
+string target_type
 string strategy
 ================================================================================
 MSG: geometry_msgs/PoseStamped
@@ -164,7 +164,7 @@ float64 w
       buff.write(struct.Struct('<I%ss'%length).pack(length, _x))
       _x = self
       buff.write(_get_struct_7d().pack(_x.goal.goal.pose.position.x, _x.goal.goal.pose.position.y, _x.goal.goal.pose.position.z, _x.goal.goal.pose.orientation.x, _x.goal.goal.pose.orientation.y, _x.goal.goal.pose.orientation.z, _x.goal.goal.pose.orientation.w))
-      _x = self.goal.target_name
+      _x = self.goal.target_type
       length = len(_x)
       if python3 or type(_x) == unicode:
         _x = _x.encode('utf-8')
@@ -252,9 +252,9 @@ float64 w
       start = end
       end += length
       if python3:
-        self.goal.target_name = bytes_[start:end].decode('utf-8', 'rosmsg')
+        self.goal.target_type = bytes_[start:end].decode('utf-8', 'rosmsg')
       else:
-        self.goal.target_name = bytes_[start:end]
+        self.goal.target_type = bytes_[start:end]
       start = end
       end += 4
       (length,) = _struct_I.unpack(bytes_[start:end])
@@ -308,7 +308,7 @@ float64 w
       buff.write(struct.Struct('<I%ss'%length).pack(length, _x))
       _x = self
       buff.write(_get_struct_7d().pack(_x.goal.goal.pose.position.x, _x.goal.goal.pose.position.y, _x.goal.goal.pose.position.z, _x.goal.goal.pose.orientation.x, _x.goal.goal.pose.orientation.y, _x.goal.goal.pose.orientation.z, _x.goal.goal.pose.orientation.w))
-      _x = self.goal.target_name
+      _x = self.goal.target_type
       length = len(_x)
       if python3 or type(_x) == unicode:
         _x = _x.encode('utf-8')
@@ -397,9 +397,9 @@ float64 w
       start = end
       end += length
       if python3:
-        self.goal.target_name = bytes_[start:end].decode('utf-8', 'rosmsg')
+        self.goal.target_type = bytes_[start:end].decode('utf-8', 'rosmsg')
       else:
-        self.goal.target_name = bytes_[start:end]
+        self.goal.target_type = bytes_[start:end]
       start = end
       end += 4
       (length,) = _struct_I.unpack(bytes_[start:end])

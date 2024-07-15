@@ -8,6 +8,6 @@ from bw_behaviors.container import Container
 def make_idle_behavior(container: Container) -> Behaviour:
     return Sequence(
         "idle_sequence",
-        memory=True,
+        memory=False,
         children=[Running("idle")],
     )

@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import copy
 import math
 from typing import Optional, Tuple
 
@@ -72,7 +73,7 @@ class FieldFilter:
 
     def response_callback(self, field: EstimatedObject) -> None:
         rospy.loginfo("Received field response")
-        transform = Transform3D.from_pose_msg(field.pose.pose).inverse()
+        tf_camera_from_relativemap = Transform3D.from_pose_msg(field.pose.pose).inverse()
 
         extents = XYZ.from_msg(field.size)
         passes = self.extents_range[0] < extents < self.extents_range[1]
@@ -85,10 +86,16 @@ class FieldFilter:
         self.estimated_field.size = field.size
         self.estimated_field.header = Header(frame_id=field.child_frame_id, stamp=field.header.stamp)
         self.estimated_field.child_frame_id = field.header.frame_id
-        self.estimated_field.pose.pose = transform.to_pose_msg()
+        self.estimated_field.pose.pose = tf_camera_from_relativemap.to_pose_msg()
         self.estimated_field.label = Label.FIELD.value
-        self.estimated_field_pub.publish(self.estimated_field)
-        self.publish_field_markers(self.estimated_field)
+
+        tf_map_from_relativemap = self.get_cage_aligned_transform()
+        aligned_field = copy.deepcopy(self.estimated_field)
+        aligned_field.pose.pose = tf_map_from_relativemap.forward_by(tf_camera_from_relativemap).to_pose_msg()
+        aligned_field.header.frame_id = self.map_frame
+
+        self.estimated_field_pub.publish(aligned_field)
+        self.publish_field_markers(aligned_field)
 
     def get_cage_aligned_transform(self) -> Transform3D:
         if self.cage_corner is None:
@@ -104,7 +111,7 @@ class FieldFilter:
         self.cage_corner = CageCorner.from_msg(corner)
         self.corner_pub.publish(corner)
 
-    def publish_field_tf(self, estimated_field: EstimatedObject) -> tf2_ros.TransformStamped:
+    def get_field_tf(self, estimated_field: EstimatedObject) -> tf2_ros.TransformStamped:
         field_pose = estimated_field.pose.pose
         transform = Transform3D.from_pose_msg(field_pose)
 
@@ -115,7 +122,7 @@ class FieldFilter:
         field_tf.transform = transform.to_msg()
         return field_tf
 
-    def publish_aligned_tf(self, estimated_field: EstimatedObject) -> tf2_ros.TransformStamped:
+    def get_aligned_tf(self, estimated_field: EstimatedObject) -> tf2_ros.TransformStamped:
         transform = self.get_cage_aligned_transform()
         aligned_tf = tf2_ros.TransformStamped()
         aligned_tf.header.stamp = rospy.Time.now()
@@ -125,8 +132,8 @@ class FieldFilter:
         return aligned_tf
 
     def publish_transforms(self) -> None:
-        field_tf = self.publish_field_tf(self.estimated_field)
-        aligned_tf = self.publish_aligned_tf(self.estimated_field)
+        field_tf = self.get_field_tf(self.estimated_field)
+        aligned_tf = self.get_aligned_tf(self.estimated_field)
         self.tf_broadcaster.sendTransform([field_tf, aligned_tf])
 
     def publish_field_markers(self, estimated_field: EstimatedObject) -> None:

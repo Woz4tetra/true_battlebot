@@ -10,7 +10,7 @@ from bw_behaviors.container import Container
 def make_stay_in_corner_behavior(container: Container) -> Behaviour:
     return Sequence(
         "stay_in_corner_sequence",
-        memory=True,
+        memory=False,
         children=[
             SendCornerGoal(container),
             SetMode(container, BehaviorMode.IDLE),

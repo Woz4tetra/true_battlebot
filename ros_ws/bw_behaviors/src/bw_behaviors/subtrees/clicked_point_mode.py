@@ -10,7 +10,7 @@ from bw_behaviors.container import Container
 def make_clicked_point_behavior(container: Container) -> Behaviour:
     return Sequence(
         "clicked_point_main_sequence",
-        memory=True,
+        memory=False,
         children=[
             SendClickedGoal(container),
             SetMode(container, BehaviorMode.IDLE),

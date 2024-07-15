@@ -14,12 +14,12 @@ from geometry_msgs.msg._Quaternion import Quaternion as geometry_msgs_msg_Quater
 from std_msgs.msg._Header import Header as std_msgs_msg_Header
 
 class GoToGoalGoal(genpy.Message):
-  _md5sum: str = "7426ff4976414552272926df56cf2548"
+  _md5sum: str = "03b8d3e154c841e3895911bed57a0540"
   _type: str = "bw_interfaces/GoToGoalGoal"
   _has_header: bool = False  # flag to mark the presence of a Header object
   _full_text: str = """string goal_type
 geometry_msgs/PoseStamped goal
-string target_name
+string target_type
 string strategy
 ================================================================================
 MSG: geometry_msgs/PoseStamped
@@ -65,12 +65,12 @@ float64 y
 float64 z
 float64 w
 """
-  __slots__: List[str] = ['goal_type','goal','target_name','strategy']
+  __slots__: List[str] = ['goal_type','goal','target_type','strategy']
   _slot_types: List[str] = ['string','geometry_msgs/PoseStamped','string','string']
 
   def __init__(self, goal_type: str = None,
     goal: geometry_msgs_msg_PoseStamped = None,
-    target_name: str = None,
+    target_type: str = None,
     strategy: str = None):
     """
     Constructor. Any message fields that are implicitly/explicitly
@@ -79,13 +79,13 @@ float64 w
     changes.  You cannot mix in-order arguments and keyword arguments.
 
     The available fields are:
-      goal_type,goal,target_name,strategy
+      goal_type,goal,target_type,strategy
 
     :param args: complete set of field values, in .msg order
     :param kwds: use keyword arguments corresponding to message field names
     to set specific fields.
     """
-    super(GoToGoalGoal, self).__init__(**{'goal_type': goal_type, 'goal': goal, 'target_name': target_name, 'strategy': strategy})
+    super(GoToGoalGoal, self).__init__(**{'goal_type': goal_type, 'goal': goal, 'target_type': target_type, 'strategy': strategy})
     if self.goal_type is None:
       self.goal_type: str = ''
     else:
@@ -94,10 +94,10 @@ float64 w
       self.goal: geometry_msgs_msg_PoseStamped = geometry_msgs_msg_PoseStamped()
     else:
       self.goal = goal
-    if self.target_name is None:
-      self.target_name: str = ''
+    if self.target_type is None:
+      self.target_type: str = ''
     else:
-      self.target_name = target_name
+      self.target_type = target_type
     if self.strategy is None:
       self.strategy: str = ''
     else:
@@ -131,7 +131,7 @@ float64 w
       buff.write(struct.Struct('<I%ss'%length).pack(length, _x))
       _x = self
       buff.write(_get_struct_7d().pack(_x.goal.pose.position.x, _x.goal.pose.position.y, _x.goal.pose.position.z, _x.goal.pose.orientation.x, _x.goal.pose.orientation.y, _x.goal.pose.orientation.z, _x.goal.pose.orientation.w))
-      _x = self.target_name
+      _x = self.target_type
       length = len(_x)
       if python3 or type(_x) == unicode:
         _x = _x.encode('utf-8')
@@ -189,9 +189,9 @@ float64 w
       start = end
       end += length
       if python3:
-        self.target_name = bytes_[start:end].decode('utf-8', 'rosmsg')
+        self.target_type = bytes_[start:end].decode('utf-8', 'rosmsg')
       else:
-        self.target_name = bytes_[start:end]
+        self.target_type = bytes_[start:end]
       start = end
       end += 4
       (length,) = _struct_I.unpack(bytes_[start:end])
@@ -229,7 +229,7 @@ float64 w
       buff.write(struct.Struct('<I%ss'%length).pack(length, _x))
       _x = self
       buff.write(_get_struct_7d().pack(_x.goal.pose.position.x, _x.goal.pose.position.y, _x.goal.pose.position.z, _x.goal.pose.orientation.x, _x.goal.pose.orientation.y, _x.goal.pose.orientation.z, _x.goal.pose.orientation.w))
-      _x = self.target_name
+      _x = self.target_type
       length = len(_x)
       if python3 or type(_x) == unicode:
         _x = _x.encode('utf-8')
@@ -288,9 +288,9 @@ float64 w
       start = end
       end += length
       if python3:
-        self.target_name = bytes_[start:end].decode('utf-8', 'rosmsg')
+        self.target_type = bytes_[start:end].decode('utf-8', 'rosmsg')
       else:
-        self.target_name = bytes_[start:end]
+        self.target_type = bytes_[start:end]
       start = end
       end += 4
       (length,) = _struct_I.unpack(bytes_[start:end])

@@ -1,6 +1,6 @@
 string goal_type
 geometry_msgs/PoseStamped goal
-string target_name
+string target_type
 string strategy
 ---
 bool success

@@ -4,7 +4,7 @@ from bw_interfaces.msg import EstimatedObject
 from bw_shared.geometry.pose2d import Pose2D
 from geometry_msgs.msg import Twist
 
-from ros_ws.bw_navigation.src.bw_navigation.planners.planner_interface import PlannerInterface
+from bw_navigation.planners.planner_interface import PlannerInterface
 
 
 class CrashOpponentAvoidFriendly(PlannerInterface):

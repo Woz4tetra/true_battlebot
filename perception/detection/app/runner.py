@@ -17,12 +17,12 @@ from app.keypoint.keypoint_interface import KeypointInterface
 from app.keypoint.keypoint_loader import load_keypoint
 from app.segmentation.segmentation_interface import SegmentationInterface
 from app.segmentation.segmentation_loader import load_segmentation
-from app.tick_regulator import regulate_tick
 from bw_interfaces.msg import EstimatedObject, KeypointInstanceArray, SegmentationInstanceArray
 from bw_shared.configs.shared_config import SharedConfig
 from bw_shared.enums.field_type import FieldType
 from bw_shared.environment import get_map, get_robot
 from bw_shared.messages.header import Header
+from bw_shared.tick_regulator import regulate_tick
 from perception_tools.rosbridge.ros_poll_subscriber import RosPollSubscriber
 from perception_tools.rosbridge.ros_publisher import RosPublisher
 from sensor_msgs.msg import Image, PointCloud2

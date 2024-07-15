@@ -1,0 +1,14 @@
+#!/bin/bash
+
+BASE_DIR=$(realpath "$(dirname $0)")
+
+IMAGE_TYPE=$(${BASE_DIR}/lib/get_image_type)
+
+if [ "${IMAGE_TYPE}" == "true_battlebot" ]; then
+    ${BASE_DIR}/lib/test_ros_ws
+elif [ "${IMAGE_TYPE}" == "true_battlebot_perception" ]; then
+    ${BASE_DIR}/lib/test_perception
+else
+    echo "ERROR: Unknown IMAGE_TYPE: ${IMAGE_TYPE}"
+    exit 1
+fi

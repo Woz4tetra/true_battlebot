@@ -96,7 +96,7 @@ void MotionTracker::image_callback(const sensor_msgs::ImageConstPtr &image_msg)
         cv::Point3d center;
         if (!project_to_field(centroid_scaled, plane_center, plane_normal, center))
         {
-            ROS_WARN("Failed to project centroid to field");
+            ROS_WARN_THROTTLE(1.0, "Failed to project centroid to field");
             continue;
         }
 

@@ -9,15 +9,15 @@ import struct
 import genpy
 
 class BehaviorMode(genpy.Message):
-  _md5sum: str = "89b81386720be1cd0ce7a3953fcd1b19"
+  _md5sum: str = "890d2fbf5b6e45074133a9b18a5f56b6"
   _type: str = "bw_interfaces/BehaviorMode"
   _has_header: bool = False  # flag to mark the presence of a Header object
-  _full_text: str = """uint8 mode
+  _full_text: str = """uint32 mode
 """
   __slots__: List[str] = ['mode']
-  _slot_types: List[str] = ['uint8']
+  _slot_types: List[str] = ['uint32']
 
-  def __init__(self, mode: bytes = None):
+  def __init__(self, mode: int = None):
     """
     Constructor. Any message fields that are implicitly/explicitly
     set to None will be assigned a default value. The recommend
@@ -33,7 +33,7 @@ class BehaviorMode(genpy.Message):
     """
     super(BehaviorMode, self).__init__(**{'mode': mode})
     if self.mode is None:
-      self.mode: bytes = 0
+      self.mode: int = 0
     else:
       self.mode = mode
 
@@ -50,7 +50,7 @@ class BehaviorMode(genpy.Message):
     """
     try:
       _x = self.mode
-      buff.write(_get_struct_B().pack(_x))
+      buff.write(_get_struct_I().pack(_x))
     except struct.error as se: self._check_types(struct.error("%s: '%s' when writing '%s'" % (type(se), str(se), str(locals().get('_x', self)))))
     except TypeError as te: self._check_types(ValueError("%s: '%s' when writing '%s'" % (type(te), str(te), str(locals().get('_x', self)))))
 
@@ -64,8 +64,8 @@ class BehaviorMode(genpy.Message):
     try:
       end = 0
       start = end
-      end += 1
-      (self.mode,) = _get_struct_B().unpack(bytes_[start:end])
+      end += 4
+      (self.mode,) = _get_struct_I().unpack(bytes_[start:end])
       return self
     except struct.error as e:
       raise genpy.DeserializationError(e)  # most likely buffer underfill
@@ -79,7 +79,7 @@ class BehaviorMode(genpy.Message):
     """
     try:
       _x = self.mode
-      buff.write(_get_struct_B().pack(_x))
+      buff.write(_get_struct_I().pack(_x))
     except struct.error as se: self._check_types(struct.error("%s: '%s' when writing '%s'" % (type(se), str(se), str(locals().get('_x', self)))))
     except TypeError as te: self._check_types(ValueError("%s: '%s' when writing '%s'" % (type(te), str(te), str(locals().get('_x', self)))))
 
@@ -94,8 +94,8 @@ class BehaviorMode(genpy.Message):
     try:
       end = 0
       start = end
-      end += 1
-      (self.mode,) = _get_struct_B().unpack(bytes_[start:end])
+      end += 4
+      (self.mode,) = _get_struct_I().unpack(bytes_[start:end])
       return self
     except struct.error as e:
       raise genpy.DeserializationError(e)  # most likely buffer underfill
@@ -104,9 +104,3 @@ _struct_I = genpy.struct_I
 def _get_struct_I():
     global _struct_I
     return _struct_I
-_struct_B = None
-def _get_struct_B():
-    global _struct_B
-    if _struct_B is None:
-        _struct_B = struct.Struct("<B")
-    return _struct_B

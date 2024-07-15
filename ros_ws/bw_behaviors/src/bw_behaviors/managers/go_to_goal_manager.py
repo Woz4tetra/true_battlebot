@@ -4,6 +4,7 @@ from actionlib_msgs.msg import GoalStatus
 from bw_interfaces.msg import GoToGoalAction, GoToGoalFeedback, GoToGoalGoal
 from bw_tools.messages.goal_strategy import GoalStrategy
 from bw_tools.messages.goal_type import GoalType
+from bw_tools.messages.target_type import TargetType
 from geometry_msgs.msg import PoseStamped
 from py_trees.common import Status
 
@@ -11,7 +12,9 @@ from py_trees.common import Status
 class GoToGoalManager:
     def __init__(self) -> None:
         self.go_to_goal_client = SimpleActionClient("go_to_goal", GoToGoalAction)
+        rospy.loginfo("Waiting for go to goal action server")
         self.go_to_goal_client.wait_for_server()
+        rospy.loginfo("Go to goal action server is ready")
         self.status = Status.RUNNING
         self.strategy = GoalStrategy.CRASH_OPPONENT
         self.feedback = GoToGoalFeedback()
@@ -27,10 +30,10 @@ class GoToGoalManager:
         goal.goal_type = GoalType.FIXED_POSE.value
         self.go_to_goal_client.send_goal(goal, feedback_cb=self.feedback_callback)
 
-    def send_target_goal(self, target_name: str) -> None:
+    def send_target_goal(self, target_type: TargetType) -> None:
         rospy.loginfo("Sending go to goal action")
         goal = GoToGoalGoal()
-        goal.target_name = target_name
+        goal.target_type = target_type.value
         goal.strategy = self.strategy.value
         goal.goal_type = GoalType.TRACKED_TARGET.value
         self.go_to_goal_client.send_goal(goal, feedback_cb=self.feedback_callback)

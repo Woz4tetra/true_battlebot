@@ -3,8 +3,8 @@ from typing import Optional
 from bw_interfaces.msg import EstimatedObject, GoToGoalGoal
 from bw_shared.geometry.pose2d import Pose2D
 
+from bw_navigation.exceptions import FrameIdMismatchError
 from bw_navigation.goal_supplier.goal_supplier_interface import GoalSupplierInterface
-from ros_ws.bw_navigation.src.bw_navigation.exceptions import FrameIdMismatchError
 
 
 class FixedPoseSupplier(GoalSupplierInterface):

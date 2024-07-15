@@ -1,0 +1,8 @@
+#!/bin/bash
+
+python3 <<EOF
+import os
+image_version = os.environ.get("IMAGE_VERSION", "")
+image_type = image_version.split(":")[0] if image_version else ""
+print(image_type, end='')
+EOF

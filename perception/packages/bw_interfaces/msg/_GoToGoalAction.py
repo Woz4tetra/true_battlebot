@@ -23,7 +23,7 @@ from std_msgs.msg._Header import Header as std_msgs_msg_Header
 import genpy
 
 class GoToGoalAction(genpy.Message):
-  _md5sum: str = "b3f08f9beb1ed1f7a12ac54291b1debf"
+  _md5sum: str = "31d820d9d731cf5987d32217c5a6bb78"
   _type: str = "bw_interfaces/GoToGoalAction"
   _has_header: bool = False  # flag to mark the presence of a Header object
   _full_text: str = """GoToGoalActionGoal action_goal
@@ -69,7 +69,7 @@ string id
 MSG: bw_interfaces/GoToGoalGoal
 string goal_type
 geometry_msgs/PoseStamped goal
-string target_name
+string target_type
 string strategy
 ================================================================================
 MSG: geometry_msgs/PoseStamped
@@ -221,7 +221,7 @@ float64 distance_to_goal
       buff.write(struct.Struct('<I%ss'%length).pack(length, _x))
       _x = self
       buff.write(_get_struct_7d().pack(_x.action_goal.goal.goal.pose.position.x, _x.action_goal.goal.goal.pose.position.y, _x.action_goal.goal.goal.pose.position.z, _x.action_goal.goal.goal.pose.orientation.x, _x.action_goal.goal.goal.pose.orientation.y, _x.action_goal.goal.goal.pose.orientation.z, _x.action_goal.goal.goal.pose.orientation.w))
-      _x = self.action_goal.goal.target_name
+      _x = self.action_goal.goal.target_type
       length = len(_x)
       if python3 or type(_x) == unicode:
         _x = _x.encode('utf-8')
@@ -359,9 +359,9 @@ float64 distance_to_goal
       start = end
       end += length
       if python3:
-        self.action_goal.goal.target_name = bytes_[start:end].decode('utf-8', 'rosmsg')
+        self.action_goal.goal.target_type = bytes_[start:end].decode('utf-8', 'rosmsg')
       else:
-        self.action_goal.goal.target_name = bytes_[start:end]
+        self.action_goal.goal.target_type = bytes_[start:end]
       start = end
       end += 4
       (length,) = _struct_I.unpack(bytes_[start:end])
@@ -495,7 +495,7 @@ float64 distance_to_goal
       buff.write(struct.Struct('<I%ss'%length).pack(length, _x))
       _x = self
       buff.write(_get_struct_7d().pack(_x.action_goal.goal.goal.pose.position.x, _x.action_goal.goal.goal.pose.position.y, _x.action_goal.goal.goal.pose.position.z, _x.action_goal.goal.goal.pose.orientation.x, _x.action_goal.goal.goal.pose.orientation.y, _x.action_goal.goal.goal.pose.orientation.z, _x.action_goal.goal.goal.pose.orientation.w))
-      _x = self.action_goal.goal.target_name
+      _x = self.action_goal.goal.target_type
       length = len(_x)
       if python3 or type(_x) == unicode:
         _x = _x.encode('utf-8')
@@ -634,9 +634,9 @@ float64 distance_to_goal
       start = end
       end += length
       if python3:
-        self.action_goal.goal.target_name = bytes_[start:end].decode('utf-8', 'rosmsg')
+        self.action_goal.goal.target_type = bytes_[start:end].decode('utf-8', 'rosmsg')
       else:
-        self.action_goal.goal.target_name = bytes_[start:end]
+        self.action_goal.goal.target_type = bytes_[start:end]
       start = end
       end += 4
       (length,) = _struct_I.unpack(bytes_[start:end])
