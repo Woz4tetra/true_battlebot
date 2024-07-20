@@ -15,6 +15,6 @@ z = 0.0
 [[maps]]
 name = "meatball_testbox"
 [maps.size]
-x = 1.35
-y = 1.35
+x = 1.15
+y = 1.15
 z = 0.0

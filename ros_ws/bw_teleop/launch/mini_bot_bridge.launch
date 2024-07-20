@@ -1,7 +1,5 @@
 <launch>
     <node name="mini_bot_bridge" pkg="bw_teleop" type="mini_bot_bridge.py" output="screen"
-        required="false">
-        <param name="broadcast_address" value="192.168.1.255" />
-        <remap from="filtered_states" to="/filtered_states" />
+        respawn="true">
     </node>
 </launch>

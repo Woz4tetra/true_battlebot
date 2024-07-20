@@ -33,6 +33,8 @@ class DepthAiOak1W:
         self.width = get_param("~width", 1920)
         self.height = get_param("~height", 1080)
         self.fps = get_param("~fps", 60.0)
+        self.exposure_time = get_param("~exposure_time", 8000)  # microseconds
+        self.iso = get_param("~iso", 800)
         self.resolution_mode = Oak1ResolutionMode("mode_" + get_param("~resolution_mode", "1080_p"))
         self.debug_image = get_param("~debug_image", False)
         self.camera_matrix_alpha = get_param("~camera_matrix_alpha", 0.0)
@@ -125,6 +127,10 @@ class DepthAiOak1W:
         # Linking
         cam_rgb.video.link(xout_video.input)
 
+        control_in = pipeline.create(dai.node.XLinkIn)
+        control_in.setStreamName("control")
+        control_in.out.link(cam_rgb.inputControl)
+
         return pipeline
 
     def tick(
@@ -180,6 +186,12 @@ class DepthAiOak1W:
 
         # Connect to device and start pipeline
         with dai.Device(pipeline) as device:
+            # Camera control
+            control_queue = device.getInputQueue("control")
+            ctrl = dai.CameraControl()
+            ctrl.setManualExposure(self.exposure_time, self.iso)
+            control_queue.send(ctrl)
+
             video = device.getOutputQueue(name="video", maxSize=1, blocking=False)
 
             calib_data = device.readCalibration()
