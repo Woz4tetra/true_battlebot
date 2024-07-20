@@ -5,11 +5,11 @@ is_controlled = true
 
 [[robots.tags]]
 tag_id = 41
-tag_size = 0.1
+tag_size = 0.064
 
 [[robots.tags]]
 tag_id = 76
-tag_size = 0.1
+tag_size = 0.064
 
 
 [[robots]]

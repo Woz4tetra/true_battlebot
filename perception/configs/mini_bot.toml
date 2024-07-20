@@ -27,8 +27,9 @@ exclude_filters = [
 ]
 
 [robot_keypoint]
-type = "YoloKeypoint"
-model_name = "yolov8-pose_2024-06-06.pt"
+type = "NoopKeypoint"
+# type = "YoloKeypoint"
+# model_name = "yolov8-pose_2024-06-06.pt"
 
 [robot_keypoint.model_to_system_labels]
 "mr_stabs_mk1" = "controlled_robot"

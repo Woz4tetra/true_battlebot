@@ -296,7 +296,7 @@ class RobotFilter:
             pose = detection.pose.pose
             pose.orientation = self.rotate_tag_orientation(pose.orientation, self.apriltag_rotate_tf)
             covariance = self.tag_heurstics.compute_covariance(detection)
-            detection.pose.pose.covariance = covariance  # type: ignore
+            detection.pose.covariance = covariance  # type: ignore
             map_pose = self.transform_to_map(detection.header, detection.pose.pose)
             if map_pose is None:
                 rospy.logwarn(f"Could not transform pose for tag {detection}")

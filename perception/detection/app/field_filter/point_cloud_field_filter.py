@@ -78,7 +78,8 @@ class PointCloudFieldFilter(FieldFilterInterface):
             return EstimatedObject(), point_cloud
 
         self.logger.debug(f"Computing {segmentations.width}x{segmentations.height} mask")
-        mask = msg_to_mask(field.contours, segmentations.width, segmentations.height)
+        largest_area_contour = max(field.contours, key=lambda x: x.area)
+        mask = msg_to_mask(largest_area_contour, segmentations.width, segmentations.height)
 
         if len(point_cloud.points) == 0:
             self.logger.error("Point cloud is empty. Skipping filtering.")
