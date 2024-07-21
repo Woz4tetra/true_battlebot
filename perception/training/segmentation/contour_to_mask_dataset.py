@@ -21,7 +21,7 @@ def write_classes(classes: dict[int, str], path: str) -> None:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Convert to segmantic segmentation dataset")
+    parser = argparse.ArgumentParser(description="Convert to semantic segmentation dataset")
     parser.add_argument(
         "dataset_path",
         type=str,
@@ -30,7 +30,7 @@ def main():
     parser.add_argument("-o", "--output", nargs="?", type=str, help="Path to the output directory", default="")
     args = parser.parse_args()
     dataset_path = Path(args.dataset_path)
-    output_path = Path(args.output) if args.output else Path(str(dataset_path) + "_segmantic")
+    output_path = Path(args.output) if args.output else Path(str(dataset_path) + "_semantic")
     classes_name = "_classes.csv"
     annotations_name = "_annotations.coco.json"
 

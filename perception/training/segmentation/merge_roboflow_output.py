@@ -19,7 +19,7 @@ def save_annotations(annotations: CocoMetaDataset, annotations_path: str) -> Non
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Augment a dataset")
+    parser = argparse.ArgumentParser(description="Merge a dataset into a single directory")
     parser.add_argument(
         "images_path",
         type=str,

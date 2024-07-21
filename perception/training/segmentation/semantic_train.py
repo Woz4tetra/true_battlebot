@@ -319,7 +319,7 @@ def main() -> None:
         "-ne",
         "--num-epochs",
         type=int,
-        default=50,
+        default=100,
         help="Number of training epochs",
     )
     parser.add_argument(
@@ -329,6 +329,9 @@ def main() -> None:
         default="",
         help="Output directory for the model and logs",
     )
+    assert torch.cuda.is_available(), "CUDA is not available"
+    assert torch.cuda.device_count() > 0, "No CUDA devices available"
+
     args = parser.parse_args()
     dataset_location = Path(args.dataset_location)
     checkpoint_path = Path(args.checkpoint) if args.checkpoint else None
@@ -337,7 +340,7 @@ def main() -> None:
     num_workers = args.num_workers
     num_epochs = args.num_epochs
     num_classes = len(FIELD_SEMANTIC_MODEL_METADATA.labels)
-    backbone_model_name = "mbv3"  # mbv3 | r50 | r101
+    backbone_model_name = "r50"  # mbv3 | r50 | r101
 
     output.mkdir(parents=True, exist_ok=True)
 
