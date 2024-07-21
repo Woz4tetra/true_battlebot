@@ -8,6 +8,7 @@ docker-compose.gpu.yaml
 build/
 
 lightning_logs/
+runs/
 
 # ZED files
 *neural_depth*.model*
