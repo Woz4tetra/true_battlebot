@@ -172,11 +172,13 @@ def generate_from_config(config_path: str):
     print("Grid is %d x %d" % (num_cols, num_rows))
     assert all(len(row) == num_cols for row in config.general.grid), "Grid must be rectangular"
 
+    pixels_per_mm = config.general.pixels_per_mm
+
     image_lookup: dict[str, Image.Image] = {}
     for tag_config in config.tags:
         size = config.general.default_size if tag_config.size is None else tag_config.size
         tag = Tag(config.general.tag_family, tag_config.code)
-        image_path = generate_raster_tag(tag, load_tag_image(tag), size, config.general.pixels_per_mm, "png")
+        image_path = generate_raster_tag(tag, load_tag_image(tag), size, pixels_per_mm, "png")
         image = Image.open(image_path)
         image_lookup[tag_config.name] = image
 
@@ -188,7 +190,7 @@ def generate_from_config(config_path: str):
 
     largest_grid_width = int(max(img.width for img in grid.values()))
     largest_grid_height = int(max(img.height for img in grid.values()))
-    spacing_px = config.general.spacing * config.general.pixels_per_mm
+    spacing_px = config.general.spacing * pixels_per_mm
     half_spacing_px = spacing_px // 2
     width_spaced = int(largest_grid_width + spacing_px)
     height_spaced = int(largest_grid_height + spacing_px)
@@ -215,7 +217,8 @@ def generate_from_config(config_path: str):
                 ],
                 outline=(255, 0, 0),
             )
+    print("Image size is %0.2f mm x %0.2f mm" % (grid_image.width / pixels_per_mm, grid_image.height / pixels_per_mm))
 
-    dpi = config.general.pixels_per_mm * 25.4
+    dpi = pixels_per_mm * 25.4
     grid_image.save(out_path, resolution=dpi)
     print(f"Generated grid path is {out_path}")
