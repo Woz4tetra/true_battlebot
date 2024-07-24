@@ -38,3 +38,11 @@ type = "NoopKeypoint"
 "mrs_buff_mk2" = "friendly_robot"
 "robot" = "robot"
 "referee" = "referee"
+
+[robot_keypoint.keypoint_names]
+"mr_stabs_mk1" = ["front", "back"]
+"mr_stabs_mk2" = ["back", "front"]
+"mrs_buff_mk1" = ["front", "back"]
+"mrs_buff_mk2" = ["back", "front"]
+"robot" = ["front", "back"]
+"referee" = ["front", "back"]

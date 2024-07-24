@@ -7,8 +7,9 @@ model = YOLO("yolov8l-pose.pt")
 results = model.train(
     data="/media/storage/training/labeled/keypoints/2024-07-20/data.yaml",
     imgsz=1280,
-    epochs=100,
+    epochs=500,
     batch=4,
     name="battlebots_keypoints",
     save_dir="/media/storage/true-battlebot-media/training/models/battlebots/yolov8-pose/2024-07-20",
+    device=0,
 )

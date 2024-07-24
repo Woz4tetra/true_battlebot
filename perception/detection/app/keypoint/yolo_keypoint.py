@@ -5,7 +5,7 @@ import numpy as np
 from app.config.keypoint_config.yolo_keypoint_config import YoloKeypointConfig
 from app.keypoint.keypoint_interface import KeypointInterface
 from bw_interfaces.msg import KeypointInstance, KeypointInstanceArray, UVKeypoint
-from bw_shared.enums.keypoint_name import RobotKeypointsNames
+from bw_shared.enums.keypoint_name import KeypointName
 from bw_shared.enums.label import Label
 from perception_tools.data_directory import get_data_directory
 from perception_tools.messages.image import Image
@@ -29,7 +29,7 @@ class YoloKeypoint(KeypointInterface):
         self.logger.info(f"Loading model from {model_path}")
         self.model = YOLO(str(model_path))
         self.logger.info("Model loaded")
-        self.keypoint_names = [name.value for name in RobotKeypointsNames]
+        self.keypoint_names = self.config.keypoint_names
 
         self.warmup()
 
@@ -60,14 +60,15 @@ class YoloKeypoint(KeypointInterface):
         for keypoint, label, class_idx in zip(keypoints, labels, ids):
             if label == Label.BACKGROUND:
                 continue
-            if len(keypoint) != len(RobotKeypointsNames):
-                raise ValueError(f"Expected {len(RobotKeypointsNames)} keypoints, but got {len(keypoint)}")
+            keypoint_names = self.keypoint_names[label]
+            if len(keypoint) != len(keypoint_names):
+                raise ValueError(f"Expected {len(keypoint_names)} keypoints, but got {len(keypoint)}")
             kp_front = UVKeypoint(x=keypoint[0][0], y=keypoint[0][1])
             kp_back = UVKeypoint(x=keypoint[1][0], y=keypoint[1][1])
             keypoint_instances.append(
                 KeypointInstance(
                     keypoints=[kp_front, kp_back],
-                    names=self.keypoint_names,
+                    names=keypoint_names,  # type: ignore
                     label=label,
                     class_index=class_idx,
                     object_index=object_counts[label],

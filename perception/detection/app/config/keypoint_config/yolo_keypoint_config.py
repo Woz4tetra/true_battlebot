@@ -1,6 +1,8 @@
 from dataclasses import dataclass, field
 from typing import Literal
 
+from bw_shared.enums.keypoint_name import KeypointName
+
 
 @dataclass
 class YoloKeypointConfig:
@@ -9,3 +11,4 @@ class YoloKeypointConfig:
     threshold: float = 0.8
     debug: bool = False
     model_to_system_labels: dict[str, str] = field(default_factory=dict)
+    keypoint_names: dict[str, list[KeypointName]] = field(default_factory=dict)

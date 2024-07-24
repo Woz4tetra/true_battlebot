@@ -319,7 +319,7 @@ def main() -> None:
         "-ne",
         "--num-epochs",
         type=int,
-        default=100,
+        default=500,
         help="Number of training epochs",
     )
     parser.add_argument(

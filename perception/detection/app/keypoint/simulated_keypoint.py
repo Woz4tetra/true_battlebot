@@ -6,7 +6,7 @@ from app.config.keypoint_config.simulated_keypoint_config import SimulatedKeypoi
 from app.keypoint.ground_truth_manager import GroundTruthManager
 from app.keypoint.keypoint_interface import KeypointInterface
 from bw_interfaces.msg import EstimatedObject, KeypointInstance, KeypointInstanceArray, UVKeypoint
-from bw_shared.enums.keypoint_name import RobotKeypointsNames
+from bw_shared.enums.keypoint_name import KeypointName
 from bw_shared.enums.label import Label
 from bw_shared.geometry.transform3d import Transform3D
 from image_geometry import PinholeCameraModel
@@ -21,7 +21,7 @@ class SimulatedKeypoint(KeypointInterface):
         self.logger = logging.getLogger("perception")
         self.debug = self.config.debug
         self.model: PinholeCameraModel | None = None
-        self.keypoint_names = [name.value for name in RobotKeypointsNames]
+        self.keypoint_names = [KeypointName.FRONT, KeypointName.BACK]
 
         self.model_to_system_labels = {
             model_label: Label(real_label) for model_label, real_label in self.config.model_to_system_labels.items()
