@@ -8,8 +8,7 @@ from pathlib import Path
 
 import cv2
 import tqdm
-
-from perception.training.keypoints.keypoints_config import load_keypoints_config
+from keypoints_config import load_keypoints_config
 
 logging.setLoggerClass(logging.Logger)  # fix rospy breaking logs
 from ultralytics import YOLO
@@ -46,7 +45,7 @@ def main() -> None:
     print("Loading YOLO model")
     model = YOLO(model_path)
 
-    keypoint_names = load_keypoints_config(config_path).keypoint_names
+    keypoint_names = load_keypoints_config(config_path)
 
     diffs = []
     for image_path in tqdm.tqdm(image_paths):
@@ -55,41 +54,39 @@ def main() -> None:
 
         image = cv2.imread(str(image_path))
         t0 = time.perf_counter()
-        results = model(image)
+        results = model(image, verbose=False)
         t1 = time.perf_counter()
         delta = t1 - t0
         diffs.append(delta)
 
-        for result in results:
-            ids = result.boxes.cpu().cls.int().numpy()  # get the class ids
-            keypoints = result.keypoints.cpu().xy.int().numpy()  # get the keypoints
-            labels = [result.names[index] for index in ids]
-            for keypoint, label in zip(keypoints, labels):
-                print(label, keypoint.tolist())
-            img_array = result.plot(kpt_line=True, kpt_radius=6)  # plot a BGR array of predictions
-            # render keypoint names in image
-            for i, (keypoint, label) in enumerate(zip(keypoints, labels)):
-                keypoint = keypoint.tolist()
-                front_label = keypoint_names[label][0]
-                back_label = keypoint_names[label][1]
-                cv2.putText(
-                    img_array,
-                    front_label,
-                    (keypoint[0][0], keypoint[0][1]),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.5,
-                    (255, 255, 255),
-                    1,
-                )
-                cv2.putText(
-                    img_array,
-                    back_label,
-                    (keypoint[1][0], keypoint[1][1]),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.5,
-                    (255, 255, 255),
-                    1,
-                )
+        result = results[0]
+        ids = result.boxes.cpu().cls.int().numpy()  # get the class ids
+        keypoints = result.keypoints.cpu().xy.int().numpy()  # get the keypoints
+        labels = [result.names[index] for index in ids]
+        img_array = result.plot(kpt_line=True, kpt_radius=6)  # plot a BGR array of predictions
+        # render keypoint names in image
+        for i, (keypoint, label) in enumerate(zip(keypoints, labels)):
+            keypoint = keypoint.tolist()
+            front_label = keypoint_names[label][0]
+            back_label = keypoint_names[label][1]
+            cv2.putText(
+                img_array,
+                front_label,
+                (keypoint[0][0], keypoint[0][1]),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.5,
+                (255, 255, 255),
+                1,
+            )
+            cv2.putText(
+                img_array,
+                back_label,
+                (keypoint[1][0], keypoint[1][1]),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.5,
+                (255, 255, 255),
+                1,
+            )
 
             cv2.imwrite(str(output_path / image_path.name), img_array)
     print("Warmup time:", diffs.pop(0))
