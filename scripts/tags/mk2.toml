@@ -1,0 +1,18 @@
+[general]
+pixels_per_mm = 20
+tag_family = "tag36h11"
+grid = [
+    ["mr_stabs_mk2_top", "mr_stabs_mk2_top"],
+    ["mr_stabs_mk2_bottom", "mr_stabs_mk2_bottom"],
+]
+default_size = 80
+spacing = 5
+draw_cut_lines = true
+
+[[tags]]
+name = "mr_stabs_mk2_top"
+code = 76
+
+[[tags]]
+name = "mr_stabs_mk2_bottom"
+code = 41
