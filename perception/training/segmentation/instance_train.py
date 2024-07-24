@@ -1,7 +1,7 @@
 import datetime
 import os
 
-from training_manager import TrainingManager
+from perception_tools.training.training_manager import TrainingManager
 
 training_dir = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 # training_dir = "2023-11-20-13-20-28"

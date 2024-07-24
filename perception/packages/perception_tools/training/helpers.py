@@ -132,8 +132,8 @@ def segmentation_to_mask(
 ) -> np.ndarray:
     mask = np.zeros((image_height, image_width), dtype=np.uint8)
     for segmentation in segmentations:
-        segmentation = np.array(segmentation).reshape(-1, 2).astype(int)
-        mask = cv2.fillPoly(mask, [segmentation], category_id)
+        segmentation_px = np.array(segmentation).reshape(-1, 2).astype(int)
+        mask = cv2.fillPoly(mask, [segmentation_px], category_id)  # type: ignore
     return mask
 
 

@@ -5,9 +5,9 @@ import os
 import shutil
 
 from bw_shared.enums.label import ModelLabel
-from keypoints_config import load_keypoints_config
 from perception_tools.config.model_metadata import LABEL_COLORS, LabelColor, ModelMetadata
 from perception_tools.data_directory import get_data_directory
+from perception_tools.training.keypoints_config import load_keypoints_config
 from ultralytics import YOLO
 
 

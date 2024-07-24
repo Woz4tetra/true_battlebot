@@ -5,7 +5,7 @@ import cv2
 import numpy as np
 import torch
 from bw_interfaces.msg import Contour, UVKeypoint
-from bw_shared.enums.label import Label
+from bw_shared.enums.label import ModelLabel
 
 from perception_tools.config.model_metadata import ModelMetadata
 
@@ -17,7 +17,7 @@ def load_metadata(metadata_path: str | Path) -> ModelMetadata:
     return metadata
 
 
-def mask_to_polygons(mask: np.ndarray, metadata: ModelMetadata) -> dict[Label, tuple[list[np.ndarray], bool]]:
+def mask_to_polygons(mask: np.ndarray, metadata: ModelMetadata) -> dict[ModelLabel, tuple[list[np.ndarray], bool]]:
     # from detectron2 module.
     # cv2.RETR_CCOMP flag retrieves all the contours and arranges them to a 2-level
     # hierarchy. External contours (boundary) of the object are placed in hierarchy-1.
@@ -62,5 +62,13 @@ def contour_to_msg(contours: list[np.ndarray]) -> list[Contour]:
 def msg_to_mask(contour: Contour, width: int, height: int) -> np.ndarray:
     mask = np.zeros((height, width), dtype=np.uint8)
     points = np.array([[point.x, point.y] for point in contour.points], dtype=np.int32)
-    mask = cv2.fillPoly(mask, [points], (1,))
+    mask = cv2.fillPoly(mask, [points], (1,))  # type: ignore
     return mask != 0
+
+
+def multi_msg_to_mask(contours: list[Contour], width: int, height: int) -> np.ndarray:
+    mask = np.zeros((height, width), dtype=np.uint8)
+    for contour in contours:
+        sub_mask = msg_to_mask(contour, width, height)
+        mask = np.logical_or(mask, sub_mask)
+    return mask

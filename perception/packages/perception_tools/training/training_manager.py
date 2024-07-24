@@ -10,7 +10,7 @@ import cv2
 import numpy as np
 import torch.jit
 import torchvision
-from bw_shared.enums.label import Label
+from bw_shared.enums.label import ModelLabel
 from detectron2 import model_zoo
 from detectron2.checkpoint import DetectionCheckpointer
 from detectron2.config import CfgNode, get_cfg
@@ -23,12 +23,13 @@ from detectron2.modeling import GeneralizedRCNN, build_model
 from detectron2.structures import Boxes
 from detectron2.utils.env import TORCH_VERSION
 from detectron2.utils.visualizer import ColorMode, GenericMask, Visualizer
-from helpers import load_dataset
-from nhrl_trainer import NhrlTrainer
-from perception_tools.config.model_metadata import LABEL_COLORS, LabelColor, ModelMetadata
 from tensorboard import program
 from torch import ScriptModule, Tensor, nn
 from torch.jit._serialization import save as save_model
+
+from perception_tools.config.model_metadata import LABEL_COLORS, LabelColor, ModelMetadata
+from perception_tools.training.helpers import load_dataset
+from perception_tools.training.nhrl_trainer import NhrlTrainer
 
 
 class TrainingManager:
@@ -129,7 +130,7 @@ class TrainingManager:
 
         label_index_pairs = [(info.id, info.name) for info in self.train_dataset.dataset.categories]
         label_index_pairs.sort(key=lambda x: x[0])
-        labels = [Label(name) for _, name in label_index_pairs]
+        labels = [ModelLabel(name) for _, name in label_index_pairs]
         colors = [LABEL_COLORS.get(label, self.default_color) for label in labels]
 
         metadata = ModelMetadata(labels=labels, colors=colors)
@@ -170,14 +171,14 @@ class TrainingManager:
     ) -> np.ndarray:
         h, w = image.shape[:2]
         debug_image = np.copy(image)
-        with torch.jit.optimized_execution(True):
+        with torch.jit.optimized_execution(True):  # type: ignore
             with torch.no_grad():
                 # Convert to channels first, convert to float datatype. Convert (H, W, C) to (C, H, W)
                 image_tensor = torch.from_numpy(image).to(device).permute(2, 0, 1).float()
                 # outputs = model([{"image": image_tensor}, {"image": other}])  # batch images here if necessary
                 print("Running model...")
                 t0 = time.perf_counter()
-                outputs = model([{"image": image_tensor}])
+                outputs = model([{"image": image_tensor}])  # type: ignore
                 t1 = time.perf_counter()
                 print(f"Got {len(outputs)} outputs. Took {t1 - t0:0.2f}s")
                 output = outputs[0]

@@ -47,7 +47,8 @@ class SimulatedFieldFilter(FieldFilterInterface):
         self.logger.info(f"Received simulated field result: {result}")
 
         self.logger.debug("Filtering point cloud with simulated field result.")
-        mask = msg_to_mask(field.contours, segmentations.width, segmentations.height).astype(bool)
+        largest_area_contour = max(field.contours, key=lambda x: x.area)
+        mask = msg_to_mask(largest_area_contour, segmentations.width, segmentations.height).astype(bool)
 
         if len(point_cloud.points) == 0:
             self.logger.error("Point cloud is empty. Skipping filtering.")

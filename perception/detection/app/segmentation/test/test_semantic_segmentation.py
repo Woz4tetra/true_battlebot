@@ -9,8 +9,8 @@ from perception_tools.messages.image import Image
 @pytest.fixture
 def semantic_segmentation_config() -> SemanticSegmentationConfig:
     return SemanticSegmentationConfig(
-        model_path="models/field_deeplabv3_mbv3_2024-06-17.torchscript",
-        metadata_path="models/field_deeplabv3_mbv3_2024-06-17.json",
+        model_path="field_deeplabv3_mbv3_2024-06-17.torchscript",
+        metadata_path="field_deeplabv3_mbv3_2024-06-17.json",
         debug=True,
     )
 

@@ -1,8 +1,8 @@
 import os
 
 import cv2
-from helpers import load_dataset, plot_annotated_image
 from matplotlib import pyplot as plt
+from perception_tools.training.helpers import load_dataset, plot_annotated_image
 
 
 def main():

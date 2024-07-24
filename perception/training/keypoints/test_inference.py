@@ -8,7 +8,7 @@ from pathlib import Path
 
 import cv2
 import tqdm
-from keypoints_config import load_keypoints_config
+from perception_tools.training.keypoints_config import load_keypoints_config
 
 logging.setLoggerClass(logging.Logger)  # fix rospy breaking logs
 from ultralytics import YOLO

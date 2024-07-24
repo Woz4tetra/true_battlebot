@@ -60,9 +60,9 @@ class SegDataset(Dataset):
 
         mask = np.pad(mask, ((PAD_SIZE, PAD_SIZE), (PAD_SIZE, PAD_SIZE), (0, 0)), mode="constant", constant_values=0)
 
-        mask = torch.from_numpy(mask).permute(2, 0, 1)
+        reordered_mask = torch.from_numpy(mask).permute(2, 0, 1)
 
-        return image, mask
+        return image, reordered_mask
 
 
 def get_training_set_paths(data_directory: Path) -> tuple[list[Path], list[Path]]:

@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 from bw_interfaces.msg import Contour, UVKeypoint
-from perception_tools.inference.common import contour_to_msg, msg_to_mask
+from perception_tools.inference.common import contour_to_msg, multi_msg_to_mask
 
 
 @pytest.mark.parametrize(
@@ -79,4 +79,4 @@ def test_contour_to_msg(input_contours: list[np.ndarray], expected_msg: list[Con
     ),
 )
 def test_msg_to_mask(contour_msgs: list[Contour], width: int, height: int, expected_mask: np.ndarray) -> None:
-    assert np.array_equal(msg_to_mask(contour_msgs, width, height), expected_mask)
+    assert np.array_equal(multi_msg_to_mask(contour_msgs, width, height), expected_mask)
