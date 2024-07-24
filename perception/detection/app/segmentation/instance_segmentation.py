@@ -24,8 +24,8 @@ class InstanceSegmentation(SegmentationInterface):
     def __init__(self, config: InstanceSegmentationConfig) -> None:
         self.logger = logging.getLogger("perception")
         data_dir = get_data_directory()
-        self.model_path = data_dir / config.model_path
-        self.metadata_path = data_dir / config.metadata_path
+        self.model_path = data_dir / "models" / config.model_path
+        self.metadata_path = data_dir / "models" / config.metadata_path
         self.threshold = config.threshold
         self.nms_threshold = config.nms_threshold
         self.mask_conversion_threshold = config.mask_conversion_threshold

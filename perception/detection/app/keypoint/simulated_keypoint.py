@@ -7,7 +7,7 @@ from app.keypoint.ground_truth_manager import GroundTruthManager
 from app.keypoint.keypoint_interface import KeypointInterface
 from bw_interfaces.msg import EstimatedObject, KeypointInstance, KeypointInstanceArray, UVKeypoint
 from bw_shared.enums.keypoint_name import KeypointName
-from bw_shared.enums.label import Label
+from bw_shared.enums.label import Label, ModelLabel
 from bw_shared.geometry.transform3d import Transform3D
 from image_geometry import PinholeCameraModel
 from perception_tools.messages.image import Image
@@ -23,9 +23,7 @@ class SimulatedKeypoint(KeypointInterface):
         self.model: PinholeCameraModel | None = None
         self.keypoint_names = [KeypointName.FRONT, KeypointName.BACK]
 
-        self.model_to_system_labels = {
-            model_label: Label(real_label) for model_label, real_label in self.config.model_to_system_labels.items()
-        }
+        self.model_to_system_labels = self.config.model_to_system_labels
         if len(self.model_to_system_labels) == 0:
             self.logger.warning("No simulated to real label mapping provided")
         self.logger.info(f"Simulated to real label mapping: {self.model_to_system_labels}")
@@ -65,7 +63,7 @@ class SimulatedKeypoint(KeypointInterface):
         Project these two points to pixel space.
         Fill the keypoint instance with the pixel coordinates.
         """
-        label = self.model_to_system_labels[robot.child_frame_id]
+        label = self.model_to_system_labels[ModelLabel(robot.label)]
         radius = max(robot.size.x, robot.size.y) / 2
         tf_camera_from_robot = Transform3D.from_pose_msg(robot.pose.pose)
         pos_robotcenter_to_robotfront = np.array([0, radius, 0, 1])
@@ -99,7 +97,7 @@ class SimulatedKeypoint(KeypointInterface):
 
         return KeypointInstance(
             keypoints=[forward_pixel, backward_pixel],
-            names=self.keypoint_names,
+            names=self.keypoint_names,  # type: ignore
             score=1.0,
             label=label,
             class_index=self.real_model_labels.index(label),

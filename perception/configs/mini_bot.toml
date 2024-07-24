@@ -10,8 +10,8 @@ type = "PointCloudFieldFilter"
 [field_segmentation]
 type = "SemanticSegmentation"
 debug = true
-model_path = "models/field_deeplabv3_mbv3_2024-06-17.torchscript"
-metadata_path = "models/field_deeplabv3_mbv3_2024-06-17.json"
+model_path = "field_deeplabv3_mbv3_2024-07-24.torchscript"
+metadata_path = "field_deeplabv3_mbv3_2024-07-24.json"
 
 [ros]
 log = false
@@ -27,9 +27,8 @@ exclude_filters = [
 ]
 
 [robot_keypoint]
-type = "NoopKeypoint"
-# type = "YoloKeypoint"
-# model_name = "yolov8-pose_2024-06-06.pt"
+type = "YoloKeypoint"
+model_name = "yolov8-pose_2024-07-24.pt"
 
 [robot_keypoint.model_to_system_labels]
 "mr_stabs_mk1" = "controlled_robot"
@@ -38,11 +37,3 @@ type = "NoopKeypoint"
 "mrs_buff_mk2" = "friendly_robot"
 "robot" = "robot"
 "referee" = "referee"
-
-[robot_keypoint.keypoint_names]
-"mr_stabs_mk1" = ["front", "back"]
-"mr_stabs_mk2" = ["back", "front"]
-"mrs_buff_mk1" = ["front", "back"]
-"mrs_buff_mk2" = ["back", "front"]
-"robot" = ["front", "back"]
-"referee" = ["front", "back"]

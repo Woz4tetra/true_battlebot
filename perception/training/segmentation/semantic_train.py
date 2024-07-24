@@ -109,8 +109,8 @@ def prepare_model(backbone_model: str, num_classes: int):
 
     # Update the number of output channels for the output layer.
     # This will remove the pre-trained weights for the last layer.
-    model.classifier[4] = nn.LazyConv2d(num_classes, 1)
-    model.aux_classifier[4] = nn.LazyConv2d(num_classes, 1)
+    model.classifier[4] = nn.LazyConv2d(num_classes, 1)  # type: ignore
+    model.aux_classifier[4] = nn.LazyConv2d(num_classes, 1)  # type: ignore
     return model
 
 
@@ -380,7 +380,10 @@ def main() -> None:
 
     optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
 
-    liveloss = PlotLosses(outputs=[MatplotlibPlot(figpath=str(fig_path)), "ExtremaPrinter"], mode="script")
+    liveloss = PlotLosses(
+        outputs=[MatplotlibPlot(figpath=str(fig_path)), "ExtremaPrinter"],  # type: ignore
+        mode="script",
+    )
 
     best_metric = 0.0
     train_step = TrainStep(model, optimizer, loss_fn)

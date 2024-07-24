@@ -18,10 +18,10 @@ class SemanticSegmentation(SegmentationInterface):
         self.config = config
         self.device = get_default_device()
         data_dir = get_data_directory()
-        self.model = torch.jit.load(data_dir / self.config.model_path, map_location=self.device)
+        self.model = torch.jit.load(data_dir / "models" / self.config.model_path, map_location=self.device)
         self.inference = DeepLabV3Inference(self.model, self.device)
 
-        self.metadata = load_metadata(data_dir / self.config.metadata_path)
+        self.metadata = load_metadata(data_dir / "models" / self.config.metadata_path)
 
         self.warmup()
         self.logger.info("SemanticSegmentation initialized")

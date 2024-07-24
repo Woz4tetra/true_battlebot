@@ -44,13 +44,14 @@ def main() -> None:
     inference = DeepLabV3Inference(model, device)
 
     for image_path in tqdm.tqdm(image_paths):
+        if not image_path.exists():
+            raise FileNotFoundError(f"Image not found: {image_path}")
         image = cv2.imread(str(image_path))
 
         out_mask = inference.compute_inference(image)
         color_seg_resized = inference.draw_debug_image(out_mask, FIELD_SEMANTIC_MODEL_METADATA)
 
         output_image = cv2.addWeighted(image, 0.5, color_seg_resized, 0.5, 0)
-        # output_image = cv2.addWeighted(image_resized, 0.5, color_seg, 0.5, 0)
         cv2.imwrite(str(output_path / image_path.name), output_image)
 
 

@@ -9,3 +9,18 @@ class Label(str, EnumAutoLowerStr):
     FRIENDLY_ROBOT = auto()
     CONTROLLED_ROBOT = auto()
     BACKGROUND = auto()
+
+
+class ModelLabel(str, EnumAutoLowerStr):
+    MR_STABS_MK1 = auto()
+    MR_STABS_MK2 = auto()
+    MRS_BUFF_MK1 = auto()
+    MRS_BUFF_MK2 = auto()
+    ROBOT = auto()
+    REFEREE = auto()
+    FIELD = auto()
+    BACKGROUND = auto()
+    MAIN_BOT = auto()
+    MINI_BOT = auto()
+    OPPONENT_1 = auto()
+    OPPONENT_2 = auto()
