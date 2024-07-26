@@ -22,7 +22,7 @@ class SemanticSegmentation(SegmentationInterface):
         self.inference = DeepLabV3Inference(self.model, self.device)
 
         self.metadata = load_metadata(data_dir / "models" / self.config.metadata_path)
-        self.model_to_system_labels = self.config.model_to_system_labels.mapping
+        self.model_to_system_labels = self.config.model_to_system_labels.labels
 
         self.warmup()
         self.logger.info("SemanticSegmentation initialized")

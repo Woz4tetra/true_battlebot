@@ -23,7 +23,7 @@ class SimulatedKeypoint(KeypointInterface):
         self.model: PinholeCameraModel | None = None
         self.keypoint_names = [KeypointName.FRONT, KeypointName.BACK]
 
-        self.model_to_system_labels = self.config.model_to_system_labels
+        self.model_to_system_labels = self.config.model_to_system_labels.labels
         if len(self.model_to_system_labels) == 0:
             self.logger.warning("No simulated to real label mapping provided")
         self.logger.info(f"Simulated to real label mapping: {self.model_to_system_labels}")

@@ -9,7 +9,7 @@ from app.config.segmentation_config.simulated_segmentation_config import Simulat
 from app.segmentation.segmentation_interface import SegmentationInterface
 from app.segmentation.simulated_segmentation_manager import SimulatedSegmentationManager
 from bw_interfaces.msg import Contour, SegmentationInstance, SegmentationInstanceArray, UVKeypoint
-from bw_shared.enums.label import Label
+from bw_shared.enums.label import Label, ModelLabel
 from perception_tools.messages.image import Image
 
 
@@ -126,7 +126,7 @@ class SimulatedSegmentation(SegmentationInterface):
         self.debug = config.debug
         self.error_range = self.config.compression_error_tolerance
 
-        self.model_to_system_labels = self.config.model_to_system_labels.mapping
+        self.model_to_system_labels = self.config.model_to_system_labels.labels
         if len(self.model_to_system_labels) == 0:
             self.logger.warning("No simulated to real label mapping provided")
         self.logger.info(f"Simulated to real label mapping: {self.model_to_system_labels}")
@@ -220,10 +220,14 @@ class SimulatedSegmentation(SegmentationInterface):
     def process_segmentation(self, msg: SegmentationInstanceArray) -> dict[int, Label]:
         simulated_segmentations = {}
         for instant in msg.instances:
-            if instant.label not in self.model_to_system_labels:
+            try:
+                label = ModelLabel(instant.label.lower())
+            except ValueError:
+                continue
+            if label not in self.model_to_system_labels:
                 continue
             color = instant.class_index
-            label = self.model_to_system_labels[instant.label]
+            label = self.model_to_system_labels[label]
             simulated_segmentations[color] = label
         return simulated_segmentations
 

@@ -23,7 +23,7 @@ class YoloKeypoint(KeypointInterface):
         model_path = data_dir / "models" / config.model_path
         self.model_metadata = load_metadata(data_dir / "models" / self.config.metadata_path)
 
-        self.model_to_system_labels = self.config.model_to_system_labels
+        self.model_to_system_labels = self.config.model_to_system_labels.labels
 
         self.logger.info(f"Loading model from {model_path}")
         self.model = YOLO(str(model_path))
