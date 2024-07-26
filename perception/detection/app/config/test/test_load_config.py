@@ -1,6 +1,6 @@
 import os
 
-import dacite.exceptions
+import marshmallow.exceptions
 import pytest
 from app.config.config import Config
 from app.config.config_loader import load_config
@@ -19,5 +19,5 @@ def test_load_config(robot_name: str) -> None:
 
 
 def test_extra_field() -> None:
-    with pytest.raises(dacite.exceptions.UnexpectedDataError):
+    with pytest.raises(marshmallow.exceptions.ValidationError):
         from_dict(RosConfig, {"extra_field": "value"})
