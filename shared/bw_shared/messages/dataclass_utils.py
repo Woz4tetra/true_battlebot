@@ -9,7 +9,14 @@ T = TypeVar("T")
 
 
 def from_dict(cls: Type[T], data: dict) -> T:
-    return from_dict_dacite(data_class=cls, data=data, config=Config(strict=True, cast=[Enum]))
+    return from_dict_dacite(
+        data_class=cls,
+        data=data,
+        config=Config(
+            strict=True,
+            cast=[Enum],
+        ),
+    )
 
 
 def _asdict_factory(data):

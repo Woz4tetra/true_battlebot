@@ -32,7 +32,7 @@ exclude_filters = [
 [robot_keypoint]
 type = "SimulatedKeypoint"
 
-[robot_keypoint.model_to_system_labels]
+[robot_keypoint.model_to_system_labels.mapping]
 "mini_bot" = "controlled_robot"
 "main_bot" = "friendly_robot"
 "opponent_1" = "robot"
