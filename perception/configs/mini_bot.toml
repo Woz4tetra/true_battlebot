@@ -13,6 +13,9 @@ debug = true
 model_path = "field_deeplabv3_mbv3_2024-07-24.torchscript"
 metadata_path = "field_deeplabv3_mbv3_2024-07-24.json"
 
+[field_segmentation.model_to_system_labels.mapping]
+"field" = "field"
+
 [ros]
 log = false
 exclude_filters = [

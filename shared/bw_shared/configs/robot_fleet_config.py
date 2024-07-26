@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import List
 
 from bw_interfaces.msg import RobotConfigMsg, RobotFleetConfigMsg
 
@@ -19,7 +18,7 @@ class RobotConfig:
 
     name: str
     team: RobotTeam = RobotTeam.OUR_TEAM
-    tags: List[TagConfig] = field(default_factory=list)
+    tags: list[TagConfig] = field(default_factory=list)
     radius: float = 0.15  # max outer radius of the robot in meters
     is_controlled: bool = False
 

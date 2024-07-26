@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Literal
 
-from bw_shared.enums.label import Label, ModelLabel
+from app.config.keypoint_config.model_to_system_labels_config import ModelToSystemLabelsConfig
 
 
 @dataclass
@@ -11,4 +11,4 @@ class YoloKeypointConfig:
     metadata_path: str = "model_metadata.json"
     threshold: float = 0.85
     debug: bool = False
-    model_to_system_labels: dict[ModelLabel, Label] = field(default_factory=dict)
+    model_to_system_labels: ModelToSystemLabelsConfig = field(default_factory=ModelToSystemLabelsConfig)

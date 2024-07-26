@@ -13,8 +13,8 @@ stale_image_timeout = 2.0
 [field_segmentation]
 type = "SimulatedSegmentation"
 
-[field_segmentation.model_to_system_labels]
-"Field" = "field"
+[field_segmentation.model_to_system_labels.mapping]
+"field" = "field"
 
 [ros]
 log = false
