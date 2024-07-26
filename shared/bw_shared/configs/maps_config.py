@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from typing import List
 
 from bw_shared.configs.size import Size
 from bw_shared.enums.field_type import FieldType
@@ -19,7 +20,7 @@ class MapConfig:
 
 @dataclass
 class MapsConfig:
-    maps: list[MapConfig] = field(default_factory=lambda: [])
+    maps: List[MapConfig] = field(default_factory=lambda: [])
 
     def __post_init__(self):
         self.maps_map = {field.type: field for field in self.maps}

@@ -52,7 +52,7 @@ class RobotConfig:
 
 @dataclass
 class RobotFleetConfig:
-    robots: list[RobotConfig] = field(default_factory=lambda: [])
+    robots: List[RobotConfig] = field(default_factory=lambda: [])
 
     @classmethod
     def from_dict(cls, data: dict) -> RobotFleetConfig:

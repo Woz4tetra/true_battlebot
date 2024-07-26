@@ -22,6 +22,7 @@ class SemanticSegmentation(SegmentationInterface):
         self.inference = DeepLabV3Inference(self.model, self.device)
 
         self.metadata = load_metadata(data_dir / "models" / self.config.metadata_path)
+        self.model_to_system_labels = self.config.model_to_system_labels.mapping
 
         self.warmup()
         self.logger.info("SemanticSegmentation initialized")
@@ -46,8 +47,9 @@ class SemanticSegmentation(SegmentationInterface):
         result.height = height
         result.width = width
 
-        for label, (contours, has_holes) in polygon_result.items():
-            class_idx = self.metadata.labels.index(label)
+        for model_label, (contours, has_holes) in polygon_result.items():
+            label = self.model_to_system_labels[model_label]
+            class_idx = self.metadata.labels.index(model_label)
 
             if class_idx not in object_indices:
                 object_indices[class_idx] = 0

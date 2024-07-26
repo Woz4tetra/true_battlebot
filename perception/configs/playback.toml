@@ -32,4 +32,4 @@ exclude_filters = [
 
 [robot_keypoint]
 type = "YoloKeypoint"
-model_name = "yolov8-pose_2024-06-06.pt"
+model_path = "yolov8-pose_2024-06-06.pt"

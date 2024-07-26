@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from typing import List
 
 from bw_shared.enums.label import Label
 from bw_shared.messages.dataclass_utils import from_dict, to_dict
@@ -18,7 +19,7 @@ class LabelConfig:
 
 @dataclass
 class LabelsConfig:
-    labels: list[LabelConfig] = field(default_factory=lambda: [])
+    labels: List[LabelConfig] = field(default_factory=lambda: [])
 
     def __post_init__(self):
         self.labels_map = {label.type: label for label in self.labels}

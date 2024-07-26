@@ -4,6 +4,7 @@ from typing import Literal
 import numpy as np
 
 
+@dataclass
 class BasePlaneSolverConfig:
     pass
 

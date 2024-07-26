@@ -126,9 +126,7 @@ class SimulatedSegmentation(SegmentationInterface):
         self.debug = config.debug
         self.error_range = self.config.compression_error_tolerance
 
-        self.model_to_system_labels = {
-            model_label: Label(real_label) for model_label, real_label in self.config.model_to_system_labels.items()
-        }
+        self.model_to_system_labels = self.config.model_to_system_labels.mapping
         if len(self.model_to_system_labels) == 0:
             self.logger.warning("No simulated to real label mapping provided")
         self.logger.info(f"Simulated to real label mapping: {self.model_to_system_labels}")

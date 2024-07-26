@@ -13,8 +13,8 @@ stale_image_timeout = 2.0
 [field_segmentation]
 type = "SimulatedSegmentation"
 
-[field_segmentation.model_to_system_labels]
-"Field" = "field"
+[field_segmentation.model_to_system_labels.mapping]
+"field" = "field"
 
 [ros]
 log = false
@@ -32,7 +32,7 @@ exclude_filters = [
 [robot_keypoint]
 type = "SimulatedKeypoint"
 
-[robot_keypoint.model_to_system_labels]
+[robot_keypoint.model_to_system_labels.mapping]
 "mini_bot" = "controlled_robot"
 "main_bot" = "friendly_robot"
 "opponent_1" = "robot"
