@@ -40,7 +40,7 @@ class DriveKalmanModel:
         dt: float,
         process_noise: float = 0.001,
         friction_factor: float = 0.2,
-        stale_timeout: float = 1.0,
+        stale_timeout: float = 10.0,
         significant_distance: float = 0.1,
         robot_min_radius: float = 0.05,
         robot_max_radius: float = 0.15,

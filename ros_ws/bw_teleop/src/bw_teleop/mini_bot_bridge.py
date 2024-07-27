@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import rospy
 import serial
+from bw_interfaces.msg import MotorVelocities, TelemetryStatus
 from bw_shared.geometry.rpy import RPY
 from bw_tools.get_param import get_param
 from geometry_msgs.msg import Twist
@@ -27,6 +28,7 @@ class MiniBotBridge:
         self.max_angular_scale = 1.0 / get_param("~max_angular", 20.0)  # rad/s
         self.command_timeout = rospy.Duration.from_sec(get_param("~command_timeout", 0.5))
         self.min_command = get_param("~min_command", 30)
+        self.wheel_base_width = get_param("~wheel_base_width", 0.128)
         self.neutral_command = 500
 
         self.device = find_transmitter()
@@ -37,6 +39,10 @@ class MiniBotBridge:
 
         self.imu_pub = rospy.Publisher("imu", Imu, queue_size=1)
         self.twist_sub = rospy.Subscriber("cmd_vel", Twist, self.twist_callback, queue_size=1)
+        self.motor_command_sub = rospy.Subscriber(
+            "motor_command", MotorVelocities, self.motor_command_callback, queue_size=1
+        )
+        self.telemetry_pub = rospy.Publisher("telemetry_status", TelemetryStatus, queue_size=1)
 
     def set_telemetry(self, telemetry: bool) -> None:
         if telemetry:
@@ -44,7 +50,18 @@ class MiniBotBridge:
         else:
             self.device.write(b"telemetry off\r\n")
 
+    def motor_command_callback(self, msg: MotorVelocities) -> None:
+        left_velocity = msg.velocities[0]
+        right_velocity = msg.velocities[1]
+        twist = Twist()
+        twist.linear.x = (left_velocity + right_velocity) / 2.0
+        twist.angular.z = (right_velocity - left_velocity) / self.wheel_base_width
+        self.set_twist_command(twist)
+
     def twist_callback(self, msg: Twist) -> None:
+        self.set_twist_command(msg)
+
+    def set_twist_command(self, msg: Twist) -> None:
         linear_x = msg.linear.x
         angular_z = msg.angular.z
         linear_value = int(self.neutral_command * linear_x * self.max_linear_scale)
