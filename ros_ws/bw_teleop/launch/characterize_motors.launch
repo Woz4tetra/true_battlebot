@@ -9,7 +9,9 @@
             <param name="channel" value="1" />
             <param name="microphone_id" value="10" />
         </node>
-        <include file="$(find bw_teleop)/launch/mini_bot_bridge.launch" />
+        <include file="$(find bw_teleop)/launch/mini_bot_bridge.launch">
+            <param name="lookup_table" value="passthrough" />
+        </include>
         <node pkg="rosbag" type="record" name="rosbag_characterize_motors"
             args="record -o /media/storage/bags/characterize_motors microphone_sample" />
     </group>

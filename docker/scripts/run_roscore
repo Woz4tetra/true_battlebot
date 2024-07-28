@@ -1,0 +1,14 @@
+#!/bin/bash
+BASE_DIR=$(realpath "$(dirname $0)")
+
+export PROJECT_DIR=$(realpath "${BASE_DIR}/../../")
+export PROJECT_NAME=$(${BASE_DIR}/../get_project_name)
+export IMAGE_VERSION=$(${BASE_DIR}/../get_image_tag)
+export PERCEPTION_IMAGE_VERSION=$(${BASE_DIR}/../get_image_tag perception)
+export ORGANIZATION=$(${BASE_DIR}/../get_organization)
+
+cd ${BASE_DIR}/../resources
+
+docker-compose \
+-f docker-compose.roscore.yml \
+up $@ -d

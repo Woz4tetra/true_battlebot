@@ -12,6 +12,11 @@ from rosbag import Bag
 from scipy.io import wavfile
 from scipy.signal import find_peaks
 
+AMPLITUDE_CAP = 2000
+MIN_FREQUENCY = 0.1
+MAX_FREQUENCY = 100.0
+SHOW_FFT = True
+
 
 @dataclass
 class MotorCharacterizationSample:
@@ -42,14 +47,15 @@ def compute_frequency(path: str) -> float:
     data = data[time_clip]
 
     max_amplitude = np.max(np.abs(data))
-    if max_amplitude < 20000:
+    print("max amplitude:", max_amplitude)
+    if max_amplitude < AMPLITUDE_CAP:
         return 0.0
     normalized = data / max_amplitude
 
     fft_data = np.fft.fft(normalized)
     frequencies = np.fft.fftfreq(len(fft_data)) * sample_rate
 
-    fft_clip = (frequencies >= 0.25) & (frequencies <= 20.0)
+    fft_clip = (frequencies >= MIN_FREQUENCY) & (frequencies <= MAX_FREQUENCY)
 
     fft_data = np.abs(fft_data)
 
@@ -61,14 +67,15 @@ def compute_frequency(path: str) -> float:
     freq = frequencies[index]
     freq_in_hertz = abs(freq)
 
-    # plt.figure(2)
-    # waveform = plt.subplot(2, 1, 1)
-    # fft_graph = plt.subplot(2, 1, 2)
-    # waveform.plot(times, normalized)
-    # fft_graph.plot(frequencies, fft_data)
-    # fft_graph.plot(frequencies[index], fft_data[index], "x")
-    # print(max_amplitude, freq_in_hertz)
-    # plt.show()
+    if SHOW_FFT:
+        plt.figure(2)
+        waveform = plt.subplot(2, 1, 1)
+        fft_graph = plt.subplot(2, 1, 2)
+        waveform.plot(times, normalized)
+        fft_graph.plot(frequencies, fft_data)
+        fft_graph.plot(frequencies[index], fft_data[index], "x")
+        print(max_amplitude, freq_in_hertz)
+        plt.show()
 
     return freq_in_hertz
 
@@ -89,6 +96,7 @@ def main() -> None:
                     if not msg.valid:
                         continue
                     samples.append(MotorCharacterizationSample.from_msg(msg))
+    print(f"Found {len(samples)} samples")
     data: dict[int, dict[str, list[float]]] = {}
     for sample in samples:
         if sample.channel not in data:
@@ -109,7 +117,7 @@ def main() -> None:
             for velocity, frequency in zip(channel_data["velocities"], channel_data["frequencies"]):
                 writer.writerow({"velocities": velocity, "frequencies": frequency})
 
-    plots = {channel: plt.subplot(1, len(data), channel + 1) for channel in data.keys()}
+    plots = {channel: plt.subplot(1, max(data.keys()) + 1, channel + 1) for channel in data.keys()}
 
     for channel, channel_data in data.items():
         subplot = plots[channel]

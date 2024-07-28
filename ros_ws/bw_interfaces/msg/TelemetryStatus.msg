@@ -1,2 +1,8 @@
 bool is_armed
-bool is_ok
+bool is_ready
+bool is_connected
+float32 battery_voltage
+float32 battery_current
+float32 battery_consumption
+string link_stats_json
+string flight_mode

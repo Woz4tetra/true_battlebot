@@ -6,8 +6,9 @@ from typing import Generator
 
 import numpy as np
 import rospy
-from bw_interfaces.msg import MotorCharacterizationSample, MotorVelocities, TelemetryStatus
+from bw_interfaces.msg import MotorCharacterizationSample, TelemetryStatus
 from bw_tools.get_param import get_param
+from geometry_msgs.msg import Twist
 from std_msgs.msg import Header
 
 from bw_teleop.motor_characterization.microphone_recorder import MicrophoneRecorder
@@ -25,6 +26,7 @@ class MotorCharacterizeNode:
         self.ping_timeout = get_param("~ping_timeout", 3.0)
         self.discard_timeout = get_param("~discard_timeout", 0.5)
         self.channel = get_param("~channel", 0)
+        self.num_samples = get_param("~num_samples", 100)
 
         random.seed(port)
 
@@ -37,9 +39,9 @@ class MotorCharacterizeNode:
         self.experiment_thread = Thread(target=self.run_experiment, daemon=False)
         self.sample_pub = rospy.Publisher("microphone_sample", MotorCharacterizationSample, queue_size=1)
         self.telemetry_sub = rospy.Subscriber(
-            "telemetry_status", TelemetryStatus, self.telemetry_callback, queue_size=1
+            "telemetry_status", TelemetryStatus, self.telemetry_callback, queue_size=10
         )
-        self.motor_command_pub = rospy.Publisher("motor_command", MotorVelocities, queue_size=1)
+        self.twist_pub = rospy.Publisher("cmd_vel", Twist, queue_size=10)
 
     def signal_exit(self) -> None:
         rospy.loginfo("Signaling exit")
@@ -66,25 +68,26 @@ class MotorCharacterizeNode:
 
     def iterate_samples(self) -> Generator[int, None, None]:
         while True:
-            velocities = np.arange(-255, 256, 5, dtype=int).tolist()
+            velocities = np.linspace(-1, 1, self.num_samples, dtype=float).tolist()
             random.shuffle(velocities)
             for velocity in velocities:
                 yield velocity
 
     def telemetry_callback(self, msg: TelemetryStatus) -> None:
-        self.prev_ping_time = time.perf_counter()
+        if msg.is_connected and msg.is_armed:
+            self.prev_ping_time = time.perf_counter()
 
     def run_experiment(self) -> None:
-        num_channels = 2
-        command = MotorVelocities(velocities=[0] * num_channels)
-        for velocity in self.iterate_samples():
+        command = Twist()
+        for index, velocity in enumerate(self.iterate_samples()):
             self.wait_for_ping()
             if self.should_exit():
                 break
             is_sample_valid = False
-            rospy.loginfo(f"Recording channel {self.channel} at velocity {velocity}")
+            percent_done = (index + 1) / self.num_samples * 100
+            rospy.loginfo(f"Recording channel {self.channel} at velocity {velocity}. {percent_done:.2f}% done")
             path = self.recording.split()
-            command.velocities[self.channel] = velocity
+            command.linear.x = velocity
             while not is_sample_valid:
                 self.is_sample_valid = True
                 self.spin_motor_for(command, 3.0)
@@ -98,19 +101,19 @@ class MotorCharacterizeNode:
                         valid=is_sample_valid,
                     )
                 )
-        command.velocities[self.channel] = 0
-        self.motor_command_pub.publish(command)
+        command.linear.x = 0
+        self.twist_pub.publish(command)
         rospy.loginfo("Finished recording samples")
 
     def should_exit(self) -> bool:
         return self._should_exit or rospy.is_shutdown()
 
-    def spin_motor_for(self, command: MotorVelocities, duration: float) -> None:
+    def spin_motor_for(self, command: Twist, duration: float) -> None:
         start_time = time.perf_counter()
         while time.perf_counter() - start_time < duration:
             if self.should_exit():
                 break
-            self.motor_command_pub.publish(command)
+            self.twist_pub.publish(command)
             time.sleep(0.02)
 
     def run(self) -> None:
