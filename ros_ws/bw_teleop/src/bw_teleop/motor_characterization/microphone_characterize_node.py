@@ -15,7 +15,7 @@ from bw_teleop.motor_characterization.microphone_recorder import MicrophoneRecor
 from bw_teleop.parameters import load_rosparam_robot_config
 
 
-class MotorCharacterizeNode:
+class MicrophoneCharacterizeNode:
     def __init__(self) -> None:
         self.mini_bot_config = load_rosparam_robot_config(get_param("~robot_name", "mini_bot"))
 
@@ -37,7 +37,7 @@ class MotorCharacterizeNode:
         self.recording = MicrophoneRecorder(audio_directory, mic_id)
 
         self.experiment_thread = Thread(target=self.run_experiment, daemon=False)
-        self.sample_pub = rospy.Publisher("microphone_sample", MotorCharacterizationSample, queue_size=1)
+        self.sample_pub = rospy.Publisher("motor_sample", MotorCharacterizationSample, queue_size=1)
         self.telemetry_sub = rospy.Subscriber(
             "telemetry_status", TelemetryStatus, self.telemetry_callback, queue_size=10
         )
@@ -134,7 +134,7 @@ class MotorCharacterizeNode:
 def main() -> None:
     log_level = rospy.DEBUG
     rospy.init_node("motor_characterization", log_level=log_level)
-    node = MotorCharacterizeNode()
+    node = MicrophoneCharacterizeNode()
     node.run()
 
 

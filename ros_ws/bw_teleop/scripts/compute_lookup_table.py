@@ -67,12 +67,19 @@ def fit_data_segment(data: np.ndarray) -> tuple[Callable[[Any], float], np.ndarr
     return fit_function, popt  # type: ignore
 
 
+MIN_COMMAND = -1.0
+MAX_COMMAND = 1.0
+NUM_SAMPLES = 100
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="compute_lookup_table")
     parser.add_argument("path", type=str, help="Path to the table")
+    parser.add_argument("--asymmetric", action="store_true", help="Use asymmetric fit")
     args = parser.parse_args()
 
     path = args.path
+    is_asymmetric = args.asymmetric
 
     data = []
     with open(path) as file:
@@ -109,26 +116,30 @@ def main() -> None:
     upper_linear_fit = lambda freq: linear_function(freq, upper_freq, upper_vel)  # noqa: E731
     lower_linear_fit = lambda freq: linear_function(freq, lower_freq, lower_vel)  # noqa: E731
 
-    input_velocities = np.arange(-255, 256, 1)
+    input_velocities = np.linspace(MIN_COMMAND, MAX_COMMAND, NUM_SAMPLES)
     output_frequencies = []
     for velocity in input_velocities:
-        output_frequencies.append(
-            # symmetric_frequency_to_velocity(
-            #     velocity,
-            #     nonlinear_fit,
-            #     upper_linear_fit,
-            #     lower_vel,
-            #     upper_vel,
-            # )
-            asymmetric_frequency_to_velocity(
-                velocity,
-                nonlinear_fit,
-                lower_linear_fit,
-                upper_linear_fit,
-                lower_vel,
-                upper_vel,
+        if is_asymmetric:
+            output_frequencies.append(
+                asymmetric_frequency_to_velocity(
+                    velocity,
+                    nonlinear_fit,
+                    lower_linear_fit,
+                    upper_linear_fit,
+                    lower_vel,
+                    upper_vel,
+                )
             )
-        )
+        else:
+            output_frequencies.append(
+                symmetric_frequency_to_velocity(
+                    velocity,
+                    nonlinear_fit,
+                    upper_linear_fit,
+                    lower_vel,
+                    upper_vel,
+                )
+            )
     with open("lookup_table.json", "w") as file:
         output = {
             "frequencies": output_frequencies,

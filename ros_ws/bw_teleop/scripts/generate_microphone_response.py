@@ -91,7 +91,7 @@ def main() -> None:
         if not bag.endswith(".bag"):
             continue
         with Bag(bag, "r") as bag:
-            for topic, msg, t in bag.read_messages():
+            for topic, msg, t in bag.read_messages():  # type: ignore
                 if topic == "microphone_sample":
                     if not msg.valid:
                         continue

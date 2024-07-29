@@ -1,0 +1,1 @@
+bw_interfaces/MotorCharacterizationSample[] samples
