@@ -4582,9 +4582,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   baseTopic: camera_1
-  imageWidth: 480
-  imageHeight: 270
-  publishRate: 10
+  imageWidth: 960
+  imageHeight: 540
+  publishRate: 30
   segmentationTopic: 
   publishSegmentationLabels: 0
   captureConfig:
@@ -4592,6 +4592,7 @@ MonoBehaviour:
     image_topic: image_raw
     info_topic: camera_info
     renderTexture: {fileID: 8400000, guid: db58390c5d35b7c5b808a363aef6de06, type: 2}
+    enabled: 1
   uberReplacementShader: {fileID: 4800000, guid: b1b5f33c8b6ddb6f38ade45484478858, type: 3}
   opticalFlowShader: {fileID: 4800000, guid: 382790d66e210253eb2a15e3240b485e, type: 3}
   opticalFlowSensitivity: 1
@@ -12719,9 +12720,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   baseTopic: camera_0
-  imageWidth: 480
-  imageHeight: 270
-  publishRate: 1
+  imageWidth: 1920
+  imageHeight: 1080
+  publishRate: 30
   segmentationTopic: simulated_segmentation
   publishSegmentationLabels: 1
   captureConfig:
@@ -12729,14 +12730,17 @@ MonoBehaviour:
     image_topic: rgb/image_raw
     info_topic: rgb/camera_info
     renderTexture: {fileID: 8400000, guid: 38cd70c343ffec90ab87796bb230126e, type: 2}
+    enabled: 0
   - name: layer
     image_topic: layer/image_raw
     info_topic: layer/camera_info
     renderTexture: {fileID: 8400000, guid: 9aa2ff5a63cc8811cbca8aea28148e91, type: 2}
+    enabled: 0
   - name: depth
     image_topic: depth/depth_registered
     info_topic: depth/camera_info
     renderTexture: {fileID: 8400000, guid: 4e0006a7e8dfa867db572ed8b3405c1b, type: 2}
+    enabled: 1
   uberReplacementShader: {fileID: 4800000, guid: b1b5f33c8b6ddb6f38ade45484478858, type: 3}
   opticalFlowShader: {fileID: 4800000, guid: 382790d66e210253eb2a15e3240b485e, type: 3}
   opticalFlowSensitivity: 1

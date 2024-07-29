@@ -17,6 +17,7 @@ CGINCLUDE
 fixed4 _ObjectColor;
 fixed4 _CategoryColor;
 int _OutputMode;
+float _FarClipPlane;
 
 // remap depth: [0 @ eye .. 1 @ far] => [0 @ near .. 1 @ far]
 inline float Linear01FromEyeToLinear01FromNear(float depth01)
@@ -53,9 +54,11 @@ float4 Output(float depth01, float3 normal)
 	}
 	else if (_OutputMode == 3) // DepthMultichannel
 	{
-		float lowBits = frac(depth01 * 256);
-		float highBits = depth01 - lowBits / 256;
-		return float4(lowBits, highBits, depth01, 1);
+        float depthMillimeters = 0.001 * (3.90625 * (depth01 * _FarClipPlane - 0.256) + 1.002);
+
+		float lowBits = frac(depthMillimeters * 256);
+		float highBits = depthMillimeters - lowBits / 256;
+		return float4(lowBits, highBits, depthMillimeters, 1);
 	}
 	else if (_OutputMode == 4) // Normals
 	{

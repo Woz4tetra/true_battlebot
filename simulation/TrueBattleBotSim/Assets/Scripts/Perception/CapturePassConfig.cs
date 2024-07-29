@@ -8,4 +8,5 @@ class CapturePassConfig
     public string image_topic;
     public string info_topic;
     public RenderTexture renderTexture;
+    public bool enabled = true;
 }

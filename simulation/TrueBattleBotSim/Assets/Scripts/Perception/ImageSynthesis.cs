@@ -99,6 +99,10 @@ public class ImageSynthesis : MonoBehaviour
 
         foreach (CapturePassConfig config in captureConfig)
         {
+            if (!config.enabled)
+            {
+                continue;
+            }
             CapturePass pass = new CapturePass()
             {
                 name = config.name,
@@ -254,7 +258,8 @@ public class ImageSynthesis : MonoBehaviour
     static private void SetupCameraWithReplacementShader(Camera cam, Shader shader, ReplacelementModes mode, Color clearColor)
     {
         var cb = new CommandBuffer();
-        cb.SetGlobalFloat("_OutputMode", (int)mode); // @TODO: CommandBuffer is missing SetGlobalInt() method
+        cb.SetGlobalFloat("_OutputMode", (int)mode);
+        cb.SetGlobalFloat("_FarClipPlane", cam.farClipPlane / 1000.0f);  // scale based on reference clip plane (1000)
         cam.AddCommandBuffer(CameraEvent.BeforeForwardOpaque, cb);
         cam.AddCommandBuffer(CameraEvent.BeforeFinalPass, cb);
         cam.SetReplacementShader(shader, "");
@@ -479,25 +484,6 @@ public class ImageSynthesis : MonoBehaviour
         // extract bytes
         byte[] bytes = texture.GetRawTextureData();
 
-
-        switch (encoding)
-        {
-            case Encoding.RGB8:
-                break;
-            case Encoding.MONO16:
-                for (int i = 0; i < bytes.Length; i += 2)
-                {
-                    (bytes[i], bytes[i + 1]) = convertBytesToMillimeters(
-                        bytes[i],
-                        bytes[i + 1],
-                        camera.farClipPlane
-                    );
-                }
-                break;
-            default:
-                break;
-        }
-
         // create ROS Image message
         ImageMsg imageMsg = new ImageMsg(
             new HeaderMsg(),
@@ -523,21 +509,5 @@ public class ImageSynthesis : MonoBehaviour
         imageMsg.header = header;
         pass.imageTopicState.Publish(imageMsg);
         pass.infoTopicState.Publish(cameraInfoMsg);
-    }
-
-    static (byte, byte) convertBytesToMillimeters(byte lowerByte, byte higherByte, float farClipPlane)
-    {
-        uint unscaledRawDepth = (uint)(lowerByte | (higherByte << 8));
-        if (unscaledRawDepth == 0)
-        {
-            return (0, 0);
-        }
-        float depthMeters = 1.0f / 0xffff * unscaledRawDepth;
-        depthMeters *= farClipPlane / 1000.0f;  // scale based on reference clip plane
-        depthMeters = 3.90625f * (depthMeters - 0.256f) + 1.002f;
-        uint depthMillimeters = (uint)(1000.0f * depthMeters);
-        byte rawDepthLowerByte = (byte)(depthMillimeters & 0xff);
-        byte rawDepthHigherByte = (byte)((depthMillimeters >> 8) & 0xff);
-        return (rawDepthLowerByte, rawDepthHigherByte);
     }
 }
