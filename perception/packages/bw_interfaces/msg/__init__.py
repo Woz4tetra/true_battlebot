@@ -1,5 +1,4 @@
 from ._BehaviorMode import *
-from ._BundleConfigMsg import *
 from ._CageCorner import *
 from ._CollisionInfo import *
 from ._ConfiguredOpponents import *
@@ -18,6 +17,7 @@ from ._KeypointInstance import *
 from ._KeypointInstanceArray import *
 from ._Labels import *
 from ._MotorCharacterizationSample import *
+from ._MotorCharacterizationSampleArray import *
 from ._MotorVelocities import *
 from ._RobotConfigMsg import *
 from ._RobotFleetConfigMsg import *
@@ -25,4 +25,5 @@ from ._SegmentationInstance import *
 from ._SegmentationInstanceArray import *
 from ._SystemSummary import *
 from ._TagConfigMsg import *
+from ._TelemetryStatus import *
 from ._UVKeypoint import *

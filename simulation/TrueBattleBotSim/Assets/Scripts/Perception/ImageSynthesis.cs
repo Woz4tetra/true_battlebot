@@ -259,7 +259,7 @@ public class ImageSynthesis : MonoBehaviour
     {
         var cb = new CommandBuffer();
         cb.SetGlobalFloat("_OutputMode", (int)mode);
-        cb.SetGlobalFloat("_FarClipPlane", cam.farClipPlane / 1000.0f);  // scale based on reference clip plane (1000)
+        cb.SetGlobalFloat("_DepthRescale", cam.farClipPlane / 1000.0f);  // scale based on reference clip plane (1000)
         cam.AddCommandBuffer(CameraEvent.BeforeForwardOpaque, cb);
         cam.AddCommandBuffer(CameraEvent.BeforeFinalPass, cb);
         cam.SetReplacementShader(shader, "");

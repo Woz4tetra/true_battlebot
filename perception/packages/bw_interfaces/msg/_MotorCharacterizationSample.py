@@ -10,14 +10,15 @@ import genpy
 from std_msgs.msg._Header import Header as std_msgs_msg_Header
 
 class MotorCharacterizationSample(genpy.Message):
-  _md5sum: str = "455a47144a9003c6bb9bcde605416646"
+  _md5sum: str = "4accd4d68cae99dc85c19b42cfc8a8a2"
   _type: str = "bw_interfaces/MotorCharacterizationSample"
   _has_header: bool = True  # flag to mark the presence of a Header object
   _full_text: str = """std_msgs/Header header
-int32 channel
-int32 velocity
-string filename
-bool valid
+int32 channel  # motor channel
+float64 velocity  # commanded velocity in relative units
+string filename  # sample filename containing the data
+bool valid  # true if the sample should be used
+float64 feedback  # sensed motor velocity in real units (Hz, RPM, etc)
 
 ================================================================================
 MSG: std_msgs/Header
@@ -35,14 +36,15 @@ time stamp
 #Frame this data is associated with
 string frame_id
 """
-  __slots__: List[str] = ['header','channel','velocity','filename','valid']
-  _slot_types: List[str] = ['std_msgs/Header','int32','int32','string','bool']
+  __slots__: List[str] = ['header','channel','velocity','filename','valid','feedback']
+  _slot_types: List[str] = ['std_msgs/Header','int32','float64','string','bool','float64']
 
   def __init__(self, header: std_msgs_msg_Header = None,
     channel: int = None,
-    velocity: int = None,
+    velocity: float = None,
     filename: str = None,
-    valid: bool = None):
+    valid: bool = None,
+    feedback: float = None):
     """
     Constructor. Any message fields that are implicitly/explicitly
     set to None will be assigned a default value. The recommend
@@ -50,13 +52,13 @@ string frame_id
     changes.  You cannot mix in-order arguments and keyword arguments.
 
     The available fields are:
-      header,channel,velocity,filename,valid
+      header,channel,velocity,filename,valid,feedback
 
     :param args: complete set of field values, in .msg order
     :param kwds: use keyword arguments corresponding to message field names
     to set specific fields.
     """
-    super(MotorCharacterizationSample, self).__init__(**{'header': header, 'channel': channel, 'velocity': velocity, 'filename': filename, 'valid': valid})
+    super(MotorCharacterizationSample, self).__init__(**{'header': header, 'channel': channel, 'velocity': velocity, 'filename': filename, 'valid': valid, 'feedback': feedback})
     if self.header is None:
       self.header: std_msgs_msg_Header = std_msgs_msg_Header()
     else:
@@ -66,7 +68,7 @@ string frame_id
     else:
       self.channel = channel
     if self.velocity is None:
-      self.velocity: int = 0
+      self.velocity: float = 0.
     else:
       self.velocity = velocity
     if self.filename is None:
@@ -77,6 +79,10 @@ string frame_id
       self.valid: bool = False
     else:
       self.valid = valid
+    if self.feedback is None:
+      self.feedback: float = 0.
+    else:
+      self.feedback = feedback
 
   def _get_types(self):
     """
@@ -99,15 +105,15 @@ string frame_id
         length = len(_x)
       buff.write(struct.Struct('<I%ss'%length).pack(length, _x))
       _x = self
-      buff.write(_get_struct_2i().pack(_x.channel, _x.velocity))
+      buff.write(_get_struct_id().pack(_x.channel, _x.velocity))
       _x = self.filename
       length = len(_x)
       if python3 or type(_x) == unicode:
         _x = _x.encode('utf-8')
         length = len(_x)
       buff.write(struct.Struct('<I%ss'%length).pack(length, _x))
-      _x = self.valid
-      buff.write(_get_struct_B().pack(_x))
+      _x = self
+      buff.write(_get_struct_Bd().pack(_x.valid, _x.feedback))
     except struct.error as se: self._check_types(struct.error("%s: '%s' when writing '%s'" % (type(se), str(se), str(locals().get('_x', self)))))
     except TypeError as te: self._check_types(ValueError("%s: '%s' when writing '%s'" % (type(te), str(te), str(locals().get('_x', self)))))
 
@@ -137,8 +143,8 @@ string frame_id
         self.header.frame_id = bytes_[start:end]
       _x = self
       start = end
-      end += 8
-      (_x.channel, _x.velocity,) = _get_struct_2i().unpack(bytes_[start:end])
+      end += 12
+      (_x.channel, _x.velocity,) = _get_struct_id().unpack(bytes_[start:end])
       start = end
       end += 4
       (length,) = _struct_I.unpack(bytes_[start:end])
@@ -148,9 +154,10 @@ string frame_id
         self.filename = bytes_[start:end].decode('utf-8', 'rosmsg')
       else:
         self.filename = bytes_[start:end]
+      _x = self
       start = end
-      end += 1
-      (self.valid,) = _get_struct_B().unpack(bytes_[start:end])
+      end += 9
+      (_x.valid, _x.feedback,) = _get_struct_Bd().unpack(bytes_[start:end])
       self.valid = bool(self.valid)
       return self
     except struct.error as e:
@@ -173,15 +180,15 @@ string frame_id
         length = len(_x)
       buff.write(struct.Struct('<I%ss'%length).pack(length, _x))
       _x = self
-      buff.write(_get_struct_2i().pack(_x.channel, _x.velocity))
+      buff.write(_get_struct_id().pack(_x.channel, _x.velocity))
       _x = self.filename
       length = len(_x)
       if python3 or type(_x) == unicode:
         _x = _x.encode('utf-8')
         length = len(_x)
       buff.write(struct.Struct('<I%ss'%length).pack(length, _x))
-      _x = self.valid
-      buff.write(_get_struct_B().pack(_x))
+      _x = self
+      buff.write(_get_struct_Bd().pack(_x.valid, _x.feedback))
     except struct.error as se: self._check_types(struct.error("%s: '%s' when writing '%s'" % (type(se), str(se), str(locals().get('_x', self)))))
     except TypeError as te: self._check_types(ValueError("%s: '%s' when writing '%s'" % (type(te), str(te), str(locals().get('_x', self)))))
 
@@ -212,8 +219,8 @@ string frame_id
         self.header.frame_id = bytes_[start:end]
       _x = self
       start = end
-      end += 8
-      (_x.channel, _x.velocity,) = _get_struct_2i().unpack(bytes_[start:end])
+      end += 12
+      (_x.channel, _x.velocity,) = _get_struct_id().unpack(bytes_[start:end])
       start = end
       end += 4
       (length,) = _struct_I.unpack(bytes_[start:end])
@@ -223,9 +230,10 @@ string frame_id
         self.filename = bytes_[start:end].decode('utf-8', 'rosmsg')
       else:
         self.filename = bytes_[start:end]
+      _x = self
       start = end
-      end += 1
-      (self.valid,) = _get_struct_B().unpack(bytes_[start:end])
+      end += 9
+      (_x.valid, _x.feedback,) = _get_struct_Bd().unpack(bytes_[start:end])
       self.valid = bool(self.valid)
       return self
     except struct.error as e:
@@ -235,21 +243,21 @@ _struct_I = genpy.struct_I
 def _get_struct_I():
     global _struct_I
     return _struct_I
-_struct_2i = None
-def _get_struct_2i():
-    global _struct_2i
-    if _struct_2i is None:
-        _struct_2i = struct.Struct("<2i")
-    return _struct_2i
 _struct_3I = None
 def _get_struct_3I():
     global _struct_3I
     if _struct_3I is None:
         _struct_3I = struct.Struct("<3I")
     return _struct_3I
-_struct_B = None
-def _get_struct_B():
-    global _struct_B
-    if _struct_B is None:
-        _struct_B = struct.Struct("<B")
-    return _struct_B
+_struct_Bd = None
+def _get_struct_Bd():
+    global _struct_Bd
+    if _struct_Bd is None:
+        _struct_Bd = struct.Struct("<Bd")
+    return _struct_Bd
+_struct_id = None
+def _get_struct_id():
+    global _struct_id
+    if _struct_id is None:
+        _struct_id = struct.Struct("<id")
+    return _struct_id

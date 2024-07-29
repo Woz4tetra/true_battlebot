@@ -12720,9 +12720,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   baseTopic: camera_0
-  imageWidth: 1920
-  imageHeight: 1080
-  publishRate: 30
+  imageWidth: 960
+  imageHeight: 540
+  publishRate: 10
   segmentationTopic: simulated_segmentation
   publishSegmentationLabels: 1
   captureConfig:
@@ -12730,12 +12730,12 @@ MonoBehaviour:
     image_topic: rgb/image_raw
     info_topic: rgb/camera_info
     renderTexture: {fileID: 8400000, guid: 38cd70c343ffec90ab87796bb230126e, type: 2}
-    enabled: 0
+    enabled: 1
   - name: layer
     image_topic: layer/image_raw
     info_topic: layer/camera_info
     renderTexture: {fileID: 8400000, guid: 9aa2ff5a63cc8811cbca8aea28148e91, type: 2}
-    enabled: 0
+    enabled: 1
   - name: depth
     image_topic: depth/depth_registered
     info_topic: depth/camera_info
