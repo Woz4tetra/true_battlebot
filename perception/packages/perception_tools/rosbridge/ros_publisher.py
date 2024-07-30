@@ -26,11 +26,7 @@ class RosPublisher(Generic[T]):
 
     def publish(self, msg: T) -> None:
         if self.log and (len(self.exclude_filters) == 0 or self.topic_name not in self.exclude_filters):
-            str_msg = str(msg)
-            if len(str_msg) > 100:
-                str_msg = str_msg[:100] + "..."
-            str_msg = str_msg.replace("\n", "\\n")
-            self.logger.debug(f"{self.topic_name} published a message: {repr(str_msg)}")
+            self.logger.debug(f"{self.topic_name} published a message")
         self.publisher.publish(msg)
 
     def num_subscribers(self) -> int:

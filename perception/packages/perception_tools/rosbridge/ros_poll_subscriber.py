@@ -38,11 +38,7 @@ class RosPollSubscriber(Generic[T]):
 
     def _process_message(self, msg: T) -> None:
         if self.log and (len(self.exclude_filters) == 0 or self.topic_name not in self.exclude_filters):
-            str_msg = str(msg)
-            if len(str_msg) > 100:
-                str_msg = str_msg[:100] + "..."
-            str_msg = str_msg.replace("\n", "\\n")
-            self.logger.debug(f"{self.topic_name} received a message: {repr(str_msg)}")
+            self.logger.debug(f"{self.topic_name} received a message")
         if self.queue_size == 1:
             self.last_value = msg
             return
