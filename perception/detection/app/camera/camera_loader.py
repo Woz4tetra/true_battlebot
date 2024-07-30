@@ -27,7 +27,6 @@ def make_simulated_camera(camera_config: SimulatedCameraConfig, container: Conta
     color_image_sub = RosPollSubscriber(ns + "/rgb/image_raw", Image, buff_size=2 << 24)
     depth_image_sub = RosPollSubscriber(ns + "/depth/depth_registered", Image, buff_size=2 << 24)
     camera_info_sub = RosPollSubscriber(ns + "/rgb/camera_info", CameraInfo)
-    layer_request_pub = RosPublisher(ns + "/layer/request", Empty)
     depth_request_pub = RosPublisher(ns + "/depth/request", Empty)
 
     return SimulatedCamera(
@@ -36,7 +35,6 @@ def make_simulated_camera(camera_config: SimulatedCameraConfig, container: Conta
         color_image_sub,
         depth_image_sub,
         camera_info_sub,
-        layer_request_pub,
         depth_request_pub,
     )
 

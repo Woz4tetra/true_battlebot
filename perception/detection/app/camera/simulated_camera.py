@@ -23,7 +23,6 @@ class SimulatedCamera(CameraInterface):
         color_image_sub: RosPollSubscriber[RosImage],
         depth_image_sub: RosPollSubscriber[RosImage],
         camera_info_sub: RosPollSubscriber[CameraInfo],
-        layer_request_pub: RosPublisher[Empty],
         depth_request_pub: RosPublisher[Empty],
     ) -> None:
         self.config = config
@@ -31,18 +30,17 @@ class SimulatedCamera(CameraInterface):
         self.color_image_sub = color_image_sub
         self.depth_image_sub = depth_image_sub
         self.camera_info_sub = camera_info_sub
-        self.layer_request_pub = layer_request_pub
         self.depth_request_pub = depth_request_pub
         self.camera_data = CameraData()
         self.mode = CameraMode.ROBOT_FINDER
+        self.mode_change_time = 0.0
+        self.depth_receive_time = 0.0
         self.logger = logging.getLogger("perception")
 
     def open(self, mode: CameraMode) -> bool:
+        if self.mode != mode:
+            self.mode_change_time = time.monotonic()
         self.mode = mode
-        if self.mode == CameraMode.FIELD_FINDER:
-            self.logger.info("Requesting depth and layer images")
-            self.layer_request_pub.publish(Empty())
-            self.depth_request_pub.publish(Empty())
         return True
 
     def check_frame_id(self, frame_id: str) -> None:
@@ -51,6 +49,10 @@ class SimulatedCamera(CameraInterface):
 
     def poll(self) -> CameraData | None:
         now = time.time()
+        if self.mode == CameraMode.FIELD_FINDER:
+            if self.mode_change_time > self.depth_receive_time:
+                self.logger.debug("Requested depth image")
+                self.depth_request_pub.publish(Empty())
         if color := self.color_image_sub.receive():
             self._update_color(now, color)
         if depth := self.depth_image_sub.receive():
@@ -86,6 +88,7 @@ class SimulatedCamera(CameraInterface):
                 depth_image,
                 self.camera_data.camera_info,
             )
+            self.depth_receive_time = time.monotonic()
 
     def close(self) -> None:
         pass

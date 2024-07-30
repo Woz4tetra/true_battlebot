@@ -175,7 +175,7 @@ class InstanceSegmentation(SegmentationInterface):
         for contour in contours:
             cv2.drawContours(image, [contour], -1, cv_color, 1)
 
-    def process_image(self, msg: Image) -> tuple[SegmentationInstanceArray, Image | None]:
+    def process_image(self, msg: Image) -> tuple[SegmentationInstanceArray | None, Image | None]:
         self.logger.debug(f"Image delay is: {time.time() - msg.header.stamp}")
         image = msg.data
         self.update_resize(image.shape)

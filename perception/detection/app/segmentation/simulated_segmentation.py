@@ -149,17 +149,18 @@ class SimulatedSegmentation(SegmentationInterface):
         self.segmentation_manager = segmentation_manager
         self.logger.info("SimulatedSegmentation initialized")
 
-    def process_image(self, rgb_image: Image) -> tuple[SegmentationInstanceArray, Image | None]:
+    def process_image(self, rgb_image: Image) -> tuple[SegmentationInstanceArray | None, Image | None]:
+        self.segmentation_manager.request_segmentation()
         if len(rgb_image.data) == 0:
             self.logger.warning("Empty image received")
-            return SegmentationInstanceArray(), None
+            return None, None
         image = self.segmentation_manager.get_image()
         if image is None:
-            return SegmentationInstanceArray(), None
+            return None, None
         if segmentation := self.segmentation_manager.get_segmentation():
             self.simulated_segmentations.update(self.process_segmentation(segmentation))
         if len(self.simulated_segmentations) == 0:
-            return SegmentationInstanceArray(), None
+            return None, None
 
         segmentation_array = SegmentationInstanceArray()
 

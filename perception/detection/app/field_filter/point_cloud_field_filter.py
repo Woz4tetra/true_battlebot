@@ -82,7 +82,7 @@ class PointCloudFieldFilter(FieldFilterInterface):
         mask = msg_to_mask(largest_area_contour, segmentations.width, segmentations.height)
 
         if len(point_cloud.points) == 0:
-            self.logger.error("Point cloud is empty. Skipping filtering.")
+            self.logger.warning("Point cloud is empty. Skipping filtering.")
             return None, point_cloud
 
         cloud_size = point_cloud.points.shape[0] * point_cloud.points.shape[1]

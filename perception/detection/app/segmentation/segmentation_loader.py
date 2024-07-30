@@ -11,7 +11,9 @@ from app.segmentation.semantic_segmentation import SemanticSegmentation
 from app.segmentation.simulated_segmentation_manager import SimulatedSegmentationManager
 from bw_interfaces.msg import SegmentationInstanceArray
 from perception_tools.rosbridge.ros_poll_subscriber import RosPollSubscriber
+from perception_tools.rosbridge.ros_publisher import RosPublisher
 from sensor_msgs.msg import Image
+from std_msgs.msg import Empty
 
 from .instance_segmentation import InstanceSegmentation
 from .noop_segmentation import NoopSegmentation
@@ -30,7 +32,9 @@ def load_simulated_segmentation_manager(container: Container) -> SimulatedSegmen
     namespace = config.camera_topic.namespace
     sim_segmentation_image_sub = RosPollSubscriber(namespace + "/layer/image_raw", Image, buff_size=2 << 24)
     simulated_segmentation_sub = RosPollSubscriber(namespace + "/simulated_segmentation", SegmentationInstanceArray)
-    return SimulatedSegmentationManager(sim_segmentation_image_sub, simulated_segmentation_sub)
+    layer_request_pub = RosPublisher(namespace + "/layer/request", Empty)
+
+    return SimulatedSegmentationManager(sim_segmentation_image_sub, simulated_segmentation_sub, layer_request_pub)
 
 
 def load_segmentation(container: Container, config: SegmentationConfig) -> SegmentationImplementation:

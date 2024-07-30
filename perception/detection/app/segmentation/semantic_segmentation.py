@@ -27,7 +27,7 @@ class SemanticSegmentation(SegmentationInterface):
         self.warmup()
         self.logger.info("SemanticSegmentation initialized")
 
-    def process_image(self, msg: Image) -> tuple[SegmentationInstanceArray, Image | None]:
+    def process_image(self, msg: Image) -> tuple[SegmentationInstanceArray | None, Image | None]:
         self.logger.debug(f"Processing image with shape: {msg.data.shape}")
         height, width = msg.data.shape[:2]
 

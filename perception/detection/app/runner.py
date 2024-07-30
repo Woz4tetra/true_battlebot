@@ -61,7 +61,6 @@ class Runner:
         self.logger = logging.getLogger("perception")
 
     def start(self) -> None:
-        rospy.init_node("perception")
         self.logger.info("Runner started")
 
     def loop(self) -> None:
@@ -106,7 +105,7 @@ class Runner:
 
         image = camera_data.color_image
         field_seg, debug_image = self.field_segmentation.process_image(image)
-        if len(field_seg.instances) == 0:
+        if not field_seg:
             self.logger.debug("No field detected")
             return False
         self.field_segmentation_publisher.publish(field_seg)
@@ -224,6 +223,8 @@ def main() -> None:
     logger = logging.getLogger("perception")
     logger.info("Initializing perception")
 
+    rospy.init_node("perception")
+
     container = Container()
     container.register(config)
     container.register(shared_config)
@@ -237,11 +238,12 @@ def main() -> None:
     make_field_interface(container)
     make_field_request_handler(container)
 
-    app = Runner(container)
-
     logger.info("Starting perception")
+
+    app = Runner(container)
     app.start()
-    logger.info("perception is running")
+
+    logger.info("Running perception")
     try:
         for dt in regulate_tick(config.target_tick_rate):
             app.loop()
