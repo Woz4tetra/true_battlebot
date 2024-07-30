@@ -30,7 +30,9 @@ class SimulatedKeypoint(KeypointInterface):
         self.logger.info(f"Simulated to real label mapping: {self.model_to_system_labels}")
         self.real_model_labels = tuple(Label)
 
-    def process_image(self, camera_info: CameraInfo, rgb_image: Image) -> tuple[KeypointInstanceArray, Image | None]:
+    def process_image(
+        self, camera_info: CameraInfo, rgb_image: Image
+    ) -> tuple[KeypointInstanceArray | None, Image | None]:
         robots = self.ground_truth_manager.get_robots()
         self.camera_info.header.stamp = camera_info.header.stamp
         self.camera_info.header.seq = camera_info.header.seq
@@ -39,8 +41,12 @@ class SimulatedKeypoint(KeypointInterface):
             self.model.fromCameraInfo(camera_info)
             self.logger.info(f"Camera model loaded: {camera_info}")
             self.camera_info = camera_info
-        if robots is None or self.model is None:
-            return KeypointInstanceArray(), None
+        if self.model is None:
+            self.logger.debug("Camera model not loaded")
+            return None, None
+        if robots is None:
+            self.logger.debug("No robots found")
+            return None, None
 
         array = KeypointInstanceArray(header=camera_info.header, height=camera_info.height, width=camera_info.width)
         debug_image = Image.from_other(rgb_image) if self.debug else None

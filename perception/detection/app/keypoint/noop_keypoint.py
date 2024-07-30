@@ -9,5 +9,5 @@ class NoopKeypoint(KeypointInterface):
     def __init__(self, config: NoopKeypointConfig) -> None:
         pass
 
-    def process_image(self, camera_info: CameraInfo, image: Image) -> tuple[KeypointInstanceArray, Image | None]:
+    def process_image(self, camera_info: CameraInfo, image: Image) -> tuple[KeypointInstanceArray | None, Image | None]:
         return KeypointInstanceArray(), image

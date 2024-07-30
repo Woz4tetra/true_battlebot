@@ -86,7 +86,8 @@ class Runner:
         robot_points, debug_image = self.robot_keypoint.process_image(camera_data.camera_info, camera_data.color_image)
         if debug_image:
             self.robot_debug_image_publisher.publish(debug_image.to_msg())
-        self.robot_keypoint_publisher.publish(robot_points)
+        if robot_points:
+            self.robot_keypoint_publisher.publish(robot_points)
 
     def perceive_field(self) -> bool:
         self.logger.debug("Processing field request")
@@ -223,7 +224,7 @@ def main() -> None:
     logger = logging.getLogger("perception")
     logger.info("Initializing perception")
 
-    rospy.init_node("perception")
+    rospy.init_node("perception", log_level=rospy.DEBUG)
 
     container = Container()
     container.register(config)

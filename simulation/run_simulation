@@ -1,5 +1,21 @@
 #!/bin/bash
 BASE_DIR=$(realpath "$(dirname $0)")
 
+# SIGINT-handler
+int_handler() {
+    echo "Caught stop signal"
+    if [ -n "$SIM_PID" ]; then
+        echo "Stopping simulation"
+        kill -SIGINT "${SIM_PID}"
+        tail --pid="${SIM_PID}" -f /dev/null
+    fi
+    exit 0;
+}
+trap 'int_handler' SIGINT
+
+
 EXTENSION=$(uname -i)
-${BASE_DIR}/TrueBattleBotSim/Build/TrueBattleBotSim.${EXTENSION}
+${BASE_DIR}/TrueBattleBotSim/Build/TrueBattleBotSim.${EXTENSION} &
+SIM_PID=$!
+
+tail -F -n 1000 ~/.config/unity3d/DefaultCompany/TrueBattleBotSim/Player.log

@@ -34,16 +34,36 @@ def initialize() -> None:
     # Reinitialize logging to reset rospy logging
     logging.shutdown()
     reload(logging)
+    logging.setLoggerClass(logging.Logger)  # fix rospy breaking logs
 
     logger = logging.getLogger("perception")
+    ros_loggers = [
+        logging.getLogger(name)
+        for name in (
+            "rosout",
+            "rospy.client",
+            "rospy.msg",
+            "rospy.internal",
+            "rospy.init",
+            "rospy.impl.statistics",
+            "rospy.rosout",
+            "rospy.simtime",
+            "rospy.registration",
+            "rospy.tcpros",
+            "rospy.service",
+        )
+    ]
     formatter = CustomJsonFormatter()
 
     handle = logging.StreamHandler()
     handle.setLevel(logging.DEBUG)
     handle.setFormatter(formatter)
     logger.addHandler(handle)
-
     logger.setLevel(logging.DEBUG)
+
+    for ros_log in ros_loggers:
+        ros_log.addHandler(handle)
+        ros_log.setLevel(logging.DEBUG)
 
     # in case any libraries have added any handlers to the root logger
     logging.root.handlers.clear()

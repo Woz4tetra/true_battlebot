@@ -41,7 +41,7 @@ class YoloKeypoint(KeypointInterface):
         t1 = time.perf_counter()
         self.logger.info(f"Model warmed up in {t1 - t0} seconds")
 
-    def process_image(self, camera_info: CameraInfo, msg: Image) -> tuple[KeypointInstanceArray, Image | None]:
+    def process_image(self, camera_info: CameraInfo, msg: Image) -> tuple[KeypointInstanceArray | None, Image | None]:
         result = self.model(
             msg.data,
             verbose=self.config.debug,
