@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import json
+from typing import Any, Callable
 
 import rospy
 import serial
@@ -51,7 +52,7 @@ class MiniBotBridge:
         self.device = find_transmitter()
         self.set_telemetry(True)
         self.parser = CrsfParser()
-        self.packet_callbacks = {
+        self.packet_callbacks: dict[FrameType, Callable[[Any], None]] = {
             FrameType.BATTERY: self.battery_callback,
             FrameType.LINK_STATISTICS: self.link_statistics_callback,
             FrameType.ATTITUDE: self.attitude_callback,
@@ -59,7 +60,7 @@ class MiniBotBridge:
         }
 
         self.header = Header(frame_id=self.mini_bot_config.name)
-        self.command = []
+        self.command: list[bytes] = [b"", b""]
         self.telemetry_status = TelemetryStatus()
         self.did_status_update = False
 
@@ -133,7 +134,7 @@ class MiniBotBridge:
         while not rospy.is_shutdown():
             if self.command:
                 for cmd in self.command:
-                    rospy.logdebug(f"Sending command: {cmd}")
+                    rospy.logdebug(f"Sending command: {cmd!r}")
                     self.device.write(cmd)
             self.get_telemetry()
             rate.sleep()

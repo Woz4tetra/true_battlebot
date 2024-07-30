@@ -1,7 +1,9 @@
 import cv2
 import pytest
+from app.config.keypoint_config.model_to_system_labels_config import ModelToSystemLabelsConfig
 from app.config.segmentation_config.semantic_segmentation_config import SemanticSegmentationConfig
 from app.segmentation.semantic_segmentation import SemanticSegmentation
+from bw_shared.enums.label import Label, ModelLabel
 from perception_tools.data_directory import get_data_directory
 from perception_tools.messages.image import Image
 
@@ -12,6 +14,7 @@ def semantic_segmentation_config() -> SemanticSegmentationConfig:
         model_path="field_deeplabv3_mbv3_2024-06-17.torchscript",
         metadata_path="field_deeplabv3_mbv3_2024-06-17.json",
         debug=True,
+        model_to_system_labels=ModelToSystemLabelsConfig({ModelLabel.FIELD: Label.FIELD}),
     )
 
 
