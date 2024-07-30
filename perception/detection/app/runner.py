@@ -1,5 +1,8 @@
 import argparse
 import logging
+import os
+import re
+import time
 from typing import Protocol, cast
 
 import rospy
@@ -23,6 +26,7 @@ from bw_shared.environment import get_map, get_robot
 from bw_shared.messages.header import Header
 from bw_shared.tick_regulator import regulate_tick
 from perception_tools.messages.camera_data import CameraData
+from perception_tools.rosbridge.check_connection import check_connection
 from perception_tools.rosbridge.ros_poll_subscriber import RosPollSubscriber
 from perception_tools.rosbridge.ros_publisher import RosPublisher
 from sensor_msgs.msg import Image, PointCloud2
@@ -201,6 +205,28 @@ def make_field_interface(container: Container) -> None:
     logger.info(f"Field filter: {type(field_filter)}")
 
 
+def init_ros_node(container: Container) -> None:
+    config = container.resolve(Config)
+
+    ros_master_uri = os.environ.get("ROS_MASTER_URI", "http://localhost:11311")
+    match = re.search(r"http://(.*):(.*)", ros_master_uri)
+    if not match:
+        raise ValueError(f"Invalid ROS_MASTER_URI: {ros_master_uri}")
+    host_ip = match.group(1)
+    host_port = int(match.group(2))
+
+    is_connected = False
+    start_time = time.monotonic()
+    while time.monotonic() - start_time < config.ros.connection_timeout:
+        if check_connection(host_ip, host_port):
+            is_connected = True
+            break
+        time.sleep(0.1)
+    if not is_connected:
+        raise RuntimeError(f"Failed to connect to ROS master. {ros_master_uri}")
+    rospy.init_node("perception", log_level=rospy.DEBUG, disable_signals=True)
+
+
 def make_field_request_handler(container: Container) -> None:
     config = container.resolve(Config)
     request_subscriber = RosPollSubscriber("/perception/field/request", Empty)
@@ -224,13 +250,13 @@ def main() -> None:
     logger = logging.getLogger("perception")
     logger.info("Initializing perception")
 
-    rospy.init_node("perception", log_level=rospy.DEBUG)
-
     container = Container()
     container.register(config)
     container.register(shared_config)
     map_config = shared_config.get_map(FieldType(get_map()))
     container.register(map_config)
+
+    init_ros_node(container)
 
     make_ros_comms(container)
     make_camera(container)
