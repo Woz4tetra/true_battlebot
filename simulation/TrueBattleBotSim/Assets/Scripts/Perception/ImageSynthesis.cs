@@ -147,6 +147,9 @@ public class ImageSynthesis : MonoBehaviour
                     is_set = false;
                     break;
             }
+#if UNITY_EDITOR
+            pass.needsRescale = true;  // force rescale for camera in editor mode
+#endif
             if (is_set)
             {
                 passes.Add(pass);
@@ -479,14 +482,6 @@ public class ImageSynthesis : MonoBehaviour
 
         camera.Render();
 
-        if (needsRescale)
-        {
-            // blit to rescale (see issue with Motion Vectors in @KNOWN ISSUES)
-            RenderTexture.active = finalRT;
-            Graphics.Blit(renderRT, finalRT);
-            RenderTexture.ReleaseTemporary(renderRT);
-        }
-
         if (renderTexture != null)
         {
             Graphics.Blit(renderRT, renderTexture);
@@ -497,6 +492,14 @@ public class ImageSynthesis : MonoBehaviour
         Graphics.Blit(renderRT, temp, new Vector2(1, -1), new Vector2(0, 1));
         Graphics.Blit(temp, renderRT);
         RenderTexture.ReleaseTemporary(temp);
+
+        if (needsRescale)
+        {
+            // blit to rescale (see issue with Motion Vectors in @KNOWN ISSUES)
+            RenderTexture.active = finalRT;
+            Graphics.Blit(renderRT, finalRT);
+            RenderTexture.ReleaseTemporary(renderRT);
+        }
 
         // read offsreen texture contents into the CPU readable texture
         texture.ReadPixels(new Rect(0, 0, texture.width, texture.height), 0, 0);
