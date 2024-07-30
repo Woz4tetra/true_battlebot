@@ -1,4 +1,4 @@
-target_tick_rate = 10.0
+target_tick_rate = 60.0
 
 [camera]
 type = "SimulatedCamera"
@@ -19,13 +19,20 @@ type = "SimulatedSegmentation"
 [ros]
 log = false
 exclude_filters = [
-    "/camera_0/simulated_segmentation",
+    "/camera_0/field/debug_image",
+    "/camera_0/field/point_cloud",
+    "/camera_0/field/segmentation",
+    "/camera_0/point_cloud/cloud_registered",
     "/camera_0/robot/debug_image",
-    "/camera_0/rgb/camera_info",
-    "/camera_0/rgb/image_raw",
-    "/camera_0/layer/image_raw",
-    "/camera_0/depth/depth_registered",
-    "/camera_0/robot/segmentation",
+    "/camera_0/robot/keypoints",
+    "/perception/field/response",
+    # "/camera_0/depth/depth_registered",
+    "/camera_0/ground_truth/robots",
+    # "/camera_0/layer/image_raw",
+    # "/camera_0/rgb/camera_info",
+    # "/camera_0/rgb/image_raw",
+    "/camera_0/simulated_segmentation",
+    "/perception/field/request",
     "/perception/heartbeat",
 ]
 

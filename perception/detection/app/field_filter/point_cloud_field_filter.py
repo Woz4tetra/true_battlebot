@@ -70,12 +70,12 @@ class PointCloudFieldFilter(FieldFilterInterface):
 
     def compute_field(
         self, segmentations: SegmentationInstanceArray, point_cloud: PointCloud
-    ) -> tuple[EstimatedObject, PointCloud | None]:
+    ) -> tuple[EstimatedObject | None, PointCloud | None]:
         try:
             field = get_field(segmentations)
         except ValueError as e:
             self.logger.error(f"Failed to get field segmentation: {e}")
-            return EstimatedObject(), point_cloud
+            return None, point_cloud
 
         self.logger.debug(f"Computing {segmentations.width}x{segmentations.height} mask")
         largest_area_contour = max(field.contours, key=lambda x: x.area)
@@ -83,14 +83,14 @@ class PointCloudFieldFilter(FieldFilterInterface):
 
         if len(point_cloud.points) == 0:
             self.logger.error("Point cloud is empty. Skipping filtering.")
-            return EstimatedObject(), point_cloud
+            return None, point_cloud
 
         cloud_size = point_cloud.points.shape[0] * point_cloud.points.shape[1]
         if mask.size != cloud_size:
             self.logger.error(
                 f"Mask size {mask.size} does not match point cloud size {cloud_size}. Skipping filtering."
             )
-            return EstimatedObject(), point_cloud
+            return None, point_cloud
 
         # assumes the point cloud is same shape as the contour source image
         self.logger.debug(f"Applying mask on cloud with shape {point_cloud.points.shape}")

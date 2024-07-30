@@ -1,6 +1,5 @@
 import argparse
 import logging
-import time
 from typing import Protocol, cast
 
 import rospy
@@ -23,6 +22,7 @@ from bw_shared.enums.field_type import FieldType
 from bw_shared.environment import get_map, get_robot
 from bw_shared.messages.header import Header
 from bw_shared.tick_regulator import regulate_tick
+from perception_tools.messages.camera_data import CameraData
 from perception_tools.rosbridge.ros_poll_subscriber import RosPollSubscriber
 from perception_tools.rosbridge.ros_publisher import RosPublisher
 from sensor_msgs.msg import Image, PointCloud2
@@ -56,7 +56,8 @@ class Runner:
         self.robot_keypoint_publisher: RosPublisher[KeypointInstanceArray] = self.container.resolve_by_name(
             "robot_keypoint_publisher"
         )
-        self.prev_image_time = time.time()
+        self.camera_data = CameraData()
+        self.is_field_request_active = False
         self.logger = logging.getLogger("perception")
 
     def start(self) -> None:
@@ -67,8 +68,13 @@ class Runner:
         if rospy.is_shutdown():
             raise KeyboardInterrupt("ROS is shutting down")
         self.heartbeat_publisher.publish(Header.auto().to_msg())
-        self.perceive_robot()
-        self.perceive_field()
+        if self.field_request_handler.has_request():
+            self.is_field_request_active = True
+        if self.is_field_request_active:
+            if self.perceive_field():
+                self.is_field_request_active = False
+        else:
+            self.perceive_robot()
 
     def perceive_robot(self) -> None:
         if not self.camera.open(CameraMode.ROBOT_FINDER):
@@ -77,33 +83,37 @@ class Runner:
         camera_data = self.camera.poll()
         if camera_data is None or camera_data.color_image.data.size == 0:
             return
-        self.prev_image_time = time.time()
+        self.camera_data = camera_data
         robot_points, debug_image = self.robot_keypoint.process_image(camera_data.camera_info, camera_data.color_image)
         if debug_image:
             self.robot_debug_image_publisher.publish(debug_image.to_msg())
         self.robot_keypoint_publisher.publish(robot_points)
 
-    def perceive_field(self) -> None:
-        if not self.field_request_handler.has_request(self.prev_image_time):
-            return
-        self.logger.info("Processing field request")
+    def perceive_field(self) -> bool:
+        self.logger.debug("Processing field request")
 
         if not self.camera.open(CameraMode.FIELD_FINDER):
             self.logger.error("Failed to open camera")
-            return
+            return True
 
         camera_data = self.camera.poll()
         if camera_data is None or camera_data.color_image.data.size == 0:
             self.logger.warning("No camera data. Ignoring field request.")
-            return
-        self.prev_image_time = time.time()
+            return False
+        self.camera_data = camera_data
 
         self.point_cloud_publisher.publish(camera_data.point_cloud.to_msg())
 
         image = camera_data.color_image
         field_seg, debug_image = self.field_segmentation.process_image(image)
+        if len(field_seg.instances) == 0:
+            self.logger.debug("No field detected")
+            return False
         self.field_segmentation_publisher.publish(field_seg)
         field_result, field_point_cloud = self.field_filter.compute_field(field_seg, camera_data.point_cloud)
+        if not field_result:
+            self.logger.debug("No field result")
+            return False
         self.field_request_handler.send_response(field_result)
         if debug_image:
             self.logger.info("Publishing debug image")
@@ -115,6 +125,7 @@ class Runner:
             self.field_cloud_publisher.publish(field_point_cloud.to_msg())
         else:
             self.logger.debug("No field point cloud to publish")
+        return True
 
     def stop(self) -> None:
         self.camera.close()

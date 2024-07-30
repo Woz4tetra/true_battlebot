@@ -10,6 +10,7 @@ from app.container import Container
 from perception_tools.rosbridge.ros_poll_subscriber import RosPollSubscriber
 from perception_tools.rosbridge.ros_publisher import RosPublisher
 from sensor_msgs.msg import CameraInfo, Image
+from std_msgs.msg import Empty
 
 from .noop_camera import NoopCamera
 from .simulated_camera import SimulatedCamera
@@ -26,8 +27,18 @@ def make_simulated_camera(camera_config: SimulatedCameraConfig, container: Conta
     color_image_sub = RosPollSubscriber(ns + "/rgb/image_raw", Image, buff_size=2 << 24)
     depth_image_sub = RosPollSubscriber(ns + "/depth/depth_registered", Image, buff_size=2 << 24)
     camera_info_sub = RosPollSubscriber(ns + "/rgb/camera_info", CameraInfo)
+    layer_request_pub = RosPublisher(ns + "/layer/request", Empty)
+    depth_request_pub = RosPublisher(ns + "/depth/request", Empty)
 
-    return SimulatedCamera(camera_config, config.camera_topic, color_image_sub, depth_image_sub, camera_info_sub)
+    return SimulatedCamera(
+        camera_config,
+        config.camera_topic,
+        color_image_sub,
+        depth_image_sub,
+        camera_info_sub,
+        layer_request_pub,
+        depth_request_pub,
+    )
 
 
 def make_zed_camera(camera_config: ZedCameraConfig, container: Container) -> CameraImplementation:

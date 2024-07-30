@@ -28,7 +28,7 @@ public class UiManager : MonoBehaviour
 
     DisplayReadoutManager displayReadoutManager;
 
-    Resolution[] resolutions;
+    List<Resolution> resolutions = new List<Resolution>();
     List<string> scenarios = new List<string>();
     Dictionary<string, int> scenarioIndex = new Dictionary<string, int>();
 
@@ -74,34 +74,48 @@ public class UiManager : MonoBehaviour
 
         resolutionDropdown.ClearOptions();
         List<string> options = new List<string>();
-        resolutions = Screen.resolutions;
+        Resolution[] foundResolutions = Screen.resolutions;
         int currentResolutionIndex = -1;
 
-        for (int i = 0; i < resolutions.Length; i++)
+        float commonRatio = (float)commonWidth / commonHeight;
+        int resolutionIndex = 0;
+
+        for (int index = 0; index < foundResolutions.Length; index++)
         {
-            string option = resolutions[i].width + " x " + resolutions[i].height;
+            float ratio = (float)foundResolutions[index].width / foundResolutions[index].height;
+            if (!Mathf.Approximately(ratio, commonRatio))
+            {
+                continue;
+            }
+            string option = foundResolutions[index].width + " x " + foundResolutions[index].height;
             options.Add(option);
+            resolutions.Add(foundResolutions[index]);
+            resolutionIndex++;
             if (currentResolutionIndex != -1)
             {
                 continue;
             }
-            if (resolutions[i].width == commonWidth && resolutions[i].height == commonHeight)
+            if (foundResolutions[index].width == commonWidth && foundResolutions[index].height == commonHeight)
             {
-                currentResolutionIndex = i;
+                currentResolutionIndex = resolutionIndex;
                 Debug.Log(
                     $"Common resolution found: ({commonWidth} x {commonHeight}). " +
                     $"Labeling as index {currentResolutionIndex}"
                 );
             }
-            else if (resolutions[i].width == Screen.currentResolution.width
-                    && resolutions[i].height == Screen.currentResolution.height)
+            else if (foundResolutions[index].width == Screen.currentResolution.width
+                    && foundResolutions[index].height == Screen.currentResolution.height)
             {
-                currentResolutionIndex = i;
+                currentResolutionIndex = resolutionIndex;
                 Debug.Log(
                     $"Current resolution found: ({commonWidth} x {commonHeight}). " +
                     $"Labeling as index {currentResolutionIndex}"
                 );
             }
+        }
+        if (currentResolutionIndex == -1)
+        {
+            currentResolutionIndex = resolutions.Count - 1;
         }
 
         scenarios = new List<string>(sceneManager.GetScenarioNames());

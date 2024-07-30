@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass, field
 from enum import Enum
 
@@ -102,6 +103,7 @@ ROS_ENCODING_TO_NUMPY = {
 }
 
 CV_BRIDGE = CvBridge()
+LOGGER = logging.getLogger("perception")
 
 
 @dataclass
@@ -125,8 +127,14 @@ class Image:
 
     @classmethod
     def from_msg(cls, msg: RosImage) -> Image:
+        try:
+            data = CV_BRIDGE.imgmsg_to_cv2(msg)
+        except Exception as e:
+            LOGGER.error(f"Failed to convert image message to cv2: {e}")
+            data = np.zeros((0, 0, 3), dtype=np.uint8)
+
         return Image(
             header=Header.from_msg(msg.header),
-            data=CV_BRIDGE.imgmsg_to_cv2(msg),
+            data=data,
             encoding=Encoding(msg.encoding),
         )

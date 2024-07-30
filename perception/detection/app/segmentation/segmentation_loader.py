@@ -28,7 +28,7 @@ SegmentationImplementation = Union[
 def load_simulated_segmentation_manager(container: Container) -> SimulatedSegmentationManager:
     config = container.resolve(Config)
     namespace = config.camera_topic.namespace
-    sim_segmentation_image_sub = RosPollSubscriber(namespace + "/layer/image_raw", Image)
+    sim_segmentation_image_sub = RosPollSubscriber(namespace + "/layer/image_raw", Image, buff_size=2 << 24)
     simulated_segmentation_sub = RosPollSubscriber(namespace + "/simulated_segmentation", SegmentationInstanceArray)
     return SimulatedSegmentationManager(sim_segmentation_image_sub, simulated_segmentation_sub)
 

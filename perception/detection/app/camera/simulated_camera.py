@@ -9,8 +9,10 @@ from perception_tools.messages.camera_data import CameraData
 from perception_tools.messages.image import Image
 from perception_tools.messages.point_cloud import PointCloud
 from perception_tools.rosbridge.ros_poll_subscriber import RosPollSubscriber
+from perception_tools.rosbridge.ros_publisher import RosPublisher
 from sensor_msgs.msg import CameraInfo
 from sensor_msgs.msg import Image as RosImage
+from std_msgs.msg import Empty
 
 
 class SimulatedCamera(CameraInterface):
@@ -21,18 +23,26 @@ class SimulatedCamera(CameraInterface):
         color_image_sub: RosPollSubscriber[RosImage],
         depth_image_sub: RosPollSubscriber[RosImage],
         camera_info_sub: RosPollSubscriber[CameraInfo],
+        layer_request_pub: RosPublisher[Empty],
+        depth_request_pub: RosPublisher[Empty],
     ) -> None:
         self.config = config
         self.camera_topic_config = camera_topic_config
         self.color_image_sub = color_image_sub
         self.depth_image_sub = depth_image_sub
         self.camera_info_sub = camera_info_sub
+        self.layer_request_pub = layer_request_pub
+        self.depth_request_pub = depth_request_pub
         self.camera_data = CameraData()
         self.mode = CameraMode.ROBOT_FINDER
         self.logger = logging.getLogger("perception")
 
     def open(self, mode: CameraMode) -> bool:
         self.mode = mode
+        if self.mode == CameraMode.FIELD_FINDER:
+            self.logger.info("Requesting depth and layer images")
+            self.layer_request_pub.publish(Empty())
+            self.depth_request_pub.publish(Empty())
         return True
 
     def check_frame_id(self, frame_id: str) -> None:

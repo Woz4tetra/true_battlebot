@@ -59,6 +59,7 @@ public class ImageSynthesis : MonoBehaviour
         public string name;
         public string imageTopic;
         public string infoTopic;
+        public string requestTopic;
         public bool supportsAntialiasing = true;
         public bool needsRescale = false;
         public ReplacelementModes mode = ReplacelementModes.None;
@@ -72,6 +73,7 @@ public class ImageSynthesis : MonoBehaviour
         public Camera camera;
         public RosTopicState imageTopicState;
         public RosTopicState infoTopicState;
+        public RosTopicState requestTopicState;
     };
 
     private ROSConnection ros;
@@ -82,15 +84,19 @@ public class ImageSynthesis : MonoBehaviour
     private float prevPublishTime = 0.0f;
 
     private SegmentationInstanceArrayMsg segmentationMsg = new SegmentationInstanceArrayMsg();
+    private Dictionary<string, bool> hasRequest = new Dictionary<string, bool>();
 
 
     // cached materials
     private Material opticalFlowMaterial;
 
     private Renderer[] prevRenderers = new Renderer[0];
+
+    private Camera mainCamera;
+
     void Start()
     {
-        Camera mainCamera = GetComponent<Camera>();
+        mainCamera = GetComponent<Camera>();
         frame = GetComponent<TransformFrame>();
         Renderer[] renderers = FindObjectsOfType<Renderer>();
 
@@ -106,8 +112,9 @@ public class ImageSynthesis : MonoBehaviour
             CapturePass pass = new CapturePass()
             {
                 name = config.name,
-                imageTopic = config.image_topic,
-                infoTopic = config.info_topic,
+                imageTopic = config.imageTopic,
+                infoTopic = config.infoTopic,
+                requestTopic = config.requestTopic,
                 renderTexture = config.renderTexture
             };
             bool is_set = true;
@@ -156,6 +163,15 @@ public class ImageSynthesis : MonoBehaviour
             if (!pass.infoTopicState.IsPublisher)
             {
                 ros.RegisterPublisher<CameraInfoMsg>(pass.infoTopicState.Topic, queue_size: 1);
+            }
+            if (pass.requestTopic.Length > 0)
+            {
+                hasRequest[pass.name] = false;
+                ros.Subscribe<EmptyMsg>(GetImageTopic(pass.requestTopic), (msg) =>
+                {
+                    Debug.Log($"Received request for {pass.name}");
+                    hasRequest[pass.name] = true;
+                });
             }
         }
         if (publishSegmentationLabels)
@@ -278,7 +294,6 @@ public class ImageSynthesis : MonoBehaviour
 
     public void OnCameraChange()
     {
-        Camera mainCamera = GetComponent<Camera>();
         int targetDisplay = mainCamera.targetDisplay;
         foreach (CapturePass pass in capturePasses)
         {
@@ -376,8 +391,6 @@ public class ImageSynthesis : MonoBehaviour
 
     private void PublishRenders()
     {
-        Camera mainCamera = GetComponent<Camera>();
-
         cameraInfoMsg = CameraInfoGenerator.ConstructCameraInfoMessage(mainCamera, new HeaderMsg { frame_id = frame.GetFrameId() });
         resizeCameraInfo(cameraInfoMsg, imageWidth, imageHeight);
 
@@ -390,6 +403,15 @@ public class ImageSynthesis : MonoBehaviour
         seq++;
         foreach (CapturePass pass in capturePasses)
         {
+            if (hasRequest.ContainsKey(pass.name))
+            {
+                if (!hasRequest[pass.name])
+                {
+                    continue;
+                }
+                hasRequest[pass.name] = false;
+            }
+
             pass.outputWidth = imageWidth;
             pass.outputHeight = imageHeight;
             ImageMsg imageMsg = RenderRosImage(pass);
@@ -399,7 +421,6 @@ public class ImageSynthesis : MonoBehaviour
 
     private ImageMsg RenderRosImage(CapturePass pass)
     {
-        Camera mainCamera = GetComponent<Camera>();
         Camera camera = pass.camera;
         int width = (int)pass.outputWidth;
         int height = (int)pass.outputHeight;

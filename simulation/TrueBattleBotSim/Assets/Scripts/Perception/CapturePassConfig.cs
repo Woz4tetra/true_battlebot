@@ -5,8 +5,9 @@ using UnityEngine;
 class CapturePassConfig
 {
     public string name;
-    public string image_topic;
-    public string info_topic;
+    public string imageTopic;
+    public string infoTopic;
+    public string requestTopic;
     public RenderTexture renderTexture;
     public bool enabled = true;
 }

@@ -1,5 +1,6 @@
 import logging
 from queue import Empty, Full, Queue
+from threading import Lock
 from typing import Generic, Type, TypeVar
 
 import rospy
@@ -13,6 +14,7 @@ class RosPollSubscriber(Generic[T]):
 
     def __init__(self, topic: str, msg_type: Type[T], queue_size: int = 1, buff_size: int = 65536):
         self.queue_size = queue_size
+        self.lock = Lock()
         if queue_size == 1:
             self.last_value: T | None = None
         else:
@@ -27,15 +29,20 @@ class RosPollSubscriber(Generic[T]):
         )
 
     def receive(self) -> T | None:
-        if self.queue_size != 1:
-            return self._pop_message()
-        return_val = self.last_value
-        self.last_value = None
-        return return_val
+        with self.lock:
+            if self.queue_size != 1:
+                return self._pop_message()
+            return_val = self.last_value
+            self.last_value = None
+            return return_val
 
-    def _callback(self, msg: T) -> None:
+    def _process_message(self, msg: T) -> None:
         if self.log and (len(self.exclude_filters) == 0 or self.topic_name not in self.exclude_filters):
-            self.logger.debug(f"{self.topic_name} received a message: {msg}")
+            str_msg = str(msg)
+            if len(str_msg) > 100:
+                str_msg = str_msg[:100] + "..."
+            str_msg = str_msg.replace("\n", "\\n")
+            self.logger.debug(f"{self.topic_name} received a message: {repr(str_msg)}")
         if self.queue_size == 1:
             self.last_value = msg
             return
@@ -47,6 +54,13 @@ class RosPollSubscriber(Generic[T]):
             except Full:
                 self.logger.debug(f"{self.topic_name} dropping a message from the queue")
                 self._pop_message()
+
+    def _callback(self, msg: T) -> None:
+        with self.lock:
+            try:
+                self._process_message(msg)
+            except Exception as e:
+                self.logger.error(f"Error in callback: {e}")
 
     def _pop_message(self) -> T | None:
         try:

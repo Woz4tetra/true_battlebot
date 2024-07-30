@@ -1,5 +1,4 @@
 import logging
-import time
 
 from app.config.field_filter_config.field_request_config import FieldRequestConfig
 from bw_interfaces.msg import EstimatedObject
@@ -20,15 +19,9 @@ class FieldRequestHandler:
         self.request_subscriber = request_subscriber
         self.response_publisher = response_publisher
 
-    def has_request(self, last_image_time: float) -> bool:
-        received = self.request_subscriber.receive()
-        if received is not None:
+    def has_request(self) -> bool:
+        if self.request_subscriber.receive():
             self.logger.info("Received field request")
-            now = time.time()
-            delay = now - last_image_time
-            if now - last_image_time > self.stale_image_timeout:
-                self.logger.warning(f"Image is {delay:0.4f} seconds stale. Dropping request.")
-                return False
             return True
         return False
 

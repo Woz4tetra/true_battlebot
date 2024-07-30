@@ -21,6 +21,7 @@ class SimulatedKeypoint(KeypointInterface):
         self.logger = logging.getLogger("perception")
         self.debug = self.config.debug
         self.model: PinholeCameraModel | None = None
+        self.camera_info = CameraInfo()
         self.keypoint_names = [KeypointName.FRONT, KeypointName.BACK]
 
         self.model_to_system_labels = self.config.model_to_system_labels.labels
@@ -31,10 +32,13 @@ class SimulatedKeypoint(KeypointInterface):
 
     def process_image(self, camera_info: CameraInfo, rgb_image: Image) -> tuple[KeypointInstanceArray, Image | None]:
         robots = self.ground_truth_manager.get_robots()
-        if self.model is None:
+        self.camera_info.header.stamp = camera_info.header.stamp
+        self.camera_info.header.seq = camera_info.header.seq
+        if self.camera_info != camera_info:
             self.model = PinholeCameraModel()
             self.model.fromCameraInfo(camera_info)
-            self.logger.info("Camera model loaded")
+            self.logger.info(f"Camera model loaded: {camera_info}")
+            self.camera_info = camera_info
         if robots is None or self.model is None:
             return KeypointInstanceArray(), None
 
@@ -44,7 +48,6 @@ class SimulatedKeypoint(KeypointInterface):
         for robot in robots:
             instance = self.odometry_to_keypoint(self.model, debug_image, robot, object_counts)
             if instance is None:
-                self.logger.warning("Failed to convert odometry to keypoint instance")
                 continue
             array.instances.append(instance)
         return array, debug_image
@@ -110,5 +113,8 @@ class SimulatedKeypoint(KeypointInterface):
         pos_camera_to_robotpoint = np.dot(tf_camera_from_robot.tfmat, pos_robotcenter_to_robotpoint)
         pixel_robot_point = model.project3dToPixel(pos_camera_to_robotpoint[:3])
         if np.any(np.isnan(pixel_robot_point)):
+            self.logger.warning(
+                f"Robot point is outside camera view: {pos_camera_to_robotpoint} -> {pixel_robot_point}"
+            )
             return None
         return UVKeypoint(x=pixel_robot_point[0], y=pixel_robot_point[1])

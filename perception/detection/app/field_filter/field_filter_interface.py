@@ -8,5 +8,5 @@ class FieldFilterInterface(ABC):
     @abstractmethod
     def compute_field(
         self, segmentations: SegmentationInstanceArray, point_cloud: PointCloud
-    ) -> tuple[EstimatedObject, PointCloud | None]:
+    ) -> tuple[EstimatedObject | None, PointCloud | None]:
         pass
