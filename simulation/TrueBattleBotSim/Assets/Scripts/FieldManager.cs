@@ -32,7 +32,6 @@ public class FieldManager : MonoBehaviour
             Debug.LogError("PauseManager not found");
         }
         Debug.Log($"Current directory: {Application.dataPath}");
-        Debug.Log($"Scenarios: {GetScenarioNames()}");
         robot_list = Resources.LoadAll<GameObject>("Robots");
         if (robot_list.Length == 0)
         {
@@ -43,13 +42,6 @@ public class FieldManager : MonoBehaviour
             Debug.Log($"Loaded robot prefab: {robot.name}");
             robot_prefabs[robot.name] = robot;
         }
-    }
-
-    public string[] GetScenarioNames()
-    {
-        TextAsset fileNamesAsset = Resources.Load<TextAsset>("FileNames");
-        FileNameInfo fileInfoLoaded = JsonUtility.FromJson<FileNameInfo>(fileNamesAsset.text);
-        return fileInfoLoaded.GetFiles(Path.Combine(baseDirectory, scenariosDirectory));
     }
 
     public void LoadScenario(string scenarioName)

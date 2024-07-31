@@ -118,7 +118,7 @@ public class UiManager : MonoBehaviour
             currentResolutionIndex = resolutions.Count - 1;
         }
 
-        scenarios = new List<string>(sceneManager.GetScenarioNames());
+        scenarios = new List<string>(ConfigManager.GetScenarioNames());
         scenarios.Insert(0, "");
         for (int i = 0; i < scenarios.Count; i++)
         {
