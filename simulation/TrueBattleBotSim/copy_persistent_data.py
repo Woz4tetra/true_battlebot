@@ -19,6 +19,8 @@ def main() -> None:
         destination_path = Path.home() / ".config" / "unity3d" / "DefaultCompany" / "TrueBattleBotSim"
     elif current_platform == "Darwin":
         destination_path = Path.home() / "Library" / "Application Support" / "unity.DefaultCompany.TrueBattleBotSim"
+    else:
+        raise NotImplementedError(f"Platform {current_platform} is not supported!")
 
     # Copy the files
     for file in source_path.iterdir():
