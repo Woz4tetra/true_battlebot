@@ -134,6 +134,8 @@ class MiniBotBridge:
         while not rospy.is_shutdown():
             if self.command:
                 for cmd in self.command:
+                    if not cmd:
+                        continue
                     rospy.logdebug(f"Sending command: {cmd!r}")
                     self.device.write(cmd)
             self.get_telemetry()

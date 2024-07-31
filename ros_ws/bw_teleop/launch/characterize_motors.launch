@@ -3,16 +3,15 @@
         output="screen" />
 
     <group ns="mini_bot">
-        <node name="motor_characterize" pkg="bw_teleop" type="motor_characterize_node.py"
+        <node name="motor_characterize" pkg="bw_teleop" type="hall_effect_characterize_node.py"
             output="screen" required="true">
-            <param name="audio_directory" value="/media/storage/audio" />
-            <param name="channel" value="1" />
-            <param name="microphone_id" value="10" />
+            <param name="sensor_path"
+                value="/dev/serial/by-id/usb-Silicon_Labs_CP2104_USB_to_UART_Bridge_Controller_0161856F-if00-port0" />
         </node>
         <include file="$(find bw_teleop)/launch/mini_bot_bridge.launch">
             <param name="lookup_table" value="passthrough" />
         </include>
         <node pkg="rosbag" type="record" name="rosbag_characterize_motors"
-            args="record -o /media/storage/bags/characterize_motors microphone_sample" />
+            args="record -o /media/storage/bags/characterize_motors motor_sample" />
     </group>
 </launch>
