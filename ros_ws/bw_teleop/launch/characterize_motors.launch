@@ -12,6 +12,6 @@
             <param name="lookup_table" value="passthrough" />
         </include>
         <node pkg="rosbag" type="record" name="rosbag_characterize_motors"
-            args="record -o /media/storage/bags/characterize_motors motor_sample" />
+            args="record -o /media/storage/bags/characterize_motors -a" />
     </group>
 </launch>

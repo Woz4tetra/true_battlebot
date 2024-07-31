@@ -1,7 +1,11 @@
 #!/usr/bin/env python
 import json
+import math
+from abc import ABC, abstractmethod
+from pathlib import Path
 from typing import Any, Callable
 
+import rospkg
 import rospy
 import serial
 from bw_interfaces.msg import TelemetryStatus
@@ -13,8 +17,11 @@ from sensor_msgs.msg import Imu
 from serial.tools.list_ports import comports
 from std_msgs.msg import Header
 
+from bw_teleop.lookup_table_config import LookupTableConfig
 from bw_teleop.parameters import load_rosparam_robot_config
 from bw_teleop.parse_crsf import CrsfAttitude, CrsfBattery, CrsfFlightMode, CrsfLinkStatistics, CrsfParser, FrameType
+
+rospack = rospkg.RosPack()
 
 
 def find_transmitter() -> serial.Serial:
@@ -26,9 +33,15 @@ def find_transmitter() -> serial.Serial:
 
 class LookupTableKey(EnumAutoLowerStr):
     PASSTHROUGH = auto()
+    PREFITTED_LOOKUP = auto()
 
 
-class PassthroughLookup:
+class LookupInterface(ABC):
+    @abstractmethod
+    def lookup(self, linear_x: float, angular_z: float) -> tuple[float, float]: ...
+
+
+class PassthroughLookup(LookupInterface):
     def __init__(self) -> None:
         pass
 
@@ -36,17 +49,50 @@ class PassthroughLookup:
         return linear_x, angular_z
 
 
+class PrefittedLookup(LookupInterface):
+    def __init__(self, table_path: Path, wheel_base_width: float, wheel_radius: float) -> None:
+        with open(table_path) as file:
+            table_data = json.load(file)
+        self.config = LookupTableConfig.from_dict(table_data)
+        self.wheel_base_width = wheel_base_width
+        self.wheel_radius = wheel_radius
+        self.wheel_circum = 2 * self.wheel_radius * math.pi
+
+    def lookup(self, linear_x: float, angular_z: float) -> tuple[float, float]:
+        left_ground_vel = linear_x - angular_z * self.wheel_base_width * 0.5
+        right_ground_vel = linear_x + angular_z * self.wheel_base_width * 0.5
+
+        left_frequency = left_ground_vel / self.wheel_circum
+        right_frequency = right_ground_vel / self.wheel_circum
+
+        left_command = self.config.lookup_velocity(left_frequency)
+        right_command = self.config.lookup_velocity(right_frequency)
+
+        linear_x_command = (left_command + right_command) / 2
+        angular_z_command = (right_command - left_command) / self.wheel_base_width
+
+        return linear_x_command, angular_z_command
+
+
 class MiniBotBridge:
     def __init__(self) -> None:
         self.mini_bot_config = load_rosparam_robot_config(get_param("~robot_name", "mini_bot"))
 
         self.poll_rate = get_param("~poll_rate", 60.0)
-        self.lookup_table_key = LookupTableKey(get_param("~lookup_table", "passthrough"))
+        self.lookup_table_key = LookupTableKey(get_param("~lookup_table", "prefitted_lookup"))
+        self.lookup_table_path = Path(get_param("~lookup_table_path", "config/lookup_table.json"))
         self.command_timeout = rospy.Duration.from_sec(get_param("~command_timeout", 0.5))
+        wheel_base_width = get_param("~wheel_base_width", 0.128)
+        wheel_radius = get_param("~wheel_radius", 0.05)
         self.neutral_command = 500
 
-        self.lookup_table = {
+        package_path = Path(rospack.get_path("bw_teleop"))
+
+        self.lookup_table: LookupInterface = {
             LookupTableKey.PASSTHROUGH: PassthroughLookup(),
+            LookupTableKey.PREFITTED_LOOKUP: PrefittedLookup(
+                package_path / self.lookup_table_path, wheel_base_width, wheel_radius
+            ),
         }[self.lookup_table_key]
 
         self.device = find_transmitter()

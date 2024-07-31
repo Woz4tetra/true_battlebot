@@ -13,13 +13,12 @@ from std_msgs.msg import Header
 
 
 def iterate_samples(num_samples: int) -> Generator[int, None, None]:
-    while True:
-        velocities = np.linspace(0, 1, num_samples // 2, dtype=float).tolist()
-        velocities.pop(0)
-        random.shuffle(velocities)
-        velocities = velocities + [0] + [-x for x in velocities]
-        for velocity in velocities:
-            yield velocity
+    velocities = np.linspace(0, 1, num_samples // 2, dtype=float).tolist()
+    velocities.pop(0)
+    random.shuffle(velocities)
+    velocities = velocities + [0] + [-x for x in velocities]
+    for velocity in velocities:
+        yield velocity
 
 
 class HallEffectCharacterizeNode:
@@ -76,7 +75,7 @@ class HallEffectCharacterizeNode:
 
     def get_num_ticks_and_reset(self) -> tuple[int, int]:
         if not self.device.in_waiting:
-            raise RuntimeError("No data available")
+            return 0, 0
         while self.device.in_waiting:
             row = self.device.readline()
         channel_0, channel_1 = [int(x) for x in row.split(b"\t")]
