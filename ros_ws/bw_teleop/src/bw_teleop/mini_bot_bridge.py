@@ -55,12 +55,13 @@ class PrefittedLookup(LookupInterface):
             table_data = json.load(file)
         self.config = LookupTableConfig.from_dict(table_data)
         self.wheel_base_width = wheel_base_width
+        self.wheel_base_half_width = wheel_base_width * 0.5
         self.wheel_radius = wheel_radius
         self.wheel_circum = 2 * self.wheel_radius * math.pi
 
     def lookup(self, linear_x: float, angular_z: float) -> tuple[float, float]:
-        left_ground_vel = linear_x - angular_z * self.wheel_base_width * 0.5
-        right_ground_vel = linear_x + angular_z * self.wheel_base_width * 0.5
+        left_ground_vel = linear_x - angular_z * self.wheel_base_half_width
+        right_ground_vel = linear_x + angular_z * self.wheel_base_half_width
 
         left_frequency = left_ground_vel / self.wheel_circum
         right_frequency = right_ground_vel / self.wheel_circum
@@ -83,7 +84,7 @@ class MiniBotBridge:
         self.lookup_table_path = Path(get_param("~lookup_table_path", "config/lookup_table.json"))
         self.command_timeout = rospy.Duration.from_sec(get_param("~command_timeout", 0.5))
         wheel_base_width = get_param("~wheel_base_width", 0.128)
-        wheel_radius = get_param("~wheel_radius", 0.05)
+        wheel_radius = get_param("~wheel_radius", 0.025)
         self.neutral_command = 500
 
         package_path = Path(rospack.get_path("bw_teleop"))
