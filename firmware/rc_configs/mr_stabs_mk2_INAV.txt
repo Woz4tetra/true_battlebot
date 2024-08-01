@@ -1,7 +1,7 @@
 diff all
 
 # version
-# INAV/MATEKF405TE 7.1.1 Jul 19 2024 / 01:48:30 (4e754354)
+# INAV/MATEKF405TE 7.1.1 Aug  1 2024 / 01:55:06 (77f97aa6)
 # GCC-10.3.1 20210824 (release)
 
 # start the command batch
@@ -23,6 +23,7 @@ servo 2 1000 2000 1500 -100
 # Fixed Wing Approach
 
 # features
+feature -CURRENT_METER
 feature -AIRMODE
 feature REVERSIBLE_MOTORS
 feature PWM_OUTPUT_ENABLE
@@ -83,10 +84,10 @@ logic 4 1 -1 0 0 0 0 0 0
 # OSD: custom elements
 
 # master
-set gyro_zero_x = -8
-set gyro_zero_y = -7
-set gyro_zero_z = 7
-set ins_gravity_cmss =  968.486
+set gyro_zero_x = -5
+set gyro_zero_y = -14
+set gyro_zero_z = 8
+set ins_gravity_cmss =  971.131
 set acc_hardware = ICM42605
 set acczero_x = -2
 set acczero_y = -3
@@ -97,10 +98,12 @@ set accgain_z = 4072
 set align_mag = CW270FLIP
 set mag_hardware = NONE
 set baro_hardware = SPL06
-set failsafe_procedure = NONE
+set failsafe_procedure = DROP
 set failsafe_fw_roll_angle = 3600
 set failsafe_fw_pitch_angle = 3600
 set failsafe_fw_yaw_rate = 3600
+set vbat_scale = 2135
+set current_meter_scale = 1000
 set 3d_deadband_low = 1000
 set 3d_deadband_high = 2000
 set 3d_neutral = 1500
@@ -157,6 +160,14 @@ set max_angle_inclination_pit = 450
 # battery_profile
 battery_profile 1
 
+set bat_cells = 4
+set vbat_cell_detect_voltage = 440
+set vbat_max_cell_voltage = 440
+set vbat_min_cell_voltage = 350
+set vbat_warning_cell_voltage = 370
+set battery_capacity = 600
+set battery_capacity_warning = 240
+set battery_capacity_critical = 120
 
 # battery_profile
 battery_profile 2
