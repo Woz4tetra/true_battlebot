@@ -1,0 +1,177 @@
+diff all
+
+# version
+# INAV/MATEKF405TE 7.1.1 Jul 19 2024 / 01:48:30 (4e754354)
+# GCC-10.3.1 20210824 (release)
+
+# start the command batch
+batch start
+
+# reset configuration to default settings
+defaults noreboot
+
+# resources
+
+# Timer overrides
+
+# Outputs [servo]
+servo 1 1000 2000 1500 -100
+servo 2 1000 2000 1500 -100
+
+# safehome
+
+# Fixed Wing Approach
+
+# features
+feature -AIRMODE
+feature REVERSIBLE_MOTORS
+feature PWM_OUTPUT_ENABLE
+
+# beeper
+
+# blackbox
+blackbox -NAV_ACC
+blackbox NAV_POS
+blackbox NAV_PID
+blackbox MAG
+blackbox ACC
+blackbox ATTI
+blackbox RC_DATA
+blackbox RC_COMMAND
+blackbox MOTORS
+blackbox -GYRO_RAW
+blackbox -PEAKS_R
+blackbox -PEAKS_P
+blackbox -PEAKS_Y
+
+# Receiver: Channel map
+
+# Ports
+
+# LEDs
+
+# LED color
+
+# LED mode_color
+
+# Modes [aux]
+aux 0 0 0 1800 2100
+aux 1 12 0 1500 2100
+
+# Adjustments [adjrange]
+
+# Receiver rxrange
+
+# temp_sensor
+
+# Mission Control Waypoints [wp]
+#wp 0 invalid
+
+# OSD [osd_layout]
+
+# Programming: logic
+logic 0 1 -1 1 2 17 0 1 0
+logic 1 1 -1 12 4 0 0 0 0
+logic 2 1 -1 15 1 1 0 1500 0
+logic 3 1 -1 18 0 0 4 2 0
+logic 4 1 -1 0 0 0 0 0 0
+
+# Programming: global variables
+
+# Programming: PID controllers
+
+# OSD: custom elements
+
+# master
+set gyro_zero_x = -8
+set gyro_zero_y = -7
+set gyro_zero_z = 7
+set ins_gravity_cmss =  968.486
+set acc_hardware = ICM42605
+set acczero_x = -2
+set acczero_y = -3
+set acczero_z = -18
+set accgain_x = 4097
+set accgain_y = 4099
+set accgain_z = 4072
+set align_mag = CW270FLIP
+set mag_hardware = NONE
+set baro_hardware = SPL06
+set failsafe_procedure = NONE
+set failsafe_fw_roll_angle = 3600
+set failsafe_fw_pitch_angle = 3600
+set failsafe_fw_yaw_rate = 3600
+set 3d_deadband_low = 1000
+set 3d_deadband_high = 2000
+set 3d_neutral = 1500
+set small_angle = 180
+set applied_defaults = 1
+
+# mixer_profile
+mixer_profile 1
+
+set platform_type = ROVER
+set model_preview_type = 31
+set motorstop_on_low = ON
+
+# Mixer: motor mixer
+
+# Mixer: servo mixer
+smix reset
+
+smix 0 1 29 1 0 -1
+smix 1 2 29 1 0 -1
+smix 2 1 30 100 0 0
+smix 3 2 30 100 0 0
+smix 4 1 2 -100 0 0
+smix 5 2 2 100 0 0
+
+# mixer_profile
+mixer_profile 2
+
+
+# Mixer: motor mixer
+
+# Mixer: servo mixer
+
+# profile
+profile 1
+
+
+# profile
+profile 2
+
+
+# profile
+profile 3
+
+set fw_p_pitch = 0
+set fw_i_pitch = 0
+set fw_ff_pitch = 1
+set fw_p_roll = 0
+set fw_i_roll = 0
+set fw_ff_roll = 1
+set max_angle_inclination_rll = 450
+set max_angle_inclination_pit = 450
+
+# battery_profile
+battery_profile 1
+
+
+# battery_profile
+battery_profile 2
+
+
+# battery_profile
+battery_profile 3
+
+
+# restore original profile selection
+mixer_profile 1
+profile 3
+battery_profile 1
+
+# save configuration
+save
+
+# 
