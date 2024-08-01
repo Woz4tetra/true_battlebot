@@ -9,7 +9,7 @@ import serial
 def main() -> None:
     parser = argparse.ArgumentParser(description="print_sensor")
     parser.add_argument("device_path", type=str, help="Path to the serial device")
-    parser.add_argument("-r", "--radius", type=float, help="Wheel radius", default=0.05)
+    parser.add_argument("-r", "--radius", type=float, help="Wheel radius", default=0.025)
     args = parser.parse_args()
     device_path = args.device_path
     wheel_radius = args.radius

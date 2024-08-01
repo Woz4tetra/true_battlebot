@@ -11,19 +11,17 @@ EPSILON = 0.01
 @dataclass
 class LookupTableConfig:
     frequencies: list[float]
-    min_command: float
-    max_command: float
+    velocities: list[float]
     lower_cutoff_frequency: float
     upper_cutoff_frequency: float
 
     def __post_init__(self):
-        self.velocities = np.linspace(self.min_command, self.max_command, len(self.frequencies), endpoint=True)
+        self.cutoff_frequency = min(abs(self.lower_cutoff_frequency), abs(self.upper_cutoff_frequency))
+        self.cutoff_velocity = self.lookup_velocity(self.cutoff_frequency)
 
     def lookup_velocity(self, frequency: float) -> float:
         if abs(frequency) < EPSILON:
             return 0.0
-        elif self.lower_cutoff_frequency <= frequency <= self.upper_cutoff_frequency:
-            frequency = self.lower_cutoff_frequency if frequency < 0.0 else self.upper_cutoff_frequency
         return float(np.interp(frequency, self.frequencies, self.velocities))
 
     def to_dict(self) -> dict:

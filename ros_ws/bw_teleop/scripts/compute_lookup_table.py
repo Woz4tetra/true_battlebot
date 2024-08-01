@@ -5,28 +5,18 @@ import json
 import numpy as np
 from bw_teleop.lookup_table_config import LookupTableConfig
 from matplotlib import pyplot as plt
-from scipy.optimize import curve_fit
 
 
-def fit_function(x, a, b, c, d):
-    return a / (1 + np.exp(-c * (x - b))) + d
-
-
-def linear_function(x, a, b):
-    return (a / b) * x
+def linear_function(x: float, m: float, b: float) -> float:
+    return m * x + b
 
 
 def fit_data_segment(data: np.ndarray) -> np.ndarray:
     velocities = data[:, 0]
     frequencies = data[:, 1]
 
-    try:
-        p0 = [1, 1]
-        popt, pcov = curve_fit(linear_function, velocities, frequencies, p0=p0, method="dogbox")
-    except RuntimeError:
-        popt = p0
-
-    return popt  # type: ignore
+    coeffs = np.polyfit(velocities, frequencies, 1)
+    return coeffs
 
 
 MIN_COMMAND = -1.0
@@ -69,25 +59,30 @@ def main() -> None:
     lower_table = table[:lower_cutoff]
     upper_coeffs = fit_data_segment(upper_table)
     lower_coeffs = fit_data_segment(lower_table)
+    coeffs = np.mean([upper_coeffs, lower_coeffs], axis=0)
+    y_intercept = max(lower_coeffs[1], upper_coeffs[1])
+    lower_coeffs = np.array([coeffs[0], y_intercept])
+    upper_coeffs = np.array([coeffs[0], -y_intercept])
 
     upper_vel = velocities[upper_cutoff]
     lower_vel = velocities[lower_cutoff]
+    velocity_cutoff = max(abs(lower_vel), abs(upper_vel))
 
-    input_velocities = np.linspace(MIN_COMMAND, MAX_COMMAND, NUM_SAMPLES)
+    input_velocities = []
     output_frequencies = []
-    for velocity in input_velocities:
-        if velocity < lower_vel:
+    for velocity in np.linspace(MIN_COMMAND, MAX_COMMAND, NUM_SAMPLES):
+        if velocity < -velocity_cutoff:
             frequency = linear_function(velocity, *lower_coeffs)
-        elif velocity > upper_vel:
+        elif velocity > velocity_cutoff:
             frequency = linear_function(velocity, *upper_coeffs)
         else:
-            frequency = 0.0
+            continue
         output_frequencies.append(frequency)
+        input_velocities.append(velocity)
     with open("lookup_table.json", "w") as file:
         config = LookupTableConfig(
             output_frequencies,
-            float(np.min(input_velocities)),
-            float(np.max(input_velocities)),
+            input_velocities,
             linear_function(lower_vel, *lower_coeffs),
             linear_function(upper_vel, *upper_coeffs),
         )

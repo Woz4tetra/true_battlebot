@@ -15,7 +15,7 @@ from bw_tools.get_param import get_param
 from geometry_msgs.msg import Twist
 from sensor_msgs.msg import Imu
 from serial.tools.list_ports import comports
-from std_msgs.msg import Header
+from std_msgs.msg import Header, String
 
 from bw_teleop.lookup_table_config import LookupTableConfig
 from bw_teleop.parameters import load_rosparam_robot_config
@@ -25,8 +25,10 @@ rospack = rospkg.RosPack()
 
 
 def find_transmitter() -> serial.Serial:
+    rospy.logdebug("Searching for transmitter")
     for port in comports():
         if port.pid == 22336 and port.vid == 1155:
+            rospy.logdebug(f"Transmitter found: {port.device}")
             return serial.Serial(port.device, 115200)
     raise RuntimeError("Transmitter not found")
 
@@ -70,7 +72,7 @@ class PrefittedLookup(LookupInterface):
         right_command = self.config.lookup_velocity(right_frequency)
 
         linear_x_command = (left_command + right_command) / 2
-        angular_z_command = (right_command - left_command) / self.wheel_base_width
+        angular_z_command = (right_command - left_command) / 2
 
         return linear_x_command, angular_z_command
 
@@ -86,6 +88,8 @@ class MiniBotBridge:
         wheel_base_width = get_param("~wheel_base_width", 0.128)
         wheel_radius = get_param("~wheel_radius", 0.025)
         self.neutral_command = 500
+        self.max_command = 1000
+        self.min_command = -1000
 
         package_path = Path(rospack.get_path("bw_teleop"))
 
@@ -114,6 +118,7 @@ class MiniBotBridge:
         self.imu_pub = rospy.Publisher("imu", Imu, queue_size=1)
         self.twist_sub = rospy.Subscriber("cmd_vel", Twist, self.twist_callback, queue_size=1)
         self.telemetry_pub = rospy.Publisher("telemetry_status", TelemetryStatus, queue_size=1)
+        self.trainer_port_pub = rospy.Publisher("trainer_port", String, queue_size=1)
 
     def set_telemetry(self, telemetry: bool) -> None:
         if telemetry:
@@ -125,6 +130,8 @@ class MiniBotBridge:
         linear_x, angular_z = self.lookup_table.lookup(msg.linear.x, msg.angular.z)
         linear_value = int(self.neutral_command * linear_x)
         angular_value = int(self.neutral_command * angular_z)
+        linear_value = max(self.min_command, min(self.max_command, linear_value))
+        angular_value = max(self.min_command, min(self.max_command, angular_value))
         linear_command = f"trainer 3 {linear_value}\r\n"
         rotate_command = f"trainer 0 {angular_value}\r\n"
         self.command = [linear_command.encode(), rotate_command.encode()]
@@ -179,12 +186,11 @@ class MiniBotBridge:
     def run(self) -> None:
         rate = rospy.Rate(self.poll_rate)
         while not rospy.is_shutdown():
-            if self.command:
-                for cmd in self.command:
-                    if not cmd:
-                        continue
-                    rospy.logdebug(f"Sending command: {cmd!r}")
-                    self.device.write(cmd)
+            for cmd in self.command:
+                if not cmd:
+                    continue
+                self.trainer_port_pub.publish(cmd.decode())
+                self.device.write(cmd)
             self.get_telemetry()
             rate.sleep()
 
