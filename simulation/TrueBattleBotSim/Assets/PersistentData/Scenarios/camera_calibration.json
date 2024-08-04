@@ -1,0 +1,25 @@
+{
+    "cage": {
+        "dims": {
+            "x": 2.35,
+            "y": 2.35
+        }
+    },
+    "actors": [
+        {
+            "name": "slow_camera",
+            "model": "ZED 2i",
+            "objective": "blue_slow_camera"
+        },
+        {
+            "name": "tracking_camera",
+            "model": "OAK-1",
+            "objective": "blue_tracking_camera"
+        },
+        {
+            "name": "calibration_target",
+            "model": "CalibrationTarget8x8",
+            "objective": "idle"
+        }
+    ]
+}

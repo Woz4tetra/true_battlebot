@@ -8,10 +8,16 @@ public class SequenceElementConfig
     // Waypoint follower fields
     public float x = 0.0f;  // meters
     public float y = 0.0f;  // meters
-    public float theta = 0.0f;  // degrees
+    public float z = 0.0f;  // meters
+    public float roll = 0.0f;  // degrees
+    public float pitch = 0.0f;  // degrees
+    public float yaw = 0.0f;  // degrees
     public float vx = 0.0f;  // meters/sec
     public float vy = 0.0f;  // meters/sec
-    public float vtheta = 0.0f;  // degrees/sec
+    public float vz = 0.0f;  // meters/sec
+    public float vroll = 0.0f;  // degrees/sec
+    public float vpitch = 0.0f;  // degrees/sec
+    public float vyaw = 0.0f;  // degrees/sec
 
     // Target follower fields
     public string target_name = "";

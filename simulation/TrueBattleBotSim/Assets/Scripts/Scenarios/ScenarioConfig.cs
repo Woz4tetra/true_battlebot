@@ -9,7 +9,6 @@ public class ScenarioConfig
 
     public CameraConfig main_cam = new CameraConfig
     {
-        follow_mouse = true,
         pose = new PoseConfig
         {
             position = new PositionConfig
@@ -26,9 +25,7 @@ public class ScenarioConfig
             }
         }
     };
-    public CameraConfig slow_cam = new CameraConfig();
-    public CameraConfig tracking_cam = new CameraConfig();
-    public List<RobotConfig> robots = new List<RobotConfig>();
+    public List<ActorConfig> actors = new List<ActorConfig>();
 
     public string ToJson()
     {

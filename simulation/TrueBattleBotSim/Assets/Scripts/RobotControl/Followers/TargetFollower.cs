@@ -8,11 +8,11 @@ class TargetFollower : BaseFollower
     [SerializeField] float maxAngularSpeed = 1000.0f;
     [SerializeField] bool reverseWhenUpsideDown = true;
 
-    Dictionary<string, GameObject> active_robots = new Dictionary<string, GameObject>();
+    Dictionary<string, GameObject> active_actors = new Dictionary<string, GameObject>();
 
-    public void SetActiveRobots(Dictionary<string, GameObject> active_robots)
+    public void SetActiveActors(Dictionary<string, GameObject> active_actors)
     {
-        this.active_robots = active_robots;
+        this.active_actors = active_actors;
     }
     protected override BaseFollowerEngine FindFollowerEngine()
     {
@@ -41,12 +41,12 @@ class TargetFollower : BaseFollower
             vx_limit = maxLinearSpeed;
         }
 
-        foreach (string name in active_robots.Keys)
+        foreach (string name in active_actors.Keys)
         {
             if (name == target_name)
             {
-                GameObject robot = active_robots[name];
-                ControllerInterface other_controller = robot.GetComponent<ControllerInterface>();
+                GameObject actor = active_actors[name];
+                ControllerInterface other_controller = actor.GetComponent<ControllerInterface>();
 
                 Matrix4x4 goalPose = GetOdomPose(other_controller.GetGroundTruth());
                 Vector3 delta = goalPose.GetT() - currentPose.GetT();
@@ -54,12 +54,12 @@ class TargetFollower : BaseFollower
                 next = new SequenceElementConfig
                 {
                     timestamp = current.timestamp,
-                    x = robot.transform.position.x,
-                    y = robot.transform.position.z,
-                    theta = heading,
+                    x = actor.transform.position.x,
+                    y = actor.transform.position.z,
+                    yaw = heading,
                     vx = vx_limit,
                     vy = 0.0f,
-                    vtheta = maxAngularSpeed,
+                    vyaw = maxAngularSpeed,
                 };
                 return true;
             }

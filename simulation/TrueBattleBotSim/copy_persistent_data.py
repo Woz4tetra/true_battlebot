@@ -22,6 +22,13 @@ def main() -> None:
     else:
         raise NotImplementedError(f"Platform {current_platform} is not supported!")
 
+    files_to_remove = list(destination_path.iterdir())
+    for file in files_to_remove:
+        if file.is_file():
+            file.unlink()
+        elif file.is_dir():
+            shutil.rmtree(file)
+
     # Copy the files
     for file in source_path.iterdir():
         if file.is_file():
@@ -29,7 +36,7 @@ def main() -> None:
         elif file.is_dir():
             shutil.copytree(file, destination_path / file.name, dirs_exist_ok=True)
 
-    print("File copied successfully!")
+    print(f"File copied to {destination_path} successfully!")
 
 
 if __name__ == "__main__":

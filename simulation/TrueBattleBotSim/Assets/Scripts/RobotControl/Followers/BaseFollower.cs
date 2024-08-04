@@ -117,7 +117,7 @@ class BaseFollower : MonoBehaviour
         {
             return new TwistMsg();
         }
-        arrow.Set2D(next.x, 0.1f, next.y, -next.theta);
+        arrow.Set2D(next.x, 0.1f, next.y, -next.yaw);
         return ComputeVelocity(next);
     }
 
@@ -146,7 +146,7 @@ class BaseFollower : MonoBehaviour
     {
         return Matrix4x4.TRS(
             new Vector3(element.x, element.y, 0.0f),
-            Quaternion.Euler(0, 0, element.theta),
+            Quaternion.Euler(0, 0, element.yaw),
             Vector3.one);
     }
 
@@ -160,7 +160,7 @@ class BaseFollower : MonoBehaviour
             (float)odom.twist.twist.linear.y,
             (float)odom.twist.twist.angular.z
         );
-        Vector3 goalVelocity = new Vector3(currentElement.vx, currentElement.vy, currentElement.vtheta * Mathf.Deg2Rad);
+        Vector3 goalVelocity = new Vector3(currentElement.vx, currentElement.vy, currentElement.vyaw * Mathf.Deg2Rad);
 
         return followerEngine.ComputeVelocity(currentPose, goalPose, currentVelocity, goalVelocity);
     }

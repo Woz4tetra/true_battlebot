@@ -7,48 +7,41 @@ using UnityEngine;
 
 public class FieldManager : MonoBehaviour
 {
-    [SerializeField] GameObject slowCam;
-    [SerializeField] GameObject trackingCam;
     [SerializeField] GameObject mainCam;
     [SerializeField] string baseDirectory = "Config";
     [SerializeField] string scenariosDirectory = "Scenarios";
     [SerializeField] GameObject flatScreenTV;
     [SerializeField] float maxCageSize = 5.0f;
-    [SerializeField] float heightFudgeFactor = 1.1f;
 
     PauseManager pauseManager;
     ScenarioConfig scenario;
     string currentScenarioName = "";
-    GameObject[] robot_list;
+    GameObject[] actor_list;
     GameObject[] cage_list;
-    Dictionary<string, GameObject> robotPrefabs = new Dictionary<string, GameObject>();
+    Dictionary<string, GameObject> actorPrefabs = new Dictionary<string, GameObject>();
     Dictionary<string, GameObject> cagePrefabs = new Dictionary<string, GameObject>();
-    Dictionary<string, GameObject> activeRobots = new Dictionary<string, GameObject>();
+    Dictionary<string, GameObject> activeActors = new Dictionary<string, GameObject>();
     Dictionary<string, ObjectiveConfig> objectives = new Dictionary<string, ObjectiveConfig>();
     GameObject activeCage;
     bool keyboard_been_set = false;
-    Transform initialSlowCamParent;
-    Transform initialTrackingCamParent;
 
     void Start()
     {
-        initialSlowCamParent = slowCam.transform.parent;
-        initialTrackingCamParent = trackingCam.transform.parent;
         pauseManager = transform.Find("PauseManager").GetComponent<PauseManager>();
         if (pauseManager == null)
         {
             Debug.LogError("PauseManager not found");
         }
         Debug.Log($"Current directory: {Application.dataPath}");
-        robot_list = Resources.LoadAll<GameObject>("Robots");
-        if (robot_list.Length == 0)
+        actor_list = Resources.LoadAll<GameObject>("Actors");
+        if (actor_list.Length == 0)
         {
-            Debug.LogError("No robot prefabs found");
+            Debug.LogError("No actor prefabs found");
         }
-        foreach (GameObject robot in robot_list)
+        foreach (GameObject actor in actor_list)
         {
-            Debug.Log($"Loaded robot prefab: {robot.name}");
-            robotPrefabs[robot.name] = robot;
+            Debug.Log($"Loaded actor prefab: {actor.name}");
+            actorPrefabs[actor.name] = actor;
         }
 
         cage_list = Resources.LoadAll<GameObject>("Cages");
@@ -58,7 +51,7 @@ public class FieldManager : MonoBehaviour
         }
         foreach (GameObject cage in cage_list)
         {
-            Debug.Log($"Loaded robot prefab: {cage.name}");
+            Debug.Log($"Loaded actor prefab: {cage.name}");
             cagePrefabs[cage.name] = cage;
         }
     }
@@ -67,9 +60,9 @@ public class FieldManager : MonoBehaviour
     {
         Debug.Log($"Loading scenario: {scenarioName}");
         currentScenarioName = scenarioName;
-        foreach (GameObject robot in activeRobots.Values)
+        foreach (GameObject actor in activeActors.Values)
         {
-            robot.SetActive(false);
+            actor.SetActive(false);
         }
         if (scenarioName.Length == 0)
         {
@@ -92,14 +85,7 @@ public class FieldManager : MonoBehaviour
         SetObjectPose(mainCam, scenario.main_cam.pose);
 
         CameraController mainController = mainCam.GetComponent<CameraController>();
-        mainController.EnableControls(scenario.main_cam.follow_mouse);
         mainController.ResetTransform();
-
-        slowCam.transform.SetParent(scenario.slow_cam.follow_mouse ? mainCam.transform : initialSlowCamParent);
-        trackingCam.transform.SetParent(scenario.tracking_cam.follow_mouse ? mainCam.transform : initialTrackingCamParent);
-
-        SetObjectPose(slowCam, scenario.slow_cam.pose);
-        SetObjectPose(trackingCam, scenario.tracking_cam.pose);
 
         Bounds field_bounds = GetMaxBounds(activeCage);
         Debug.Log($"Field bounds: {field_bounds.size}");
@@ -118,25 +104,38 @@ public class FieldManager : MonoBehaviour
         );
 
         keyboard_been_set = false;
-        foreach (GameObject robot in activeRobots.Values)
+        foreach (GameObject actor in activeActors.Values)
         {
-            Destroy(robot);
+            Destroy(actor);
         }
-        activeRobots.Clear();
-        foreach (RobotConfig robot_config in scenario.robots)
+        activeActors.Clear();
+        Debug.Log($"Loading scenario with {scenario.actors.Count} actors");
+        foreach (ActorConfig actor_config in scenario.actors)
         {
-            if (robot_config.objective.Length == 0)
+            if (actor_config.objective.Length == 0)
             {
-                robot_config.objective = "idle";
+                actor_config.objective = "idle";
             }
-            ObjectiveConfig objective_config = ConfigManager.LoadObjective(robot_config.objective);
-            objectives[robot_config.name] = objective_config;
-            Bounds robot_bounds = GetMaxBounds(robotPrefabs[robot_config.model]);
-            Matrix4x4 robot_pose = GetPoseFromConfig(objective_config.init, scenario.cage.dims, robot_bounds);
-            GameObject robot = Instantiate(robotPrefabs[robot_config.model], robot_pose.GetT(), robot_pose.GetR());
-            activeRobots[robot_config.name] = robot;
-            ActivateRobotType(robot, objective_config);
-            robot.SetActive(true);
+            ObjectiveConfig objective_config = ConfigManager.LoadObjective(actor_config.objective);
+            objectives[actor_config.name] = objective_config;
+            Debug.Log($"Loading actor: {actor_config.name}");
+            GameObject actorPrefab = actorPrefabs[actor_config.model];
+            Transform spawnHere = actorPrefab.transform.Find("SpawnHere");
+            Matrix4x4 actor_pose = GetPoseFromConfig(
+                objective_config.init,
+                scenario.cage.dims,
+                Matrix4x4.TRS(
+                    spawnHere.localPosition,
+                    spawnHere.localRotation,
+                    spawnHere.localScale
+                )
+            );
+            Debug.Log($"Actor pose: {actor_pose}");
+            GameObject actor = Instantiate(actorPrefab, actor_pose.GetT(), actor_pose.GetR());
+            activeActors[actor_config.name] = actor;
+            actor.gameObject.name = actor_config.name;
+            ActivateActorType(actor, objective_config);
+            actor.SetActive(true);
         }
     }
 
@@ -151,19 +150,19 @@ public class FieldManager : MonoBehaviour
         return pauseManager;
     }
 
-    void ActivateRobotType(GameObject robot, ObjectiveConfig objective_config)
+    void ActivateActorType(GameObject actor, ObjectiveConfig objective_config)
     {
-        KeyboardInput keyboard_input = robot.GetComponent<KeyboardInput>();
-        RosControllerConnector controller = robot.GetComponent<RosControllerConnector>();
-        WaypointFollower waypoint_follower = robot.GetComponent<WaypointFollower>();
-        TargetFollower target_follower = robot.GetComponent<TargetFollower>();
+        KeyboardInput keyboard_input = actor.GetComponent<KeyboardInput>();
+        RosControllerConnector controller = actor.GetComponent<RosControllerConnector>();
+        WaypointFollower waypoint_follower = actor.GetComponent<WaypointFollower>();
+        TargetFollower target_follower = actor.GetComponent<TargetFollower>();
         try
         {
             keyboard_input.enabled = false;
         }
         catch (NullReferenceException e)
         {
-            Debug.LogError($"Robot {robot.name} prefab missing keyboard input: {e.Message}");
+            Debug.LogError($"Actor {actor.name} prefab missing keyboard input: {e.Message}");
         }
         try
         {
@@ -171,7 +170,7 @@ public class FieldManager : MonoBehaviour
         }
         catch (NullReferenceException e)
         {
-            Debug.LogError($"Robot {robot.name} prefab missing controller input: {e.Message}");
+            Debug.LogError($"Actor {actor.name} prefab missing controller input: {e.Message}");
         }
         try
         {
@@ -179,7 +178,7 @@ public class FieldManager : MonoBehaviour
         }
         catch (NullReferenceException e)
         {
-            Debug.LogError($"Robot {robot.name} prefab missing follower input: {e.Message}");
+            Debug.LogError($"Actor {actor.name} prefab missing follower input: {e.Message}");
         }
         try
         {
@@ -187,7 +186,7 @@ public class FieldManager : MonoBehaviour
         }
         catch (NullReferenceException e)
         {
-            Debug.LogError($"Robot {robot.name} prefab missing target input: {e.Message}");
+            Debug.LogError($"Actor {actor.name} prefab missing target input: {e.Message}");
         }
 
         switch (objective_config.type)
@@ -212,7 +211,7 @@ public class FieldManager : MonoBehaviour
             case "target":
                 target_follower.enabled = true;
                 target_follower.SetSequence(objective_config.sequence);
-                target_follower.SetActiveRobots(activeRobots);
+                target_follower.SetActiveActors(activeActors);
                 break;
             default:
                 Debug.LogError("Invalid objective type: " + objective_config.type);
@@ -232,10 +231,10 @@ public class FieldManager : MonoBehaviour
                 timestamp = element.timestamp,
                 x = element.x * x_scale,
                 y = element.y * y_scale,
-                theta = element.theta,
+                yaw = element.yaw,
                 vx = element.vx * x_scale,
                 vy = element.vy * y_scale,
-                vtheta = element.vtheta
+                vyaw = element.vyaw
             });
         }
         return scaled_sequence;
@@ -251,32 +250,45 @@ public class FieldManager : MonoBehaviour
         return bounds;
     }
 
-    Matrix4x4 GetPoseFromConfig(ScenarioInitConfig init_config, DimsConfig dims_config, Bounds robot_bounds)
+    Matrix4x4 GetPoseFromConfig(ScenarioInitConfig init_config, DimsConfig dims_config, Matrix4x4 tf_objectorigin_from_spawn)
     {
         Vector2 scale;
+        Vector3 position;
+        Quaternion rotation;
         switch (init_config.type)
         {
             case "absolute":
                 scale = Vector2.one;
+                position = new Vector3(init_config.x, init_config.z, init_config.y);
+                rotation = Quaternion.Euler(-1 * init_config.roll, -1 * init_config.yaw, init_config.pitch);
                 break;
             case "relative":
                 scale = new Vector2(dims_config.x / 2, dims_config.y / 2);
+                position = new Vector3(init_config.x, init_config.z, init_config.y);
+                rotation = Quaternion.Euler(-1 * init_config.roll, -1 * init_config.yaw, init_config.pitch);
+                break;
+            case "world":
+                scale = Vector2.one;
+                position = new Vector3(init_config.x, init_config.y, init_config.z);
+                rotation = Quaternion.Euler(init_config.roll, init_config.pitch, init_config.yaw);
                 break;
             default:
                 scale = Vector2.one;
+                position = new Vector3(init_config.x, init_config.z, init_config.y);
+                rotation = Quaternion.Euler(init_config.pitch, init_config.yaw, init_config.roll);
                 Debug.LogError("Invalid pose type: " + init_config.type);
                 break;
         }
-        float height = Mathf.Min(robot_bounds.extents.x, Mathf.Min(robot_bounds.extents.y, robot_bounds.extents.z));
-        height *= heightFudgeFactor;
-        return Matrix4x4.TRS(
+        Matrix4x4 tforigin_from_spawn = Matrix4x4.TRS(
             new Vector3(
-                init_config.x * scale.x * (1.0f - init_config.x_buffer),
-                height,
-                init_config.y * scale.y * (1.0f - init_config.y_buffer)),
-            Quaternion.Euler(0, -1 * init_config.theta, 0),
+                position.x * scale.x * (1.0f - init_config.x_buffer),
+                position.y * (1.0f - init_config.z_buffer),
+                position.z * scale.y * (1.0f - init_config.y_buffer)),
+            rotation,
             Vector3.one
         );
+        Matrix4x4 tforigin_from_objectorigin = tforigin_from_spawn * tf_objectorigin_from_spawn.inverse;
+        return tforigin_from_objectorigin;
     }
 
     void SetObjectPose(GameObject obj, PoseConfig pose)

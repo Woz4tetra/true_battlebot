@@ -48,5 +48,10 @@ namespace MathExtensions
         {
             return new Vector3(trs.GetColumn(0).magnitude, trs.GetColumn(1).magnitude, trs.GetColumn(2).magnitude);
         }
+
+        public static Matrix4x4 GetMatrix4x4(this Transform tf)
+        {
+            return Matrix4x4.TRS(tf.position, tf.rotation, tf.localScale);
+        }
     }
 }

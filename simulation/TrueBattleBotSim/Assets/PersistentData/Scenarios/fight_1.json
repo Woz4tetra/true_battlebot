@@ -5,55 +5,33 @@
             "y": 2.35
         }
     },
-    "slow_cam": {
-        "pose": {
-            "position": {
-                "x": -1.4405,
-                "y": 1.1219,
-                "z": -1.0059
-            },
-            "rotation": {
-                "x": 41.035,
-                "y": 51.168,
-                "z": -3.358
-            }
-        }
-    },
-    "tracking_cam": {
-        "pose": {
-            "position": {
-                "x": -1.4694,
-                "y": 1.053,
-                "z": -1.0923
-            },
-            "rotation": {
-                "x": 41.373,
-                "y": 51.882,
-                "z": -2.464
-            }
-        }
-    },
-    "robots": [
+    "actors": [
         {
-            "label": "Mini bot",
+            "name": "slow_camera",
+            "model": "ZED 2i",
+            "objective": "blue_slow_camera"
+        },
+        {
+            "name": "tracking_camera",
+            "model": "OAK-1",
+            "objective": "blue_tracking_camera"
+        },
+        {
             "name": "mini_bot",
             "model": "MR STABS A-02",
             "objective": "target_opponent_mid_fight"
         },
         {
-            "label": "Main bot",
             "name": "main_bot",
             "model": "MRS BUFF B-03",
             "objective": "fight_1_chase"
         },
         {
-            "label": "Enemy bot",
             "name": "opponent_1",
             "model": "MRS BUFF B-03 Bizarro",
             "objective": "fight_1_aggressor"
         },
         {
-            "label": "Referee",
             "name": "referee",
             "model": "Referee",
             "objective": "idle_ref_corner"
