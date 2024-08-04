@@ -6,6 +6,7 @@ docker-compose.gpu.yaml
 *.pt
 *.wav
 build/
+*.blend1
 
 lightning_logs/
 runs/
