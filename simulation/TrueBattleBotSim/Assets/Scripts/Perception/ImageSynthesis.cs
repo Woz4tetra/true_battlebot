@@ -114,7 +114,7 @@ public class ImageSynthesis : MonoBehaviour
                 name = config.name,
                 imageTopic = config.imageTopic,
                 infoTopic = config.infoTopic,
-                requestTopic = config.requestTopic,
+                requestTopic = config.continuous ? "" : config.requestTopic,
                 renderTexture = config.renderTexture
             };
             bool is_set = true;

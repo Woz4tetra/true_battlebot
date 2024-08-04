@@ -10,4 +10,5 @@ class CapturePassConfig
     public string requestTopic;
     public RenderTexture renderTexture;
     public bool enabled = true;
+    public bool continuous = true;
 }
