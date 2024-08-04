@@ -15,8 +15,7 @@ public class FieldManager : MonoBehaviour
     [SerializeField] GameObject flatScreenTV;
     [SerializeField] float maxCageSize = 5.0f;
     [SerializeField] float heightFudgeFactor = 1.1f;
-    [SerializeField] Transform initialSlowCamParent;
-    [SerializeField] Transform initialTrackingCamParent;
+
     PauseManager pauseManager;
     ScenarioConfig scenario;
     string currentScenarioName = "";
@@ -28,6 +27,8 @@ public class FieldManager : MonoBehaviour
     Dictionary<string, ObjectiveConfig> objectives = new Dictionary<string, ObjectiveConfig>();
     GameObject activeCage;
     bool keyboard_been_set = false;
+    Transform initialSlowCamParent;
+    Transform initialTrackingCamParent;
 
     void Start()
     {
