@@ -16,7 +16,16 @@ public class DisplayReadoutManager : MonoBehaviour
 
     void Update()
     {
+        if (Input.GetKeyDown(KeyCode.Y))
+        {
+            NextView();
+        }
+    }
 
+    void NextView()
+    {
+        currentMaterialIndex = (currentMaterialIndex + 1) % materials.Length;
+        meshRenderer.material = materials[currentMaterialIndex];
     }
 
     public void SetEnableClicks(bool enabled)
@@ -24,14 +33,13 @@ public class DisplayReadoutManager : MonoBehaviour
         enableClicks = enabled;
     }
 
-    void OnMouseUpAsButton()
+    void OnMouseUp()
     {
         Debug.Log("Clicked on display readout");
         if (!enableClicks)
         {
             return;
         }
-        currentMaterialIndex = (currentMaterialIndex + 1) % materials.Length;
-        meshRenderer.material = materials[currentMaterialIndex];
+        NextView();
     }
 }

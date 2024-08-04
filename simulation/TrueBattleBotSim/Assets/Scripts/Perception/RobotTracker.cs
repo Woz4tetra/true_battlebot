@@ -25,7 +25,7 @@ public class RobotTracker : MonoBehaviour
         {
             bounds = trackerRenderer.bounds;
         }
-        else if (childRenderers.Length != 0)
+        else if (childRenderers != null && childRenderers.Length != 0)
         {
             bounds = childRenderers[0].bounds;
         }
@@ -33,9 +33,12 @@ public class RobotTracker : MonoBehaviour
         {
             bounds = new Bounds();
         }
-        foreach (Renderer render in childRenderers)
+        if (childRenderers != null)
         {
-            bounds.Encapsulate(render.bounds);
+            foreach (Renderer render in childRenderers)
+            {
+                bounds.Encapsulate(render.bounds);
+            }
         }
         return bounds;
     }
