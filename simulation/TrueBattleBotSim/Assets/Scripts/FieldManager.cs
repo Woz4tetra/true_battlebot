@@ -7,25 +7,32 @@ using UnityEngine;
 
 public class FieldManager : MonoBehaviour
 {
-    [SerializeField] GameObject scaleableField;
     [SerializeField] GameObject slowCam;
     [SerializeField] GameObject trackingCam;
+    [SerializeField] GameObject mainCam;
     [SerializeField] string baseDirectory = "Config";
     [SerializeField] string scenariosDirectory = "Scenarios";
     [SerializeField] GameObject flatScreenTV;
     [SerializeField] float maxCageSize = 5.0f;
     [SerializeField] float heightFudgeFactor = 1.1f;
+    [SerializeField] Transform initialSlowCamParent;
+    [SerializeField] Transform initialTrackingCamParent;
     PauseManager pauseManager;
     ScenarioConfig scenario;
     string currentScenarioName = "";
     GameObject[] robot_list;
-    Dictionary<string, GameObject> robot_prefabs = new Dictionary<string, GameObject>();
-    Dictionary<string, GameObject> active_robots = new Dictionary<string, GameObject>();
+    GameObject[] cage_list;
+    Dictionary<string, GameObject> robotPrefabs = new Dictionary<string, GameObject>();
+    Dictionary<string, GameObject> cagePrefabs = new Dictionary<string, GameObject>();
+    Dictionary<string, GameObject> activeRobots = new Dictionary<string, GameObject>();
     Dictionary<string, ObjectiveConfig> objectives = new Dictionary<string, ObjectiveConfig>();
+    GameObject activeCage;
     bool keyboard_been_set = false;
 
     void Start()
     {
+        initialSlowCamParent = slowCam.transform.parent;
+        initialTrackingCamParent = trackingCam.transform.parent;
         pauseManager = transform.Find("PauseManager").GetComponent<PauseManager>();
         if (pauseManager == null)
         {
@@ -40,7 +47,18 @@ public class FieldManager : MonoBehaviour
         foreach (GameObject robot in robot_list)
         {
             Debug.Log($"Loaded robot prefab: {robot.name}");
-            robot_prefabs[robot.name] = robot;
+            robotPrefabs[robot.name] = robot;
+        }
+
+        cage_list = Resources.LoadAll<GameObject>("Cages");
+        if (cage_list.Length == 0)
+        {
+            Debug.LogError("No cage prefabs found");
+        }
+        foreach (GameObject cage in cage_list)
+        {
+            Debug.Log($"Loaded robot prefab: {cage.name}");
+            cagePrefabs[cage.name] = cage;
         }
     }
 
@@ -48,7 +66,7 @@ public class FieldManager : MonoBehaviour
     {
         Debug.Log($"Loading scenario: {scenarioName}");
         currentScenarioName = scenarioName;
-        foreach (GameObject robot in active_robots.Values)
+        foreach (GameObject robot in activeRobots.Values)
         {
             robot.SetActive(false);
         }
@@ -63,11 +81,35 @@ public class FieldManager : MonoBehaviour
         scenario.cage.dims.x = Mathf.Min(scenario.cage.dims.x, maxCageSize);
         scenario.cage.dims.y = Mathf.Min(scenario.cage.dims.y, maxCageSize);
 
-        scaleableField.transform.localScale = new Vector3(scenario.cage.dims.x, 1, scenario.cage.dims.y);
-        SetObjectPose(slowCam, scenario.cage.slow_cam);
-        SetObjectPose(trackingCam, scenario.cage.tracking_cam);
-        Bounds field_bounds = GetMaxBounds(scaleableField);
+        if (activeCage != null)
+        {
+            Destroy(activeCage);
+        }
+        activeCage = Instantiate(cagePrefabs[scenario.cage.cage_type]);
+
+        activeCage.transform.localScale = new Vector3(scenario.cage.dims.x, 1, scenario.cage.dims.y);
+        SetObjectPose(mainCam, scenario.main_cam.pose);
+
+        CameraController mainController = mainCam.GetComponent<CameraController>();
+        mainController.EnableControls(scenario.main_cam.follow_mouse);
+        mainController.ResetTransform();
+
+        slowCam.transform.SetParent(scenario.slow_cam.follow_mouse ? mainCam.transform : initialSlowCamParent);
+        trackingCam.transform.SetParent(scenario.tracking_cam.follow_mouse ? mainCam.transform : initialTrackingCamParent);
+
+        SetObjectPose(slowCam, scenario.slow_cam.pose);
+        SetObjectPose(trackingCam, scenario.tracking_cam.pose);
+
+        Bounds field_bounds = GetMaxBounds(activeCage);
         Debug.Log($"Field bounds: {field_bounds.size}");
+        if (scenario.cage.display_readout)
+        {
+            flatScreenTV.SetActive(true);
+        }
+        else
+        {
+            flatScreenTV.SetActive(false);
+        }
         flatScreenTV.transform.position = new Vector3(
             flatScreenTV.transform.position.x,
             flatScreenTV.transform.position.y,
@@ -75,6 +117,11 @@ public class FieldManager : MonoBehaviour
         );
 
         keyboard_been_set = false;
+        foreach (GameObject robot in activeRobots.Values)
+        {
+            Destroy(robot);
+        }
+        activeRobots.Clear();
         foreach (RobotConfig robot_config in scenario.robots)
         {
             if (robot_config.objective.Length == 0)
@@ -83,20 +130,10 @@ public class FieldManager : MonoBehaviour
             }
             ObjectiveConfig objective_config = ConfigManager.LoadObjective(robot_config.objective);
             objectives[robot_config.name] = objective_config;
-            Bounds robot_bounds = GetMaxBounds(robot_prefabs[robot_config.model]);
+            Bounds robot_bounds = GetMaxBounds(robotPrefabs[robot_config.model]);
             Matrix4x4 robot_pose = GetPoseFromConfig(objective_config.init, scenario.cage.dims, robot_bounds);
-            GameObject robot;
-            if (active_robots.ContainsKey(robot_config.name))
-            {
-                robot = active_robots[robot_config.name];
-                robot.transform.position = robot_pose.GetT();
-                robot.transform.rotation = robot_pose.GetR();
-            }
-            else
-            {
-                robot = Instantiate(robot_prefabs[robot_config.model], robot_pose.GetT(), robot_pose.GetR());
-                active_robots[robot_config.name] = robot;
-            }
+            GameObject robot = Instantiate(robotPrefabs[robot_config.model], robot_pose.GetT(), robot_pose.GetR());
+            activeRobots[robot_config.name] = robot;
             ActivateRobotType(robot, objective_config);
             robot.SetActive(true);
         }
@@ -174,7 +211,7 @@ public class FieldManager : MonoBehaviour
             case "target":
                 target_follower.enabled = true;
                 target_follower.SetSequence(objective_config.sequence);
-                target_follower.SetActiveRobots(active_robots);
+                target_follower.SetActiveRobots(activeRobots);
                 break;
             default:
                 Debug.LogError("Invalid objective type: " + objective_config.type);

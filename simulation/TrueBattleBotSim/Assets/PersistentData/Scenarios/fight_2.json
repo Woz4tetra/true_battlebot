@@ -3,8 +3,10 @@
         "dims": {
             "x": 2.35,
             "y": 2.35
-        },
-        "slow_cam": {
+        }
+    },
+    "slow_cam": {
+        "pose": {
             "position": {
                 "x": -1.4405,
                 "y": 1.1219,
@@ -15,8 +17,10 @@
                 "y": 51.168,
                 "z": -3.358
             }
-        },
-        "tracking_cam": {
+        }
+    },
+    "tracking_cam": {
+        "pose": {
             "position": {
                 "x": -1.4694,
                 "y": 1.053,

@@ -1,0 +1,16 @@
+{
+    "type": "idle",
+    "init": {
+        "type": "relative",
+        "x": -0.8,
+        "y": 0.8,
+        "theta": 135.0
+    },
+    "sequence": [
+        {
+            "x": 0.0,
+            "y": 0.0,
+            "theta": 0.0
+        }
+    ]
+}

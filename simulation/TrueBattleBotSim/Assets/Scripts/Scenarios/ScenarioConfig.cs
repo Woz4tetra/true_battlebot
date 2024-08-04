@@ -6,6 +6,28 @@ using UnityEngine;
 public class ScenarioConfig
 {
     public CageConfig cage = new CageConfig();
+
+    public CameraConfig main_cam = new CameraConfig
+    {
+        follow_mouse = true,
+        pose = new PoseConfig
+        {
+            position = new PositionConfig
+            {
+                x = 0.0f,
+                y = 1.167f,
+                z = -2.05f
+            },
+            rotation = new RotationConfig
+            {
+                x = 29.654f,
+                y = 0.0f,
+                z = 0.0f
+            }
+        }
+    };
+    public CameraConfig slow_cam = new CameraConfig();
+    public CameraConfig tracking_cam = new CameraConfig();
     public List<RobotConfig> robots = new List<RobotConfig>();
 
     public string ToJson()

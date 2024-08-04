@@ -82,6 +82,13 @@ public class CameraController : MonoBehaviour
         }
     }
 
+    public void ResetTransform()
+    {
+        initializePolarCoordinates();
+        Matrix4x4 desiredTransform = getDesiredTransform();
+        transform.SetPositionAndRotation(desiredTransform.GetT(), desiredTransform.GetR());
+    }
+
     void Update()
     {
         if (!enableControls)

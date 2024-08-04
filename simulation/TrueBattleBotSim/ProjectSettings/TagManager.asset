@@ -26,9 +26,9 @@ TagManager:
   - Display Readout
   - Robot
   - Details
-  - PostProcessing
-  - 
-  - 
+  - PostProcessingMain
+  - PostProcessingSlowCam
+  - PostProcessingTrackingCam
   - 
   - 
   - 
