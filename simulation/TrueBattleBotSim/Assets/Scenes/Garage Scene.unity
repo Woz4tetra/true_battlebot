@@ -11097,8 +11097,6 @@ GameObject:
   - component: {fileID: 123829558449934358}
   - component: {fileID: 8866093376738926397}
   - component: {fileID: 8076577937699542032}
-  - component: {fileID: 8866093376738926398}
-  - component: {fileID: 8866093376738926399}
   m_Layer: 14
   m_Name: Drilling machine
   m_TagString: Untagged
@@ -12018,41 +12016,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6748044899542477883}
   m_Mesh: {fileID: 3553007978463355508, guid: 8f9e4da5668113a4da8b4efea4a9499f, type: 3}
---- !u!114 &8866093376738926398
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6748044899542477883}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f36cb0e08ed4fc31ca6ae98329d522c5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  toggleKey: 0
-  targetObject: {fileID: 0}
---- !u!65 &8866093376738926399
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6748044899542477883}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 0.6306163, y: 1.7309123, z: 0.60960007}
-  m_Center: {x: -0.0041588396, y: -0.27583343, z: 0.0487497}
 --- !u!23 &8884367333348565446
 MeshRenderer:
   m_ObjectHideFlags: 0

@@ -1,0 +1,32 @@
+{
+    "cage": {
+        "cage_type": "Drive Test Box",
+        "display_readout": false,
+        "dims": {
+            "x": 1.15,
+            "y": 1.15
+        }
+    },
+    "actors": [
+        {
+            "name": "slow_camera",
+            "model": "ZED 2i",
+            "objective": "blue_slow_camera"
+        },
+        {
+            "name": "tracking_camera",
+            "model": "OAK-1",
+            "objective": "blue_tracking_camera"
+        },
+        {
+            "name": "mini_bot",
+            "model": "MR STABS MK2",
+            "objective": "auto_blue_corner"
+        },
+        {
+            "name": "main_bot",
+            "model": "MRS BUFF MK2",
+            "objective": "keyboard_blue_corner"
+        }
+    ]
+}

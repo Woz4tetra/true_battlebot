@@ -51,7 +51,7 @@ public class FieldManager : MonoBehaviour
         }
         foreach (GameObject cage in cage_list)
         {
-            Debug.Log($"Loaded actor prefab: {cage.name}");
+            Debug.Log($"Loaded cage prefab: {cage.name}");
             cagePrefabs[cage.name] = cage;
         }
     }
@@ -59,6 +59,7 @@ public class FieldManager : MonoBehaviour
     public void LoadScenario(string scenarioName)
     {
         Debug.Log($"Loading scenario: {scenarioName}");
+        bool didScenarioChange = currentScenarioName != scenarioName;
         currentScenarioName = scenarioName;
         foreach (GameObject actor in activeActors.Values)
         {
@@ -79,13 +80,18 @@ public class FieldManager : MonoBehaviour
         {
             Destroy(activeCage);
         }
+        Debug.Log($"Loading cage: {scenario.cage.cage_type}");
         activeCage = Instantiate(cagePrefabs[scenario.cage.cage_type]);
 
         activeCage.transform.localScale = new Vector3(scenario.cage.dims.x, 1, scenario.cage.dims.y);
-        SetObjectPose(mainCam, scenario.main_cam.pose);
 
-        CameraController mainController = mainCam.GetComponent<CameraController>();
-        mainController.ResetTransform();
+        if (didScenarioChange)
+        {
+            SetObjectPose(mainCam, scenario.main_cam.pose);
+
+            CameraController mainController = mainCam.GetComponent<CameraController>();
+            mainController.ResetTransform();
+        }
 
         Bounds field_bounds = GetMaxBounds(activeCage);
         Debug.Log($"Field bounds: {field_bounds.size}");
@@ -162,7 +168,7 @@ public class FieldManager : MonoBehaviour
         }
         catch (NullReferenceException e)
         {
-            Debug.LogError($"Actor {actor.name} prefab missing keyboard input: {e.Message}");
+            Debug.Log($"Actor {actor.name} prefab missing keyboard input: {e.Message}");
         }
         try
         {
@@ -170,7 +176,7 @@ public class FieldManager : MonoBehaviour
         }
         catch (NullReferenceException e)
         {
-            Debug.LogError($"Actor {actor.name} prefab missing controller input: {e.Message}");
+            Debug.Log($"Actor {actor.name} prefab missing controller input: {e.Message}");
         }
         try
         {
@@ -178,7 +184,7 @@ public class FieldManager : MonoBehaviour
         }
         catch (NullReferenceException e)
         {
-            Debug.LogError($"Actor {actor.name} prefab missing follower input: {e.Message}");
+            Debug.Log($"Actor {actor.name} prefab missing follower input: {e.Message}");
         }
         try
         {
@@ -186,7 +192,7 @@ public class FieldManager : MonoBehaviour
         }
         catch (NullReferenceException e)
         {
-            Debug.LogError($"Actor {actor.name} prefab missing target input: {e.Message}");
+            Debug.Log($"Actor {actor.name} prefab missing target input: {e.Message}");
         }
 
         switch (objective_config.type)
@@ -196,19 +202,39 @@ public class FieldManager : MonoBehaviour
                 {
                     Debug.LogWarning("Multiple keyboard objectives detected");
                 }
+                if (keyboard_input == null)
+                {
+                    Debug.LogError("Keyboard input not found");
+                    break;
+                }
                 keyboard_input.enabled = true;
                 keyboard_been_set = true;
                 break;
             case "idle":
                 break;
             case "auto":
+                if (controller == null)
+                {
+                    Debug.LogError("Controller not found");
+                    break;
+                }
                 controller.enabled = true;
                 break;
             case "follow":
+                if (waypoint_follower == null)
+                {
+                    Debug.LogError("Waypoint follower not found");
+                    break;
+                }
                 waypoint_follower.enabled = true;
                 waypoint_follower.SetSequence(GetScaledSequence(objective_config.init, objective_config.sequence));
                 break;
             case "target":
+                if (target_follower == null)
+                {
+                    Debug.LogError("Target follower not found");
+                    break;
+                }
                 target_follower.enabled = true;
                 target_follower.SetSequence(objective_config.sequence);
                 target_follower.SetActiveActors(activeActors);
