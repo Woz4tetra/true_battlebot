@@ -15,6 +15,7 @@ GameObject:
   - component: {fileID: 4579556464845220220}
   - component: {fileID: 7446481438457985961}
   - component: {fileID: 2514383934974596028}
+  - component: {fileID: 1314033071082127165}
   m_Layer: 17
   m_Name: OAK-1
   m_TagString: Untagged
@@ -230,6 +231,20 @@ MonoBehaviour:
   topic: /camera_1/ground_truth/pose
   frame_id: map
   referenceObject: {fileID: 0}
+--- !u!114 &1314033071082127165
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1276782465850214786}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 421dac03ed4072854bc52548c2417a15, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  sequenceProgressTopicName: /camera_1/sequence_progress
+  smooth: 0
 --- !u!1 &2133361721140071036
 GameObject:
   m_ObjectHideFlags: 0

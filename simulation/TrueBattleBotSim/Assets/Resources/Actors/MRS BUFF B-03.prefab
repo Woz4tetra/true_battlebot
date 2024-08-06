@@ -2110,6 +2110,7 @@ GameObject:
   - component: {fileID: 2041392216425241104}
   - component: {fileID: 176291765912563751}
   - component: {fileID: 7239449581062608869}
+  - component: {fileID: 8617433747101101193}
   m_Layer: 13
   m_Name: MRS BUFF B-03
   m_TagString: Main bot
@@ -2404,6 +2405,20 @@ MonoBehaviour:
   maxLinearSpeed: 10
   maxAngularSpeed: 1000
   reverseWhenUpsideDown: 1
+--- !u!114 &8617433747101101193
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 885901064405613515}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 421dac03ed4072854bc52548c2417a15, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  sequenceProgressTopicName: /main_bot/sequence_progress
+  smooth: 0
 --- !u!1 &903287245801918095
 GameObject:
   m_ObjectHideFlags: 0

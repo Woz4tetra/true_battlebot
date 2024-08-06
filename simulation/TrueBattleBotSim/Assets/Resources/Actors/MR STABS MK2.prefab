@@ -716,6 +716,7 @@ GameObject:
   - component: {fileID: 7026299343007992233}
   - component: {fileID: 5312354932561942740}
   - component: {fileID: 4489037318940457600}
+  - component: {fileID: 813685194571247589}
   m_Layer: 13
   m_Name: MR STABS MK2
   m_TagString: Mini bot
@@ -991,6 +992,20 @@ MonoBehaviour:
   maxLinearSpeed: 10
   maxAngularSpeed: 1000
   reverseWhenUpsideDown: 0
+--- !u!114 &813685194571247589
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5663843122987369642}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 421dac03ed4072854bc52548c2417a15, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  sequenceProgressTopicName: /mini_bot/sequence_progress
+  smooth: 0
 --- !u!1 &5729489285050866356
 GameObject:
   m_ObjectHideFlags: 0

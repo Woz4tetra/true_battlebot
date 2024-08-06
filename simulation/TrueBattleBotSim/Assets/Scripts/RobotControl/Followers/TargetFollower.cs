@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using MathExtensions;
 using UnityEngine;
 
-class TargetFollower : BaseFollower
+class TargetFollower : BaseVelocityFollower
 {
     [SerializeField] float maxLinearSpeed = 10.0f;
     [SerializeField] float maxAngularSpeed = 1000.0f;
@@ -13,10 +13,6 @@ class TargetFollower : BaseFollower
     public void SetActiveActors(Dictionary<string, GameObject> active_actors)
     {
         this.active_actors = active_actors;
-    }
-    protected override BaseFollowerEngine FindFollowerEngine()
-    {
-        return GetComponent<PIDFollowerEngine>();
     }
 
     protected override bool ComputeNextGoal(float current_time, int index, out SequenceElementConfig next)

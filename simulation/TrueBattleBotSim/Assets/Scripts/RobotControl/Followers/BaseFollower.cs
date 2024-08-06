@@ -6,14 +6,13 @@ using RosMessageTypes.Std;
 using Unity.Robotics.ROSTCPConnector;
 using UnityEngine;
 
-class BaseFollower : MonoBehaviour
+public abstract class BaseFollower : MonoBehaviour
 {
     [SerializeField] string sequenceProgressTopicName = "sequence_progress";
     protected ControllerInterface controller;
     List<SequenceElementConfig> sequence = new List<SequenceElementConfig>();
     float sequence_time = 0.0f;
     ArrowIndicator arrow;
-    BaseFollowerEngine followerEngine;
     ROSConnection ros;
     static RosTopicState sequenceProgressTopic = null;
 
@@ -31,16 +30,6 @@ class BaseFollower : MonoBehaviour
         }
         controller = GetComponent<ControllerInterface>();
 
-        followerEngine = FindFollowerEngine();
-        if (followerEngine == null)
-        {
-            Debug.LogError("No follower engine found");
-        }
-        else
-        {
-            Debug.Log($"{gameObject.name} Follower engine: {followerEngine.GetType().Name}");
-        }
-
         Reset();
         ros = ROSConnection.GetOrCreateInstance();
         if (sequenceProgressTopic == null)
@@ -49,60 +38,30 @@ class BaseFollower : MonoBehaviour
         }
     }
 
-    protected virtual BaseFollowerEngine FindFollowerEngine()
-    {
-        BaseFollowerEngine engine = null;
-        Type[] types = new Type[] { typeof(RamseteFollowerEngine), typeof(PIDFollowerEngine) };
-        foreach (Type type in types)
-        {
-            if (type.IsSubclassOf(typeof(BaseFollowerEngine)) && !type.IsAbstract)
-            {
-                engine = GetComponent(type) as BaseFollowerEngine;
-                break;
-            }
-        }
-        return engine;
-    }
-
     public void Update()
     {
         if (Time.timeScale == 0.0f)
         {
             return;
         }
-        updateCommand();
-    }
 
-    void Reset()
-    {
-        sequence_time = Time.time;
-        if (followerEngine != null)
+        if (GetNextGoal().TryGet(out SequenceElementConfig next))
         {
-            followerEngine.Reset();
-        }
-        if (controller != null)
-        {
-            controller.Reset();
+            UpdateRobotState(next);
         }
     }
 
-    public void SetSequence(List<SequenceElementConfig> sequence)
-    {
-        this.sequence = sequence;
-        Reset();
-    }
-
-    private TwistMsg GetCommand()
+    Optional<SequenceElementConfig> GetNextGoal()
     {
         if (sequence.Count == 0)
         {
-            return new TwistMsg();
+            return Optional<SequenceElementConfig>.CreateEmpty();
         }
 
         float current_time = Time.time - sequence_time;
         if (current_time < 0)
         {
-            return new TwistMsg();
+            return Optional<SequenceElementConfig>.CreateEmpty();
         }
         sequenceProgressTopic.Publish(new Float64Msg { data = current_time });
 
@@ -115,17 +74,31 @@ class BaseFollower : MonoBehaviour
         SequenceElementConfig next;
         if (!ComputeNextGoal(current_time, index, out next))
         {
-            return new TwistMsg();
+            return Optional<SequenceElementConfig>.CreateEmpty();
         }
         arrow.Set2D(next.x, 0.1f, next.y, -next.yaw);
-        return ComputeVelocity(next);
+        if (next == null)
+        {
+            return Optional<SequenceElementConfig>.CreateEmpty();
+        }
+        return Optional<SequenceElementConfig>.Create(next);
     }
 
-    protected virtual bool ComputeNextGoal(float current_time, int index, out SequenceElementConfig next)
+    void Reset()
     {
-        next = GetElement(index);
-        return true;
+        sequence_time = Time.time;
+        if (controller != null)
+        {
+            controller.Reset();
+        }
     }
+
+    public void SetSequence(List<SequenceElementConfig> sequence)
+    {
+        this.sequence = sequence;
+        Reset();
+    }
+
 
     protected SequenceElementConfig GetElement(int index)
     {
@@ -150,23 +123,6 @@ class BaseFollower : MonoBehaviour
             Vector3.one);
     }
 
-    TwistMsg ComputeVelocity(SequenceElementConfig currentElement)
-    {
-        OdometryMsg odom = controller.GetGroundTruth();
-        Matrix4x4 currentPose = GetOdomPose(odom);
-        Matrix4x4 goalPose = GetElementPose(currentElement);
-        Vector3 currentVelocity = new Vector3(
-            (float)odom.twist.twist.linear.x,
-            (float)odom.twist.twist.linear.y,
-            (float)odom.twist.twist.angular.z
-        );
-        Vector3 goalVelocity = new Vector3(currentElement.vx, currentElement.vy, currentElement.vyaw * Mathf.Deg2Rad);
-
-        return followerEngine.ComputeVelocity(currentPose, goalPose, currentVelocity, goalVelocity);
-    }
-
-    private void updateCommand()
-    {
-        controller.SetCommand(GetCommand());
-    }
+    protected abstract bool ComputeNextGoal(float current_time, int index, out SequenceElementConfig next);
+    protected abstract void UpdateRobotState(SequenceElementConfig next);
 }

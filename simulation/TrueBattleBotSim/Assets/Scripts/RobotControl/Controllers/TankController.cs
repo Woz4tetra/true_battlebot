@@ -99,6 +99,11 @@ class TankController : MonoBehaviour, ControllerInterface
         };
     }
 
+    public void Teleport(Vector3 position, Quaternion rotation)
+    {
+        body.TeleportRoot(position, rotation);
+    }
+
     private Vector3 GetRelativeVelocity()
     {
         // Get the velocity of the body in world space

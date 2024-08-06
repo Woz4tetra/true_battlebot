@@ -1,5 +1,6 @@
 {
-    "type": "follow",
+    "type": "teleport",
+    "smooth_teleports": true,
     "init": {
         "type": "relative",
         "x": -0.5000018261910494,

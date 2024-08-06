@@ -1,6 +1,6 @@
 using UnityEngine;
 
-class WaypointFollower : BaseFollower
+class WaypointFollower : BaseVelocityFollower
 {
     protected override bool ComputeNextGoal(float current_time, int index, out SequenceElementConfig interpolated)
     {

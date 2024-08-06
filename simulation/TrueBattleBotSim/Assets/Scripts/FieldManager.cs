@@ -162,38 +162,24 @@ public class FieldManager : MonoBehaviour
         RosControllerConnector controller = actor.GetComponent<RosControllerConnector>();
         WaypointFollower waypoint_follower = actor.GetComponent<WaypointFollower>();
         TargetFollower target_follower = actor.GetComponent<TargetFollower>();
-        try
-        {
-            keyboard_input.enabled = false;
-        }
-        catch (NullReferenceException e)
-        {
-            Debug.Log($"Actor {actor.name} prefab missing keyboard input: {e.Message}");
-        }
-        try
-        {
-            controller.enabled = false;
-        }
-        catch (NullReferenceException e)
-        {
-            Debug.Log($"Actor {actor.name} prefab missing controller input: {e.Message}");
-        }
-        try
-        {
-            waypoint_follower.enabled = false;
-        }
-        catch (NullReferenceException e)
-        {
-            Debug.Log($"Actor {actor.name} prefab missing follower input: {e.Message}");
-        }
-        try
-        {
-            target_follower.enabled = false;
-        }
-        catch (NullReferenceException e)
-        {
-            Debug.Log($"Actor {actor.name} prefab missing target input: {e.Message}");
-        }
+        TeleportFollower teleport_follower = actor.GetComponent<TeleportFollower>();
+
+        try { keyboard_input.enabled = false; }
+        catch (NullReferenceException e) { Debug.Log($"Actor {actor.name} prefab missing keyboard input: {e.Message}"); }
+
+        try { controller.enabled = false; }
+        catch (NullReferenceException e) { Debug.Log($"Actor {actor.name} prefab missing controller input: {e.Message}"); }
+
+        try { waypoint_follower.enabled = false; }
+        catch (NullReferenceException e) { Debug.Log($"Actor {actor.name} prefab missing follower input: {e.Message}"); }
+
+        try { target_follower.enabled = false; }
+        catch (NullReferenceException e) { Debug.Log($"Actor {actor.name} prefab missing target input: {e.Message}"); }
+
+        try { teleport_follower.enabled = false; }
+        catch (NullReferenceException e) { Debug.Log($"Actor {actor.name} prefab missing teleport input: {e.Message}"); }
+
+        BaseFollowerEngine followerEngine = GetFollowerEngine(objective_config.follower_engine, actor);
 
         switch (objective_config.type)
         {
@@ -228,6 +214,7 @@ public class FieldManager : MonoBehaviour
                 }
                 waypoint_follower.enabled = true;
                 waypoint_follower.SetSequence(GetScaledSequence(objective_config.init, objective_config.sequence));
+                waypoint_follower.SetFollowerEngine(followerEngine);
                 break;
             case "target":
                 if (target_follower == null)
@@ -238,11 +225,62 @@ public class FieldManager : MonoBehaviour
                 target_follower.enabled = true;
                 target_follower.SetSequence(objective_config.sequence);
                 target_follower.SetActiveActors(activeActors);
+                target_follower.SetFollowerEngine(followerEngine);
+                break;
+            case "teleport":
+                if (teleport_follower == null)
+                {
+                    Debug.LogError("Teleport follower not found");
+                    break;
+                }
+                teleport_follower.enabled = true;
+                teleport_follower.SetSequence(objective_config.sequence);
+                teleport_follower.SetComputeMethod(objective_config.smooth_teleports);
                 break;
             default:
                 Debug.LogError("Invalid objective type: " + objective_config.type);
                 break;
         }
+    }
+
+    BaseFollowerEngine GetFollowerEngine(string followerType, GameObject actor)
+    {
+        PIDFollowerEngine pid_follower_engine = actor.GetComponent<PIDFollowerEngine>();
+        RamseteFollowerEngine ramsete_follower_engine = actor.GetComponent<RamseteFollowerEngine>();
+
+        try { pid_follower_engine.enabled = false; }
+        catch (NullReferenceException e) { Debug.Log($"Actor {actor.name} prefab missing PID follower engine: {e.Message}"); }
+
+        try { ramsete_follower_engine.enabled = false; }
+        catch (NullReferenceException e) { Debug.Log($"Actor {actor.name} prefab missing Ramsete follower engine: {e.Message}"); }
+
+
+        BaseFollowerEngine followerEngine = null;
+        switch (followerType)
+        {
+            case "Ramsete":
+                if (ramsete_follower_engine == null)
+                {
+                    Debug.LogError("Ramsete follower engine not found");
+                    break;
+                }
+                ramsete_follower_engine.enabled = true;
+                followerEngine = ramsete_follower_engine;
+                break;
+            case "PID":
+                if (pid_follower_engine == null)
+                {
+                    Debug.LogError("PID follower engine not found");
+                    break;
+                }
+                pid_follower_engine.enabled = true;
+                followerEngine = pid_follower_engine;
+                break;
+            default:
+                Debug.LogError("Invalid follower engine type: " + followerType);
+                break;
+        }
+        return followerEngine;
     }
 
     List<SequenceElementConfig> GetScaledSequence(ScenarioInitConfig init_config, List<SequenceElementConfig> sequence)

@@ -534,6 +534,7 @@ GameObject:
   - component: {fileID: 1703929134997514596}
   - component: {fileID: 3417161761976010756}
   - component: {fileID: 1616125070237668740}
+  - component: {fileID: 6538483376301899770}
   m_Layer: 16
   m_Name: ZED 2i
   m_TagString: Untagged
@@ -871,6 +872,20 @@ MonoBehaviour:
   viewAngleThreshold: 180
   debugVisibilityReason: 0
   topic: /camera_0/ground_truth/robots
+--- !u!114 &6538483376301899770
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7939675261591341045}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 421dac03ed4072854bc52548c2417a15, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  sequenceProgressTopicName: /camera_0/sequence_progress
+  smooth: 0
 --- !u!1 &8233962579349433497
 GameObject:
   m_ObjectHideFlags: 0
