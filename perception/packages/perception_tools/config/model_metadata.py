@@ -16,7 +16,7 @@ class LabelColor:
     a: float = 1.0
 
     def to_cv_color(self) -> tuple[int, int, int]:
-        return (int(self.r * 255), int(self.g * 255), int(self.b * 255))
+        return (int(self.b * 255), int(self.g * 255), int(self.r * 255))
 
 
 LABEL_COLORS = {
