@@ -17,6 +17,7 @@ def main():
 
     for video_name in args.video:
         video_path = os.path.abspath(video_name)
+        print(f"Processing video: {video_path}")
         if len(args.output) == 0:
             filename = os.path.basename(video_path)
             output_dir = os.path.join(os.path.dirname(video_path), os.path.splitext(filename)[0])
@@ -31,6 +32,7 @@ def main():
         video_name = os.path.splitext(os.path.basename(video_path))[0]
         video = cv2.VideoCapture(video_path)
         frame_count = 0
+        total_frames = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
         while True:
             if frame_skip > 0:
                 frame_count += frame_skip
@@ -38,7 +40,7 @@ def main():
             else:
                 frame_count += 1
             success, frame = video.read()
-            if not success:
+            if not success or frame_count > total_frames:
                 print("Video finished")
                 break
             if split_left:
@@ -47,6 +49,7 @@ def main():
             image_path = os.path.join(output_dir, image_name)
             print(f"Writing to {image_path}")
             cv2.imwrite(image_path, frame)
+        video.release()
 
 
 main()
