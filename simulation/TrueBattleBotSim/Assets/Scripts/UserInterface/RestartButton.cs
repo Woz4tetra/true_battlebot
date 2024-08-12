@@ -12,15 +12,7 @@ public class RestartButton : MonoBehaviour
         button.onClick.AddListener(OnClick);
     }
 
-    void Update()
-    {
-        if (Input.GetKeyDown(KeyCode.R))
-        {
-            RestartScenario();
-        }
-    }
-
-    void RestartScenario()
+    public void RestartScenario()
     {
         sceneManager.ReloadScenario();
     }

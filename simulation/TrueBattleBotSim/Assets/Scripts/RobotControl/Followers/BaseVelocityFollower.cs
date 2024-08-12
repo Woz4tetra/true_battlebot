@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-using MathExtensions;
 using RosMessageTypes.Geometry;
 using RosMessageTypes.Nav;
 using UnityEngine;
@@ -13,6 +11,12 @@ abstract class BaseVelocityFollower : BaseFollower
         {
             followerEngine.Reset();
         }
+    }
+
+    public override void Start()
+    {
+        base.Start();
+        SetShowArrow(true);
     }
 
     public void SetFollowerEngine(BaseFollowerEngine engine)

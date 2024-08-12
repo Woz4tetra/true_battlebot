@@ -6959,6 +6959,8 @@ MonoBehaviour:
   sceneManager: {fileID: 82517897}
   remoteScenarioSelectionTopic: simulation/scenario_selection
   scenarioListTopic: simulation/scenarios
+  restartButton: {fileID: 523059943}
+  playPauseButton: {fileID: 777581869}
 --- !u!1 &1875482142
 GameObject:
   m_ObjectHideFlags: 0

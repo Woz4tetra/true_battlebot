@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using RosMessageTypes.Geometry;
 using RosMessageTypes.Nav;
@@ -8,17 +7,17 @@ using UnityEngine;
 
 public abstract class BaseFollower : MonoBehaviour
 {
-    [SerializeField] string sequenceProgressTopicName = "sequence_progress";
     protected ControllerInterface controller;
+    protected ActorSharedProperties properties;
     List<SequenceElementConfig> sequence = new List<SequenceElementConfig>();
     float sequence_time = 0.0f;
     ArrowIndicator arrow;
     ROSConnection ros;
     static RosTopicState sequenceProgressTopic = null;
 
-
-    public void Start()
+    public virtual void Start()
     {
+        properties = FindObjectOfType<ActorSharedProperties>();
         ArrowIndicator[] arrows = Resources.LoadAll<ArrowIndicator>("Indicators");
         if (arrows.Length == 0)
         {
@@ -34,7 +33,7 @@ public abstract class BaseFollower : MonoBehaviour
         ros = ROSConnection.GetOrCreateInstance();
         if (sequenceProgressTopic == null)
         {
-            sequenceProgressTopic = ros.RegisterPublisher<Float64Msg>(sequenceProgressTopicName);
+            sequenceProgressTopic = ros.RegisterPublisher<Float64Msg>(properties.GetSequenceProgressTopicName());
         }
     }
 
@@ -82,6 +81,11 @@ public abstract class BaseFollower : MonoBehaviour
             return Optional<SequenceElementConfig>.CreateEmpty();
         }
         return Optional<SequenceElementConfig>.Create(next);
+    }
+
+    public void SetShowArrow(bool show)
+    {
+        arrow.gameObject.SetActive(show);
     }
 
     void Reset()

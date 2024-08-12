@@ -6,6 +6,13 @@ class TeleportFollower : BaseFollower
 {
     [SerializeField] private bool smooth = false;
 
+    public override void Start()
+    {
+        base.Start();
+        SetShowArrow(false);
+    }
+
+
     protected override bool ComputeNextGoal(float current_time, int index, out SequenceElementConfig next)
     {
         if (smooth)

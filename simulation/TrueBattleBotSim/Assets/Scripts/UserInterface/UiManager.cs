@@ -23,6 +23,8 @@ public class UiManager : MonoBehaviour
     [SerializeField] FieldManager sceneManager;
     [SerializeField] string remoteScenarioSelectionTopic = "simulation/scenario_selection";
     [SerializeField] string scenarioListTopic = "simulation/scenarios";
+    [SerializeField] RestartButton restartButton;
+    [SerializeField] PlayPauseButton playPauseButton;
 
     DisplayReadoutManager displayReadoutManager;
 
@@ -355,6 +357,22 @@ public class UiManager : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Escape))
         {
             ShowHideSettingsPanel(!isShown);
+        }
+
+        if (!isShown)
+        {
+            if (Input.GetKeyDown(KeyCode.Space))
+            {
+                PauseManager pauseManager = sceneManager.GetPauseManager();
+                pauseManager.SetPause(!pauseManager.IsPaused());
+
+                playPauseButton.SetPause(pauseManager.IsPaused());
+            }
+
+            if (Input.GetKeyDown(KeyCode.R))
+            {
+                restartButton.RestartScenario();
+            }
         }
     }
 }

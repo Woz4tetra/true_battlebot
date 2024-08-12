@@ -9,14 +9,6 @@ public class PauseManager : MonoBehaviour
         return isPaused;
     }
 
-    void Update()
-    {
-        if (Input.GetKeyDown(KeyCode.Space))
-        {
-            SetPause(!isPaused);
-        }
-    }
-
     public void SetPause(bool paused)
     {
         Debug.Log($"Set pause to {paused}");

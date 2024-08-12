@@ -2111,6 +2111,8 @@ GameObject:
   - component: {fileID: 176291765912563751}
   - component: {fileID: 7239449581062608869}
   - component: {fileID: 8617433747101101193}
+  - component: {fileID: 7470154928868189629}
+  - component: {fileID: 5529998272134402584}
   m_Layer: 13
   m_Name: MRS BUFF B-03
   m_TagString: Main bot
@@ -2292,7 +2294,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ab4142c1343d6636daaa5ac45ebdb10a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  sequenceProgressTopicName: /main_bot/sequence_progress
 --- !u!114 &3714681312600055751
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2401,7 +2402,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 14e69c3d1b666ef42afaccf0e29290fc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  sequenceProgressTopicName: /main_bot/sequence_progress
   maxLinearSpeed: 10
   maxAngularSpeed: 1000
   reverseWhenUpsideDown: 1
@@ -2417,8 +2417,32 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 421dac03ed4072854bc52548c2417a15, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  sequenceProgressTopicName: /main_bot/sequence_progress
   smooth: 0
+--- !u!114 &7470154928868189629
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 885901064405613515}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a6c865e792d80ae8e92054f4bc08ee9e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &5529998272134402584
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 885901064405613515}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9c1a0cf1d5ada30d0b0dd3a8f9b5db91, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  sequenceProgressTopicName: /main_bot/sequence_progress
 --- !u!1 &903287245801918095
 GameObject:
   m_ObjectHideFlags: 0

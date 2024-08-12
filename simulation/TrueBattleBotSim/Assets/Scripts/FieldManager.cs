@@ -21,6 +21,7 @@ public class FieldManager : MonoBehaviour
     Dictionary<string, GameObject> actorPrefabs = new Dictionary<string, GameObject>();
     Dictionary<string, GameObject> cagePrefabs = new Dictionary<string, GameObject>();
     Dictionary<string, GameObject> activeActors = new Dictionary<string, GameObject>();
+    Dictionary<string, GameObject> persistentActors = new Dictionary<string, GameObject>();
     Dictionary<string, ObjectiveConfig> objectives = new Dictionary<string, ObjectiveConfig>();
     GameObject activeCage;
     bool keyboard_been_set = false;
@@ -54,6 +55,7 @@ public class FieldManager : MonoBehaviour
             Debug.Log($"Loaded cage prefab: {cage.name}");
             cagePrefabs[cage.name] = cage;
         }
+        persistentActors["main_cam"] = mainCam;
     }
 
     public void LoadScenario(string scenarioName)
@@ -87,7 +89,13 @@ public class FieldManager : MonoBehaviour
 
         if (didScenarioChange)
         {
-            SetObjectPose(mainCam, scenario.main_cam.pose);
+            Matrix4x4 cam_pose = GetPoseFromConfig(
+                scenario.main_cam.init,
+                scenario.cage.dims,
+                Matrix4x4.identity
+            );
+            mainCam.transform.position = cam_pose.GetT();
+            mainCam.transform.rotation = cam_pose.GetR();
 
             CameraController mainController = mainCam.GetComponent<CameraController>();
             mainController.ResetTransform();
@@ -115,6 +123,7 @@ public class FieldManager : MonoBehaviour
             Destroy(actor);
         }
         activeActors.Clear();
+
         Debug.Log($"Loading scenario with {scenario.actors.Count} actors");
         foreach (ActorConfig actor_config in scenario.actors)
         {
@@ -163,6 +172,7 @@ public class FieldManager : MonoBehaviour
         WaypointFollower waypoint_follower = actor.GetComponent<WaypointFollower>();
         TargetFollower target_follower = actor.GetComponent<TargetFollower>();
         TeleportFollower teleport_follower = actor.GetComponent<TeleportFollower>();
+        RelativeToFollower relative_to_follower = actor.GetComponent<RelativeToFollower>();
 
         try { keyboard_input.enabled = false; }
         catch (NullReferenceException e) { Debug.Log($"Actor {actor.name} prefab missing keyboard input: {e.Message}"); }
@@ -179,7 +189,20 @@ public class FieldManager : MonoBehaviour
         try { teleport_follower.enabled = false; }
         catch (NullReferenceException e) { Debug.Log($"Actor {actor.name} prefab missing teleport input: {e.Message}"); }
 
-        BaseFollowerEngine followerEngine = GetFollowerEngine(objective_config.follower_engine, actor);
+        try { relative_to_follower.enabled = false; }
+        catch (NullReferenceException e) { Debug.Log($"Actor {actor.name} prefab missing relative_to input: {e.Message}"); }
+
+        BaseFollowerEngine followerEngine;
+
+        Dictionary<string, GameObject> combinedActors = new Dictionary<string, GameObject>();
+        foreach (KeyValuePair<string, GameObject> entry in activeActors)
+        {
+            combinedActors[entry.Key] = entry.Value;
+        }
+        foreach (KeyValuePair<string, GameObject> entry in persistentActors)
+        {
+            combinedActors[entry.Key] = entry.Value;
+        }
 
         switch (objective_config.type)
         {
@@ -212,6 +235,7 @@ public class FieldManager : MonoBehaviour
                     Debug.LogError("Waypoint follower not found");
                     break;
                 }
+                followerEngine = GetFollowerEngine(objective_config.follower_engine, actor);
                 waypoint_follower.enabled = true;
                 waypoint_follower.SetSequence(GetScaledSequence(objective_config.init, objective_config.sequence));
                 waypoint_follower.SetFollowerEngine(followerEngine);
@@ -222,9 +246,10 @@ public class FieldManager : MonoBehaviour
                     Debug.LogError("Target follower not found");
                     break;
                 }
+                followerEngine = GetFollowerEngine(objective_config.follower_engine, actor);
                 target_follower.enabled = true;
                 target_follower.SetSequence(objective_config.sequence);
-                target_follower.SetActiveActors(activeActors);
+                target_follower.SetActiveActors(combinedActors);
                 target_follower.SetFollowerEngine(followerEngine);
                 break;
             case "teleport":
@@ -236,6 +261,16 @@ public class FieldManager : MonoBehaviour
                 teleport_follower.enabled = true;
                 teleport_follower.SetSequence(objective_config.sequence);
                 teleport_follower.SetComputeMethod(objective_config.smooth_teleports);
+                break;
+            case "relative_to":
+                if (relative_to_follower == null)
+                {
+                    Debug.LogError("Relative to follower not found");
+                    break;
+                }
+                relative_to_follower.enabled = true;
+                relative_to_follower.SetSequence(objective_config.sequence);
+                relative_to_follower.SetActiveActors(combinedActors);
                 break;
             default:
                 Debug.LogError("Invalid objective type: " + objective_config.type);
@@ -353,12 +388,6 @@ public class FieldManager : MonoBehaviour
         );
         Matrix4x4 tforigin_from_objectorigin = tforigin_from_spawn * tf_objectorigin_from_spawn.inverse;
         return tforigin_from_objectorigin;
-    }
-
-    void SetObjectPose(GameObject obj, PoseConfig pose)
-    {
-        obj.transform.position = new Vector3(pose.position.x, pose.position.y, pose.position.z);
-        obj.transform.rotation = Quaternion.Euler(pose.rotation.x, pose.rotation.y, pose.rotation.z);
     }
 
     // Update is called once per frame

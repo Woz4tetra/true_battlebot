@@ -717,6 +717,8 @@ GameObject:
   - component: {fileID: 5312354932561942740}
   - component: {fileID: 4489037318940457600}
   - component: {fileID: 813685194571247589}
+  - component: {fileID: 6520693298685513076}
+  - component: {fileID: 6378346792877701842}
   m_Layer: 13
   m_Name: MR STABS MK2
   m_TagString: Mini bot
@@ -892,7 +894,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ab4142c1343d6636daaa5ac45ebdb10a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  sequenceProgressTopicName: /mini_bot/sequence_progress
 --- !u!114 &3226015220246296653
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -988,7 +989,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 14e69c3d1b666ef42afaccf0e29290fc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  sequenceProgressTopicName: /mini_bot/sequence_progress
   maxLinearSpeed: 10
   maxAngularSpeed: 1000
   reverseWhenUpsideDown: 0
@@ -1004,8 +1004,32 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 421dac03ed4072854bc52548c2417a15, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  sequenceProgressTopicName: /mini_bot/sequence_progress
   smooth: 0
+--- !u!114 &6520693298685513076
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5663843122987369642}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a6c865e792d80ae8e92054f4bc08ee9e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &6378346792877701842
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5663843122987369642}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9c1a0cf1d5ada30d0b0dd3a8f9b5db91, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  sequenceProgressTopicName: /mini_bot/sequence_progress
 --- !u!1 &5729489285050866356
 GameObject:
   m_ObjectHideFlags: 0

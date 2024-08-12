@@ -7297,6 +7297,8 @@ GameObject:
   - component: {fileID: 6565830483140698421}
   - component: {fileID: 366412101632411798}
   - component: {fileID: 8466902194964744933}
+  - component: {fileID: 6462601928920040641}
+  - component: {fileID: 6215941774216981158}
   m_Layer: 13
   m_Name: MRS BUFF B-03 Bizarro
   m_TagString: Enemy bot
@@ -7476,7 +7478,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ab4142c1343d6636daaa5ac45ebdb10a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  sequenceProgressTopicName: /opponent_1/sequence_progress
 --- !u!114 &8796651060337530605
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7585,7 +7586,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 14e69c3d1b666ef42afaccf0e29290fc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  sequenceProgressTopicName: /opponent_1/sequence_progress
   maxLinearSpeed: 10
   maxAngularSpeed: 1000
   reverseWhenUpsideDown: 1
@@ -7601,8 +7601,32 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 421dac03ed4072854bc52548c2417a15, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  sequenceProgressTopicName: /opponent_1/sequence_progress
   smooth: 0
+--- !u!114 &6462601928920040641
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2875149751232713950}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a6c865e792d80ae8e92054f4bc08ee9e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &6215941774216981158
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2875149751232713950}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9c1a0cf1d5ada30d0b0dd3a8f9b5db91, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  sequenceProgressTopicName: /opponent_1/sequence_progress
 --- !u!1 &2893022683982512379
 GameObject:
   m_ObjectHideFlags: 0

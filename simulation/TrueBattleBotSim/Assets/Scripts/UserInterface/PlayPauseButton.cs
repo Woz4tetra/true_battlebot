@@ -17,14 +17,9 @@ public class PlayPauseButton : MonoBehaviour
         button.onClick.AddListener(OnClick);
     }
 
-    private void SetPause(bool pausedState)
+    public void SetPause(bool pausedState)
     {
         icon.sprite = pausedState ? playIcon : pauseIcon;
-    }
-
-    void Update()
-    {
-        SetPause(pauseManager.IsPaused());
     }
 
     public void OnClick()
