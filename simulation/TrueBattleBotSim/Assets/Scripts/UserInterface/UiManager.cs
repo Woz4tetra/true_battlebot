@@ -20,6 +20,7 @@ public class UiManager : MonoBehaviour
     [SerializeField] GameObject displayReadout;
     [SerializeField] FPSCounter fpsCounter;
     [SerializeField] CameraController cameraController;
+    [SerializeField] FocusObjectController focusObjectController;
     [SerializeField] FieldManager sceneManager;
     [SerializeField] string remoteScenarioSelectionTopic = "simulation/scenario_selection";
     [SerializeField] string scenarioListTopic = "simulation/scenarios";
@@ -205,6 +206,7 @@ public class UiManager : MonoBehaviour
         enterSettingsPanel.gameObject.SetActive(!show);
         displayReadoutManager.SetEnableClicks(!show);
         cameraController.EnableControls(!show);
+        focusObjectController.EnableControls(!show);
         if (show)
         {
             wasPausedWhenSettingsOpened = IsPaused();

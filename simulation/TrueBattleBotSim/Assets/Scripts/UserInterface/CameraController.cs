@@ -32,7 +32,7 @@ public class CameraController : MonoBehaviour
         float z = distance * Mathf.Cos(elevationAngle) * Mathf.Sin(azimuthAngle);
         Vector3 position = new Vector3(x, y, z);
         Quaternion rotation = Quaternion.LookRotation(focusObject.transform.position - position);
-        return Matrix4x4.TRS(position, rotation, Vector3.one);
+        return Matrix4x4.TRS(position + focusObject.transform.position, rotation, Vector3.one);
     }
 
     void Start()

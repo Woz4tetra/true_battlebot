@@ -1,0 +1,12 @@
+
+BASE_DIR=$(realpath "$(dirname $0)")
+
+IMAGE_TYPE=$(${BASE_DIR}/lib/get_image_type)
+
+if [ "${IMAGE_TYPE}" == "true_battlebot" ]; then
+    echo "Run true_battlebot/docker/scripts/run_roscore outside the container if roscore is not running."
+    roslaunch --wait bw_bringup unity.launch
+else
+    echo "${IMAGE_TYPE} can't run this script"
+    exit 1
+fi

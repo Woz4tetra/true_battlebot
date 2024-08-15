@@ -1,8 +1,7 @@
 #!/bin/bash
 
 BASE_DIR=$(realpath "$(dirname $0)")
-ORG_DIR=${BASE_DIR}/../..
-export PROJECT_DIR=$(realpath ${ORG_DIR}/${PROJECT_NAME})
+export PROJECT_DIR=$(${BASE_DIR}/get_project_dir.sh)
 export SEARCH_DIR=${PROJECT_DIR}/ros_ws/$1
 
 python <<EOF
