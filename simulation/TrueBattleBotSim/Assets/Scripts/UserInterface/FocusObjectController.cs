@@ -60,7 +60,7 @@ public class FocusObjectController : MonoBehaviour
             return;
         }
         Vector2 movement = GetMovementVector();
-        if (movement.magnitude > 0.01f)
+        if (movement.magnitude > 0.001f)
         {
             focusObject.transform.Translate(movement.x, 0, movement.y, Space.World);
             transform.Translate(movement.x, 0, movement.y, Space.World);

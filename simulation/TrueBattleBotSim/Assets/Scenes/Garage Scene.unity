@@ -4592,7 +4592,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   focusObject: {fileID: 284639720}
-  scalingFactor: 0.2
+  scalingFactor: 0.05
 --- !u!1 &1004835098
 GameObject:
   m_ObjectHideFlags: 0
