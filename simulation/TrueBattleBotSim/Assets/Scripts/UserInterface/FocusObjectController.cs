@@ -3,6 +3,7 @@ using UnityEngine;
 public class FocusObjectController : MonoBehaviour
 {
     [SerializeField] GameObject focusObject = null;
+    [SerializeField] float scalingFactor = 1.0f;
     private bool prevButtonState = false;
     private Vector2 prevClickPosition = Vector2.zero;
     private bool enableControls = true;
@@ -30,7 +31,7 @@ public class FocusObjectController : MonoBehaviour
     private Vector2 GetMovementVector()
     {
         bool buttonState = GetMiddleMouseDown();
-        Vector2 mousePosition = Input.mousePosition;
+        Vector2 mousePosition = Input.mousePosition * scalingFactor;
         if (buttonState != prevButtonState)
         {
             prevButtonState = buttonState;
@@ -61,8 +62,8 @@ public class FocusObjectController : MonoBehaviour
         Vector2 movement = GetMovementVector();
         if (movement.magnitude > 0.01f)
         {
-            focusObject.transform.Translate(movement.x, 0, movement.y);
-            transform.Translate(movement.x, 0, movement.y);
+            focusObject.transform.Translate(movement.x, 0, movement.y, Space.World);
+            transform.Translate(movement.x, 0, movement.y, Space.World);
         }
     }
 }
