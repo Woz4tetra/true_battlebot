@@ -3,13 +3,14 @@ using UnityEngine;
 
 public class CameraController : MonoBehaviour
 {
-    [SerializeField] GameObject focusObject = null;
+    [SerializeField] Matrix4x4 focusObject = Matrix4x4.identity;
     [SerializeField] float smoothSpeed = 20.0f;
     [SerializeField] float azimuthScale = 5.0f;
     [SerializeField] float elevationScale = 2.0f;
     [SerializeField] float distanceSpeed = 30.0f;
     [SerializeField] SerializableTuple<float, float> elevationLimits = new SerializableTuple<float, float>(-Mathf.PI / 4, Mathf.PI / 4);
     [SerializeField] SerializableTuple<float, float> distanceLimits = new SerializableTuple<float, float>(1.0f, 5.0f);
+    [SerializeField] LayerMask layerMask;
     float azimuthAngle = 0.0f, elevationAngle = 0.0f, distance = 10.0f;
     float clickedAzimuthAngle = 0.0f, clickedElevationAngle = 0.0f;
     private Vector2 prevClickPosition = Vector2.zero;
@@ -19,7 +20,7 @@ public class CameraController : MonoBehaviour
 
     void initializePolarCoordinates()
     {
-        Vector3 direction = transform.position - focusObject.transform.position;
+        Vector3 direction = transform.position - focusObject.GetT();
         distance = direction.magnitude;
         azimuthAngle = Mathf.Atan2(direction.z, direction.x);
         elevationAngle = Mathf.Asin(direction.y / distance);
@@ -31,23 +32,40 @@ public class CameraController : MonoBehaviour
         float y = distance * Mathf.Sin(elevationAngle);
         float z = distance * Mathf.Cos(elevationAngle) * Mathf.Sin(azimuthAngle);
         Vector3 position = new Vector3(x, y, z);
-        Quaternion rotation = Quaternion.LookRotation(focusObject.transform.position - position);
-        return Matrix4x4.TRS(position + focusObject.transform.position, rotation, Vector3.one);
+        Quaternion rotation = Quaternion.LookRotation(-position);
+        return Matrix4x4.TRS(position + focusObject.GetT(), rotation, Vector3.one);
     }
 
     void Start()
     {
         if (focusObject == null)
         {
-            focusObject = new GameObject();
-            focusObject.transform.position = Vector3.zero;
+            focusObject = Matrix4x4.identity;
         }
         initializePolarCoordinates();
     }
 
-    private bool GetMouseDown()
+    private bool GetRightMouseDown()
     {
         return Input.GetButton("Fire2");
+    }
+
+    private bool DidLeftMouseUp()
+    {
+        return Input.GetMouseButtonUp(0);
+    }
+
+    private bool RaycastToFocusObject(out Matrix4x4 newFocusObject)
+    {
+        newFocusObject = Matrix4x4.identity;
+        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+        RaycastHit hit;
+        if (Physics.Raycast(ray, out hit, Mathf.Infinity, layerMask))
+        {
+            newFocusObject = Matrix4x4.TRS(hit.point, Quaternion.identity, Vector3.one);
+            return true;
+        }
+        return false;
     }
 
     public void EnableControls(bool enable)
@@ -57,7 +75,7 @@ public class CameraController : MonoBehaviour
 
     private Vector2 GetMovementVector()
     {
-        bool buttonState = GetMouseDown();
+        bool buttonState = GetRightMouseDown();
         Vector2 mousePosition = Input.mousePosition;
         if (buttonState != prevButtonState)
         {
@@ -110,5 +128,14 @@ public class CameraController : MonoBehaviour
         Vector3 smoothedPosition = Vector3.Slerp(transform.position, desiredPosition, smoothSpeed * Time.fixedDeltaTime);
         Quaternion smoothedRotation = Quaternion.Slerp(transform.rotation, desiredTransform.GetR(), smoothSpeed * Time.fixedDeltaTime);
         transform.SetPositionAndRotation(smoothedPosition, smoothedRotation);
+
+        if (DidLeftMouseUp())
+        {
+            Matrix4x4 newFocusObject;
+            if (RaycastToFocusObject(out newFocusObject))
+            {
+                focusObject = newFocusObject;
+            }
+        }
     }
 }

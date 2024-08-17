@@ -1,8 +1,8 @@
 {
     "adaptiveThreshWinSizeMin": 3,
     "adaptiveThreshWinSizeMax": 255,
-    "adaptiveThreshWinSizeStep": 2,
-    "adaptiveThreshConstant": 41.0,
+    "adaptiveThreshWinSizeStep": 10,
+    "adaptiveThreshConstant": 35.0,
     "minMarkerPerimeterRate": 2.9999999999999999e-2,
     "maxMarkerPerimeterRate": 4.0,
     "polygonalApproxAccuracyRate": 2.5000000000000001e-2,
@@ -13,7 +13,6 @@
     "cornerRefinementWinSize": 5,
     "cornerRefinementMaxIterations": 100,
     "cornerRefinementMinAccuracy": 1.0000000000000001e-1,
-    "markerBorderBits": 2,
     "perspectiveRemovePixelPerCell": 4,
     "perspectiveRemoveIgnoredMarginPerCell": 1.3e-1,
     "maxErroneousBitsInBorderRate": 3.4999999999999998e-1,
