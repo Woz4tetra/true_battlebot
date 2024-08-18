@@ -157,7 +157,7 @@ def main() -> None:
         info = compute_camera_info(config, parameter_path, images)
         write_calibration(info, calibration_path)
 
-    grid_size = 11
+    grid_size = config.num_rows + 1
     length_half = config.all_tag_width / 2
     mesh_x, mesh_y = np.meshgrid(
         np.linspace(-length_half, length_half, grid_size), np.linspace(-length_half, length_half, grid_size)
