@@ -1,3 +1,5 @@
+from typing import Optional
+
 import cv2
 import numpy as np
 from sensor_msgs.msg import CameraInfo
@@ -37,7 +39,12 @@ def resize_camera_info(camera_info: CameraInfo, new_width: int, new_height: int)
 
 
 class ImageRectifier:
-    def __init__(self, camera_info: CameraInfo, new_width: int, new_height: int, alpha: float = 0.0) -> None:
+    def __init__(self, camera_info: CameraInfo, new_size: Optional[tuple[int, int]] = None, alpha: float = 0.0) -> None:
+        if new_size is None:
+            new_width = camera_info.width
+            new_height = camera_info.height
+        else:
+            new_width, new_height = new_size
         self.camera_info = resize_camera_info(camera_info, new_width, new_height)
         intrinsics = np.array(self.camera_info.K).reshape(3, 3)
         distortion = np.array(self.camera_info.D)

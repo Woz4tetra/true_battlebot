@@ -83,8 +83,12 @@ public class FieldManager : MonoBehaviour
             Destroy(activeCage);
         }
         Debug.Log($"Loading cage: {scenario.cage.cage_type}");
+        if (!cagePrefabs.ContainsKey(scenario.cage.cage_type))
+        {
+            Debug.LogError("Failed to load cage. Not loading scenario.");
+            return;
+        }
         activeCage = Instantiate(cagePrefabs[scenario.cage.cage_type]);
-
         activeCage.transform.localScale = new Vector3(scenario.cage.dims.x, 1, scenario.cage.dims.y);
 
         if (didScenarioChange)

@@ -96,7 +96,7 @@ class DepthAiOak1W:
         return camera_info
 
     def make_rectifier(self, camera_info: CameraInfo) -> ImageRectifier:
-        return ImageRectifier(camera_info, self.width, self.height, alpha=self.camera_matrix_alpha)
+        return ImageRectifier(camera_info, (self.width, self.height), alpha=self.camera_matrix_alpha)
 
     def make_bundle_detectors(self, rectified_info: CameraInfo) -> dict[str, BundleDetectorInterface]:
         bundle_detectors = {}

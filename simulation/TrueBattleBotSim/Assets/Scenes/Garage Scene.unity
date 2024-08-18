@@ -4655,7 +4655,7 @@ MonoBehaviour:
   elevationScale: 2
   distanceSpeed: 30
   elevationLimits:
-    item1: -0.25
+    item1: -1.4
     item2: 1.4
   distanceLimits:
     item1: 1

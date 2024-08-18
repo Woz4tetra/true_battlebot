@@ -21,10 +21,11 @@ class BoardConfig:
         self.board = aruco.CharucoBoard(
             (self.num_rows, self.num_rows), self.square_size, self.marker_size, self.aruco_dict, ids=self.ids
         )
+        self.all_tag_width = self.num_rows * self.square_size
 
     def generate_image(self) -> np.ndarray:
         all_marker_size_px = self.num_rows * self.square_size * self.px_per_meter
-        margin_size = int(self.texture_size - all_marker_size_px)
+        margin_size = int(self.texture_size - all_marker_size_px) // 2
         if margin_size < 0:
             raise ValueError("Texture size is too small for the given board size")
         return self.board.generateImage(

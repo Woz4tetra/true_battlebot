@@ -1,6 +1,6 @@
 {
     "cage": {
-        "cage_type": "Drive Test Box",
+        "cage_type": "Invisible Cage",
         "display_readout": false,
         "dims": {
             "x": 2.5,
@@ -16,7 +16,7 @@
         {
             "name": "calibration_target",
             "model": "CalibrationTarget8x8",
-            "objective": "idle"
+            "objective": "calibration_vertical"
         }
     ]
 }
