@@ -138,11 +138,14 @@ def main() -> None:
     parser.add_argument(
         "-p", "--parameters", type=str, default="calibration_parameters.json", help="calibration parameter file"
     )
-    parser.add_argument("-c", "--calibration-path", type=str, default="./calibration.toml", help="output directory")
+    parser.add_argument("-c", "--calibration-path", type=str, default="", help="output directory")
     args = parser.parse_args()
     image_bag = args.image_bag
     parameter_path = args.parameters
     calibration_path = args.calibration_path
+
+    if len(calibration_path) == 0:
+        calibration_path = os.path.splitext(image_bag)[0] + ".toml"
 
     config = BoardConfig()
 
@@ -156,6 +159,7 @@ def main() -> None:
         images = [row[0] for row in bag_data]
         info = compute_camera_info(config, parameter_path, images)
         write_calibration(info, calibration_path)
+    print(info)
 
     grid_size = config.num_rows + 1
     length_half = config.all_tag_width / 2
@@ -188,8 +192,6 @@ def main() -> None:
         key = chr(cv2.waitKey(-1) & 0xFF)
         if key == "q":
             break
-
-    print(info)
 
 
 if __name__ == "__main__":

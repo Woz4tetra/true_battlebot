@@ -11,7 +11,7 @@ from bw_interfaces.msg._MotorCharacterizationSample import MotorCharacterization
 from std_msgs.msg._Header import Header as std_msgs_msg_Header
 
 class MotorCharacterizationSampleArray(genpy.Message):
-  _md5sum: str = "e2902200d0d6fe957cb8e229282b2c70"
+  _md5sum: str = "1296e4c9586de8981b5e3f0ad80f1846"
   _type: str = "bw_interfaces/MotorCharacterizationSampleArray"
   _has_header: bool = False  # flag to mark the presence of a Header object
   _full_text: str = """bw_interfaces/MotorCharacterizationSample[] samples
@@ -23,7 +23,7 @@ float64 velocity  # commanded velocity in relative units
 string filename  # sample filename containing the data
 bool valid  # true if the sample should be used
 float64 feedback  # sensed motor velocity in real units (Hz, RPM, etc)
-
+float64 duration  # duration of the sample in seconds
 ================================================================================
 MSG: std_msgs/Header
 # Standard metadata for higher-level stamped data types.
@@ -99,7 +99,7 @@ string frame_id
           length = len(_x)
         buff.write(struct.Struct('<I%ss'%length).pack(length, _x))
         _x = val1
-        buff.write(_get_struct_Bd().pack(_x.valid, _x.feedback))
+        buff.write(_get_struct_B2d().pack(_x.valid, _x.feedback, _x.duration))
     except struct.error as se: self._check_types(struct.error("%s: '%s' when writing '%s'" % (type(se), str(se), str(locals().get('_x', self)))))
     except TypeError as te: self._check_types(ValueError("%s: '%s' when writing '%s'" % (type(te), str(te), str(locals().get('_x', self)))))
 
@@ -153,8 +153,8 @@ string frame_id
           val1.filename = bytes_[start:end]
         _x = val1
         start = end
-        end += 9
-        (_x.valid, _x.feedback,) = _get_struct_Bd().unpack(bytes_[start:end])
+        end += 17
+        (_x.valid, _x.feedback, _x.duration,) = _get_struct_B2d().unpack(bytes_[start:end])
         val1.valid = bool(val1.valid)
         self.samples.append(val1)
       return self
@@ -193,7 +193,7 @@ string frame_id
           length = len(_x)
         buff.write(struct.Struct('<I%ss'%length).pack(length, _x))
         _x = val1
-        buff.write(_get_struct_Bd().pack(_x.valid, _x.feedback))
+        buff.write(_get_struct_B2d().pack(_x.valid, _x.feedback, _x.duration))
     except struct.error as se: self._check_types(struct.error("%s: '%s' when writing '%s'" % (type(se), str(se), str(locals().get('_x', self)))))
     except TypeError as te: self._check_types(ValueError("%s: '%s' when writing '%s'" % (type(te), str(te), str(locals().get('_x', self)))))
 
@@ -248,8 +248,8 @@ string frame_id
           val1.filename = bytes_[start:end]
         _x = val1
         start = end
-        end += 9
-        (_x.valid, _x.feedback,) = _get_struct_Bd().unpack(bytes_[start:end])
+        end += 17
+        (_x.valid, _x.feedback, _x.duration,) = _get_struct_B2d().unpack(bytes_[start:end])
         val1.valid = bool(val1.valid)
         self.samples.append(val1)
       return self
@@ -266,12 +266,12 @@ def _get_struct_2I():
     if _struct_2I is None:
         _struct_2I = struct.Struct("<2I")
     return _struct_2I
-_struct_Bd = None
-def _get_struct_Bd():
-    global _struct_Bd
-    if _struct_Bd is None:
-        _struct_Bd = struct.Struct("<Bd")
-    return _struct_Bd
+_struct_B2d = None
+def _get_struct_B2d():
+    global _struct_B2d
+    if _struct_B2d is None:
+        _struct_B2d = struct.Struct("<B2d")
+    return _struct_B2d
 _struct_id = None
 def _get_struct_id():
     global _struct_id

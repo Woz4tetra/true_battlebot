@@ -9,6 +9,7 @@ build/
 *.blend1
 playground/**/*.jpg*
 playground/**/*.png*
+*.bag
 
 lightning_logs/
 runs/
