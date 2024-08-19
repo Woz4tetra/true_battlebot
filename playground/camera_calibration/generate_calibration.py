@@ -170,25 +170,35 @@ def main() -> None:
     zeros = np.zeros((grid_size * grid_size, 1))
     grid_in_tag = np.concatenate((grid_in_tag, zeros), axis=1)
 
+    show_rectified = False
     rectifier = ImageRectifier(info)
     rectified_info = rectifier.get_rectified_info()
+
+    if show_rectified:
+        show_info = rectified_info
+    else:
+        show_info = info
+
     for image, ground_truth in bag_data:
         if ground_truth is None:
             continue
-        rectified_image = rectifier.rectify(image)
+        if show_rectified:
+            show_image = rectifier.rectify(image)
+        else:
+            show_image = np.copy(image)
         points = np.zeros((0, 3))
         for detection in ground_truth.detections:
             tf_camera_from_tag = Transform3D.from_pose_msg(detection.pose.pose.pose)
             grid_points = points_transform_by(grid_in_tag, tf_camera_from_tag.tfmat)
             points = np.concatenate((points, grid_points), axis=0)
-            draw_pose(rectified_image, tf_camera_from_tag, rectified_info, 0.5)
+            draw_pose(show_image, tf_camera_from_tag, show_info, 0.5)
         if len(points) == 0:
             continue
-        tag_pixels = project_point_array_to_pixel(points, rectified_info)
+        tag_pixels = project_point_array_to_pixel(points, show_info)
         tag_pixels = tag_pixels.astype(int)
         for tag_pixel in tag_pixels:
-            cv2.circle(rectified_image, tag_pixel, 3, (255, 0, 0), -1)
-        cv2.imshow("reproject", rectified_image)
+            cv2.circle(show_image, tag_pixel, 3, (255, 0, 0), -1)
+        cv2.imshow("reproject", show_image)
         key = chr(cv2.waitKey(-1) & 0xFF)
         if key == "q":
             break
