@@ -11,29 +11,30 @@ public abstract class BaseFollower : MonoBehaviour
     protected ActorSharedProperties properties;
     List<SequenceElementConfig> sequence = new List<SequenceElementConfig>();
     float sequence_time = 0.0f;
+    ArrowIndicator[] arrowPrefabs;
     ArrowIndicator arrow;
+    bool isArrowEnabled = true;
     ROSConnection ros;
     static RosTopicState sequenceProgressTopic = null;
 
-    public virtual void Start()
+    public virtual void Awake()
     {
         properties = FindObjectOfType<ActorSharedProperties>();
-        ArrowIndicator[] arrows = Resources.LoadAll<ArrowIndicator>("Indicators");
-        if (arrows.Length == 0)
-        {
-            Debug.LogError("No arrow prefabs found");
-        }
-        else
-        {
-            arrow = Instantiate(arrows[0]);
-        }
+        arrowPrefabs = Resources.LoadAll<ArrowIndicator>("Indicators");
         controller = GetComponent<ControllerInterface>();
 
-        Reset();
         ros = ROSConnection.GetOrCreateInstance();
         if (sequenceProgressTopic == null)
         {
             sequenceProgressTopic = ros.RegisterPublisher<Float64Msg>(properties.GetSequenceProgressTopicName());
+        }
+    }
+
+    void OnDestroy()
+    {
+        if (arrow != null)
+        {
+            Destroy(arrow.gameObject);
         }
     }
 
@@ -43,7 +44,11 @@ public abstract class BaseFollower : MonoBehaviour
         {
             return;
         }
+        TickSequence();
+    }
 
+    void TickSequence()
+    {
         if (GetNextGoal().TryGet(out SequenceElementConfig next))
         {
             UpdateRobotState(next);
@@ -85,22 +90,22 @@ public abstract class BaseFollower : MonoBehaviour
 
     public void SetShowArrow(bool show)
     {
-        arrow.gameObject.SetActive(show);
-    }
-
-    void Reset()
-    {
-        sequence_time = Time.time;
-        if (controller != null)
-        {
-            controller.Reset();
-        }
+        isArrowEnabled = show;
     }
 
     public void SetSequence(List<SequenceElementConfig> sequence)
     {
         this.sequence = sequence;
-        Reset();
+        sequence_time = Time.time;
+        controller.Reset();
+        if (arrowPrefabs.Length == 0)
+        {
+            Debug.LogError("No arrow prefabs found");
+        }
+        else if (isArrowEnabled)
+        {
+            arrow = Instantiate(arrowPrefabs[0]);
+        }
     }
 
 

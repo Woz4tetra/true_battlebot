@@ -22,19 +22,14 @@ def main() -> None:
     else:
         raise NotImplementedError(f"Platform {current_platform} is not supported!")
 
-    files_to_remove = list(destination_path.iterdir())
-    for file in files_to_remove:
-        if file.is_file():
-            file.unlink()
-        elif file.is_dir():
-            shutil.rmtree(file)
-
     # Copy the files
     for file in source_path.iterdir():
         if file.is_file():
             shutil.copy(file, destination_path / file.name)
         elif file.is_dir():
-            shutil.copytree(file, destination_path / file.name, dirs_exist_ok=True)
+            full_path = destination_path / file.name
+            shutil.rmtree(full_path)
+            shutil.copytree(file, full_path, dirs_exist_ok=True)
 
     print(f"File copied to {destination_path} successfully!")
 

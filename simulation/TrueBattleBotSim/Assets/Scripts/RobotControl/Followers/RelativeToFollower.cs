@@ -5,9 +5,9 @@ class RelativeToFollower : BaseFollower
 {
     Dictionary<string, GameObject> active_actors = new Dictionary<string, GameObject>();
 
-    public override void Start()
+    public override void Awake()
     {
-        base.Start();
+        base.Awake();
         SetShowArrow(false);
     }
 

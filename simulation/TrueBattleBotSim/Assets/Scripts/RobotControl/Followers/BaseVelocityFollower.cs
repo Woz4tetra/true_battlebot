@@ -13,9 +13,9 @@ abstract class BaseVelocityFollower : BaseFollower
         }
     }
 
-    public override void Start()
+    public override void Awake()
     {
-        base.Start();
+        base.Awake();
         SetShowArrow(true);
     }
 

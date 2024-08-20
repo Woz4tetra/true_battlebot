@@ -6,9 +6,9 @@ class TeleportFollower : BaseFollower
 {
     [SerializeField] private bool smooth = false;
 
-    public override void Start()
+    public override void Awake()
     {
-        base.Start();
+        base.Awake();
         SetShowArrow(false);
     }
 

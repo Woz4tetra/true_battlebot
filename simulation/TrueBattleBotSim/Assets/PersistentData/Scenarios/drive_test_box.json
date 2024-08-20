@@ -21,12 +21,12 @@
         {
             "name": "mini_bot",
             "model": "MR STABS MK2",
-            "objective": "auto_blue_corner"
+            "objective": "keyboard_blue_corner"
         },
         {
             "name": "main_bot",
             "model": "MRS BUFF MK2",
-            "objective": "keyboard_blue_corner"
+            "objective": "target_mini_bot_red_corner"
         }
     ]
 }
