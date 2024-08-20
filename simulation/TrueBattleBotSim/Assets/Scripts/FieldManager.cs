@@ -58,7 +58,7 @@ public class FieldManager : MonoBehaviour
         persistentActors["main_cam"] = mainCam;
     }
 
-    public void LoadScenario(string scenarioName)
+    public void LoadScenarioByName(string scenarioName)
     {
         Debug.Log($"Loading scenario: {scenarioName}");
         bool didScenarioChange = currentScenarioName != scenarioName;
@@ -75,6 +75,11 @@ public class FieldManager : MonoBehaviour
 
         scenario = ConfigManager.LoadScenario(scenarioName);
 
+        LoadScenario(scenario, didScenarioChange);
+    }
+
+    public void LoadScenario(ScenarioConfig scenario, bool resetMainCamera = false)
+    {
         scenario.cage.dims.x = Mathf.Min(scenario.cage.dims.x, maxCageSize);
         scenario.cage.dims.y = Mathf.Min(scenario.cage.dims.y, maxCageSize);
 
@@ -91,7 +96,7 @@ public class FieldManager : MonoBehaviour
         activeCage = Instantiate(cagePrefabs[scenario.cage.cage_type]);
         activeCage.transform.localScale = new Vector3(scenario.cage.dims.x, 1, scenario.cage.dims.y);
 
-        if (didScenarioChange)
+        if (resetMainCamera)
         {
             Matrix4x4 cam_pose = GetPoseFromConfig(
                 scenario.main_cam.init,
@@ -161,7 +166,7 @@ public class FieldManager : MonoBehaviour
     public void ReloadScenario()
     {
         Debug.Log($"Reloading scenario: {currentScenarioName}");
-        LoadScenario(currentScenarioName);
+        LoadScenarioByName(currentScenarioName);
     }
 
     public PauseManager GetPauseManager()

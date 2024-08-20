@@ -1,0 +1,2 @@
+bw_interfaces/SimulationConfig scenario
+bw_interfaces/SimulationConfig[] objectives

@@ -15,26 +15,38 @@ namespace RosMessageTypes.BwInterfaces
 
         public Std.HeaderMsg header;
         public int channel;
-        public int velocity;
+        //  motor channel
+        public double velocity;
+        //  commanded velocity in relative units
         public string filename;
+        //  sample filename containing the data
         public bool valid;
+        //  true if the sample should be used
+        public double feedback;
+        //  sensed motor velocity in real units (Hz, RPM, etc)
+        public double duration;
+        //  duration of the sample in seconds
 
         public MotorCharacterizationSampleMsg()
         {
             this.header = new Std.HeaderMsg();
             this.channel = 0;
-            this.velocity = 0;
+            this.velocity = 0.0;
             this.filename = "";
             this.valid = false;
+            this.feedback = 0.0;
+            this.duration = 0.0;
         }
 
-        public MotorCharacterizationSampleMsg(Std.HeaderMsg header, int channel, int velocity, string filename, bool valid)
+        public MotorCharacterizationSampleMsg(Std.HeaderMsg header, int channel, double velocity, string filename, bool valid, double feedback, double duration)
         {
             this.header = header;
             this.channel = channel;
             this.velocity = velocity;
             this.filename = filename;
             this.valid = valid;
+            this.feedback = feedback;
+            this.duration = duration;
         }
 
         public static MotorCharacterizationSampleMsg Deserialize(MessageDeserializer deserializer) => new MotorCharacterizationSampleMsg(deserializer);
@@ -46,6 +58,8 @@ namespace RosMessageTypes.BwInterfaces
             deserializer.Read(out this.velocity);
             deserializer.Read(out this.filename);
             deserializer.Read(out this.valid);
+            deserializer.Read(out this.feedback);
+            deserializer.Read(out this.duration);
         }
 
         public override void SerializeTo(MessageSerializer serializer)
@@ -55,6 +69,8 @@ namespace RosMessageTypes.BwInterfaces
             serializer.Write(this.velocity);
             serializer.Write(this.filename);
             serializer.Write(this.valid);
+            serializer.Write(this.feedback);
+            serializer.Write(this.duration);
         }
 
         public override string ToString()
@@ -64,7 +80,9 @@ namespace RosMessageTypes.BwInterfaces
             "\nchannel: " + channel.ToString() +
             "\nvelocity: " + velocity.ToString() +
             "\nfilename: " + filename.ToString() +
-            "\nvalid: " + valid.ToString();
+            "\nvalid: " + valid.ToString() +
+            "\nfeedback: " + feedback.ToString() +
+            "\nduration: " + duration.ToString();
         }
 
 #if UNITY_EDITOR

@@ -17,6 +17,7 @@ namespace RosMessageTypes.BwInterfaces
         public string team;
         public TagConfigMsgMsg[] tags;
         public double radius;
+        public bool is_controlled;
 
         public RobotConfigMsgMsg()
         {
@@ -24,14 +25,16 @@ namespace RosMessageTypes.BwInterfaces
             this.team = "";
             this.tags = new TagConfigMsgMsg[0];
             this.radius = 0.0;
+            this.is_controlled = false;
         }
 
-        public RobotConfigMsgMsg(string name, string team, TagConfigMsgMsg[] tags, double radius)
+        public RobotConfigMsgMsg(string name, string team, TagConfigMsgMsg[] tags, double radius, bool is_controlled)
         {
             this.name = name;
             this.team = team;
             this.tags = tags;
             this.radius = radius;
+            this.is_controlled = is_controlled;
         }
 
         public static RobotConfigMsgMsg Deserialize(MessageDeserializer deserializer) => new RobotConfigMsgMsg(deserializer);
@@ -42,6 +45,7 @@ namespace RosMessageTypes.BwInterfaces
             deserializer.Read(out this.team);
             deserializer.Read(out this.tags, TagConfigMsgMsg.Deserialize, deserializer.ReadLength());
             deserializer.Read(out this.radius);
+            deserializer.Read(out this.is_controlled);
         }
 
         public override void SerializeTo(MessageSerializer serializer)
@@ -51,6 +55,7 @@ namespace RosMessageTypes.BwInterfaces
             serializer.WriteLength(this.tags);
             serializer.Write(this.tags);
             serializer.Write(this.radius);
+            serializer.Write(this.is_controlled);
         }
 
         public override string ToString()
@@ -59,7 +64,8 @@ namespace RosMessageTypes.BwInterfaces
             "\nname: " + name.ToString() +
             "\nteam: " + team.ToString() +
             "\ntags: " + System.String.Join(", ", tags.ToList()) +
-            "\nradius: " + radius.ToString();
+            "\nradius: " + radius.ToString() +
+            "\nis_controlled: " + is_controlled.ToString();
         }
 
 #if UNITY_EDITOR

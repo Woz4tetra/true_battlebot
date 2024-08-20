@@ -23,6 +23,7 @@ public class UiManager : MonoBehaviour
     [SerializeField] CameraController cameraController;
     [SerializeField] FieldManager sceneManager;
     [SerializeField] string remoteScenarioSelectionTopic = "simulation/scenario_selection";
+    [SerializeField] string addConfigurationTopic = "simulation/add_configuration";
     [SerializeField] string scenarioListTopic = "simulation/scenarios";
     [SerializeField] RestartButton restartButton;
     [SerializeField] PlayPauseButton playPauseButton;
@@ -72,6 +73,7 @@ public class UiManager : MonoBehaviour
     {
         ros = ROSConnection.GetOrCreateInstance();
         ros.Subscribe<StringMsg>(remoteScenarioSelectionTopic, RemoteScenarioSelectionCallback);
+        ros.Subscribe<ConfigureSimulationMsg>(addConfigurationTopic, AddConfigurationCallback);
         ros.RegisterPublisher<LabelsMsg>(scenarioListTopic);
 
         resolutionDropdown.ClearOptions();
@@ -191,7 +193,7 @@ public class UiManager : MonoBehaviour
         Debug.Log($"Setting scenario to {scenarioIndex} -> {scenarioName}");
         PlayerPrefs.SetString(PreferenceKey.ScenarioPreference.Value, scenarioName);
         PlayerPrefs.Save();
-        sceneManager.LoadScenario(scenarioName);
+        sceneManager.LoadScenarioByName(scenarioName);
     }
 
     private void SetSpotlight(bool isSpotlight)
@@ -351,6 +353,37 @@ public class UiManager : MonoBehaviour
         {
             Debug.LogWarning($"Scenario {msg.data} not found in scenario index");
         }
+    }
+
+    void AddConfigurationCallback(ConfigureSimulationMsg msg)
+    {
+        UpdateConfigurationManager(msg);
+        AddToScenarioDropdown(msg.scenario.name);
+    }
+
+    void UpdateConfigurationManager(ConfigureSimulationMsg msg)
+    {
+        Debug.Log($"Adding scenario {msg.scenario.name} to configuration manager");
+        ConfigManager.AddScenarioFromJson(msg.scenario.name, msg.scenario.json_data);
+        for (int i = 0; i < msg.objectives.Length; i++)
+        {
+            string objectiveName = msg.objectives[i].name;
+            Debug.Log($"Adding objective {objectiveName} to configuration manager");
+            ConfigManager.AddObjectiveFromJson(objectiveName, msg.objectives[i].json_data);
+        }
+    }
+
+    void AddToScenarioDropdown(string scenarioName)
+    {
+        if (scenarios.Contains(scenarioName))
+        {
+            return;
+        }
+        Debug.Log($"Adding scenario {scenarioName} to dropdown");
+        scenarioIndex[scenarioName] = scenarios.Count - 1;
+        scenarioDropdown.AddOptions(new List<string> { scenarioName });
+        scenarioDropdown.RefreshShownValue();
+        scenarios.Add(scenarioName);
     }
 
     IEnumerator<object> PublishScenarioListCallback()

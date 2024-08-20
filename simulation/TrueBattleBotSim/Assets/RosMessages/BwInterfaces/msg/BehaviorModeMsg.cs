@@ -13,14 +13,14 @@ namespace RosMessageTypes.BwInterfaces
         public const string k_RosMessageName = "bw_interfaces/BehaviorMode";
         public override string RosMessageName => k_RosMessageName;
 
-        public byte mode;
+        public uint mode;
 
         public BehaviorModeMsg()
         {
             this.mode = 0;
         }
 
-        public BehaviorModeMsg(byte mode)
+        public BehaviorModeMsg(uint mode)
         {
             this.mode = mode;
         }
