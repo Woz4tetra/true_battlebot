@@ -1,7 +1,7 @@
 from typing import Optional
 
 import numpy as np
-from geometry_msgs.msg import Quaternion, Vector3
+from geometry_msgs.msg import Quaternion
 
 from bw_shared.geometry.rotation_transforms import quaternion_from_matrix
 
