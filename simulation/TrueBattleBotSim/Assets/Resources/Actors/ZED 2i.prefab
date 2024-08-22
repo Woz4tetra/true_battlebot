@@ -155,6 +155,7 @@ GameObject:
   - component: {fileID: 1022128046478193387}
   - component: {fileID: 8010827060173345987}
   - component: {fileID: 4420171650167451606}
+  - component: {fileID: 6001035542632619913}
   m_Layer: 16
   m_Name: ZED 2i
   m_TagString: Untagged
@@ -530,6 +531,20 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   sequenceProgressTopicName: /camera_0/sequence_progress
+--- !u!114 &6001035542632619913
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2195758086682191925}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6cf0fdd67adad93cbb8d57886da0bc9a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  topic: /camera_0/set_pose
+  referenceObject: {fileID: 0}
 --- !u!1 &3155467165195114721
 GameObject:
   m_ObjectHideFlags: 0

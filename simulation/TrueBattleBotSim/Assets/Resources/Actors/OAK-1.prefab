@@ -683,6 +683,7 @@ GameObject:
   - component: {fileID: 241518630459231948}
   - component: {fileID: 6553286218619692583}
   - component: {fileID: 2131668703734385241}
+  - component: {fileID: 5713299436357410431}
   m_Layer: 17
   m_Name: OAK-1
   m_TagString: Untagged
@@ -936,6 +937,20 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   sequenceProgressTopicName: /camera_1/sequence_progress
+--- !u!114 &5713299436357410431
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6191050381476558163}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6cf0fdd67adad93cbb8d57886da0bc9a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  topic: /camera_1/set_pose
+  referenceObject: {fileID: 0}
 --- !u!1 &7043653395538183128
 GameObject:
   m_ObjectHideFlags: 0

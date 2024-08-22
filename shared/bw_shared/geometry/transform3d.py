@@ -71,6 +71,13 @@ class Transform3D:
         return quaternion_from_matrix(self.tfmat)
 
     @property
+    def quaternion_np(self) -> np.ndarray:
+        """
+        Quaternion array representing orientation of this transform in space frame
+        """
+        return np.array([self.quaternion.x, self.quaternion.y, self.quaternion.z, self.quaternion.w])
+
+    @property
     def rpy(self) -> RPY:
         """
         RPY representing rpy corresponding to this transform in space frame
