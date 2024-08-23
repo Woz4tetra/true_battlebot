@@ -11,7 +11,9 @@ from geometry_msgs.msg import Quaternion, Vector3
 from std_msgs.msg import String
 
 
-def compute_camera_pose(distance: float, azimuth_angle: float, elevation_angle: float) -> Transform3D:
+def compute_camera_pose(
+    distance: float, azimuth_angle: float, elevation_angle: float
+) -> Transform3D:
     position_array = np.array(
         [
             distance * np.cos(elevation_angle) * np.cos(azimuth_angle),
@@ -42,7 +44,9 @@ def get_random_camera_pose() -> Transform3D:
     pose = compute_camera_pose(distance, azimuth_angle, elevation_angle)
     rotation = pose.quaternion_np
     randomized_rotation = np.random.normal(rotation, 0.01)
-    camera_pose = Transform3D.from_position_and_quaternion(pose.position, Quaternion(*randomized_rotation))
+    camera_pose = Transform3D.from_position_and_quaternion(
+        pose.position, Quaternion(*randomized_rotation)
+    )
     return camera_pose
 
 
@@ -135,10 +139,26 @@ def generate_idle(spawn_grid: list) -> dict:
 def generate_scenario(num_bots: int) -> dict:
     cage_x = random.uniform(2.2, 2.4)
     cage_y = cage_x + random.uniform(-0.02, 0.02)
-    mini_bot_objective = "randomized_start_target_opponent" if num_bots >= 3 else "mini_bot_randomized_sequence"
-    mini_bot = {"name": "mini_bot", "model": "MR STABS MK2", "objective": mini_bot_objective}
-    main_bot = {"name": "main_bot", "model": "MRS BUFF MK2", "objective": "main_bot_randomized_sequence"}
-    opponent_1 = {"name": "opponent_1", "model": "MRS BUFF B-03 Bizarro", "objective": "randomized_start_target_main"}
+    mini_bot_objective = (
+        "randomized_start_target_opponent"
+        if num_bots >= 3
+        else "mini_bot_randomized_sequence"
+    )
+    mini_bot = {
+        "name": "mini_bot",
+        "model": "MR STABS MK2",
+        "objective": mini_bot_objective,
+    }
+    main_bot = {
+        "name": "main_bot",
+        "model": "MRS BUFF MK2",
+        "objective": "main_bot_randomized_sequence",
+    }
+    opponent_1 = {
+        "name": "opponent_1",
+        "model": "MRS BUFF B-03 Bizarro",
+        "objective": "randomized_start_target_main",
+    }
     robot_actors = [mini_bot, main_bot, opponent_1]
     robot_actors = robot_actors[:num_bots]
     actors = [
@@ -154,8 +174,12 @@ def generate_scenario(num_bots: int) -> dict:
 def main() -> None:
     rospy.init_node("generate_images_from_sim")
 
-    configure_simulation_pub = rospy.Publisher("/simulation/add_configuration", ConfigureSimulation, queue_size=1)
-    select_scenario_pub = rospy.Publisher("/simulation/scenario_selection", String, queue_size=1)
+    configure_simulation_pub = rospy.Publisher(
+        "/simulation/add_configuration", ConfigureSimulation, queue_size=1
+    )
+    select_scenario_pub = rospy.Publisher(
+        "/simulation/scenario_selection", String, queue_size=1
+    )
 
     rospy.sleep(2.0)  # wait for publishers to connect
 

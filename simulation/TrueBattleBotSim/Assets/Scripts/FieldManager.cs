@@ -383,8 +383,7 @@ public class FieldManager : MonoBehaviour
         Vector2 scale;
         Vector3 position;
         Quaternion rotation;
-        Quaternion tempRotation;
-        PoseMsg rosPose;
+        Matrix4x4 objectPose = ComputeConfigPoseFromReference(init_config);
         switch (init_config.type)
         {
             case "absolute":
@@ -403,26 +402,14 @@ public class FieldManager : MonoBehaviour
                 rotation = Quaternion.Euler(init_config.roll, init_config.pitch, init_config.yaw);
                 break;
             case "flu":
-                tempRotation = new Vector3(init_config.roll, init_config.pitch, init_config.yaw).FromFLUEulerAngles();
-                rosPose = new PoseMsg
-                {
-                    position = new PointMsg(init_config.x, init_config.y, init_config.z),
-                    orientation = new QuaternionMsg(tempRotation.x, tempRotation.y, tempRotation.z, tempRotation.w)
-                };
-                Matrix4x4 objectPose = Matrix4x4.TRS(rosPose.position.From<FLU>(), rosPose.orientation.From<FLU>(), Vector3.one);
-                if (referenceObject != null)
-                {
-                    objectPose = referenceObject.transform.worldToLocalMatrix * objectPose;
-                }
-                objectPose = Matrix4x4.TRS(Vector3.zero, Quaternion.Euler(0, 90, 0), Vector3.one) * objectPose;
                 scale = Vector2.one;
                 position = objectPose.GetT();
                 rotation = objectPose.GetR();
                 break;
             default:
                 scale = Vector2.one;
-                position = new Vector3(init_config.x, init_config.z, init_config.y);
-                rotation = Quaternion.Euler(init_config.pitch, init_config.yaw, init_config.roll);
+                position = objectPose.GetT();
+                rotation = objectPose.GetR();
                 Debug.LogError("Invalid pose type: " + init_config.type);
                 break;
         }
@@ -436,6 +423,22 @@ public class FieldManager : MonoBehaviour
         );
         Matrix4x4 tforigin_from_objectorigin = tforigin_from_spawn * tf_objectorigin_from_spawn.inverse;
         return tforigin_from_objectorigin;
+    }
+
+    Matrix4x4 ComputeConfigPoseFromReference(ScenarioInitConfig init_config)
+    {
+        Quaternion tempRotation = new Vector3(init_config.roll, init_config.pitch, init_config.yaw).FromFLUEulerAngles();
+        PoseMsg rosPose = new PoseMsg
+        {
+            position = new PointMsg(init_config.x, init_config.y, init_config.z),
+            orientation = new QuaternionMsg(tempRotation.x, tempRotation.y, tempRotation.z, tempRotation.w)
+        };
+        Matrix4x4 objectPose = Matrix4x4.TRS(rosPose.position.From<FLU>(), rosPose.orientation.From<FLU>(), Vector3.one);
+        if (referenceObject != null)
+        {
+            objectPose = referenceObject.transform.worldToLocalMatrix * objectPose;
+        }
+        return Matrix4x4.TRS(Vector3.zero, Quaternion.Euler(0, 90, 0), Vector3.one) * objectPose;
     }
 
     // Update is called once per frame
