@@ -53,5 +53,11 @@ namespace MathExtensions
         {
             return Matrix4x4.TRS(tf.position, tf.rotation, tf.localScale);
         }
+
+        public static Quaternion FromFLUEulerAngles(this Vector3 euler)
+        {
+            Quaternion quat = Quaternion.Euler(euler.x, euler.y, euler.z);
+            return new Quaternion(-quat.x, quat.y, quat.z, quat.w);
+        }
     }
 }

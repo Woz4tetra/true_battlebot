@@ -80,7 +80,10 @@ public abstract class BaseFollower : MonoBehaviour
         {
             return Optional<SequenceElementConfig>.CreateEmpty();
         }
-        arrow.Set2D(next.x, 0.1f, next.y, -next.yaw);
+        if (arrow != null)
+        {
+            arrow.Set2D(next.x, 0.1f, next.y, -next.yaw);
+        }
         if (next == null)
         {
             return Optional<SequenceElementConfig>.CreateEmpty();
@@ -97,7 +100,10 @@ public abstract class BaseFollower : MonoBehaviour
     {
         this.sequence = sequence;
         sequence_time = Time.time;
-        controller.Reset();
+        if (controller != null)
+        {
+            controller.Reset();
+        }
         if (arrowPrefabs.Length == 0)
         {
             Debug.LogError("No arrow prefabs found");

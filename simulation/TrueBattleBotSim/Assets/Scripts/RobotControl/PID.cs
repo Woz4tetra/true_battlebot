@@ -6,7 +6,7 @@ public class PID
     [SerializeField] private float i_zone = 0.0f, i_max = 0.0f;
     [SerializeField] private float epsilon = 1e-9f, tolerance = 0.0f;
     private float i_accum = 0.0f;
-    private float prev_error = 0.0f;
+    private float prev_error = float.NaN;
 
     public PID(float kp, float ki = 0.0f, float kd = 0.0f, float kf = 0.0f, float i_zone = 0.0f, float i_max = 0.0f, float epsilon = 1e-9f, float tolerance = 0.0f)
     {
@@ -23,7 +23,7 @@ public class PID
     public void Reset()
     {
         i_accum = 0.0f;
-        prev_error = 0.0f;
+        prev_error = float.NaN;
     }
 
     public float Update(float setpoint, float measurement, float dt)
@@ -33,9 +33,14 @@ public class PID
         {
             return 0.0f;
         }
+        if (dt <= 0.0f)
+        {
+            Debug.LogWarning("dt must be positive");
+            return 0.0f;
+        }
         float output = 0.0f;
         output += CalculateP(error);
-        output += CalculateI(error);
+        output += CalculateI(error, dt);
         output += CalculateD(error, dt);
         output += CalculateF(setpoint);
         return output;
@@ -49,7 +54,7 @@ public class PID
         }
         return kp * error;
     }
-    private float CalculateI(float error)
+    private float CalculateI(float error, float dt)
     {
         if (Mathf.Abs(ki) < epsilon)
             return 0.0f;
@@ -64,15 +69,15 @@ public class PID
             else
                 i_accum = Mathf.Max(i_accum, -i_max / ki);
 
-        return ki * i_accum;
+        return ki * i_accum * dt;
     }
 
     private float CalculateD(float error, float dt)
     {
         if (Mathf.Abs(kd) < epsilon)
             return 0.0f;
-        if (dt < 0.0f)
-            return 0.0f;
+        if (float.IsNaN(prev_error))
+            prev_error = error;
         float derivative = (error - prev_error) / dt;
         prev_error = error;
         return kd * derivative;

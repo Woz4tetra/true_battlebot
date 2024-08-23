@@ -217,6 +217,7 @@ public class UiManager : MonoBehaviour
 
     public void ShowHideSettingsPanel(bool show)
     {
+        Debug.Log($"Show settings panel: {show}");
         isShown = show;
         settingsPanel.SetActive(show);
         settingsBackground.SetActive(show);
@@ -236,7 +237,10 @@ public class UiManager : MonoBehaviour
 
     public void SetPause(bool paused)
     {
-        sceneManager.GetPauseManager().SetPause(paused);
+        if (sceneManager.GetPauseManager().SetPause(paused))
+        {
+            playPauseButton.SetPause(paused);
+        }
     }
 
     public bool IsPaused()
@@ -346,8 +350,8 @@ public class UiManager : MonoBehaviour
             scenarioDropdown.value = scenarioIndex[msg.data];
             scenarioDropdown.RefreshShownValue();
             SetScenario(scenarioDropdown.value);
+            wasPausedWhenSettingsOpened = false;
             ShowHideSettingsPanel(false);
-            sceneManager.GetPauseManager().SetPause(false);
         }
         else
         {
@@ -380,10 +384,10 @@ public class UiManager : MonoBehaviour
             return;
         }
         Debug.Log($"Adding scenario {scenarioName} to dropdown");
+        scenarios.Add(scenarioName);
         scenarioIndex[scenarioName] = scenarios.Count - 1;
         scenarioDropdown.AddOptions(new List<string> { scenarioName });
         scenarioDropdown.RefreshShownValue();
-        scenarios.Add(scenarioName);
     }
 
     IEnumerator<object> PublishScenarioListCallback()
@@ -413,12 +417,9 @@ public class UiManager : MonoBehaviour
 
         if (!isShown)
         {
-            if (Input.GetKeyDown(KeyCode.Space))
+            if (Input.GetKeyDown(KeyCode.Space) || playPauseButton.WasClicked())
             {
-                PauseManager pauseManager = sceneManager.GetPauseManager();
-                pauseManager.SetPause(!pauseManager.IsPaused());
-
-                playPauseButton.SetPause(pauseManager.IsPaused());
+                SetPause(!sceneManager.GetPauseManager().IsPaused());
             }
 
             if (Input.GetKeyDown(KeyCode.R))

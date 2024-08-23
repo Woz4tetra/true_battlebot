@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using MathExtensions;
+using RosMessageTypes.Geometry;
+using Unity.Robotics.ROSTCPConnector.ROSGeometry;
 using UnityEngine;
 
 public class FieldManager : MonoBehaviour
@@ -12,6 +14,7 @@ public class FieldManager : MonoBehaviour
     [SerializeField] string scenariosDirectory = "Scenarios";
     [SerializeField] GameObject flatScreenTV;
     [SerializeField] float maxCageSize = 5.0f;
+    [SerializeField] private GameObject referenceObject;
 
     PauseManager pauseManager;
     ScenarioConfig scenario;
@@ -28,6 +31,11 @@ public class FieldManager : MonoBehaviour
 
     void Start()
     {
+        if (referenceObject == null)
+        {
+            referenceObject = GameObject.Find("Coordinate Frame");
+        }
+        flatScreenTV.SetActive(false);
         pauseManager = transform.Find("PauseManager").GetComponent<PauseManager>();
         if (pauseManager == null)
         {
@@ -70,6 +78,11 @@ public class FieldManager : MonoBehaviour
         if (scenarioName.Length == 0)
         {
             Debug.Log("No scenario selected");
+            flatScreenTV.SetActive(false);
+            if (activeCage != null)
+            {
+                Destroy(activeCage);
+            }
             return;
         }
 
@@ -133,6 +146,7 @@ public class FieldManager : MonoBehaviour
         }
         activeActors.Clear();
 
+
         Debug.Log($"Loading scenario with {scenario.actors.Count} actors");
         foreach (ActorConfig actor_config in scenario.actors)
         {
@@ -158,8 +172,24 @@ public class FieldManager : MonoBehaviour
             GameObject actor = Instantiate(actorPrefab, actor_pose.GetT(), actor_pose.GetR());
             activeActors[actor_config.name] = actor;
             actor.gameObject.name = actor_config.name;
-            ActivateActorType(actor, objective_config);
             actor.SetActive(true);
+        }
+
+        Dictionary<string, GameObject> combinedActors = new Dictionary<string, GameObject>();
+        foreach (KeyValuePair<string, GameObject> entry in activeActors)
+        {
+            combinedActors[entry.Key] = entry.Value;
+        }
+        foreach (KeyValuePair<string, GameObject> entry in persistentActors)
+        {
+            combinedActors[entry.Key] = entry.Value;
+        }
+
+        foreach (ActorConfig actor_config in scenario.actors)
+        {
+            GameObject actor = activeActors[actor_config.name];
+            ObjectiveConfig objective_config = objectives[actor_config.name];
+            ActivateActorType(actor, objective_config, combinedActors);
         }
     }
 
@@ -174,7 +204,7 @@ public class FieldManager : MonoBehaviour
         return pauseManager;
     }
 
-    void ActivateActorType(GameObject actor, ObjectiveConfig objective_config)
+    void ActivateActorType(GameObject actor, ObjectiveConfig objective_config, Dictionary<string, GameObject> actors)
     {
         KeyboardInput keyboard_input = actor.GetComponent<KeyboardInput>();
         RosControllerConnector controller = actor.GetComponent<RosControllerConnector>();
@@ -202,16 +232,6 @@ public class FieldManager : MonoBehaviour
         catch (NullReferenceException e) { Debug.Log($"Actor {actor.name} prefab missing relative_to input: {e.Message}"); }
 
         BaseFollowerEngine followerEngine;
-
-        Dictionary<string, GameObject> combinedActors = new Dictionary<string, GameObject>();
-        foreach (KeyValuePair<string, GameObject> entry in activeActors)
-        {
-            combinedActors[entry.Key] = entry.Value;
-        }
-        foreach (KeyValuePair<string, GameObject> entry in persistentActors)
-        {
-            combinedActors[entry.Key] = entry.Value;
-        }
 
         switch (objective_config.type)
         {
@@ -258,7 +278,7 @@ public class FieldManager : MonoBehaviour
                 followerEngine = GetFollowerEngine(objective_config.follower_engine, actor);
                 target_follower.enabled = true;
                 target_follower.SetSequence(objective_config.sequence);
-                target_follower.SetActiveActors(combinedActors);
+                target_follower.SetActiveActors(actors);
                 target_follower.SetFollowerEngine(followerEngine);
                 break;
             case "teleport":
@@ -279,7 +299,7 @@ public class FieldManager : MonoBehaviour
                 }
                 relative_to_follower.enabled = true;
                 relative_to_follower.SetSequence(objective_config.sequence);
-                relative_to_follower.SetActiveActors(combinedActors);
+                relative_to_follower.SetActiveActors(actors);
                 break;
             default:
                 Debug.LogError("Invalid objective type: " + objective_config.type);
@@ -363,6 +383,8 @@ public class FieldManager : MonoBehaviour
         Vector2 scale;
         Vector3 position;
         Quaternion rotation;
+        Quaternion tempRotation;
+        PoseMsg rosPose;
         switch (init_config.type)
         {
             case "absolute":
@@ -379,6 +401,23 @@ public class FieldManager : MonoBehaviour
                 scale = Vector2.one;
                 position = new Vector3(init_config.x, init_config.y, init_config.z);
                 rotation = Quaternion.Euler(init_config.roll, init_config.pitch, init_config.yaw);
+                break;
+            case "flu":
+                tempRotation = new Vector3(init_config.roll, init_config.pitch, init_config.yaw).FromFLUEulerAngles();
+                rosPose = new PoseMsg
+                {
+                    position = new PointMsg(init_config.x, init_config.y, init_config.z),
+                    orientation = new QuaternionMsg(tempRotation.x, tempRotation.y, tempRotation.z, tempRotation.w)
+                };
+                Matrix4x4 objectPose = Matrix4x4.TRS(rosPose.position.From<FLU>(), rosPose.orientation.From<FLU>(), Vector3.one);
+                if (referenceObject != null)
+                {
+                    objectPose = referenceObject.transform.worldToLocalMatrix * objectPose;
+                }
+                objectPose = Matrix4x4.TRS(Vector3.zero, Quaternion.Euler(0, 90, 0), Vector3.one) * objectPose;
+                scale = Vector2.one;
+                position = objectPose.GetT();
+                rotation = objectPose.GetR();
                 break;
             default:
                 scale = Vector2.one;

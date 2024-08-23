@@ -75,6 +75,7 @@ class TankController : MonoBehaviour, ControllerInterface
         {
             pose = referenceObject.transform.worldToLocalMatrix * pose;
         }
+        pose = Matrix4x4.TRS(Vector3.zero, Quaternion.Euler(0, -90, 0), Vector3.one) * pose * Matrix4x4.TRS(Vector3.zero, Quaternion.Euler(0, 90, 0), Vector3.one);
         return new OdometryMsg
         {
             header = new HeaderMsg
@@ -89,7 +90,7 @@ class TankController : MonoBehaviour, ControllerInterface
                 pose = new PoseMsg
                 {
                     position = pose.GetT().To<FLU>(),
-                    orientation = (pose.GetR() * Quaternion.Euler(0, 90, 0)).To<FLU>()
+                    orientation = pose.GetR().To<FLU>()
                 }
             },
             twist = new TwistWithCovarianceMsg

@@ -1,3 +1,5 @@
+from typing import Optional
+
 from bw_shared.pid.config import PidConfig
 
 
@@ -28,14 +30,14 @@ class PID:
         self.i_max = config.i_max
         self.tolerance = config.tolerance
         self.i_accum = 0.0
-        self.prev_error = 0.0
+        self.prev_error: Optional[float] = None
 
     def reset(self) -> None:
         """
         Reset the integral term and previous error.
         """
         self.i_accum = 0.0
-        self.prev_error = 0.0
+        self.prev_error = None
 
     def update(self, setpoint: float, measurement: float, dt: float) -> float:
         """
@@ -52,9 +54,11 @@ class PID:
         error = setpoint - measurement
         if abs(error) < self.tolerance:
             return 0.0
+        if dt <= 0.0:
+            raise ValueError("dt must be positive")
         output = 0.0
         output += self._calculate_p(error)
-        output += self._calculate_i(error)
+        output += self._calculate_i(error, dt)
         output += self._calculate_d(error, dt)
         output += self._calculate_f(setpoint)
         return output
@@ -64,7 +68,7 @@ class PID:
             return 0.0
         return self.kp * error
 
-    def _calculate_i(self, error: float) -> float:
+    def _calculate_i(self, error: float, dt: float) -> float:
         if self.ki == 0.0:
             return 0.0
         if self.i_zone is None:
@@ -78,13 +82,13 @@ class PID:
             else:
                 self.i_accum = max(self.i_accum, -self.i_max / self.ki)
 
-        return self.ki * self.i_accum
+        return self.ki * self.i_accum * dt
 
     def _calculate_d(self, error: float, dt: float) -> float:
         if self.kd == 0.0:
             return 0.0
-        if dt < 0.0:
-            return 0.0
+        if self.prev_error is None:
+            self.prev_error = error
         output = self.kd * (error - self.prev_error) / dt
         self.prev_error = error
         return output

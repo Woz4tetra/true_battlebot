@@ -3,12 +3,12 @@ using UnityEngine.UI;
 
 public class PlayPauseButton : MonoBehaviour
 {
-    [SerializeField] PauseManager pauseManager;
     [SerializeField] Sprite playIcon;
     [SerializeField] Sprite pauseIcon;
 
     Image icon;
     Button button;
+    bool wasClicked = false;
 
     void Start()
     {
@@ -24,8 +24,16 @@ public class PlayPauseButton : MonoBehaviour
 
     public void OnClick()
     {
-        bool pauseState = !pauseManager.IsPaused();
-        Debug.Log($"Setting pause icon to {pauseState}");
-        pauseManager.SetPause(pauseState);
+        wasClicked = true;
+    }
+
+    public bool WasClicked()
+    {
+        if (wasClicked)
+        {
+            wasClicked = false;
+            return true;
+        }
+        return false;
     }
 }
