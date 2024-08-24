@@ -28,6 +28,8 @@ def main() -> None:
     current_index = args.index
     while True:
         image_path = images_paths[current_index]
+        print("Current index:", current_index)
+        print(f"Current image: {image_path}")
         annotation_path = os.path.splitext(image_path)[0] + ".txt"
         with open(annotation_path) as file:
             annotations = YoloKeypointImage.from_txt(file.read())
@@ -61,7 +63,6 @@ def main() -> None:
             current_index = (current_index + 1) % len(images_paths)
         elif key == "a":
             current_index = (current_index - 1) % len(images_paths)
-        print("Current index:", current_index)
 
 
 if __name__ == "__main__":

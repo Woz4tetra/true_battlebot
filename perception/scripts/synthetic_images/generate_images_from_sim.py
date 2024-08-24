@@ -138,6 +138,9 @@ def make_annotation_from_robot(
     except ProjectionError as e:
         print(f"Projection error: {e}")
         return None
+    if len(contours) == 0:
+        print("No contours found")
+        return None
 
     rectangles = np.array([cv2.boundingRect(contour) for contour in contours])
     top_left = np.min(rectangles[:, :2], axis=0)
@@ -177,7 +180,9 @@ def record_image_and_keypoints(output_dir: Path, data_snapshot: DataShapshot) ->
             print("Robot and image timestamps are too far apart.")
             return
         layer = data_snapshot.layer.copy()
+        data_snapshot.layer = None
         robots = data_snapshot.robots
+        data_snapshot.robots = None
         model = data_snapshot.model
         image_annotation = YoloKeypointImage(image_id=filename)
 
@@ -192,7 +197,7 @@ def record_image_and_keypoints(output_dir: Path, data_snapshot: DataShapshot) ->
             annotation = make_annotation_from_robot(robot, model, contour_map, image_size)
             if annotation is None:
                 print(f"Skipping annotation. Label: {robot.label}")
-                continue
+                return
             print(f"Adding annotation for label: {robot.label}")
 
             image_annotation.labels.append(annotation)
