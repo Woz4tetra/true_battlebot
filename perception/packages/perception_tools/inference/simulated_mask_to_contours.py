@@ -1,16 +1,31 @@
+from typing import Sequence
+
 import cv2
 import numpy as np
 from bw_interfaces.msg import Contour, SegmentationInstance, SegmentationInstanceArray, UVKeypoint
 from bw_shared.enums.label import ModelLabel
 
 
-def make_simulated_segmentation_color_map(msg: SegmentationInstanceArray) -> tuple[dict[int, ModelLabel], set[str]]:
+class EmptyMaskError(Exception):
+    pass
+
+
+class InvalidLabelError(Exception):
+    pass
+
+
+def make_simulated_segmentation_color_map(
+    msg: SegmentationInstanceArray, filter_labels: Sequence[ModelLabel] | None = None
+) -> tuple[dict[int, ModelLabel], set[str]]:
     color_to_model_label_map = {}
     skipped_labels = set()
     for instant in msg.instances:
         try:
             label = ModelLabel(instant.label.lower())
         except ValueError:
+            skipped_labels.add(instant.label)
+            continue
+        if filter_labels is not None and label not in filter_labels:
             skipped_labels.add(instant.label)
             continue
         color = instant.class_index
@@ -46,10 +61,13 @@ def simulated_mask_to_contours(
     error_range: int = -1,
     erode_dilate_size: int = 3,
     debug_image: np.ndarray | None = None,
-) -> SegmentationInstanceArray:
+) -> tuple[SegmentationInstanceArray, dict[int, Exception]]:
     segmentation_array = SegmentationInstanceArray()
+    exceptions = {}
     for color, label in simulated_segmentation_color_map.items():
         if label not in model_labels:
+            exc = InvalidLabelError(f"Label {label} not in model labels")
+            exceptions[color] = exc
             continue
         color_bgr = color_i32_to_bgr(color)
         if error_range < 0:
@@ -62,23 +80,32 @@ def simulated_mask_to_contours(
         mask = bridge_gaps(mask, erode_dilate_size)
         contours, hierarchy = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
         if hierarchy is None:  # empty mask
-            print("empty mask", label)
-            continue
-        has_holes = bool((hierarchy.reshape(-1, 4)[:, 3] >= 0).sum() > 0)  # type: ignore
-        segmentation = SegmentationInstance(
-            contours=[to_contours_msg(contour) for contour in contours],
-            score=1.0,
-            label=label,
-            class_index=model_labels.index(label),
-            object_index=0,
-            has_holes=has_holes,
-        )
+            exc = EmptyMaskError(f"Empty mask for label {label}")
+            exceptions[color] = exc
+            segmentation = SegmentationInstance(
+                contours=[],
+                score=1.0,
+                label=label,
+                class_index=model_labels.index(label),
+                object_index=0,
+                has_holes=False,
+            )
+        else:
+            has_holes = bool((hierarchy.reshape(-1, 4)[:, 3] >= 0).sum() > 0)  # type: ignore
+            segmentation = SegmentationInstance(
+                contours=[to_contours_msg(contour) for contour in contours],
+                score=1.0,
+                label=label,
+                class_index=model_labels.index(label),
+                object_index=0,
+                has_holes=has_holes,
+            )
         segmentation_array.instances.append(segmentation)
 
         if debug_image is not None:
             debug_image = cv2.drawContours(debug_image, contours, -1, color=color_bgr, thickness=1)
 
-    return segmentation_array
+    return segmentation_array, exceptions
 
 
 def segmentation_array_to_contour_map(

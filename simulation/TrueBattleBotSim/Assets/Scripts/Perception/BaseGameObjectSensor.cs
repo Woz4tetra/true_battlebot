@@ -118,10 +118,14 @@ public abstract class BaseGameObjectSensor : MonoBehaviour
             if (debugVisibilityReason) Debug.Log($"Object {obj.name} is not in the layer mask. Layer name: {LayerMask.LayerToName(obj.layer)}");
             return false;
         }
-        if (!Physics.Raycast(measurementRay, out hit, maxDistance, layerMask))
+        if (!Physics.Raycast(measurementRay, out hit, maxDistance, layerMask) && hit.transform != null)
         {
-            if (debugVisibilityReason) Debug.Log($"Object {obj.name} is obstructed by something");
+            if (debugVisibilityReason) Debug.Log($"Object {obj.name} is obstructed by {hit.transform.gameObject.name}");
             return false;
+        }
+        if (hit.transform == null)
+        {
+            return true;
         }
         GameObject toplevelObj = ObjectUtils.GetTopLevelObject(hit.transform.gameObject);
         bool isUnObstructed = ObjectUtils.IsChild(toplevelObj, obj);

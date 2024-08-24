@@ -193,7 +193,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8243485073148179727, guid: bc251d82e3a1cb0e28930f80a098a169, type: 3}
       propertyPath: m_RootOrder
-      value: 4
+      value: 9
       objectReference: {fileID: 0}
     - target: {fileID: 8243485073148179727, guid: bc251d82e3a1cb0e28930f80a098a169, type: 3}
       propertyPath: m_LocalScale.x
@@ -453,6 +453,10 @@ PrefabInstance:
       propertyPath: m_ParentAnchorRotation.z
       value: 0.50000006
       objectReference: {fileID: 0}
+    - target: {fileID: 7827245993423774302, guid: f677fa178e96533d89b4d813f1e8dccd, type: 3}
+      propertyPath: m_RootOrder
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 8891330791176638603, guid: f677fa178e96533d89b4d813f1e8dccd, type: 3}
       propertyPath: m_ParentAnchorPosition.z
       value: -0.14999998
@@ -520,7 +524,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4843778166518662606, guid: 26f56d420891a4b27bc761378e77c2c7, type: 3}
       propertyPath: m_RootOrder
-      value: 1
+      value: 7
       objectReference: {fileID: 0}
     - target: {fileID: 7939675261591341045, guid: 26f56d420891a4b27bc761378e77c2c7, type: 3}
       propertyPath: m_Name
@@ -773,6 +777,10 @@ PrefabInstance:
     - target: {fileID: 1276782465850214786, guid: 715380c56b7a89dc78df134d26835f3b, type: 3}
       propertyPath: m_Name
       value: OAK-1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2258279477657449934, guid: 715380c56b7a89dc78df134d26835f3b, type: 3}
+      propertyPath: m_RootOrder
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 8589281845435560256, guid: 715380c56b7a89dc78df134d26835f3b, type: 3}
       propertyPath: m_RootOrder
@@ -1112,6 +1120,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 8107387666001676313, guid: 5bd45563ec35d1d669fbeb2538f27a1c, type: 3}
+      propertyPath: m_RootOrder
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 9198680217887167523, guid: 5bd45563ec35d1d669fbeb2538f27a1c, type: 3}
       propertyPath: m_Name
       value: MRS BUFF MK2
@@ -1263,6 +1275,10 @@ PrefabInstance:
       propertyPath: m_LocalPosition.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 742699150303488892, guid: c4c8ea109926e35e0bec215c2ba4efed, type: 3}
+      propertyPath: m_RootOrder
+      value: 4
+      objectReference: {fileID: 0}
     - target: {fileID: 1278621001008975804, guid: c4c8ea109926e35e0bec215c2ba4efed, type: 3}
       propertyPath: m_Name
       value: MR STABS A-02
@@ -1390,7 +1406,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3993189858487244568, guid: 0631e6e04fa89ffe3a68becee08cd39b, type: 3}
       propertyPath: m_RootOrder
-      value: 3
+      value: 8
       objectReference: {fileID: 0}
     - target: {fileID: 4206350700310068122, guid: 0631e6e04fa89ffe3a68becee08cd39b, type: 3}
       propertyPath: m_RootOrder
@@ -1544,6 +1560,10 @@ PrefabInstance:
     - target: {fileID: 3181161418445663840, guid: 73e89e9cd462f8550b1b7061dfda2b36, type: 3}
       propertyPath: m_ParentAnchorRotation.y
       value: 0.7071068
+      objectReference: {fileID: 0}
+    - target: {fileID: 4353318772449692413, guid: 73e89e9cd462f8550b1b7061dfda2b36, type: 3}
+      propertyPath: m_RootOrder
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 4678118381435893069, guid: 73e89e9cd462f8550b1b7061dfda2b36, type: 3}
       propertyPath: m_ParentAnchorPosition.z
@@ -1721,6 +1741,10 @@ PrefabInstance:
     - target: {fileID: 2002369437097360648, guid: 7b17e69e71099e8d789d76050cc1b9e0, type: 3}
       propertyPath: m_LocalPosition.z
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2038006578087855720, guid: 7b17e69e71099e8d789d76050cc1b9e0, type: 3}
+      propertyPath: m_RootOrder
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 3260491406043267109, guid: 7b17e69e71099e8d789d76050cc1b9e0, type: 3}
       propertyPath: m_ParentAnchorPosition.z

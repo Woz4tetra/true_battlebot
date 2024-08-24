@@ -59,17 +59,17 @@ class DataShapshot:
     lock: Lock = field(default_factory=Lock)
 
 
-IMAGE_LAYER_MAX_DELAY = 0.05
+IMAGE_LAYER_MAX_DELAY = 0.001
 IMAGE_GROUND_MAX_DELAY = 0.015
-CACHE_SIZE = 20
+CACHE_SIZE = 5
 LAYER_CACHE = {}
 GROUND_TRUTH_CACHE = {}
 
 
 def image_callback(data_snapshot: DataShapshot, msg: Image) -> None:
     with data_snapshot.lock:
-        if data_snapshot.image is None:
-            print("Received image.")
+        if data_snapshot.image is not None:
+            return
         data_snapshot.image = BRIDGE.imgmsg_to_cv2(msg, "bgr8")
         data_snapshot.image_timestamp = msg.header.stamp.to_sec()
 
@@ -97,7 +97,7 @@ def camera_info_callback(data_snapshot: DataShapshot, msg: CameraInfo) -> None:
 
 def ground_truth_callback(data_snapshot: DataShapshot, msg: EstimatedObjectArray) -> None:
     with data_snapshot.lock:
-        GROUND_TRUTH_CACHE[msg.robots[0].header.stamp.to_sec()] = msg
+        GROUND_TRUTH_CACHE[msg.robots[-1].header.stamp.to_sec()] = msg
         selected_key = min(GROUND_TRUTH_CACHE.keys(), key=lambda k: abs(k - data_snapshot.image_timestamp))
         selected_msg = GROUND_TRUTH_CACHE[selected_key]
         if abs(selected_key - data_snapshot.image_timestamp) <= IMAGE_GROUND_MAX_DELAY:
@@ -111,7 +111,7 @@ def ground_truth_callback(data_snapshot: DataShapshot, msg: EstimatedObjectArray
 
 def simulated_segmentation_label_callback(data_snapshot: DataShapshot, msg: SegmentationInstanceArray) -> None:
     with data_snapshot.lock:
-        color_to_model_label_map, skipped_labels = make_simulated_segmentation_color_map(msg)
+        color_to_model_label_map, skipped_labels = make_simulated_segmentation_color_map(msg, ALL_LABELS)
         if color_to_model_label_map != data_snapshot.color_to_model_label_map:
             data_snapshot.color_to_model_label_map = color_to_model_label_map
             labels = [label.value for label in data_snapshot.color_to_model_label_map.values()]
@@ -129,6 +129,7 @@ def make_annotation_from_robot(
     if label in OPPONENT_GROUP:
         label = ModelLabel.ROBOT
     if label not in contour_map:
+        print(f"Missing contour for label: {label}")
         return None
     contours = contour_map[label]
     try:
@@ -156,6 +157,8 @@ def record_image_and_keypoints(output_dir: Path, data_snapshot: DataShapshot) ->
         if data_snapshot.image is None:
             print("Missing image")
             return
+        image = data_snapshot.image.copy()
+        data_snapshot.image = None
         if data_snapshot.layer is None:
             print("Missing layer")
             return
@@ -172,7 +175,6 @@ def record_image_and_keypoints(output_dir: Path, data_snapshot: DataShapshot) ->
         if data_snapshot.robots.robots[0].header.stamp.to_sec() - data_snapshot.image_timestamp > IMAGE_LAYER_MAX_DELAY:
             print("Robot and image timestamps are too far apart.")
             return
-        image = data_snapshot.image.copy()
         layer = data_snapshot.layer.copy()
         robots = data_snapshot.robots
         model = data_snapshot.model
@@ -181,13 +183,16 @@ def record_image_and_keypoints(output_dir: Path, data_snapshot: DataShapshot) ->
         height, width = image.shape[:2]
         image_size = (width, height)
 
-        segmentations = simulated_mask_to_contours(layer, data_snapshot.color_to_model_label_map, ALL_LABELS)
+        segmentations, exceptions = simulated_mask_to_contours(
+            layer, data_snapshot.color_to_model_label_map, ALL_LABELS
+        )
         contour_map = segmentation_array_to_contour_map(segmentations)
         for robot in robots.robots:
             annotation = make_annotation_from_robot(robot, model, contour_map, image_size)
             if annotation is None:
                 print(f"Skipping annotation. Label: {robot.label}")
                 continue
+            print(f"Adding annotation for label: {robot.label}")
 
             image_annotation.labels.append(annotation)
 

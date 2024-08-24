@@ -406,7 +406,7 @@ public class ImageSynthesis : MonoBehaviour
         };
         seq++;
 
-        Dictionary<string, ImageMsg> imagesToPublish = new Dictionary<string, ImageMsg>();
+        Dictionary<string, Texture2D> imagesToPublish = new Dictionary<string, Texture2D>();
 
         foreach (CapturePass pass in capturePasses)
         {
@@ -421,20 +421,58 @@ public class ImageSynthesis : MonoBehaviour
 
             pass.outputWidth = imageWidth;
             pass.outputHeight = imageHeight;
-            ImageMsg imageMsg = RenderRosImage(pass);
-            imagesToPublish[pass.name] = imageMsg;
+            Texture2D texture = RenderPassToTexture(pass);
+            imagesToPublish[pass.name] = texture;
         }
         foreach (CapturePass pass in capturePasses)
         {
             if (imagesToPublish.ContainsKey(pass.name))
             {
-                ImageMsg imageMsg = imagesToPublish[pass.name];
+                ImageMsg imageMsg = textureToImageMsg(pass, imagesToPublish[pass.name]);
                 PublishImage(pass, imageMsg, cameraInfoMsg.header);
             }
         }
     }
 
-    private ImageMsg RenderRosImage(CapturePass pass)
+    private ImageMsg textureToImageMsg(CapturePass pass, Texture2D texture)
+    {
+        Encoding encoding = pass.encoding;
+        int rosImageChannels;
+        string encodingString;
+        switch (encoding)
+        {
+            case Encoding.RGB8:
+                rosImageChannels = 3;
+                encodingString = "rgb8";
+                break;
+            case Encoding.MONO16:
+                rosImageChannels = 2;
+                encodingString = "16UC1";
+                break;
+            default:
+                rosImageChannels = 0;
+                encodingString = "unknown";
+                break;
+        }
+        // extract bytes
+        byte[] bytes = texture.GetRawTextureData();
+
+        Destroy(texture);
+
+        // create ROS Image message
+        return new ImageMsg(
+            new HeaderMsg(),
+            (uint)texture.height,
+            (uint)texture.width,
+            encodingString,
+            0x00,
+            (uint)(texture.width * rosImageChannels),
+            bytes
+        );
+
+    }
+
+    private Texture2D RenderPassToTexture(CapturePass pass)
     {
         Camera camera = pass.camera;
         int width = (int)pass.outputWidth;
@@ -446,33 +484,25 @@ public class ImageSynthesis : MonoBehaviour
         bool supportsAntialiasing = pass.supportsAntialiasing;
         bool needsRescale = pass.needsRescale;
 
-
         var readWrite = RenderTextureReadWrite.Default;
         TextureFormat textureFormat;
         int depth;
-        int rosImageChannels;
-        string encodingString;
+
         RenderTextureFormat format;
         switch (encoding)
         {
             case Encoding.RGB8:
                 textureFormat = TextureFormat.RGB24;
-                rosImageChannels = 3;
-                encodingString = "rgb8";
                 format = RenderTextureFormat.Default;
                 depth = 24;
                 break;
             case Encoding.MONO16:
                 textureFormat = TextureFormat.R16;
-                rosImageChannels = 2;
-                encodingString = "16UC1";
                 format = RenderTextureFormat.R16;
                 depth = 16;
                 break;
             default:
                 textureFormat = TextureFormat.RGB24;
-                rosImageChannels = 0;
-                encodingString = "unknown";
                 format = RenderTextureFormat.Default;
                 depth = 24;
                 break;
@@ -517,28 +547,13 @@ public class ImageSynthesis : MonoBehaviour
         texture.ReadPixels(new Rect(0, 0, texture.width, texture.height), 0, 0);
         texture.Apply();
 
-        // extract bytes
-        byte[] bytes = texture.GetRawTextureData();
-
-        // create ROS Image message
-        ImageMsg imageMsg = new ImageMsg(
-            new HeaderMsg(),
-            (uint)texture.height,
-            (uint)texture.width,
-            encodingString,
-            0x00,
-            (uint)(texture.width * rosImageChannels),
-            bytes
-        );
-
         // restore state and cleanup
         camera.targetTexture = prevCameraRT;
         RenderTexture.active = prevActiveRT;
 
-        Destroy(texture);
         RenderTexture.ReleaseTemporary(finalRT);
 
-        return imageMsg;
+        return texture;
     }
     private void PublishImage(CapturePass pass, ImageMsg imageMsg, HeaderMsg header)
     {

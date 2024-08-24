@@ -13,10 +13,10 @@ class GroundTruthPublisher : MonoBehaviour
     RosTopicState groundTruthPoseTopic;
     public void Start()
     {
+        controller = GetComponent<ControllerInterface>();
         ros = ROSConnection.GetOrCreateInstance();
         groundTruthTopic = ros.RegisterPublisher<OdometryMsg>(baseTopic + "/ground_truth");
         groundTruthPoseTopic = ros.RegisterPublisher<PoseStampedMsg>(baseTopic + "/ground_truth/pose");
-        controller = GetComponent<ControllerInterface>();
     }
 
     public void Update()
