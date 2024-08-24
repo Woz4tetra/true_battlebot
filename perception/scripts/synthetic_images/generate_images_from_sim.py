@@ -16,7 +16,7 @@ from bw_interfaces.msg import (
     SegmentationInstanceArray,
     SimulationConfig,
 )
-from bw_shared.enums.label import ModelLabel
+from bw_shared.enums.label import OPPONENT_GROUP, ModelLabel
 from bw_shared.geometry.projection_math.look_rotation import look_rotation
 from bw_shared.geometry.projection_math.project_object_to_uv import ProjectionError, project_object_to_uv
 from bw_shared.geometry.transform3d import Transform3D
@@ -42,7 +42,6 @@ BRIDGE = CvBridge()
 ALL_LABELS = (
     ModelLabel.MINI_BOT,
     ModelLabel.MAIN_BOT,
-    ModelLabel.OPPONENT_1,
     ModelLabel.ROBOT,
     ModelLabel.REFEREE,
 )
@@ -56,7 +55,15 @@ class DataShapshot:
     robots: EstimatedObjectArray | None = None
     dataset: YoloKeypointDataset = field(default_factory=YoloKeypointDataset)
     color_to_model_label_map: dict[int, ModelLabel] = field(default_factory=dict)
+    image_timestamp: float = 0.0
     lock: Lock = field(default_factory=Lock)
+
+
+IMAGE_LAYER_MAX_DELAY = 0.05
+IMAGE_GROUND_MAX_DELAY = 0.015
+CACHE_SIZE = 20
+LAYER_CACHE = {}
+GROUND_TRUTH_CACHE = {}
 
 
 def image_callback(data_snapshot: DataShapshot, msg: Image) -> None:
@@ -64,13 +71,19 @@ def image_callback(data_snapshot: DataShapshot, msg: Image) -> None:
         if data_snapshot.image is None:
             print("Received image.")
         data_snapshot.image = BRIDGE.imgmsg_to_cv2(msg, "bgr8")
+        data_snapshot.image_timestamp = msg.header.stamp.to_sec()
 
 
 def layer_callback(data_snapshot: DataShapshot, msg: Image) -> None:
     with data_snapshot.lock:
-        if data_snapshot.layer is None:
-            print("Received layer.")
-        data_snapshot.layer = BRIDGE.imgmsg_to_cv2(msg)
+        layer = BRIDGE.imgmsg_to_cv2(msg)
+        LAYER_CACHE[msg.header.stamp.to_sec()] = layer
+        selected_key = min(LAYER_CACHE.keys(), key=lambda k: abs(k - data_snapshot.image_timestamp))
+        selected_msg = LAYER_CACHE[selected_key]
+        if abs(selected_key - data_snapshot.image_timestamp) <= IMAGE_LAYER_MAX_DELAY:
+            data_snapshot.layer = selected_msg
+        while len(LAYER_CACHE) > CACHE_SIZE:
+            del LAYER_CACHE[min(LAYER_CACHE.keys())]
 
 
 def camera_info_callback(data_snapshot: DataShapshot, msg: CameraInfo) -> None:
@@ -84,18 +97,25 @@ def camera_info_callback(data_snapshot: DataShapshot, msg: CameraInfo) -> None:
 
 def ground_truth_callback(data_snapshot: DataShapshot, msg: EstimatedObjectArray) -> None:
     with data_snapshot.lock:
-        if data_snapshot.robots is None:
-            print("Received ground truth.")
-        data_snapshot.robots = msg
+        GROUND_TRUTH_CACHE[msg.robots[0].header.stamp.to_sec()] = msg
+        selected_key = min(GROUND_TRUTH_CACHE.keys(), key=lambda k: abs(k - data_snapshot.image_timestamp))
+        selected_msg = GROUND_TRUTH_CACHE[selected_key]
+        if abs(selected_key - data_snapshot.image_timestamp) <= IMAGE_GROUND_MAX_DELAY:
+            data_snapshot.robots = selected_msg
+        else:
+            print(f"Ground truth and image timestamps are too far apart. {selected_key -data_snapshot.image_timestamp}")
+            data_snapshot.robots = None
+        while len(GROUND_TRUTH_CACHE) > CACHE_SIZE:
+            del GROUND_TRUTH_CACHE[min(GROUND_TRUTH_CACHE.keys())]
 
 
 def simulated_segmentation_label_callback(data_snapshot: DataShapshot, msg: SegmentationInstanceArray) -> None:
     with data_snapshot.lock:
-        color_to_model_label_map = make_simulated_segmentation_color_map(msg)
+        color_to_model_label_map, skipped_labels = make_simulated_segmentation_color_map(msg)
         if color_to_model_label_map != data_snapshot.color_to_model_label_map:
             data_snapshot.color_to_model_label_map = color_to_model_label_map
             labels = [label.value for label in data_snapshot.color_to_model_label_map.values()]
-            print(f"Received labels: {str(labels)[1:-1]}")
+            print(f"Received labels: {str(labels)[1:-1]}. Skipped: {skipped_labels}")
 
 
 def make_annotation_from_robot(
@@ -106,6 +126,8 @@ def make_annotation_from_robot(
 ) -> YoloKeypointAnnotation | None:
     width, height = image_size
     label = ModelLabel(robot.label)
+    if label in OPPONENT_GROUP:
+        label = ModelLabel.ROBOT
     if label not in contour_map:
         return None
     contours = contour_map[label]
@@ -125,21 +147,30 @@ def make_annotation_from_robot(
     bw /= width
     bh /= height
 
-    keypoints = [(point.x, point.y, YoloVisibility.LABELED_VISIBLE) for point in (forward, backward)]
+    keypoints = [(point.x / width, point.y / height, YoloVisibility.LABELED_VISIBLE) for point in (forward, backward)]
     return YoloKeypointAnnotation.from_xywh(bx, by, bw, bh, class_index=ALL_LABELS.index(label), keypoints=keypoints)
 
 
 def record_image_and_keypoints(output_dir: Path, data_snapshot: DataShapshot) -> None:
     with data_snapshot.lock:
+        if data_snapshot.image is None:
+            print("Missing image")
+            return
+        if data_snapshot.layer is None:
+            print("Missing layer")
+            return
+        if data_snapshot.robots is None:
+            print("Missing robots")
+            return
+        if data_snapshot.model is None:
+            print("Missing camera model")
+            return
+        if not data_snapshot.color_to_model_label_map:
+            print("Missing color map data.")
+            return
         filename = f"{time.time():.9f}"
-        if (
-            data_snapshot.image is None
-            or data_snapshot.layer is None
-            or data_snapshot.robots is None
-            or data_snapshot.model is None
-            or not data_snapshot.color_to_model_label_map
-        ):
-            print("Missing data.")
+        if data_snapshot.robots.robots[0].header.stamp.to_sec() - data_snapshot.image_timestamp > IMAGE_LAYER_MAX_DELAY:
+            print("Robot and image timestamps are too far apart.")
             return
         image = data_snapshot.image.copy()
         layer = data_snapshot.layer.copy()
@@ -149,8 +180,7 @@ def record_image_and_keypoints(output_dir: Path, data_snapshot: DataShapshot) ->
 
         height, width = image.shape[:2]
         image_size = (width, height)
-        cv2.imshow("image", layer)
-        cv2.waitKey(1)
+
         segmentations = simulated_mask_to_contours(layer, data_snapshot.color_to_model_label_map, ALL_LABELS)
         contour_map = segmentation_array_to_contour_map(segmentations)
         for robot in robots.robots:
@@ -158,6 +188,7 @@ def record_image_and_keypoints(output_dir: Path, data_snapshot: DataShapshot) ->
             if annotation is None:
                 print(f"Skipping annotation. Label: {robot.label}")
                 continue
+
             image_annotation.labels.append(annotation)
 
         image_path = str(output_dir / f"{filename}.jpg")
@@ -292,6 +323,7 @@ def generate_idle(spawn_grid: list) -> dict:
 def generate_scenario(num_bots: int) -> dict:
     cage_x = random.uniform(2.2, 2.4)
     cage_y = cage_x + random.uniform(-0.02, 0.02)
+    spawn_referee = random.uniform(0, 1) > 0.5
     mini_bot_objective = "randomized_start_target_opponent" if num_bots >= 3 else "mini_bot_randomized_sequence"
     mini_bot = {
         "name": "mini_bot",
@@ -311,9 +343,10 @@ def generate_scenario(num_bots: int) -> dict:
     robot_actors = [mini_bot, main_bot, opponent_1]
     robot_actors = robot_actors[:num_bots]
     actors = [
-        {"name": "tracking_camera", "model": "Training Camera", "objective": "randomized_camera"},
-        {"name": "referee", "model": "Referee", "objective": "randomized_idle"},
+        {"name": "tracking_camera", "model": "ZED 2i", "objective": "randomized_camera"},
     ] + robot_actors
+    if spawn_referee:
+        actors.append({"name": "referee", "model": "Referee", "objective": "randomized_idle"})
     return {
         "cage": {"dims": {"x": cage_x, "y": cage_y}},
         "actors": actors,
@@ -377,7 +410,7 @@ def main() -> None:
     while not rospy.is_shutdown():
         # select number of robots and duration. Set camera pose.
         num_bots = random.randint(1, 3)
-        duration = random.uniform(5, 10)
+        duration = random.uniform(2, 5)
 
         # generate spawn grid
         spawn_grid = generate_spawn_grid()

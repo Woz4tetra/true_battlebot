@@ -4,6 +4,7 @@ using MathExtensions;
 using System.Collections;
 using System.Collections.Generic;
 
+[RequireComponent(typeof(Camera))]
 public abstract class BaseGameObjectSensor : MonoBehaviour
 {
     public class TrackedDebugRayCast
@@ -44,7 +45,7 @@ public abstract class BaseGameObjectSensor : MonoBehaviour
     void Start()
     {
         ros = ROSConnection.GetOrCreateInstance();
-        frame = GetComponent<TransformFrame>();
+        frame = ObjectUtils.GetComponentInTree<TransformFrame>(gameObject);
         cameraView = GetComponent<Camera>();
 
         BaseGameObjectSensorStart();

@@ -88,8 +88,8 @@ class YoloKeypointAnnotation:
     ) -> YoloKeypointAnnotation:
         keypoints = keypoints or []
         self = cls(class_index=class_index, keypoints=keypoints)
-        self.center_x = x
-        self.center_y = y
+        self.center_x = x + w / 2
+        self.center_y = y + h / 2
         self.width = w
         self.height = h
         return self
@@ -102,6 +102,17 @@ class YoloKeypointAnnotation:
         label += "\n"
         return label
 
+    @classmethod
+    def from_row(cls, row: str) -> YoloKeypointAnnotation:
+        parts = row.split()
+        class_index = int(parts[0])
+        bbox = [float(x) for x in parts[1:5]]
+        keypoints = []
+        for i in range(5, len(parts), 3):
+            keypoint = tuple(float(x) for x in parts[i : i + 3])
+            keypoints.append(keypoint)
+        return cls(class_index, bbox, keypoints)
+
 
 @dataclass
 class YoloKeypointImage:
@@ -110,6 +121,13 @@ class YoloKeypointImage:
 
     def to_txt(self) -> str:
         return "".join(label.to_row() for label in self.labels)
+
+    @classmethod
+    def from_txt(cls, data: str) -> YoloKeypointImage:
+        self = cls()
+        for line in data.splitlines():
+            self.labels.append(YoloKeypointAnnotation.from_row(line))
+        return self
 
 
 @dataclass

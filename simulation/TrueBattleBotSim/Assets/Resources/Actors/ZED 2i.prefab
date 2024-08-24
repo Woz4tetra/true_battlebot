@@ -292,7 +292,7 @@ MonoBehaviour:
     requestTopic: layer/request
     renderTexture: {fileID: 8400000, guid: 9aa2ff5a63cc8811cbca8aea28148e91, type: 2}
     enabled: 1
-    continuous: 0
+    continuous: 1
   - name: depth
     imageTopic: depth/depth_registered
     infoTopic: depth/camera_info

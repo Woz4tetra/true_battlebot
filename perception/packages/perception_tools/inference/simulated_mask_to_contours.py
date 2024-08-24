@@ -4,16 +4,18 @@ from bw_interfaces.msg import Contour, SegmentationInstance, SegmentationInstanc
 from bw_shared.enums.label import ModelLabel
 
 
-def make_simulated_segmentation_color_map(msg: SegmentationInstanceArray) -> dict[int, ModelLabel]:
-    simulated_segmentations = {}
+def make_simulated_segmentation_color_map(msg: SegmentationInstanceArray) -> tuple[dict[int, ModelLabel], set[str]]:
+    color_to_model_label_map = {}
+    skipped_labels = set()
     for instant in msg.instances:
         try:
             label = ModelLabel(instant.label.lower())
         except ValueError:
+            skipped_labels.add(instant.label)
             continue
         color = instant.class_index
-        simulated_segmentations[color] = label
-    return simulated_segmentations
+        color_to_model_label_map[color] = label
+    return color_to_model_label_map, skipped_labels
 
 
 def to_contours_msg(contours: np.ndarray) -> Contour:

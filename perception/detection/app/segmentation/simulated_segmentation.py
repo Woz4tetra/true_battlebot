@@ -162,7 +162,8 @@ class SimulatedSegmentation(SegmentationInterface):
         if image is None:
             return None, None
         if segmentation := self.segmentation_manager.get_segmentation():
-            self.color_to_model_label_map.update(make_simulated_segmentation_color_map(segmentation))
+            color_to_model_label_map, skipped_labels = make_simulated_segmentation_color_map(segmentation)
+            self.color_to_model_label_map.update(color_to_model_label_map)
         if len(self.color_to_model_label_map) == 0:
             return None, None
 
