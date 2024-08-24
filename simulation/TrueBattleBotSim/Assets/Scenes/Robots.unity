@@ -518,10 +518,6 @@ PrefabInstance:
       propertyPath: m_RootOrder
       value: 1
       objectReference: {fileID: 0}
-    - target: {fileID: 7568835130692242136, guid: 26f56d420891a4b27bc761378e77c2c7, type: 3}
-      propertyPath: m_Enabled
-      value: 1
-      objectReference: {fileID: 0}
     - target: {fileID: 7939675261591341045, guid: 26f56d420891a4b27bc761378e77c2c7, type: 3}
       propertyPath: m_Name
       value: ZED 2i
@@ -993,7 +989,7 @@ Camera:
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
-    m_Bits: 30519
+    m_Bits: 554807
   m_RenderingPath: -1
   m_TargetTexture: {fileID: 0}
   m_TargetDisplay: 0
@@ -1453,6 +1449,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 5359159726142042197, guid: c153a5e827bd2046aaf87e7af443b236, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 5564160087035590093, guid: c153a5e827bd2046aaf87e7af443b236, type: 3}
       propertyPath: m_RootOrder
       value: 17
@@ -1500,6 +1500,10 @@ PrefabInstance:
     - target: {fileID: 8348814995491285522, guid: c153a5e827bd2046aaf87e7af443b236, type: 3}
       propertyPath: m_Name
       value: Training Camera
+      objectReference: {fileID: 0}
+    - target: {fileID: 8628843096385549476, guid: c153a5e827bd2046aaf87e7af443b236, type: 3}
+      propertyPath: m_Enabled
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

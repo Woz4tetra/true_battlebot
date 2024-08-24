@@ -62,13 +62,6 @@ GameObject:
   - component: {fileID: 2345749870858103324}
   - component: {fileID: 5042641051613802953}
   - component: {fileID: 2591044892374870909}
-  - component: {fileID: 6713749770090368872}
-  - component: {fileID: 6884646731506108776}
-  - component: {fileID: 3114031345236259786}
-  - component: {fileID: 6263919457013416633}
-  - component: {fileID: 4323443863952130961}
-  - component: {fileID: 9057986982663139557}
-  - component: {fileID: 1503848819627016712}
   m_Layer: 16
   m_Name: Color Camera
   m_TagString: Untagged
@@ -185,8 +178,8 @@ MonoBehaviour:
   imageWidth: 1920
   imageHeight: 1080
   publishRate: 10
-  segmentationTopic: simulated_segmentation
-  publishSegmentationLabels: 1
+  segmentationTopic: 
+  publishSegmentationLabels: 0
   captureConfig:
   - name: image
     imageTopic: rgb/image_raw
@@ -258,107 +251,6 @@ MonoBehaviour:
   m_BeforeTransparentBundles: []
   m_BeforeStackBundles: []
   m_AfterStackBundles: []
---- !u!114 &6713749770090368872
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1404566627689952796}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cdcdcfb4a221bb3b68e7574f1643d4ad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  frameId: camera_0
---- !u!114 &6884646731506108776
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1404566627689952796}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 79ee6d13bcae6b921bd5cf7a828c2afc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  topic: /camera_0/ground_truth/pose
-  frame_id: map
-  referenceObject: {fileID: 0}
---- !u!114 &3114031345236259786
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1404566627689952796}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 79b8e5816a4c6d9aeb68896e19ac9064, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  maxDistance: 5
-  layerMask:
-    serializedVersion: 2
-    m_Bits: 2248
-  debugRayCast: 0
-  publishRate: 30
-  viewAngleThreshold: 180
-  debugVisibilityReason: 0
-  topic: /camera_0/ground_truth/robots
---- !u!114 &6263919457013416633
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1404566627689952796}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 421dac03ed4072854bc52548c2417a15, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  smooth: 0
---- !u!114 &4323443863952130961
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1404566627689952796}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a6c865e792d80ae8e92054f4bc08ee9e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
---- !u!114 &9057986982663139557
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1404566627689952796}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9c1a0cf1d5ada30d0b0dd3a8f9b5db91, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  sequenceProgressTopicName: /camera_0/sequence_progress
---- !u!114 &1503848819627016712
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1404566627689952796}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6cf0fdd67adad93cbb8d57886da0bc9a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  topic: /camera_0/set_pose
-  referenceObject: {fileID: 0}
 --- !u!1 &2080464973927163100
 GameObject:
   m_ObjectHideFlags: 0
@@ -569,13 +461,6 @@ GameObject:
   - component: {fileID: 6630736906664821580}
   - component: {fileID: 8253965715301460484}
   - component: {fileID: 5457168056587739934}
-  - component: {fileID: 3615801493157300462}
-  - component: {fileID: 8628843096385549476}
-  - component: {fileID: 5359159726142042197}
-  - component: {fileID: 2025980710058875945}
-  - component: {fileID: 5163968765005259487}
-  - component: {fileID: 6667359656022820979}
-  - component: {fileID: 6297330006138794888}
   m_Layer: 16
   m_Name: Segmentation Camera
   m_TagString: Untagged
@@ -765,107 +650,6 @@ MonoBehaviour:
   m_BeforeTransparentBundles: []
   m_BeforeStackBundles: []
   m_AfterStackBundles: []
---- !u!114 &3615801493157300462
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4519554622626353083}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cdcdcfb4a221bb3b68e7574f1643d4ad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  frameId: camera_0
---- !u!114 &8628843096385549476
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4519554622626353083}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 79ee6d13bcae6b921bd5cf7a828c2afc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  topic: /camera_0/ground_truth/pose
-  frame_id: map
-  referenceObject: {fileID: 0}
---- !u!114 &5359159726142042197
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4519554622626353083}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 79b8e5816a4c6d9aeb68896e19ac9064, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  maxDistance: 5
-  layerMask:
-    serializedVersion: 2
-    m_Bits: 2248
-  debugRayCast: 0
-  publishRate: 30
-  viewAngleThreshold: 180
-  debugVisibilityReason: 0
-  topic: /camera_0/ground_truth/robots
---- !u!114 &2025980710058875945
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4519554622626353083}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 421dac03ed4072854bc52548c2417a15, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  smooth: 0
---- !u!114 &5163968765005259487
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4519554622626353083}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a6c865e792d80ae8e92054f4bc08ee9e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
---- !u!114 &6667359656022820979
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4519554622626353083}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9c1a0cf1d5ada30d0b0dd3a8f9b5db91, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  sequenceProgressTopicName: /camera_0/sequence_progress
---- !u!114 &6297330006138794888
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4519554622626353083}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6cf0fdd67adad93cbb8d57886da0bc9a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  topic: /camera_0/set_pose
-  referenceObject: {fileID: 0}
 --- !u!1 &6422786984106435455
 GameObject:
   m_ObjectHideFlags: 0
@@ -1275,6 +1059,16 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5564160087035590093}
+  - component: {fileID: 8665779520901721381}
+  - component: {fileID: 2548711404307142223}
+  - component: {fileID: 8167426121430062775}
+  - component: {fileID: 1195949023214715155}
+  - component: {fileID: 4260620116530817535}
+  - component: {fileID: 1032029331667657893}
+  - component: {fileID: 2378442138612789176}
+  - component: {fileID: 3399727522690953879}
+  - component: {fileID: 6199593823633359326}
+  - component: {fileID: 2263594980052641248}
   m_Layer: 0
   m_Name: Training Camera
   m_TagString: Untagged
@@ -1301,5 +1095,165 @@ Transform:
   - {fileID: 3014854814427066048}
   - {fileID: 3899472574124332585}
   m_Father: {fileID: 0}
-  m_RootOrder: 17
+  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8665779520901721381
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8348814995491285522}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cdcdcfb4a221bb3b68e7574f1643d4ad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  frameId: camera_0
+--- !u!114 &2548711404307142223
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8348814995491285522}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 86add3b1c87735b5c94dd5bb265f9a5c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxDistance: 3
+  layerMask:
+    serializedVersion: 2
+    m_Bits: 263368
+  debugRayCast: 0
+  publishRate: 4
+  viewAngleThreshold: 55
+  debugVisibilityReason: 0
+  topic: /camera_0/tag_detections
+--- !u!114 &8167426121430062775
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8348814995491285522}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 97dde157c74a4a6098ad5f0b7dbb81cd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxDistance: 5
+  layerMask:
+    serializedVersion: 2
+    m_Bits: 512
+  debugRayCast: 0
+  publishRate: 1
+  viewAngleThreshold: 70
+  debugVisibilityReason: 0
+  topic: /camera_0/simulated_field_result
+  child_frame_id: map_relative
+  label: field
+--- !u!114 &1195949023214715155
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8348814995491285522}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e8ae63ef031d9f65c9fd441336835965, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  FrameId: imu
+  publishDelay: 0
+  topic: /camera_0/imu/data
+--- !u!114 &4260620116530817535
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8348814995491285522}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 79ee6d13bcae6b921bd5cf7a828c2afc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  topic: /camera_0/ground_truth/pose
+  frame_id: map
+  referenceObject: {fileID: 0}
+--- !u!114 &1032029331667657893
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8348814995491285522}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 79b8e5816a4c6d9aeb68896e19ac9064, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxDistance: 5
+  layerMask:
+    serializedVersion: 2
+    m_Bits: 2248
+  debugRayCast: 0
+  publishRate: 30
+  viewAngleThreshold: 180
+  debugVisibilityReason: 0
+  topic: /camera_0/ground_truth/robots
+--- !u!114 &2378442138612789176
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8348814995491285522}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 421dac03ed4072854bc52548c2417a15, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  smooth: 0
+--- !u!114 &3399727522690953879
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8348814995491285522}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a6c865e792d80ae8e92054f4bc08ee9e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &6199593823633359326
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8348814995491285522}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9c1a0cf1d5ada30d0b0dd3a8f9b5db91, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  sequenceProgressTopicName: /camera_0/sequence_progress
+--- !u!114 &2263594980052641248
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8348814995491285522}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6cf0fdd67adad93cbb8d57886da0bc9a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  topic: /camera_0/set_pose
+  referenceObject: {fileID: 0}

@@ -70,7 +70,7 @@ def layer_callback(data_snapshot: DataShapshot, msg: Image) -> None:
     with data_snapshot.lock:
         if data_snapshot.layer is None:
             print("Received layer.")
-        data_snapshot.layer = BRIDGE.imgmsg_to_cv2(msg, "rgb8")
+        data_snapshot.layer = BRIDGE.imgmsg_to_cv2(msg)
 
 
 def camera_info_callback(data_snapshot: DataShapshot, msg: CameraInfo) -> None:
@@ -149,12 +149,16 @@ def record_image_and_keypoints(output_dir: Path, data_snapshot: DataShapshot) ->
 
         height, width = image.shape[:2]
         image_size = (width, height)
+        cv2.imshow("image", layer)
+        cv2.waitKey(1)
         segmentations = simulated_mask_to_contours(layer, data_snapshot.color_to_model_label_map, ALL_LABELS)
         contour_map = segmentation_array_to_contour_map(segmentations)
         for robot in robots.robots:
             annotation = make_annotation_from_robot(robot, model, contour_map, image_size)
-            if annotation is not None:
-                image_annotation.labels.append(annotation)
+            if annotation is None:
+                print(f"Skipping annotation. Label: {robot.label}")
+                continue
+            image_annotation.labels.append(annotation)
 
         image_path = str(output_dir / f"{filename}.jpg")
         print(f"Saving image to {image_path}")

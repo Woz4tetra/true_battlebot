@@ -20,7 +20,6 @@ using System.Collections.Generic;
 //      2) rendering several cameras with different aspect ratios - vectors do stretch to the sides of the screen
 
 [RequireComponent(typeof(Camera))]
-[RequireComponent(typeof(TransformFrame))]
 public class ImageSynthesis : MonoBehaviour
 {
     [SerializeField] private string baseTopic = "camera";
@@ -97,7 +96,7 @@ public class ImageSynthesis : MonoBehaviour
     void Start()
     {
         mainCamera = GetComponent<Camera>();
-        frame = GetComponent<TransformFrame>();
+        frame = ObjectUtils.GetComponentInTree<TransformFrame>(gameObject);
         Renderer[] renderers = FindObjectsOfType<Renderer>();
 
         ros = ROSConnection.GetOrCreateInstance();
@@ -189,9 +188,11 @@ public class ImageSynthesis : MonoBehaviour
 
         capturePasses = passes.ToArray();
         // use real camera to capture final image
-        capturePasses[0].camera = mainCamera;
-        for (int q = 1; q < capturePasses.Length; q++)
-            capturePasses[q].camera = CreateHiddenCamera(capturePasses[q].name);
+        for (int q = 0; q < capturePasses.Length; q++)
+        {
+            string name = capturePasses[q].name;
+            capturePasses[q].camera = name == "image" ? mainCamera : CreateHiddenCamera(capturePasses[q].name);
+        }
 
         OnCameraChange();
         OnSceneChange(renderers);

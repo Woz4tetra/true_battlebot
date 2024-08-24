@@ -60,6 +60,7 @@ def simulated_mask_to_contours(
         mask = bridge_gaps(mask, erode_dilate_size)
         contours, hierarchy = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
         if hierarchy is None:  # empty mask
+            print("empty mask", label)
             continue
         has_holes = bool((hierarchy.reshape(-1, 4)[:, 3] >= 0).sum() > 0)  # type: ignore
         segmentation = SegmentationInstance(
