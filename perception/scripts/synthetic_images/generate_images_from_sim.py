@@ -61,8 +61,9 @@ class DataShapshot:
 
 IMAGE_LAYER_MAX_DELAY = 0.001
 IMAGE_GROUND_MAX_DELAY = 0.015
-CACHE_SIZE = 5
+LAYER_CACHE_SIZE = 5
 LAYER_CACHE = {}
+GROUND_TRUTH_CACHE_SIZE = 50
 GROUND_TRUTH_CACHE = {}
 
 
@@ -82,7 +83,7 @@ def layer_callback(data_snapshot: DataShapshot, msg: Image) -> None:
         selected_msg = LAYER_CACHE[selected_key]
         if abs(selected_key - data_snapshot.image_timestamp) <= IMAGE_LAYER_MAX_DELAY:
             data_snapshot.layer = selected_msg
-        while len(LAYER_CACHE) > CACHE_SIZE:
+        while len(LAYER_CACHE) > LAYER_CACHE_SIZE:
             del LAYER_CACHE[min(LAYER_CACHE.keys())]
 
 
@@ -105,7 +106,7 @@ def ground_truth_callback(data_snapshot: DataShapshot, msg: EstimatedObjectArray
         else:
             print(f"Ground truth and image timestamps are too far apart. {selected_key -data_snapshot.image_timestamp}")
             data_snapshot.robots = None
-        while len(GROUND_TRUTH_CACHE) > CACHE_SIZE:
+        while len(GROUND_TRUTH_CACHE) > LAYER_CACHE_SIZE:
             del GROUND_TRUTH_CACHE[min(GROUND_TRUTH_CACHE.keys())]
 
 
@@ -348,7 +349,7 @@ def generate_scenario(num_bots: int) -> dict:
     robot_actors = [mini_bot, main_bot, opponent_1]
     robot_actors = robot_actors[:num_bots]
     actors = [
-        {"name": "tracking_camera", "model": "ZED 2i", "objective": "randomized_camera"},
+        {"name": "tracking_camera", "model": "Training Camera", "objective": "randomized_camera"},
     ] + robot_actors
     if spawn_referee:
         actors.append({"name": "referee", "model": "Referee", "objective": "randomized_idle"})
