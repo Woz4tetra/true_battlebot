@@ -405,6 +405,9 @@ public class ImageSynthesis : MonoBehaviour
             seq = seq,
         };
         seq++;
+
+        Dictionary<string, ImageMsg> imagesToPublish = new Dictionary<string, ImageMsg>();
+
         foreach (CapturePass pass in capturePasses)
         {
             if (hasRequest.ContainsKey(pass.name))
@@ -419,7 +422,15 @@ public class ImageSynthesis : MonoBehaviour
             pass.outputWidth = imageWidth;
             pass.outputHeight = imageHeight;
             ImageMsg imageMsg = RenderRosImage(pass);
-            PublishImage(pass, imageMsg, cameraInfoMsg.header);
+            imagesToPublish[pass.name] = imageMsg;
+        }
+        foreach (CapturePass pass in capturePasses)
+        {
+            if (imagesToPublish.ContainsKey(pass.name))
+            {
+                ImageMsg imageMsg = imagesToPublish[pass.name];
+                PublishImage(pass, imageMsg, cameraInfoMsg.header);
+            }
         }
     }
 
