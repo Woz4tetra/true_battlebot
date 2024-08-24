@@ -28,6 +28,7 @@ from perception_tools.inference.simulated_mask_to_contours import (
     segmentation_array_to_contour_map,
     simulated_mask_to_contours,
 )
+from perception_tools.rosbridge.check_connection import check_connection
 from perception_tools.rosbridge.wait_for_ros_connection import wait_for_ros_connection
 from perception_tools.training.yolo_keypoint_dataset import (
     YoloKeypointAnnotation,
@@ -491,6 +492,8 @@ def main() -> None:
             if rospy.is_shutdown():
                 break
             record_image_and_keypoints(output_dir, data_snapshot)
+            if not check_connection("localhost", 11311):
+                raise RuntimeError("Failed to connect to ROS master.")
             rospy.sleep(0.1)
 
 
