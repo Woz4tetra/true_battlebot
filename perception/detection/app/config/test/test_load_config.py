@@ -15,7 +15,7 @@ CONFIG_DIR = "../configs"
     [os.path.splitext(name)[0] for name in os.listdir(CONFIG_DIR) if name.endswith(".toml")],
 )
 def test_load_config(robot_name: str) -> None:
-    assert type(load_config("../configs", robot_name)) == Config
+    assert isinstance(load_config("../configs", robot_name), Config)
 
 
 def test_extra_field() -> None:

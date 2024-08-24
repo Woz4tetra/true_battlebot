@@ -3,13 +3,16 @@ import logging
 import time
 from typing import Protocol
 
-import cv2
 import numpy as np
 from app.config.segmentation_config.simulated_segmentation_config import SimulatedSegmentationConfig
 from app.segmentation.segmentation_interface import SegmentationInterface
 from app.segmentation.simulated_segmentation_manager import SimulatedSegmentationManager
-from bw_interfaces.msg import Contour, SegmentationInstance, SegmentationInstanceArray, UVKeypoint
+from bw_interfaces.msg import Contour, SegmentationInstance, SegmentationInstanceArray
 from bw_shared.enums.label import Label, ModelLabel
+from perception_tools.inference.simulated_mask_to_contours import (
+    make_simulated_segmentation_color_map,
+    simulated_mask_to_contours,
+)
 from perception_tools.messages.image import Image
 
 
@@ -130,8 +133,9 @@ class SimulatedSegmentation(SegmentationInterface):
         if len(self.model_to_system_labels) == 0:
             self.logger.warning("No simulated to real label mapping provided")
         self.logger.info(f"Simulated to real label mapping: {self.model_to_system_labels}")
-        self.real_model_labels = tuple(Label)
-        self.simulated_segmentations: dict[int, Label] = {}
+        self.model_labels = tuple(ModelLabel)
+        self.system_labels = tuple(Label)
+        self.color_to_model_label_map: dict[int, ModelLabel] = {}
         self.noise_grid: NoiseGrid | None = None
         if self.config.apply_noise:
             np.random.seed(4176)
@@ -158,43 +162,21 @@ class SimulatedSegmentation(SegmentationInterface):
         if image is None:
             return None, None
         if segmentation := self.segmentation_manager.get_segmentation():
-            self.simulated_segmentations.update(self.process_segmentation(segmentation))
-        if len(self.simulated_segmentations) == 0:
+            self.color_to_model_label_map.update(make_simulated_segmentation_color_map(segmentation))
+        if len(self.color_to_model_label_map) == 0:
             return None, None
-
-        segmentation_array = SegmentationInstanceArray()
 
         if self.debug:
             debug_image = Image.from_other(rgb_image)
         else:
             debug_image = None
-        for color, label in self.simulated_segmentations.items():
-            color_bgr = self.color_i32_to_bgr(color)
-            if self.error_range < 0:
-                mask = np.all(image.data == color_bgr, axis=2).astype(np.uint8)
-            else:
-                color_nominal = np.array(color_bgr)
-                color_lower = color_nominal - self.error_range
-                color_upper = color_nominal + self.error_range
-                mask = cv2.inRange(image.data, color_lower, color_upper)
-            mask = self.bridge_gaps(mask, 3)
-            contours, hierarchy = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
-            if hierarchy is None:  # empty mask
-                self.logger.warning(f"Empty mask encountered for {label}")
-                continue
-            has_holes = bool((hierarchy.reshape(-1, 4)[:, 3] >= 0).sum() > 0)  # type: ignore
-            segmentation = SegmentationInstance(
-                contours=[self.to_contours_msg(contour) for contour in contours],
-                score=1.0,
-                label=label,
-                class_index=self.real_model_labels.index(label),
-                object_index=0,
-                has_holes=has_holes,
-            )
-            segmentation_array.instances.append(segmentation)
 
-            if debug_image is not None:
-                debug_image.data = cv2.drawContours(debug_image.data, contours, -1, color=color_bgr, thickness=1)
+        segmentation_array = simulated_mask_to_contours(
+            image.data,
+            self.color_to_model_label_map,
+            self.model_labels,
+            debug_image=debug_image.data if debug_image is not None else None,
+        )
 
         segmentation_array.header = image.header.to_msg()
         segmentation_array.height = image.data.shape[0]
@@ -210,38 +192,12 @@ class SimulatedSegmentation(SegmentationInterface):
                 self.prev_random_sample_time = now
             segmentation_array = self.noise_grid.apply_noise(segmentation_array)
 
-        object_counts = {label: 0 for label in self.real_model_labels}
+        object_counts = {label: 0 for label in self.system_labels}
         for instance in segmentation_array.instances:
+            label = self.model_to_system_labels[ModelLabel(instance.label)]
+            instance.label = label
             object_index = object_counts[label]
             instance.object_index = object_index
             object_counts[label] += 1
 
         return segmentation_array, debug_image
-
-    def process_segmentation(self, msg: SegmentationInstanceArray) -> dict[int, Label]:
-        simulated_segmentations = {}
-        for instant in msg.instances:
-            try:
-                label = ModelLabel(instant.label.lower())
-            except ValueError:
-                continue
-            if label not in self.model_to_system_labels:
-                continue
-            color = instant.class_index
-            label = self.model_to_system_labels[label]
-            simulated_segmentations[color] = label
-        return simulated_segmentations
-
-    def color_i32_to_bgr(self, color: int) -> tuple[int, int, int]:
-        return (color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF
-
-    def bridge_gaps(self, image: np.ndarray, distance: int) -> np.ndarray:
-        image = cv2.dilate(image, np.ones((distance, distance), np.uint8), iterations=1)
-        return cv2.erode(image, np.ones((distance, distance), np.uint8), iterations=1)
-
-    def to_contours_msg(self, contours: np.ndarray) -> Contour:
-        contour_msg = Contour([], 0.0)
-        for x, y in contours[:, 0]:
-            contour_msg.points.append(UVKeypoint(x, y))
-        contour_msg.area = cv2.contourArea(contours)
-        return contour_msg

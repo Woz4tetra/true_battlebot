@@ -29,6 +29,7 @@ from perception_tools.messages.camera_data import CameraData
 from perception_tools.rosbridge.check_connection import check_connection
 from perception_tools.rosbridge.ros_poll_subscriber import RosPollSubscriber
 from perception_tools.rosbridge.ros_publisher import RosPublisher
+from perception_tools.rosbridge.wait_for_ros_connection import wait_for_ros_connection
 from sensor_msgs.msg import Image, PointCloud2
 from std_msgs.msg import Empty
 from std_msgs.msg import Header as RosHeader
@@ -207,23 +208,7 @@ def make_field_interface(container: Container) -> None:
 
 def init_ros_node(container: Container) -> None:
     config = container.resolve(Config)
-
-    ros_master_uri = os.environ.get("ROS_MASTER_URI", "http://localhost:11311")
-    match = re.search(r"http://(.*):(.*)", ros_master_uri)
-    if not match:
-        raise ValueError(f"Invalid ROS_MASTER_URI: {ros_master_uri}")
-    host_ip = match.group(1)
-    host_port = int(match.group(2))
-
-    is_connected = False
-    start_time = time.monotonic()
-    while time.monotonic() - start_time < config.ros.connection_timeout:
-        if check_connection(host_ip, host_port):
-            is_connected = True
-            break
-        time.sleep(0.1)
-    if not is_connected:
-        raise RuntimeError(f"Failed to connect to ROS master. {ros_master_uri}")
+    wait_for_ros_connection(connection_timeout=config.ros.connection_timeout)
     rospy.init_node("perception", log_level=rospy.DEBUG, disable_signals=True)
 
 

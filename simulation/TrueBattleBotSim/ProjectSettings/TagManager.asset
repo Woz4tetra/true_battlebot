@@ -14,17 +14,17 @@ TagManager:
   - Default
   - TransparentFX
   - Ignore Raycast
-  - Mini bot
+  - mini_bot
   - Water
   - UI
-  - Main bot
-  - Enemy bot
+  - main_bot
+  - robot
   - Clear Panels
-  - Field
+  - field
   - Apriltag
-  - Referee
+  - referee
   - Display Readout
-  - Robot
+  - robot_details
   - Details
   - PostProcessingMain
   - PostProcessingSlowCam

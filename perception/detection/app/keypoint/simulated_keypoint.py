@@ -1,14 +1,13 @@
 import logging
 
 import cv2
-import numpy as np
 from app.config.keypoint_config.simulated_keypoint_config import SimulatedKeypointConfig
 from app.keypoint.ground_truth_manager import GroundTruthManager
 from app.keypoint.keypoint_interface import KeypointInterface
-from bw_interfaces.msg import EstimatedObject, KeypointInstance, KeypointInstanceArray, UVKeypoint
+from bw_interfaces.msg import EstimatedObject, KeypointInstance, KeypointInstanceArray
 from bw_shared.enums.keypoint_name import KeypointName
 from bw_shared.enums.label import Label, ModelLabel
-from bw_shared.geometry.transform3d import Transform3D
+from bw_shared.geometry.projection_math.project_object_to_uv import ProjectionError, project_object_to_uv
 from image_geometry import PinholeCameraModel
 from perception_tools.messages.image import Image
 from sensor_msgs.msg import CameraInfo
@@ -73,15 +72,12 @@ class SimulatedKeypoint(KeypointInterface):
         Fill the keypoint instance with the pixel coordinates.
         """
         label = self.model_to_system_labels[ModelLabel(robot.label)]
-        radius = max(robot.size.x, robot.size.y) / 2
-        tf_camera_from_robot = Transform3D.from_pose_msg(robot.pose.pose)
-        pos_robotcenter_to_robotfront = np.array([0, radius, 0, 1])
-        pos_robotcenter_to_robotback = np.array([0, -radius, 0, 1])
-        forward_pixel = self.robot_point_to_camera_pixel(tf_camera_from_robot, pos_robotcenter_to_robotfront, model)
-        backward_pixel = self.robot_point_to_camera_pixel(tf_camera_from_robot, pos_robotcenter_to_robotback, model)
         object_index = object_counts[label]
         object_counts[label] += 1
-        if forward_pixel is None or backward_pixel is None:
+        try:
+            forward_pixel, backward_pixel = project_object_to_uv(robot, model)
+        except ProjectionError as e:
+            self.logger.warning(f"Projection error: {e}")
             return None
 
         if debug_image:
@@ -112,15 +108,3 @@ class SimulatedKeypoint(KeypointInterface):
             class_index=self.real_model_labels.index(label),
             object_index=object_index,
         )
-
-    def robot_point_to_camera_pixel(
-        self, tf_camera_from_robot: Transform3D, pos_robotcenter_to_robotpoint: np.ndarray, model: PinholeCameraModel
-    ) -> UVKeypoint | None:
-        pos_camera_to_robotpoint = np.dot(tf_camera_from_robot.tfmat, pos_robotcenter_to_robotpoint)
-        pixel_robot_point = model.project3dToPixel(pos_camera_to_robotpoint[:3])
-        if np.any(np.isnan(pixel_robot_point)):
-            self.logger.warning(
-                f"Robot point is outside camera view: {pos_camera_to_robotpoint} -> {pixel_robot_point}"
-            )
-            return None
-        return UVKeypoint(x=pixel_robot_point[0], y=pixel_robot_point[1])

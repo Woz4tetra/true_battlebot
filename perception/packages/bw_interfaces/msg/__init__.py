@@ -1,4 +1,5 @@
 from ._BehaviorMode import *
+from ._BundleConfigMsg import *
 from ._CageCorner import *
 from ._CollisionInfo import *
 from ._ConfigureSimulation import *
