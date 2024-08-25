@@ -8,7 +8,7 @@ from perception_tools.training.helpers import load_dataset, write_dataset
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Augment a dataset")
+    parser = argparse.ArgumentParser(description="Split a dataset")
     parser.add_argument(
         "source_path",
         type=str,

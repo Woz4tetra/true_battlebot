@@ -13,24 +13,25 @@ def main() -> None:
 
     image_path = args.images
     images_paths = []
+    annotation_paths = {}
 
     for dirpath, dirnames, filenames in os.walk(image_path):
         for filename in sorted(filenames):
-            if not filename.endswith(".jpg"):
-                continue
-
-            image_path = os.path.join(dirpath, filename)
-            if not os.path.exists(image_path):
-                print(f"Image not found: {image_path}")
-                continue
-            images_paths.append(image_path)
+            if filename.endswith(".jpg"):
+                image_path = os.path.join(dirpath, filename)
+                images_paths.append(image_path)
+            elif filename.endswith(".txt"):
+                name = os.path.splitext(filename)[0]
+                annotation_path = os.path.join(dirpath, filename)
+                annotation_paths[name] = annotation_path
 
     current_index = args.index
     while True:
         image_path = images_paths[current_index]
         print("Current index:", current_index)
         print(f"Current image: {image_path}")
-        annotation_path = os.path.splitext(image_path)[0] + ".txt"
+        name = os.path.basename(os.path.splitext(image_path)[0])
+        annotation_path = annotation_paths[name]
         with open(annotation_path) as file:
             annotations = YoloKeypointImage.from_txt(file.read())
 

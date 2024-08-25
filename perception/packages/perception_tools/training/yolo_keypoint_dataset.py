@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from enum import IntEnum
 
 from bw_shared.enums.label import ModelLabel
+from bw_shared.messages.dataclass_utils import to_dict
 
 
 class YoloVisibility(IntEnum):
@@ -133,4 +134,10 @@ class YoloKeypointImage:
 @dataclass
 class YoloKeypointDataset:
     kpt_shape: tuple[int, int] = (2, 3)
-    names: list[ModelLabel] = field(default_factory=list)
+    names: tuple[ModelLabel, ...] = field(default_factory=tuple)
+
+    def to_dict(self) -> dict:
+        data = to_dict(self)
+        data["names"] = [label.value for label in self.names]
+        data["nc"] = len(self.names)
+        return data

@@ -39,13 +39,9 @@ from perception_tools.training.yolo_keypoint_dataset import (
 from sensor_msgs.msg import CameraInfo, Image
 from std_msgs.msg import String
 
+from perception.scripts.synthetic_images.synthetic_dataset_labels import ALL_LABELS
+
 BRIDGE = CvBridge()
-ALL_LABELS = (
-    ModelLabel.MINI_BOT,
-    ModelLabel.MAIN_BOT,
-    ModelLabel.ROBOT,
-    ModelLabel.REFEREE,
-)
 
 
 @dataclass
