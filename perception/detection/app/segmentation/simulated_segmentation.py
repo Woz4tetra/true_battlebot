@@ -197,7 +197,9 @@ class SimulatedSegmentation(SegmentationInterface):
 
         object_counts = {label: 0 for label in self.system_labels}
         for instance in segmentation_array.instances:
-            label = self.model_to_system_labels[ModelLabel(instance.label)]
+            label = self.model_to_system_labels.get(ModelLabel(instance.label))
+            if label is None:
+                continue
             instance.label = label
             object_index = object_counts[label]
             instance.object_index = object_index

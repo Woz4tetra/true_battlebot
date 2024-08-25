@@ -38,8 +38,7 @@ from perception_tools.training.yolo_keypoint_dataset import (
 )
 from sensor_msgs.msg import CameraInfo, Image
 from std_msgs.msg import String
-
-from perception.scripts.synthetic_images.synthetic_dataset_labels import ALL_LABELS
+from synthetic_dataset_labels import ALL_LABELS
 
 BRIDGE = CvBridge()
 
@@ -291,6 +290,7 @@ def generate_random_sequence(spawn_grid: list, duration: float) -> dict:
     angle = generate_angle()
     x, y = select_from_grid(spawn_grid)
     timestamps = np.arange(0, duration, 0.5)
+    right_side_up = random.choice([True, False])
     sequence = []
     for timestamp in timestamps:
         angle = generate_angle()
@@ -313,6 +313,8 @@ def generate_random_sequence(spawn_grid: list, duration: float) -> dict:
             "x": x,
             "y": y,
             "yaw": angle,
+            "z": 0.0 if right_side_up else 0.1,
+            "roll": 0.0 if right_side_up else 180.0,
         },
         "sequence": sequence,
     }

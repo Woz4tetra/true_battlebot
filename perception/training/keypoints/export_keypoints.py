@@ -16,7 +16,7 @@ def copy_to_data(model_path: str, model_metadata_path: str) -> None:
     destination_dir = data_dir / "models"
     date_str = datetime.datetime.now().strftime("%Y-%m-%d")
     model_base_name = f"yolov8-pose_{date_str}"
-    dest_model_path = destination_dir / (model_base_name + ".torchscript")
+    dest_model_path = destination_dir / (model_base_name + ".pt")
     dest_model_metadata_path = destination_dir / (model_base_name + ".json")
 
     os.makedirs(destination_dir, exist_ok=True)
@@ -48,8 +48,8 @@ def main() -> None:
 
     # TODO: figure out why export isn't working
     # model.export(format="torchscript")
-
-    exported_path = path.replace(".pt", ".torchscript")
+    # exported_path = path.replace(".pt", ".torchscript")
+    exported_path = path
 
     default_color = LabelColor(r=0.0, g=0.0, b=0.0, a=0.0)
 

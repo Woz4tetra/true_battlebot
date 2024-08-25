@@ -36,11 +36,18 @@ exclude_filters = [
     "/perception/heartbeat",
 ]
 
+# [robot_keypoint]
+# type = "SimulatedKeypoint"
+
 [robot_keypoint]
-type = "SimulatedKeypoint"
+type = "YoloKeypoint"
+model_path = "yolov8-pose_2024-08-25.pt"
+metadata_path = "yolov8-pose_2024-08-25.json"
+
 
 [robot_keypoint.model_to_system_labels.mapping]
 "mini_bot" = "controlled_robot"
 "main_bot" = "friendly_robot"
+"robot" = "robot"
 "opponent_1" = "robot"
 "referee" = "referee"

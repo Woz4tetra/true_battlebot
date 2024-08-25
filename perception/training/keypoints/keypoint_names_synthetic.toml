@@ -1,0 +1,5 @@
+[keypoint_names]
+"mini_bot" = ["front", "back"]
+"main_bot" = ["front", "back"]
+"robot" = ["front", "back"]
+"referee" = ["front", "back"]
