@@ -1,6 +1,7 @@
 import logging
 import time
 
+import cv2
 import numpy as np
 from app.config.keypoint_config.yolo_keypoint_config import YoloKeypointConfig
 from app.keypoint.keypoint_interface import KeypointInterface

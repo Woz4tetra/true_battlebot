@@ -81,7 +81,7 @@ class SimulatedCamera(CameraInterface):
             len(self.camera_data.color_image.header.frame_id) > 0
             and len(self.camera_data.camera_info.header.frame_id) > 0
         ):
-            depth_image = Image.from_msg(depth)
+            depth_image = Image.from_msg(depth, "passthrough")
             depth_image.data = depth_image.data.astype(np.uint16)
             self.camera_data.point_cloud = PointCloud.from_rgbd(
                 self.camera_data.color_image,

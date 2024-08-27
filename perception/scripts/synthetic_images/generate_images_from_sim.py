@@ -5,6 +5,7 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 from threading import Lock
+from typing import Any, Callable
 
 import cv2
 import numpy as np
@@ -363,6 +364,13 @@ def generate_scenario(num_bots: int) -> dict:
     }
 
 
+def callback_wrapper(data_snapshot: DataShapshot, callback: Callable, msg: Any) -> None:
+    try:
+        callback(data_snapshot, msg)
+    except Exception as e:
+        print(f"Error in callback: {e}")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("-o", "--output_dir", type=str, default="output")
@@ -385,31 +393,31 @@ def main() -> None:
     rospy.Subscriber(
         camera_ns + "ground_truth/robots",
         EstimatedObjectArray,
-        lambda msg: ground_truth_callback(data_snapshot, msg),
+        lambda msg: callback_wrapper(data_snapshot, ground_truth_callback, msg),
         queue_size=1,
     )
     rospy.Subscriber(
         camera_ns + "rgb/camera_info",
         CameraInfo,
-        lambda msg: camera_info_callback(data_snapshot, msg),
+        lambda msg: callback_wrapper(data_snapshot, camera_info_callback, msg),
         queue_size=1,
     )
     rospy.Subscriber(
         camera_ns + "rgb/image_raw",
         Image,
-        lambda msg: image_callback(data_snapshot, msg),
+        lambda msg: callback_wrapper(data_snapshot, image_callback, msg),
         queue_size=1,
     )
     rospy.Subscriber(
         camera_ns + "layer/image_raw",
         Image,
-        lambda msg: layer_callback(data_snapshot, msg),
+        lambda msg: callback_wrapper(data_snapshot, layer_callback, msg),
         queue_size=1,
     )
     rospy.Subscriber(
         camera_ns + "simulated_segmentation",
         SegmentationInstanceArray,
-        lambda msg: simulated_segmentation_label_callback(data_snapshot, msg),
+        lambda msg: callback_wrapper(data_snapshot, simulated_segmentation_label_callback, msg),
         queue_size=1,
     )
 

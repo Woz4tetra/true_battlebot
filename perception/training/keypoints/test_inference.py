@@ -90,7 +90,8 @@ def main() -> None:
 
             cv2.imwrite(str(output_path / image_path.name), img_array)
     print("Warmup time:", diffs.pop(0))
-    print("Average inference time:", sum(diffs) / len(diffs))
+    if len(diffs) > 0:
+        print("Average inference time:", sum(diffs) / len(diffs))
 
 
 if __name__ == "__main__":

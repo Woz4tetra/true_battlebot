@@ -126,9 +126,9 @@ class Image:
         return msg
 
     @classmethod
-    def from_msg(cls, msg: RosImage) -> Image:
+    def from_msg(cls, msg: RosImage, desired_encoding: str = "bgr8") -> Image:
         try:
-            data = CV_BRIDGE.imgmsg_to_cv2(msg)
+            data = CV_BRIDGE.imgmsg_to_cv2(msg, desired_encoding)
         except Exception as e:
             LOGGER.error(f"Failed to convert image message to cv2: {e}")
             data = np.zeros((0, 0, 3), dtype=np.uint8)
