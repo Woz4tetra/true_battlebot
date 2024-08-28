@@ -21,13 +21,15 @@ def main() -> None:
     parser.add_argument("images", help="Path to images")
     parser.add_argument("output", help="Output path")
     parser.add_argument("-t", "--train", type=float, help="Train percentage", default=0.8)
-    parser.add_argument("-v", "--val", type=float, help="Validation percentage", default=0.2)
+    parser.add_argument("-v", "--val", type=float, help="Validation percentage", default=0.19)
+    parser.add_argument("-n", "--num-images", type=int, help="Number of images to include in the dataset", default=None)
     args = parser.parse_args()
 
     output_path = Path(args.output)
     image_path = Path(args.images)
     train_percent = args.train
     val_percent = args.val
+    num_images = args.num_images
 
     dataset_metadata = {
         "train": "../train/images",
@@ -44,18 +46,18 @@ def main() -> None:
         yaml.safe_dump(dataset_metadata, file)
 
     all_image_paths = list(image_path.glob("*.jpg"))
-    num_images = len(all_image_paths)
+    selected_images = len(all_image_paths) if num_images is None else num_images
 
-    print(f"Splitting up {num_images} images")
+    print(f"Splitting up {selected_images} images")
     random.shuffle(all_image_paths)
 
-    num_train = int(train_percent * num_images)
-    num_val = int(val_percent * num_images)
+    num_train = int(train_percent * selected_images)
+    num_val = int(val_percent * selected_images)
 
     datasets = {
         "train": all_image_paths[0:num_train],
         "val": all_image_paths[num_train : num_train + num_val],
-        "test": all_image_paths[num_train + num_val : num_images],
+        "test": all_image_paths[num_train + num_val : selected_images],
     }
 
     for subdir_key, dataset in datasets.items():
