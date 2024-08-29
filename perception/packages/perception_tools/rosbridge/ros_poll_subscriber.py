@@ -1,6 +1,5 @@
 import logging
 from queue import Empty, Full, Queue
-from threading import Lock
 from typing import Any, Generic, Type, TypeVar
 
 import rospy
