@@ -32,7 +32,6 @@ public class MainSceneManager : MonoBehaviour
     Dictionary<string, ObjectiveConfig> objectives = new Dictionary<string, ObjectiveConfig>();
     GameObject activeCage;
     bool keyboard_been_set = false;
-    List<AsyncOperation> scenesToLoad = new List<AsyncOperation>();
     BackgroundConfig loadedBackgroundConfig = new BackgroundConfig { name = "" };
 
     void Start()
@@ -74,11 +73,11 @@ public class MainSceneManager : MonoBehaviour
 
     public void LoadBackground(BackgroundConfig backgroundConfig)
     {
-        string newBackgroundName = backgroundConfig.name;
-        if (newBackgroundName == loadedBackgroundConfig.name)
+        if (backgroundConfig == loadedBackgroundConfig)
         {
             return;
         }
+        string newBackgroundName = backgroundConfig.name;
         if (newBackgroundName.Length == 0)
         {
             Debug.Log("No background selected");
@@ -210,7 +209,6 @@ public class MainSceneManager : MonoBehaviour
                     spawnHere.localScale
                 )
             );
-            Debug.Log($"Actor pose: {actor_pose}");
             GameObject actor = Instantiate(actorPrefab, actor_pose.GetT(), actor_pose.GetR());
             activeActors[actor_config.name] = actor;
             actor.gameObject.name = actor_config.name;
