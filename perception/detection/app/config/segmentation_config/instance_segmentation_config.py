@@ -1,5 +1,7 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Literal
+
+from bw_shared.configs.model_to_system_labels_map import ModelToSystemLabelsMap
 
 
 @dataclass
@@ -13,3 +15,4 @@ class InstanceSegmentationConfig:
     decimate: float = 1.0
     image_delay_threshold: float = 0.2
     debug: bool = False
+    model_to_system_labels: ModelToSystemLabelsMap = field(default_factory=ModelToSystemLabelsMap)

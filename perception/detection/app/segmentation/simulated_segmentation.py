@@ -7,7 +7,7 @@ import numpy as np
 from app.config.segmentation_config.simulated_segmentation_config import SimulatedSegmentationConfig
 from app.segmentation.segmentation_interface import SegmentationInterface
 from app.segmentation.simulated_segmentation_manager import SimulatedSegmentationManager
-from bw_interfaces.msg import Contour, SegmentationInstance, SegmentationInstanceArray
+from bw_interfaces.msg import Contour, LabelMap, SegmentationInstance, SegmentationInstanceArray
 from bw_shared.enums.label import Label, ModelLabel
 from perception_tools.inference.simulated_mask_to_contours import (
     make_simulated_segmentation_color_map,
@@ -135,6 +135,7 @@ class SimulatedSegmentation(SegmentationInterface):
         self.logger.info(f"Simulated to real label mapping: {self.model_to_system_labels}")
         self.model_labels = tuple(ModelLabel)
         self.system_labels = tuple(Label)
+        self.class_indices = self.config.model_to_system_labels.get_class_indices(self.model_labels)
         self.color_to_model_label_map: dict[int, ModelLabel] = {}
         self.noise_grid: NoiseGrid | None = None
         if self.config.apply_noise:
@@ -201,8 +202,12 @@ class SimulatedSegmentation(SegmentationInterface):
             if label is None:
                 continue
             instance.label = label
+            instance.class_index = self.class_indices[label]
             object_index = object_counts[label]
             instance.object_index = object_index
             object_counts[label] += 1
 
         return segmentation_array, debug_image
+
+    def get_model_to_system_labels(self) -> LabelMap:
+        return self.config.model_to_system_labels.to_msg()

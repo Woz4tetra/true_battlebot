@@ -1,5 +1,4 @@
 from ._BehaviorMode import *
-from ._BundleConfigMsg import *
 from ._CageCorner import *
 from ._CollisionInfo import *
 from ._ConfigureSimulation import *
@@ -17,6 +16,7 @@ from ._GoToGoalResult import *
 from ._HealthSummary import *
 from ._KeypointInstance import *
 from ._KeypointInstanceArray import *
+from ._LabelMap import *
 from ._Labels import *
 from ._MotorCharacterizationSample import *
 from ._MotorCharacterizationSampleArray import *

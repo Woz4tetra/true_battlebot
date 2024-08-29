@@ -1,8 +1,15 @@
 import cv2
 import pytest
-from app.segmentation.semantic_segmentation import SemanticSegmentation
+from app.keypoint.yolo_keypoint import YoloKeypoint
 from perception_tools.data_directory import get_data_directory
 from perception_tools.messages.image import Image
+from sensor_msgs.msg import CameraInfo
+
+
+@pytest.fixture
+def camera_info() -> CameraInfo:
+    return CameraInfo()
+
 
 TEST_IMAGES = (
     "20230506_115229.jpg",
@@ -17,14 +24,14 @@ TEST_IMAGES = (
 
 def load_image(image_name: str) -> Image:
     data_dir = get_data_directory()
-    image_path = data_dir / "images" / "semantic_segmentation" / image_name
+    image_path = data_dir / "images" / "yolo_keypoint" / image_name
     assert image_path.is_file()
     image = cv2.imread(str(image_path))
     return Image(data=image)
 
 
 @pytest.mark.parametrize("image_path", TEST_IMAGES)
-def test_semantic_segmentation(image_path: str, semantic_segmentation: SemanticSegmentation):
+def test_yolo_keypoint(image_path: str, yolo_keypoint: YoloKeypoint, camera_info: CameraInfo):
     image = load_image(image_path)
-    result, debug_msg = semantic_segmentation.process_image(image)
-    assert result is not None and len(result.instances) == 1
+    result, debug_msg = yolo_keypoint.process_image(camera_info, image)
+    assert result is not None and len(result.instances) > 1

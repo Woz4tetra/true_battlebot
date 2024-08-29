@@ -5,7 +5,8 @@ import numpy as np
 import torch
 from app.config.segmentation_config.semantic_segmentation_config import SemanticSegmentationConfig
 from app.segmentation.segmentation_interface import SegmentationInterface
-from bw_interfaces.msg import SegmentationInstance, SegmentationInstanceArray
+from bw_interfaces.msg import LabelMap, SegmentationInstance, SegmentationInstanceArray
+from bw_shared.enums.label import Label, ModelLabel
 from perception_tools.data_directory import get_data_directory
 from perception_tools.inference.common import contour_to_msg, get_default_device, load_metadata, mask_to_polygons
 from perception_tools.inference.deeplabv3 import IMAGE_SIZE, DeepLabV3Inference
@@ -23,6 +24,7 @@ class SemanticSegmentation(SegmentationInterface):
 
         self.metadata = load_metadata(data_dir / "models" / self.config.metadata_path)
         self.model_to_system_labels = self.config.model_to_system_labels.labels
+        self.class_indices = self.config.model_to_system_labels.get_class_indices(self.metadata.labels)
 
         self.warmup()
         self.logger.info("SemanticSegmentation initialized")
@@ -49,7 +51,7 @@ class SemanticSegmentation(SegmentationInterface):
 
         for model_label, (contours, has_holes) in polygon_result.items():
             label = self.model_to_system_labels[model_label]
-            class_idx = self.metadata.labels.index(model_label)
+            class_idx = self.class_indices[label]
 
             if class_idx not in object_indices:
                 object_indices[class_idx] = 0
@@ -75,3 +77,6 @@ class SemanticSegmentation(SegmentationInterface):
         _ = self.model(warmup_input)
         t1 = time.perf_counter()
         self.logger.info(f"Model warmed up in {t1 - t0} seconds")
+
+    def get_model_to_system_labels(self) -> LabelMap:
+        return self.config.model_to_system_labels.to_msg()

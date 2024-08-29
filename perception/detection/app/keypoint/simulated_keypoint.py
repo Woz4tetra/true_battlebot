@@ -4,7 +4,7 @@ import cv2
 from app.config.keypoint_config.simulated_keypoint_config import SimulatedKeypointConfig
 from app.keypoint.ground_truth_manager import GroundTruthManager
 from app.keypoint.keypoint_interface import KeypointInterface
-from bw_interfaces.msg import EstimatedObject, KeypointInstance, KeypointInstanceArray
+from bw_interfaces.msg import EstimatedObject, KeypointInstance, KeypointInstanceArray, LabelMap
 from bw_shared.enums.keypoint_name import KeypointName
 from bw_shared.enums.label import Label, ModelLabel
 from bw_shared.geometry.projection_math.project_object_to_uv import ProjectionError, project_object_to_uv
@@ -22,12 +22,14 @@ class SimulatedKeypoint(KeypointInterface):
         self.model: PinholeCameraModel | None = None
         self.camera_info = CameraInfo()
         self.keypoint_names = [KeypointName.FRONT, KeypointName.BACK]
+        self.model_labels = tuple(ModelLabel)
+        self.system_labels = tuple(Label)
 
         self.model_to_system_labels = self.config.model_to_system_labels.labels
         if len(self.model_to_system_labels) == 0:
             self.logger.warning("No simulated to real label mapping provided")
+        self.class_indices = self.config.model_to_system_labels.get_class_indices(self.model_labels)
         self.logger.info(f"Simulated to real label mapping: {self.model_to_system_labels}")
-        self.real_model_labels = tuple(Label)
 
     def process_image(
         self, camera_info: CameraInfo, rgb_image: Image
@@ -49,7 +51,7 @@ class SimulatedKeypoint(KeypointInterface):
 
         array = KeypointInstanceArray(header=camera_info.header, height=camera_info.height, width=camera_info.width)
         debug_image = Image.from_other(rgb_image) if self.debug else None
-        object_counts = {label: 0 for label in self.real_model_labels}
+        object_counts = {label: 0 for label in self.system_labels}
         for robot in robots:
             instance = self.odometry_to_keypoint(self.model, debug_image, robot, object_counts)
             if instance is None:
@@ -105,6 +107,9 @@ class SimulatedKeypoint(KeypointInterface):
             names=self.keypoint_names,  # type: ignore
             score=1.0,
             label=label,
-            class_index=self.real_model_labels.index(label),
+            class_index=self.class_indices[label],
             object_index=object_index,
         )
+
+    def get_model_to_system_labels(self) -> LabelMap:
+        return self.config.model_to_system_labels.to_msg()

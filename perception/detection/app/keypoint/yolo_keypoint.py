@@ -1,11 +1,10 @@
 import logging
 import time
 
-import cv2
 import numpy as np
 from app.config.keypoint_config.yolo_keypoint_config import YoloKeypointConfig
 from app.keypoint.keypoint_interface import KeypointInterface
-from bw_interfaces.msg import KeypointInstance, KeypointInstanceArray, UVKeypoint
+from bw_interfaces.msg import KeypointInstance, KeypointInstanceArray, LabelMap, UVKeypoint
 from bw_shared.enums.label import Label, ModelLabel
 from perception_tools.data_directory import get_data_directory
 from perception_tools.inference.common import load_metadata
@@ -25,6 +24,7 @@ class YoloKeypoint(KeypointInterface):
         self.model_metadata = load_metadata(data_dir / "models" / self.config.metadata_path)
 
         self.model_to_system_labels = self.config.model_to_system_labels.labels
+        self.class_indices = self.config.model_to_system_labels.get_class_indices(self.model_metadata.labels)
 
         self.logger.info(f"Loading model from {model_path}")
         self.model = YOLO(str(model_path))
@@ -68,6 +68,7 @@ class YoloKeypoint(KeypointInterface):
             if len(keypoint) != len(keypoint_names):
                 raise ValueError(f"Expected {len(keypoint_names)} keypoints, but got {len(keypoint)}")
             label = self.model_to_system_labels[model_label]
+            system_label_class_idx = self.class_indices[label]
             kp_front = UVKeypoint(x=keypoint[0][0], y=keypoint[0][1])
             kp_back = UVKeypoint(x=keypoint[1][0], y=keypoint[1][1])
             keypoint_instances.append(
@@ -75,7 +76,7 @@ class YoloKeypoint(KeypointInterface):
                     keypoints=[kp_front, kp_back],
                     names=keypoint_names,  # type: ignore
                     label=label,
-                    class_index=class_idx,
+                    class_index=system_label_class_idx,
                     object_index=object_counts[label],
                 )
             )
@@ -89,3 +90,6 @@ class YoloKeypoint(KeypointInterface):
         )
 
         return keypoint_msg, debug_image
+
+    def get_model_to_system_labels(self) -> LabelMap:
+        return self.config.model_to_system_labels.to_msg()

@@ -1,8 +1,5 @@
 import argparse
 import logging
-import os
-import re
-import time
 from typing import Protocol, cast
 
 import rospy
@@ -19,14 +16,13 @@ from app.keypoint.keypoint_interface import KeypointInterface
 from app.keypoint.keypoint_loader import load_keypoint
 from app.segmentation.segmentation_interface import SegmentationInterface
 from app.segmentation.segmentation_loader import load_segmentation
-from bw_interfaces.msg import EstimatedObject, KeypointInstanceArray, SegmentationInstanceArray
+from bw_interfaces.msg import EstimatedObject, KeypointInstanceArray, LabelMap, SegmentationInstanceArray
 from bw_shared.configs.shared_config import SharedConfig
 from bw_shared.enums.field_type import FieldType
 from bw_shared.environment import get_map, get_robot
 from bw_shared.messages.header import Header
 from bw_shared.tick_regulator import regulate_tick
 from perception_tools.messages.camera_data import CameraData
-from perception_tools.rosbridge.check_connection import check_connection
 from perception_tools.rosbridge.ros_poll_subscriber import RosPollSubscriber
 from perception_tools.rosbridge.ros_publisher import RosPublisher
 from perception_tools.rosbridge.wait_for_ros_connection import wait_for_ros_connection
@@ -53,6 +49,12 @@ class Runner:
         )
         self.field_cloud_publisher: RosPublisher[PointCloud2] = self.container.resolve_by_name("field_cloud_publisher")
         self.point_cloud_publisher: RosPublisher[PointCloud2] = self.container.resolve_by_name("point_cloud_publisher")
+        self.field_label_map_publisher: RosPublisher[LabelMap] = self.container.resolve_by_name(
+            "field_label_map_publisher"
+        )
+        self.robot_label_map_publisher: RosPublisher[LabelMap] = self.container.resolve_by_name(
+            "robot_label_map_publisher"
+        )
 
         self.robot_keypoint: KeypointInterface = self.container.resolve_by_name("robot_keypoint")
         self.robot_debug_image_publisher: RosPublisher[Image] = self.container.resolve_by_name(
@@ -67,6 +69,8 @@ class Runner:
 
     def start(self) -> None:
         self.logger.info("Runner started")
+        self.field_label_map_publisher.publish(self.field_segmentation.get_model_to_system_labels())
+        self.robot_label_map_publisher.publish(self.robot_keypoint.get_model_to_system_labels())
 
     def loop(self) -> None:
         if rospy.is_shutdown():
@@ -172,12 +176,14 @@ def make_field_segmentation(container: Container) -> None:
     field_segmentation_publisher = RosPublisher(namespace + "/field/segmentation", SegmentationInstanceArray)
     field_cloud_publisher = RosPublisher(namespace + "/field/point_cloud", PointCloud2)
     point_cloud_publisher = RosPublisher(namespace + "/point_cloud/cloud_registered", PointCloud2)
+    field_label_map_publisher = RosPublisher(namespace + "/field/label_map", LabelMap, latch=True)
 
     container.register(field_segmentation, "field_segmentation")
     container.register(field_segmentation_publisher, "field_segmentation_publisher")
     container.register(field_debug_image_publisher, "field_debug_image_publisher")
     container.register(field_cloud_publisher, "field_cloud_publisher")
     container.register(point_cloud_publisher, "point_cloud_publisher")
+    container.register(field_label_map_publisher, "field_label_map_publisher")
 
     logger.info(f"Field segmentation: {type(field_segmentation)}")
 
@@ -189,10 +195,12 @@ def make_robot_keypoint(container: Container) -> None:
     robot_keypoint = load_keypoint(container, config.robot_keypoint)
     robot_debug_image_publisher = RosPublisher(namespace + "/robot/debug_image", Image)
     robot_keypoint_publisher = RosPublisher(namespace + "/robot/keypoints", KeypointInstanceArray)
+    robot_label_map_publisher = RosPublisher(namespace + "/robot/label_map", LabelMap, latch=True)
 
     container.register(robot_keypoint, "robot_keypoint")
     container.register(robot_keypoint_publisher, "robot_keypoint_publisher")
     container.register(robot_debug_image_publisher, "robot_debug_image_publisher")
+    container.register(robot_label_map_publisher, "robot_label_map_publisher")
 
     logger.info(f"Robot segmentation: {type(robot_keypoint)}")
 

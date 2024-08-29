@@ -8,7 +8,8 @@ import torch
 import torchvision
 from app.config.segmentation_config.instance_segmentation_config import InstanceSegmentationConfig
 from app.segmentation.segmentation_interface import SegmentationInterface
-from bw_interfaces.msg import SegmentationInstance, SegmentationInstanceArray
+from bw_interfaces.msg import LabelMap, SegmentationInstance, SegmentationInstanceArray
+from bw_shared.enums.label import Label, ModelLabel
 from bw_shared.messages.header import Header
 from detectron2.layers import paste_masks_in_image
 from detectron2.utils.visualizer import GenericMask
@@ -23,17 +24,20 @@ BoundingBox = tuple[int, int, int, int]
 class InstanceSegmentation(SegmentationInterface):
     def __init__(self, config: InstanceSegmentationConfig) -> None:
         self.logger = logging.getLogger("perception")
+        self.config = config
         data_dir = get_data_directory()
-        self.model_path = data_dir / "models" / config.model_path
-        self.metadata_path = data_dir / "models" / config.metadata_path
-        self.threshold = config.threshold
-        self.nms_threshold = config.nms_threshold
-        self.mask_conversion_threshold = config.mask_conversion_threshold
-        self.decimate = config.decimate
-        self.image_delay_threshold = config.image_delay_threshold
-        self.debug = config.debug
+        self.model_path = data_dir / "models" / self.config.model_path
+        self.metadata_path = data_dir / "models" / self.config.metadata_path
+        self.threshold = self.config.threshold
+        self.nms_threshold = self.config.nms_threshold
+        self.mask_conversion_threshold = self.config.mask_conversion_threshold
+        self.decimate = self.config.decimate
+        self.image_delay_threshold = self.config.image_delay_threshold
+        self.debug = self.config.debug
 
         self.metadata = load_metadata(self.metadata_path)
+        self.model_to_system_labels = self.config.model_to_system_labels.labels
+        self.class_indices = self.config.model_to_system_labels.get_class_indices(self.metadata.labels)
 
         self.original_dims: tuple[int, int] | None = None
         self.resize_dims: tuple[int, int] | None = None
@@ -136,13 +140,15 @@ class InstanceSegmentation(SegmentationInterface):
             object_idx = object_indices[class_idx]
             object_indices[class_idx] += 1
 
-            label = self.metadata.labels[class_idx]
+            model_label = self.metadata.labels[class_idx]
+            label = self.model_to_system_labels[model_label]
+            system_label_class_idx = self.class_indices[label]
 
             segmentation_instance = SegmentationInstance(
                 contours=contour_to_msg(contours),
                 score=score,
                 label=label,
-                class_index=class_idx,
+                class_index=system_label_class_idx,
                 object_index=object_idx,
                 has_holes=mask.has_holes,
             )
@@ -182,3 +188,6 @@ class InstanceSegmentation(SegmentationInterface):
         segmentations, debug_image = self.predict(msg, self.debug)
         self.logger.debug(f"Callback delay is: {time.time() - msg.header.stamp}")
         return segmentations, debug_image
+
+    def get_model_to_system_labels(self) -> LabelMap:
+        return self.config.model_to_system_labels.to_msg()

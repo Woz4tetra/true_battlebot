@@ -108,10 +108,12 @@ class YoloKeypointAnnotation:
         parts = row.split()
         class_index = int(parts[0])
         bbox = [float(x) for x in parts[1:5]]
-        keypoints = []
+        keypoints: list[tuple[float, float, YoloVisibility]] = []
         for i in range(5, len(parts), 3):
-            keypoint = tuple(float(x) for x in parts[i : i + 3])
-            keypoints.append(keypoint)
+            x_keypoint = float(parts[i])
+            y_keypoint = float(parts[i + 1])
+            visibility = YoloVisibility(int(parts[i + 2]))
+            keypoints.append((x_keypoint, y_keypoint, visibility))
         return cls(class_index, bbox, keypoints)
 
 

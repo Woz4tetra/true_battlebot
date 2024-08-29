@@ -15,6 +15,7 @@ type = "SimulatedSegmentation"
 
 [field_segmentation.model_to_system_labels.mapping]
 "field" = "field"
+"background" = "background"
 
 [ros]
 log = true

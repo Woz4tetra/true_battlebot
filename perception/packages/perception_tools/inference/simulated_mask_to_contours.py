@@ -63,8 +63,9 @@ def simulated_mask_to_contours(
     debug_image: np.ndarray | None = None,
 ) -> tuple[SegmentationInstanceArray, dict[int, Exception]]:
     segmentation_array = SegmentationInstanceArray()
-    exceptions = {}
+    exceptions: dict[int, Exception] = {}
     for color, label in simulated_segmentation_color_map.items():
+        exc: Exception
         if label not in model_labels:
             exc = InvalidLabelError(f"Label {label} not in model labels")
             exceptions[color] = exc

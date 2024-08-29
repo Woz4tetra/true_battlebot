@@ -25,7 +25,7 @@ class RosPollSubscriber(Generic[T]):
         self.msg_type = msg_type
         self.topic_name = topic
         self.subscriber = rospy.Subscriber(
-            self.topic_name, msg_type, self._callback, queue_size=queue_size, buff_size=buff_size
+            self.topic_name, msg_type, lambda msg: self._callback(msg), queue_size=queue_size, buff_size=buff_size
         )
 
     def receive(self) -> T | None:
