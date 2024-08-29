@@ -57,7 +57,8 @@ class LogFilter:
                 return False
             match = re.search(pattern, log_line[key])
             found = match is not None
-            if found and not inverted:
+            found = found if not inverted else not found
+            if found:
                 return True
         return False
 

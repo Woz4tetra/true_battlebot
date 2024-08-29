@@ -18,12 +18,12 @@
         },
         {
             "name": "mini_bot",
-            "model": "MR STABS A-02",
-            "objective": "target_opponent_mid_fight"
+            "model": "MR STABS MK2",
+            "objective": "fight_2_aggressor"
         },
         {
             "name": "main_bot",
-            "model": "MRS BUFF B-03",
+            "model": "MRS BUFF MK2",
             "objective": "fight_1_chase"
         },
         {

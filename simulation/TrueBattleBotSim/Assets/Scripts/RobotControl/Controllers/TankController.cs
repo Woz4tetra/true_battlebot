@@ -21,10 +21,12 @@ class TankController : MonoBehaviour, ControllerInterface
     [SerializeField] private bool reverseLeft;
     [SerializeField] private bool reverseRight;
     [SerializeField] private GameObject referenceObject;
+    [SerializeField] private Transform spawnHere;
 
     private ArticulationBody body;
     private TwistMsg setpoint = new TwistMsg();
     private TransformFrame frame;
+    private Matrix4x4 tf_spawnhere_from_body;
 
     public void Start()
     {
@@ -32,8 +34,14 @@ class TankController : MonoBehaviour, ControllerInterface
         {
             referenceObject = GameObject.Find("Coordinate Frame");
         }
+        if (spawnHere == null)
+        {
+            spawnHere = transform.Find("SpawnHere");
+        }
         body = GetComponent<ArticulationBody>();
         frame = GetComponent<TransformFrame>();
+
+        tf_spawnhere_from_body = Matrix4x4.TRS(spawnHere.localPosition, spawnHere.localRotation, Vector3.one);
     }
 
     public void FixedUpdate()
@@ -102,7 +110,11 @@ class TankController : MonoBehaviour, ControllerInterface
 
     public void Teleport(Vector3 position, Quaternion rotation)
     {
-        body.TeleportRoot(position, rotation);
+        Matrix4x4 tf_world_from_body = Matrix4x4.TRS(position, rotation, Vector3.one);
+        Matrix4x4 tf_world_from_spawnhere = tf_world_from_body * tf_spawnhere_from_body.inverse;
+        Vector3 spawnPosition = tf_world_from_spawnhere.GetT();
+        Quaternion spawnRotation = tf_world_from_spawnhere.GetR();
+        body.TeleportRoot(spawnPosition, spawnRotation);
     }
 
     private Vector3 GetRelativeVelocity()
