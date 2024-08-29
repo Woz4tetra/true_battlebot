@@ -3,7 +3,7 @@ using UnityEngine.UI;
 
 public class RestartButton : MonoBehaviour
 {
-    [SerializeField] FieldManager sceneManager;
+    [SerializeField] MainSceneManager sceneManager;
     Button button;
 
     void Start()

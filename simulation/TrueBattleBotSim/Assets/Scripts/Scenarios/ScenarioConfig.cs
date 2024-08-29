@@ -6,6 +6,7 @@ using UnityEngine;
 public class ScenarioConfig
 {
     public CageConfig cage = new CageConfig();
+    public BackgroundConfig background = new BackgroundConfig();
 
     public CameraConfig main_cam = new CameraConfig
     {

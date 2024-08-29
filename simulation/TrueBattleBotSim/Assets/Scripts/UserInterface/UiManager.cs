@@ -21,7 +21,7 @@ public class UiManager : MonoBehaviour
     [SerializeField] GameObject displayReadout;
     [SerializeField] FPSCounter fpsCounter;
     [SerializeField] CameraController cameraController;
-    [SerializeField] FieldManager sceneManager;
+    [SerializeField] MainSceneManager sceneManager;
     [SerializeField] string remoteScenarioSelectionTopic = "simulation/scenario_selection";
     [SerializeField] string addConfigurationTopic = "simulation/add_configuration";
     [SerializeField] string scenarioListTopic = "simulation/scenarios";

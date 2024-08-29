@@ -1,13 +1,12 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using MathExtensions;
 using RosMessageTypes.Geometry;
 using Unity.Robotics.ROSTCPConnector.ROSGeometry;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
-public class FieldManager : MonoBehaviour
+public class MainSceneManager : MonoBehaviour
 {
     [SerializeField] GameObject mainCam;
     [SerializeField] string baseDirectory = "Config";
@@ -15,6 +14,11 @@ public class FieldManager : MonoBehaviour
     [SerializeField] GameObject flatScreenTV;
     [SerializeField] float maxCageSize = 5.0f;
     [SerializeField] private GameObject referenceObject;
+    [SerializeField]
+    BackgroundConfig defaultBackground = new BackgroundConfig
+    {
+        name = "Garage Scene"
+    };
 
     PauseManager pauseManager;
     ScenarioConfig scenario;
@@ -28,6 +32,8 @@ public class FieldManager : MonoBehaviour
     Dictionary<string, ObjectiveConfig> objectives = new Dictionary<string, ObjectiveConfig>();
     GameObject activeCage;
     bool keyboard_been_set = false;
+    List<AsyncOperation> scenesToLoad = new List<AsyncOperation>();
+    BackgroundConfig loadedBackgroundConfig = new BackgroundConfig { name = "" };
 
     void Start()
     {
@@ -66,6 +72,41 @@ public class FieldManager : MonoBehaviour
         persistentActors["main_cam"] = mainCam;
     }
 
+    public void LoadBackground(BackgroundConfig backgroundConfig)
+    {
+        string newBackgroundName = backgroundConfig.name;
+        if (newBackgroundName == loadedBackgroundConfig.name)
+        {
+            return;
+        }
+        if (newBackgroundName.Length == 0)
+        {
+            Debug.Log("No background selected");
+            return;
+        }
+        UnloadBackground(loadedBackgroundConfig);
+        Debug.Log($"Loading background: {newBackgroundName}");
+        SceneManager.LoadSceneAsync(newBackgroundName, LoadSceneMode.Additive);
+        loadedBackgroundConfig = backgroundConfig;
+    }
+
+    private void UnloadBackground(BackgroundConfig backgroundConfig)
+    {
+        if (backgroundConfig.name.Length == 0)
+        {
+            Debug.Log("No background selected");
+            return;
+        }
+        Debug.Log($"Unloading background: {backgroundConfig.name}");
+        SceneManager.UnloadSceneAsync(backgroundConfig.name);
+        loadedBackgroundConfig = new BackgroundConfig { name = "" };
+    }
+
+    public BackgroundConfig GetLoadedBackgroundConfig()
+    {
+        return loadedBackgroundConfig;
+    }
+
     public void LoadScenarioByName(string scenarioName)
     {
         Debug.Log($"Loading scenario: {scenarioName}");
@@ -88,6 +129,7 @@ public class FieldManager : MonoBehaviour
 
         scenario = ConfigManager.LoadScenario(scenarioName);
 
+        LoadBackground(scenario.background);
         LoadScenario(scenario, didScenarioChange);
     }
 
