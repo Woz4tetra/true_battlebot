@@ -350,7 +350,20 @@ def generate_scenario() -> dict:
 
     if change_cage or LAST_CAGE is None:
         LAST_CAGE = random.choice(list(CAGE_MODELS.keys()))
-        LAST_SKYIMAGE = random.choice(["Beach", "Garden", "Greenhouse", "Skyscraper", "Temple"])
+        LAST_SKYIMAGE = random.choice(
+            [
+                "Beach",
+                "Garden",
+                "Greenhouse",
+                "Skyscraper",
+                "Temple",
+                "havoc1",
+                "havoc2",
+                "havoc3",
+                "havoc4",
+                "havoc5",
+            ]
+        )
 
     if change_background or LAST_BACKGROUND is None:
         LAST_BACKGROUND = random.choice(["Garage Scene", "Panorama Scene"])

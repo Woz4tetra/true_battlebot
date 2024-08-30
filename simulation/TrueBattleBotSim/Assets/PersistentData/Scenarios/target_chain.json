@@ -5,6 +5,10 @@
             "y": 2.35
         }
     },
+    "background": {
+        "name": "Panorama Scene",
+        "sky_image": "havoc1"
+    },
     "actors": [
         {
             "name": "slow_camera",

@@ -5,16 +5,20 @@
             "y": 2.35
         }
     },
+    "background": {
+        "name": "Panorama Scene",
+        "sky_image": "havoc1"
+    },
     "actors": [
         {
             "name": "slow_camera",
             "model": "ZED 2i",
-            "objective": "red_slow_camera"
+            "objective": "blue_slow_camera"
         },
         {
             "name": "tracking_camera",
             "model": "OAK-1",
-            "objective": "red_tracking_camera"
+            "objective": "blue_tracking_camera"
         },
         {
             "name": "mini_bot",
@@ -29,7 +33,7 @@
         {
             "name": "opponent_1",
             "model": "MRS BUFF B-03 Bizarro",
-            "objective": "test_path_2"
+            "objective": "idle_red_corner"
         },
         {
             "name": "referee",
