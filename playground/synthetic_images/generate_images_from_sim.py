@@ -4,7 +4,7 @@ import random
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from threading import Lock
+from threading import Event, Lock
 from typing import Any, Callable
 
 import cv2
@@ -16,8 +16,10 @@ from bw_interfaces.msg import (
     EstimatedObjectArray,
     SegmentationInstanceArray,
     SimulationConfig,
+    SimulationScenarioLoadedEvent,
 )
-from bw_shared.enums.label import OPPONENT_GROUP, ModelLabel
+from bw_interfaces.msg import Labels as LabelMsg
+from bw_shared.enums.label import ModelLabel
 from bw_shared.geometry.projection_math.look_rotation import look_rotation
 from bw_shared.geometry.projection_math.project_object_to_uv import ProjectionError, project_object_to_uv
 from bw_shared.geometry.transform3d import Transform3D
@@ -39,7 +41,7 @@ from perception_tools.training.yolo_keypoint_dataset import (
 )
 from sensor_msgs.msg import CameraInfo, Image
 from std_msgs.msg import String
-from synthetic_dataset_labels import ALL_LABELS
+from synthetic_dataset_labels import ALL_LABELS, SYNTHETIC_ROBOT_GROUP
 
 BRIDGE = CvBridge()
 
@@ -116,6 +118,10 @@ def simulated_segmentation_label_callback(data_snapshot: DataShapshot, msg: Segm
             print(f"Received labels: {str(labels)[1:-1]}. Skipped: {skipped_labels}")
 
 
+def event_callback(event: Event) -> None:
+    event.set()
+
+
 def make_annotation_from_robot(
     robot: EstimatedObject,
     model: PinholeCameraModel,
@@ -124,7 +130,7 @@ def make_annotation_from_robot(
 ) -> YoloKeypointAnnotation | None:
     width, height = image_size
     label = ModelLabel(robot.label)
-    if label in OPPONENT_GROUP:
+    if label in SYNTHETIC_ROBOT_GROUP:
         label = ModelLabel.ROBOT
     if label not in contour_map:
         print(f"Missing contour for label: {label}")
@@ -331,17 +337,41 @@ def generate_idle(spawn_grid: list) -> dict:
     }
 
 
-def generate_scenario(num_bots: int) -> dict:
-    cage_x = random.uniform(2.2, 2.4)
+LAST_CAGE = None
+LAST_BACKGROUND = None
+LAST_SKYIMAGE = None
+CAGE_MODELS = {"Drive Test Box": 1.15, "NHRL 3lb Cage": 2.35}
+
+
+def generate_scenario() -> dict:
+    global LAST_CAGE, LAST_BACKGROUND, LAST_SKYIMAGE
+    change_cage = random.uniform(0, 1) > 0.9
+    change_background = random.uniform(0, 1) > 0.9
+
+    if change_cage or LAST_CAGE is None:
+        LAST_CAGE = random.choice(list(CAGE_MODELS.keys()))
+        LAST_SKYIMAGE = random.choice(["Beach", "Garden", "Greenhouse", "Skyscraper", "Temple"])
+
+    if change_background or LAST_BACKGROUND is None:
+        LAST_BACKGROUND = random.choice(["Garage Scene", "Panorama Scene"])
+
+    if LAST_CAGE == "NHRL 3lb Cage":
+        spawn_referee = random.uniform(0, 1) > 0.5
+    else:
+        spawn_referee = False
+
+    cage_x = CAGE_MODELS[LAST_CAGE] + random.uniform(-0.1, 0.1)
     cage_y = cage_x + random.uniform(-0.02, 0.02)
-    spawn_referee = random.uniform(0, 1) > 0.5
-    mini_bot_objective = "randomized_start_target_opponent" if num_bots >= 3 else "mini_bot_randomized_sequence"
-    mini_bot = {
+
+    num_robots = random.randint(1, 3)
+
+    mini_bot_objective = "randomized_start_target_opponent" if num_robots >= 3 else "mini_bot_randomized_sequence"
+    mr_stabs_mk2 = {
         "name": "mini_bot",
         "model": "MR STABS MK2",
         "objective": mini_bot_objective,
     }
-    main_bot = {
+    mrs_buff_mk2 = {
         "name": "main_bot",
         "model": "MRS BUFF MK2",
         "objective": "main_bot_randomized_sequence",
@@ -351,15 +381,17 @@ def generate_scenario(num_bots: int) -> dict:
         "model": "MRS BUFF B-03 Bizarro",
         "objective": "randomized_start_target_main",
     }
-    robot_actors = [mini_bot, main_bot, opponent_1]
-    robot_actors = robot_actors[:num_bots]
+    robot_actors = [mr_stabs_mk2, mrs_buff_mk2, opponent_1]
+    robot_actors = robot_actors[:num_robots]
+
     actors = [
         {"name": "tracking_camera", "model": "Training Camera", "objective": "randomized_camera"},
     ] + robot_actors
     if spawn_referee:
         actors.append({"name": "referee", "model": "Referee", "objective": "randomized_idle"})
     return {
-        "cage": {"dims": {"x": cage_x, "y": cage_y}},
+        "cage": {"dims": {"x": cage_x, "y": cage_y}, "cage_type": LAST_CAGE, "display_readout": False},
+        "background": {"name": LAST_BACKGROUND, "sky_image": LAST_SKYIMAGE},
         "actors": actors,
     }
 
@@ -387,9 +419,25 @@ def main() -> None:
     print(f"Connected to ROS master at {uri}")
     rospy.init_node("generate_images_from_sim")
 
+    scenario_loaded_event = Event()
+    configuration_acknowledged_event = Event()
+
     camera_ns = "/camera_0/"
     configure_simulation_pub = rospy.Publisher("/simulation/add_configuration", ConfigureSimulation, queue_size=1)
     select_scenario_pub = rospy.Publisher("/simulation/scenario_selection", String, queue_size=1)
+
+    rospy.Subscriber(
+        "/simulation/scenario_loaded",
+        SimulationScenarioLoadedEvent,
+        lambda msg, event=scenario_loaded_event: event_callback(event),
+        queue_size=1,
+    )
+    rospy.Subscriber(
+        "/simulation/acknowledge_configuration",
+        LabelMsg,
+        lambda msg, event=configuration_acknowledged_event: event_callback(event),
+        queue_size=1,
+    )
     rospy.Subscriber(
         camera_ns + "ground_truth/robots",
         EstimatedObjectArray,
@@ -427,8 +475,7 @@ def main() -> None:
 
     while not rospy.is_shutdown():
         # select number of robots and duration. Set camera pose.
-        num_bots = random.randint(1, 3)
-        duration = random.uniform(2, 5)
+        duration = random.uniform(1, 2)
 
         # generate spawn grid
         spawn_grid = generate_spawn_grid()
@@ -470,7 +517,7 @@ def main() -> None:
         )
 
         # create scenario
-        scenario = generate_scenario(num_bots)
+        scenario = generate_scenario()
         simulation_config = ConfigureSimulation(
             scenario=SimulationConfig(
                 name=scenario_name,
@@ -487,10 +534,20 @@ def main() -> None:
         )
 
         # publish scenario and objectives. Start scenario.
-        print(f"Starting scenario with {num_bots} robots for {duration} seconds.")
+        print(f"Starting scenario for {duration} seconds.")
         configure_simulation_pub.publish(simulation_config)
-        rospy.sleep(0.2)  # wait config to process
-        select_scenario_pub.publish(scenario_name)
+        if not configuration_acknowledged_event.wait(timeout=1.0):
+            raise RuntimeError("Timed out waiting for configuration acknowledgment.")
+        configuration_acknowledged_event.clear()
+
+        print(f"Selecting scenario: {scenario_name}")
+        for _ in range(3):
+            select_scenario_pub.publish(scenario_name)
+            if scenario_loaded_event.wait(timeout=1.0):
+                break
+        else:
+            raise RuntimeError("Timed out waiting for scenario to load.")
+        scenario_loaded_event.clear()
 
         # wait for scenario to finish. Repeat.
         start_time = time.monotonic()

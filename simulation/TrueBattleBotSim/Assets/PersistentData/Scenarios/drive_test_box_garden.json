@@ -9,7 +9,7 @@
     },
     "background": {
         "name": "Panorama Scene",
-        "skyImage": "Garden"
+        "sky_image": "Garden"
     },
     "actors": [
         {

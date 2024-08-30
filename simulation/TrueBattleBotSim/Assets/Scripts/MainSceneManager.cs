@@ -1,7 +1,10 @@
 using System;
 using System.Collections.Generic;
 using MathExtensions;
+using RosMessageTypes.BwInterfaces;
 using RosMessageTypes.Geometry;
+using RosMessageTypes.Std;
+using Unity.Robotics.ROSTCPConnector;
 using Unity.Robotics.ROSTCPConnector.ROSGeometry;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -9,16 +12,10 @@ using UnityEngine.SceneManagement;
 public class MainSceneManager : MonoBehaviour
 {
     [SerializeField] GameObject mainCam;
-    [SerializeField] string baseDirectory = "Config";
-    [SerializeField] string scenariosDirectory = "Scenarios";
     [SerializeField] GameObject flatScreenTV;
     [SerializeField] float maxCageSize = 5.0f;
     [SerializeField] private GameObject referenceObject;
-    [SerializeField]
-    BackgroundConfig defaultBackground = new BackgroundConfig
-    {
-        name = "Garage Scene"
-    };
+    [SerializeField] string scenarioLoadedTopic = "simulation/scenario_loaded";
 
     PauseManager pauseManager;
     ScenarioConfig scenario;
@@ -33,6 +30,7 @@ public class MainSceneManager : MonoBehaviour
     GameObject activeCage;
     bool keyboard_been_set = false;
     BackgroundConfig loadedBackgroundConfig = new BackgroundConfig { name = "" };
+    ROSConnection ros;
 
     void Start()
     {
@@ -69,11 +67,14 @@ public class MainSceneManager : MonoBehaviour
             cagePrefabs[cage.name] = cage;
         }
         persistentActors["main_cam"] = mainCam;
+
+        ros = ROSConnection.GetOrCreateInstance();
+        ros.RegisterPublisher<SimulationScenarioLoadedEventMsg>(scenarioLoadedTopic);
     }
 
     public void LoadBackground(BackgroundConfig backgroundConfig)
     {
-        if (backgroundConfig == loadedBackgroundConfig)
+        if (backgroundConfig.Equals(loadedBackgroundConfig))
         {
             return;
         }
@@ -225,12 +226,32 @@ public class MainSceneManager : MonoBehaviour
             combinedActors[entry.Key] = entry.Value;
         }
 
+        List<SimulationObjectiveProgressMsg> objectiveMsgs = new List<SimulationObjectiveProgressMsg>();
         foreach (ActorConfig actor_config in scenario.actors)
         {
             GameObject actor = activeActors[actor_config.name];
             ObjectiveConfig objective_config = objectives[actor_config.name];
-            ActivateActorType(actor, objective_config, combinedActors);
+            ActivateActorType(actor_config, actor, objective_config, combinedActors);
+            objectiveMsgs.Add(
+                new SimulationObjectiveProgressMsg
+                {
+                    header = new HeaderMsg
+                    {
+                        frame_id = actor_config.name,
+                        stamp = RosUtil.GetTimeMsg(0),
+                        seq = 0
+                    },
+                    sequence_length = (uint)objective_config.sequence.Count,
+                    objective_name = actor_config.objective,
+                }
+            );
         }
+
+        ros.Publish(scenarioLoadedTopic, new SimulationScenarioLoadedEventMsg
+        {
+            objectives = objectiveMsgs.ToArray(),
+            scenario_name = currentScenarioName
+        });
     }
 
     public void ReloadScenario()
@@ -244,7 +265,7 @@ public class MainSceneManager : MonoBehaviour
         return pauseManager;
     }
 
-    void ActivateActorType(GameObject actor, ObjectiveConfig objective_config, Dictionary<string, GameObject> actors)
+    void ActivateActorType(ActorConfig actor_config, GameObject actor, ObjectiveConfig objective_config, Dictionary<string, GameObject> actors)
     {
         KeyboardInput keyboard_input = actor.GetComponent<KeyboardInput>();
         RosControllerConnector controller = actor.GetComponent<RosControllerConnector>();
@@ -306,7 +327,7 @@ public class MainSceneManager : MonoBehaviour
                 }
                 followerEngine = GetFollowerEngine(objective_config.follower_engine, actor);
                 waypoint_follower.enabled = true;
-                waypoint_follower.SetSequence(GetScaledSequence(objective_config.init, objective_config.sequence));
+                waypoint_follower.SetSequence(actor_config.name, actor_config.objective, GetScaledSequence(objective_config.init, objective_config.sequence));
                 waypoint_follower.SetFollowerEngine(followerEngine);
                 break;
             case "target":
@@ -317,7 +338,7 @@ public class MainSceneManager : MonoBehaviour
                 }
                 followerEngine = GetFollowerEngine(objective_config.follower_engine, actor);
                 target_follower.enabled = true;
-                target_follower.SetSequence(objective_config.sequence);
+                target_follower.SetSequence(actor_config.name, actor_config.objective, objective_config.sequence);
                 target_follower.SetActiveActors(actors);
                 target_follower.SetFollowerEngine(followerEngine);
                 break;
@@ -328,7 +349,7 @@ public class MainSceneManager : MonoBehaviour
                     break;
                 }
                 teleport_follower.enabled = true;
-                teleport_follower.SetSequence(objective_config.sequence);
+                teleport_follower.SetSequence(actor_config.name, actor_config.objective, objective_config.sequence);
                 teleport_follower.SetComputeMethod(objective_config.smooth_teleports);
                 break;
             case "relative_to":
@@ -338,7 +359,7 @@ public class MainSceneManager : MonoBehaviour
                     break;
                 }
                 relative_to_follower.enabled = true;
-                relative_to_follower.SetSequence(objective_config.sequence);
+                relative_to_follower.SetSequence(actor_config.name, actor_config.objective, objective_config.sequence);
                 relative_to_follower.SetActiveActors(actors);
                 break;
             default:

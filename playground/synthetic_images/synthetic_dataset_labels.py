@@ -1,4 +1,4 @@
-from bw_shared.enums.label import ModelLabel
+from bw_shared.enums.label import OPPONENT_GROUP, ModelLabel
 
 ALL_LABELS = (
     ModelLabel.MINI_BOT,
@@ -6,3 +6,5 @@ ALL_LABELS = (
     ModelLabel.ROBOT,
     ModelLabel.REFEREE,
 )
+
+SYNTHETIC_ROBOT_GROUP = OPPONENT_GROUP | {ModelLabel.MRS_BUFF_MK1, ModelLabel.MR_STABS_MK1}

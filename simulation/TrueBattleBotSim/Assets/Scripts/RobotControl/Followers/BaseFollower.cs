@@ -1,20 +1,25 @@
+using RosMessageTypes.BwInterfaces;
 using System.Collections.Generic;
 using RosMessageTypes.Geometry;
 using RosMessageTypes.Nav;
 using RosMessageTypes.Std;
 using Unity.Robotics.ROSTCPConnector;
 using UnityEngine;
+using RosMessageTypes.BuiltinInterfaces;
 
 public abstract class BaseFollower : MonoBehaviour
 {
     protected ControllerInterface controller;
     protected ActorSharedProperties properties;
-    List<SequenceElementConfig> sequence = new List<SequenceElementConfig>();
-    float sequence_time = 0.0f;
+    List<SequenceElementConfig> objectiveSequence = new List<SequenceElementConfig>();
+    float sequenceTime = 0.0f;
     ArrowIndicator[] arrowPrefabs;
     ArrowIndicator arrow;
     bool isArrowEnabled = true;
     ROSConnection ros;
+    int objectiveIndex = 0;
+    string objectiveName = "";
+    string actorName = "";
     static RosTopicState sequenceProgressTopic = null;
 
     public virtual void Awake()
@@ -26,7 +31,7 @@ public abstract class BaseFollower : MonoBehaviour
         ros = ROSConnection.GetOrCreateInstance();
         if (sequenceProgressTopic == null)
         {
-            sequenceProgressTopic = ros.RegisterPublisher<Float64Msg>(properties.GetSequenceProgressTopicName());
+            sequenceProgressTopic = ros.RegisterPublisher<SimulationObjectiveProgressMsg>("simulation/objective_progress", queue_size: 100);
         }
     }
 
@@ -57,26 +62,40 @@ public abstract class BaseFollower : MonoBehaviour
 
     Optional<SequenceElementConfig> GetNextGoal()
     {
-        if (sequence.Count == 0)
+        if (objectiveSequence.Count == 0)
         {
             return Optional<SequenceElementConfig>.CreateEmpty();
         }
 
-        float current_time = Time.time - sequence_time;
+        float current_time = Time.time - sequenceTime;
         if (current_time < 0)
         {
             return Optional<SequenceElementConfig>.CreateEmpty();
         }
-        sequenceProgressTopic.Publish(new Float64Msg { data = current_time });
 
-        int index = 0;
-        while (index < sequence.Count - 1 && sequence[index + 1].timestamp < current_time)
+        if (objectiveIndex + 1 < objectiveSequence.Count - 1)
         {
-            index++;
+            while (objectiveSequence[objectiveIndex + 1].timestamp < current_time)
+            {
+                objectiveIndex++;
+            }
         }
 
+        sequenceProgressTopic.Publish(new SimulationObjectiveProgressMsg
+        {
+            header = new HeaderMsg
+            {
+                frame_id = actorName,
+                stamp = RosUtil.GetTimeMsg((double)current_time),
+            },
+            duration = RosUtil.GetTimeMsg(objectiveSequence[objectiveSequence.Count - 1].timestamp),
+            objective_index = (uint)objectiveIndex,
+            sequence_length = (uint)objectiveSequence.Count,
+            objective_name = objectiveName
+        });
+
         SequenceElementConfig next;
-        if (!ComputeNextGoal(current_time, index, out next))
+        if (!ComputeNextGoal(current_time, objectiveIndex, out next))
         {
             return Optional<SequenceElementConfig>.CreateEmpty();
         }
@@ -96,10 +115,13 @@ public abstract class BaseFollower : MonoBehaviour
         isArrowEnabled = show;
     }
 
-    public void SetSequence(List<SequenceElementConfig> sequence)
+    public void SetSequence(string actorName, string objectiveName, List<SequenceElementConfig> objectiveSequence)
     {
-        this.sequence = sequence;
-        sequence_time = Time.time;
+        this.objectiveSequence = objectiveSequence;
+        this.actorName = actorName;
+        this.objectiveName = objectiveName;
+        sequenceTime = Time.time;
+        objectiveIndex = 0;
         if (controller != null)
         {
             controller.Reset();
@@ -117,7 +139,7 @@ public abstract class BaseFollower : MonoBehaviour
 
     protected SequenceElementConfig GetElement(int index)
     {
-        return sequence[Mathf.Clamp(index, 0, sequence.Count - 1)];
+        return objectiveSequence[Mathf.Clamp(index, 0, objectiveSequence.Count - 1)];
     }
 
     protected Matrix4x4 GetOdomPose(OdometryMsg odom)

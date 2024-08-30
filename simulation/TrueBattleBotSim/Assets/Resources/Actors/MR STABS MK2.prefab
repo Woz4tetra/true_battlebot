@@ -1624,6 +1624,7 @@ MonoBehaviour:
   reverseLeft: 1
   reverseRight: 0
   referenceObject: {fileID: 0}
+  spawnHere: {fileID: 0}
 --- !u!114 &7887672778516243436
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1798,4 +1799,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9c1a0cf1d5ada30d0b0dd3a8f9b5db91, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  sequenceProgressTopicName: /mini_bot/sequence_progress
+  sequenceProgressTopicName: /simulation/sequence_progress

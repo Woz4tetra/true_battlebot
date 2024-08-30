@@ -7,18 +7,13 @@
     },
     "background": {
         "name": "Panorama Scene",
-        "sky_image": "Temple"
+        "sky_image": "Garden"
     },
     "actors": [
         {
-            "name": "slow_camera",
-            "model": "ZED 2i",
-            "objective": "blue_slow_camera"
-        },
-        {
             "name": "tracking_camera",
-            "model": "OAK-1",
-            "objective": "blue_tracking_camera"
+            "model": "Training Camera",
+            "objective": "blue_slow_camera"
         },
         {
             "name": "mini_bot",

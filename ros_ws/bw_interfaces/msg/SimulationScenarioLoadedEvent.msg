@@ -1,0 +1,2 @@
+bw_interfaces/SimulationObjectiveProgress[] objectives
+string scenario_name

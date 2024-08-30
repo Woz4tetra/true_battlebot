@@ -121,7 +121,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9c1a0cf1d5ada30d0b0dd3a8f9b5db91, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  sequenceProgressTopicName: /calibration_target/sequence_progress
+  sequenceProgressTopicName: /simulation/sequence_progress
 --- !u!1 &4664735821376003925
 GameObject:
   m_ObjectHideFlags: 0

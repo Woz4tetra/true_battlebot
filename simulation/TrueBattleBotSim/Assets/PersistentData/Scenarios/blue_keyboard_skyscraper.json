@@ -7,7 +7,7 @@
     },
     "background": {
         "name": "Panorama Scene",
-        "skyImage": "Skyscraper"
+        "sky_image": "Skyscraper"
     },
     "actors": [
         {

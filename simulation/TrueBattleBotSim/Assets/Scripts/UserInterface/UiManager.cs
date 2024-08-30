@@ -22,14 +22,16 @@ public class UiManager : MonoBehaviour
     [SerializeField] FPSCounter fpsCounter;
     [SerializeField] CameraController cameraController;
     [SerializeField] MainSceneManager sceneManager;
-    [SerializeField] string remoteScenarioSelectionTopic = "simulation/scenario_selection";
-    [SerializeField] string addConfigurationTopic = "simulation/add_configuration";
-    [SerializeField] string scenarioListTopic = "simulation/scenarios";
     [SerializeField] RestartButton restartButton;
     [SerializeField] PlayPauseButton playPauseButton;
     [SerializeField] TwoObjectToggle spotlightToggleManager;
 
     DisplayReadoutManager displayReadoutManager;
+
+    string remoteScenarioSelectionTopic = "simulation/scenario_selection";
+    string addConfigurationTopic = "simulation/add_configuration";
+    string acknowledgeConfigurationTopic = "simulation/acknowledge_configuration";
+    string scenarioListTopic = "simulation/scenarios";
 
     List<Resolution> resolutions = new List<Resolution>();
     List<string> scenarios = new List<string>();
@@ -74,6 +76,7 @@ public class UiManager : MonoBehaviour
         ros = ROSConnection.GetOrCreateInstance();
         ros.Subscribe<StringMsg>(remoteScenarioSelectionTopic, RemoteScenarioSelectionCallback);
         ros.Subscribe<ConfigureSimulationMsg>(addConfigurationTopic, AddConfigurationCallback);
+        ros.RegisterPublisher<LabelsMsg>(acknowledgeConfigurationTopic);
         ros.RegisterPublisher<LabelsMsg>(scenarioListTopic);
 
         resolutionDropdown.ClearOptions();
@@ -363,6 +366,7 @@ public class UiManager : MonoBehaviour
     {
         UpdateConfigurationManager(msg);
         AddToScenarioDropdown(msg.scenario.name);
+        ros.Publish(acknowledgeConfigurationTopic, GetScenarioListMsg());
     }
 
     void UpdateConfigurationManager(ConfigureSimulationMsg msg)
@@ -394,9 +398,14 @@ public class UiManager : MonoBehaviour
     {
         while (true)
         {
-            ros.Publish(scenarioListTopic, new LabelsMsg { labels = scenarios.ToArray() });
+            ros.Publish(scenarioListTopic, GetScenarioListMsg());
             yield return new WaitForSecondsRealtime(1);
         }
+    }
+
+    LabelsMsg GetScenarioListMsg()
+    {
+        return new LabelsMsg { labels = scenarios.ToArray() };
     }
 
     IEnumerator<object> UpdateFpsCounter()

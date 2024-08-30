@@ -1,4 +1,5 @@
 from ._BehaviorMode import *
+from ._BundleConfigMsg import *
 from ._CageCorner import *
 from ._CollisionInfo import *
 from ._ConfigureSimulation import *
@@ -26,6 +27,9 @@ from ._RobotFleetConfigMsg import *
 from ._SegmentationInstance import *
 from ._SegmentationInstanceArray import *
 from ._SimulationConfig import *
+from ._SimulationObjectiveProgress import *
+from ._SimulationScenarioLoadedEvent import *
+from ._SimulationScenarioProgress import *
 from ._SystemSummary import *
 from ._TagConfigMsg import *
 from ._TelemetryStatus import *

@@ -530,7 +530,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9c1a0cf1d5ada30d0b0dd3a8f9b5db91, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  sequenceProgressTopicName: /camera_0/sequence_progress
+  sequenceProgressTopicName: /simulation/sequence_progress
 --- !u!114 &6001035542632619913
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -1096,6 +1096,22 @@ PrefabInstance:
       propertyPath: m_RootOrder
       value: 5
       objectReference: {fileID: 0}
+    - target: {fileID: 7020623167856704501, guid: 5bd45563ec35d1d669fbeb2538f27a1c, type: 3}
+      propertyPath: m_ParentAnchorRotation.w
+      value: -0.69623333
+      objectReference: {fileID: 0}
+    - target: {fileID: 7020623167856704501, guid: 5bd45563ec35d1d669fbeb2538f27a1c, type: 3}
+      propertyPath: m_ParentAnchorRotation.x
+      value: -0.123528175
+      objectReference: {fileID: 0}
+    - target: {fileID: 7020623167856704501, guid: 5bd45563ec35d1d669fbeb2538f27a1c, type: 3}
+      propertyPath: m_ParentAnchorRotation.y
+      value: -0.69623333
+      objectReference: {fileID: 0}
+    - target: {fileID: 7020623167856704501, guid: 5bd45563ec35d1d669fbeb2538f27a1c, type: 3}
+      propertyPath: m_ParentAnchorRotation.z
+      value: 0.123528175
+      objectReference: {fileID: 0}
     - target: {fileID: 7876985986979033281, guid: 5bd45563ec35d1d669fbeb2538f27a1c, type: 3}
       propertyPath: m_LocalRotation.w
       value: 1
