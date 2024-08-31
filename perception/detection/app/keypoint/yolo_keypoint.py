@@ -69,11 +69,13 @@ class YoloKeypoint(KeypointInterface):
                 raise ValueError(f"Expected {len(keypoint_names)} keypoints, but got {len(keypoint)}")
             label = self.model_to_system_labels[model_label]
             system_label_class_idx = self.class_indices[label]
-            kp_front = UVKeypoint(x=keypoint[0][0], y=keypoint[0][1])
-            kp_back = UVKeypoint(x=keypoint[1][0], y=keypoint[1][1])
+            named_keypoints = {
+                "front": UVKeypoint(x=keypoint[0][0], y=keypoint[0][1]),
+                "back": UVKeypoint(x=keypoint[1][0], y=keypoint[1][1]),
+            }
             keypoint_instances.append(
                 KeypointInstance(
-                    keypoints=[kp_front, kp_back],
+                    keypoints=[named_keypoints[keypoint_name] for keypoint_name in keypoint_names],
                     names=keypoint_names,  # type: ignore
                     label=label,
                     class_index=system_label_class_idx,

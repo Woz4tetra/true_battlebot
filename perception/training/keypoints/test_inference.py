@@ -32,11 +32,19 @@ def main() -> None:
         type=str,
         help="Path to the image to test",
     )
+    parser.add_argument(
+        "-t",
+        "--threshold",
+        type=float,
+        default=0.4,
+        help="Confidence threshold for predictions",
+    )
 
     args = parser.parse_args()
     model_path = Path(args.model)
     config_path = args.config
     image_paths = [Path(image_path) for image_path in args.image_path]
+    threshold = args.threshold
 
     output_path = image_paths[0].parent / Path("output")
     print(f"Saving output to {output_path}")
@@ -54,7 +62,7 @@ def main() -> None:
 
         image = cv2.imread(str(image_path))
         t0 = time.perf_counter()
-        results = model(image, verbose=False)
+        results = model(image, verbose=False, conf=threshold)
         t1 = time.perf_counter()
         delta = t1 - t0
         diffs.append(delta)
@@ -65,14 +73,16 @@ def main() -> None:
         labels = [result.names[index] for index in ids]
         img_array = result.plot(kpt_line=True, kpt_radius=6)  # plot a BGR array of predictions
         # render keypoint names in image
-        for i, (keypoint, label) in enumerate(zip(keypoints, labels)):
+        for keypoint, label in zip(keypoints, labels):
             keypoint = keypoint.tolist()
+            front_keypoint = keypoint[0]
+            back_keypoint = keypoint[1]
             front_label = keypoint_names[label][0]
             back_label = keypoint_names[label][1]
             cv2.putText(
                 img_array,
                 front_label,
-                (keypoint[0][0], keypoint[0][1]),
+                front_keypoint,
                 cv2.FONT_HERSHEY_SIMPLEX,
                 0.5,
                 (255, 255, 255),
@@ -81,7 +91,7 @@ def main() -> None:
             cv2.putText(
                 img_array,
                 back_label,
-                (keypoint[1][0], keypoint[1][1]),
+                back_keypoint,
                 cv2.FONT_HERSHEY_SIMPLEX,
                 0.5,
                 (255, 255, 255),
