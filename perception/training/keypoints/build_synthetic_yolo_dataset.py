@@ -4,8 +4,8 @@ import shutil
 from pathlib import Path
 
 import yaml
+from perception_tools.training.keypoints_config import load_keypoints_config
 from perception_tools.training.yolo_keypoint_dataset import YoloKeypointDataset
-from synthetic_dataset_labels import ALL_LABELS
 
 
 def make_split_structure(dataset_root: Path) -> None:
@@ -20,16 +20,24 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("images", help="Path to images")
     parser.add_argument("output", help="Output path")
-    parser.add_argument("-t", "--train", type=float, help="Train percentage", default=0.8)
-    parser.add_argument("-v", "--val", type=float, help="Validation percentage", default=0.19)
+    parser.add_argument(
+        "config",
+        type=str,
+        help="Path to the configuration file. ex: ./keypoint_names_v1.toml",
+    )
+    parser.add_argument("-t", "--train", type=float, help="Train percentage", default=0.85)
+    parser.add_argument("-v", "--val", type=float, help="Validation percentage", default=0.1)
     parser.add_argument("-n", "--num-images", type=int, help="Number of images to include in the dataset", default=None)
     args = parser.parse_args()
 
     output_path = Path(args.output)
     image_path = Path(args.images)
+    config_path = args.config
     train_percent = args.train
     val_percent = args.val
     num_images = args.num_images
+
+    config = load_keypoints_config(config_path)
 
     dataset_metadata = {
         "train": "../train/images",
@@ -37,7 +45,7 @@ def main() -> None:
         "test": "../test/images",
     }
 
-    dataset = YoloKeypointDataset(names=ALL_LABELS)
+    dataset = YoloKeypointDataset(names=tuple(config.labels))
     dataset_metadata.update(dataset.to_dict())
 
     make_split_structure(output_path)

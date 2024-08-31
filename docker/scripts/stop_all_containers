@@ -1,4 +1,6 @@
 #!/bin/bash
+BASE_DIR=$(realpath "$(dirname $0)")
+PROJECT_NAME=$(${BASE_DIR}/../get_project_name)
 CONTAINERS=$(docker ps -a --format "{{.Names}}" | grep -e "${PROJECT_NAME}")
 if [[ ! -z ${CONTAINERS} ]]; then
     docker stop ${CONTAINERS} &> /dev/null

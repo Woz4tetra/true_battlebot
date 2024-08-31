@@ -47,7 +47,8 @@ public class RobotSensor : BaseGameObjectSensor
                 dimensions = robot.GetBounds().size,
                 cameraRelativePose = GetObjectPoseInCamera(obj.transform),
                 frame = robot.GetFrame(),
-                label = robot.GetLabel()
+                label = robot.GetLabel(),
+                keypoints = robot.GetKeypoints().ToArray()
             };
             targetList.Add(tagMsg);
         }
@@ -66,6 +67,17 @@ public class RobotSensor : BaseGameObjectSensor
         List<EstimatedObjectMsg> robots = new List<EstimatedObjectMsg>();
         foreach (VisibleTarget target in targets)
         {
+            List<PoseMsg> keypoints = new List<PoseMsg>();
+            List<string> keypoint_names = new List<string>();
+            foreach (ConfigurableKeypoint keypoint in target.keypoints)
+            {
+                keypoints.Add(new PoseMsg
+                {
+                    position = keypoint.transform.position.To<FLU>(),
+                    orientation = keypoint.transform.rotation.To<FLU>()
+                });
+                keypoint_names.Add(keypoint.name);
+            }
             Matrix4x4 targetPose = target.cameraRelativePose;
             Vector3Msg size = target.dimensions.To<FLU>();
             size = new Vector3Msg
@@ -88,7 +100,9 @@ public class RobotSensor : BaseGameObjectSensor
                 },
                 child_frame_id = target.frame.GetFrameId(),
                 size = size,
-                label = target.label
+                label = target.label,
+                keypoints = keypoints.ToArray(),
+                keypoint_names = keypoint_names.ToArray()
             };
             robots.Add(msg);
         }

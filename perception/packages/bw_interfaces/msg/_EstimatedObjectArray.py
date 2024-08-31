@@ -18,7 +18,7 @@ from geometry_msgs.msg._Vector3 import Vector3 as geometry_msgs_msg_Vector3
 from std_msgs.msg._Header import Header as std_msgs_msg_Header
 
 class EstimatedObjectArray(genpy.Message):
-  _md5sum: str = "c8cb98fc005a3f57f68b1b6abebacd57"
+  _md5sum: str = "7f680e22b9e0accfe73c739435d7f94f"
   _type: str = "bw_interfaces/EstimatedObjectArray"
   _has_header: bool = False  # flag to mark the presence of a Header object
   _full_text: str = """bw_interfaces/EstimatedObject[] robots
@@ -31,6 +31,8 @@ geometry_msgs/PoseWithCovariance pose
 geometry_msgs/TwistWithCovariance twist
 geometry_msgs/Vector3 size
 string label
+geometry_msgs/Pose[] keypoints
+string[] keypoint_names
 
 ================================================================================
 MSG: std_msgs/Header
@@ -150,13 +152,13 @@ float64 z"""
       length = len(self.robots)
       buff.write(_struct_I.pack(length))
       for val1 in self.robots:
-        _v1 = val1.header
-        _x = _v1.seq
+        _v9 = val1.header
+        _x = _v9.seq
         buff.write(_get_struct_I().pack(_x))
-        _v2 = _v1.stamp
-        _x = _v2
+        _v10 = _v9.stamp
+        _x = _v10
         buff.write(_get_struct_2I().pack(_x.secs, _x.nsecs))
-        _x = _v1.frame_id
+        _x = _v9.frame_id
         length = len(_x)
         if python3 or type(_x) == unicode:
           _x = _x.encode('utf-8')
@@ -168,26 +170,26 @@ float64 z"""
           _x = _x.encode('utf-8')
           length = len(_x)
         buff.write(struct.Struct('<I%ss'%length).pack(length, _x))
-        _v3 = val1.pose
-        _v4 = _v3.pose
-        _v5 = _v4.position
-        _x = _v5
+        _v11 = val1.pose
+        _v12 = _v11.pose
+        _v13 = _v12.position
+        _x = _v13
         buff.write(_get_struct_3d().pack(_x.x, _x.y, _x.z))
-        _v6 = _v4.orientation
-        _x = _v6
+        _v14 = _v12.orientation
+        _x = _v14
         buff.write(_get_struct_4d().pack(_x.x, _x.y, _x.z, _x.w))
-        buff.write(_get_struct_36d().pack(*_v3.covariance))
-        _v7 = val1.twist
-        _v8 = _v7.twist
-        _v9 = _v8.linear
-        _x = _v9
+        buff.write(_get_struct_36d().pack(*_v11.covariance))
+        _v15 = val1.twist
+        _v16 = _v15.twist
+        _v17 = _v16.linear
+        _x = _v17
         buff.write(_get_struct_3d().pack(_x.x, _x.y, _x.z))
-        _v10 = _v8.angular
-        _x = _v10
+        _v18 = _v16.angular
+        _x = _v18
         buff.write(_get_struct_3d().pack(_x.x, _x.y, _x.z))
-        buff.write(_get_struct_36d().pack(*_v7.covariance))
-        _v11 = val1.size
-        _x = _v11
+        buff.write(_get_struct_36d().pack(*_v15.covariance))
+        _v19 = val1.size
+        _x = _v19
         buff.write(_get_struct_3d().pack(_x.x, _x.y, _x.z))
         _x = val1.label
         length = len(_x)
@@ -195,6 +197,23 @@ float64 z"""
           _x = _x.encode('utf-8')
           length = len(_x)
         buff.write(struct.Struct('<I%ss'%length).pack(length, _x))
+        length = len(val1.keypoints)
+        buff.write(_struct_I.pack(length))
+        for val2 in val1.keypoints:
+          _v20 = val2.position
+          _x = _v20
+          buff.write(_get_struct_3d().pack(_x.x, _x.y, _x.z))
+          _v21 = val2.orientation
+          _x = _v21
+          buff.write(_get_struct_4d().pack(_x.x, _x.y, _x.z, _x.w))
+        length = len(val1.keypoint_names)
+        buff.write(_struct_I.pack(length))
+        for val2 in val1.keypoint_names:
+          length = len(val2)
+          if python3 or type(val2) == unicode:
+            val2 = val2.encode('utf-8')
+            length = len(val2)
+          buff.write(struct.Struct('<I%ss'%length).pack(length, val2))
     except struct.error as se: self._check_types(struct.error("%s: '%s' when writing '%s'" % (type(se), str(se), str(locals().get('_x', self)))))
     except TypeError as te: self._check_types(ValueError("%s: '%s' when writing '%s'" % (type(te), str(te), str(locals().get('_x', self)))))
 
@@ -215,12 +234,12 @@ float64 z"""
       self.robots = []
       for i in range(0, length):
         val1 = bw_interfaces_msg_EstimatedObject()
-        _v12 = val1.header
+        _v22 = val1.header
         start = end
         end += 4
-        (_v12.seq,) = _get_struct_I().unpack(bytes_[start:end])
-        _v13 = _v12.stamp
-        _x = _v13
+        (_v22.seq,) = _get_struct_I().unpack(bytes_[start:end])
+        _v23 = _v22.stamp
+        _x = _v23
         start = end
         end += 8
         (_x.secs, _x.nsecs,) = _get_struct_2I().unpack(bytes_[start:end])
@@ -230,9 +249,9 @@ float64 z"""
         start = end
         end += length
         if python3:
-          _v12.frame_id = bytes_[start:end].decode('utf-8', 'rosmsg')
+          _v22.frame_id = bytes_[start:end].decode('utf-8', 'rosmsg')
         else:
-          _v12.frame_id = bytes_[start:end]
+          _v22.frame_id = bytes_[start:end]
         start = end
         end += 4
         (length,) = _struct_I.unpack(bytes_[start:end])
@@ -242,38 +261,38 @@ float64 z"""
           val1.child_frame_id = bytes_[start:end].decode('utf-8', 'rosmsg')
         else:
           val1.child_frame_id = bytes_[start:end]
-        _v14 = val1.pose
-        _v15 = _v14.pose
-        _v16 = _v15.position
-        _x = _v16
+        _v24 = val1.pose
+        _v25 = _v24.pose
+        _v26 = _v25.position
+        _x = _v26
         start = end
         end += 24
         (_x.x, _x.y, _x.z,) = _get_struct_3d().unpack(bytes_[start:end])
-        _v17 = _v15.orientation
-        _x = _v17
+        _v27 = _v25.orientation
+        _x = _v27
         start = end
         end += 32
         (_x.x, _x.y, _x.z, _x.w,) = _get_struct_4d().unpack(bytes_[start:end])
         start = end
         end += 288
-        _v14.covariance = _get_struct_36d().unpack(bytes_[start:end])
-        _v18 = val1.twist
-        _v19 = _v18.twist
-        _v20 = _v19.linear
-        _x = _v20
+        _v24.covariance = _get_struct_36d().unpack(bytes_[start:end])
+        _v28 = val1.twist
+        _v29 = _v28.twist
+        _v30 = _v29.linear
+        _x = _v30
         start = end
         end += 24
         (_x.x, _x.y, _x.z,) = _get_struct_3d().unpack(bytes_[start:end])
-        _v21 = _v19.angular
-        _x = _v21
+        _v31 = _v29.angular
+        _x = _v31
         start = end
         end += 24
         (_x.x, _x.y, _x.z,) = _get_struct_3d().unpack(bytes_[start:end])
         start = end
         end += 288
-        _v18.covariance = _get_struct_36d().unpack(bytes_[start:end])
-        _v22 = val1.size
-        _x = _v22
+        _v28.covariance = _get_struct_36d().unpack(bytes_[start:end])
+        _v32 = val1.size
+        _x = _v32
         start = end
         end += 24
         (_x.x, _x.y, _x.z,) = _get_struct_3d().unpack(bytes_[start:end])
@@ -286,6 +305,38 @@ float64 z"""
           val1.label = bytes_[start:end].decode('utf-8', 'rosmsg')
         else:
           val1.label = bytes_[start:end]
+        start = end
+        end += 4
+        (length,) = _struct_I.unpack(bytes_[start:end])
+        val1.keypoints = []
+        for i in range(0, length):
+          val2 = geometry_msgs_msg_Pose()
+          _v33 = val2.position
+          _x = _v33
+          start = end
+          end += 24
+          (_x.x, _x.y, _x.z,) = _get_struct_3d().unpack(bytes_[start:end])
+          _v34 = val2.orientation
+          _x = _v34
+          start = end
+          end += 32
+          (_x.x, _x.y, _x.z, _x.w,) = _get_struct_4d().unpack(bytes_[start:end])
+          val1.keypoints.append(val2)
+        start = end
+        end += 4
+        (length,) = _struct_I.unpack(bytes_[start:end])
+        val1.keypoint_names = []
+        for i in range(0, length):
+          start = end
+          end += 4
+          (length,) = _struct_I.unpack(bytes_[start:end])
+          start = end
+          end += length
+          if python3:
+            val2 = bytes_[start:end].decode('utf-8', 'rosmsg')
+          else:
+            val2 = bytes_[start:end]
+          val1.keypoint_names.append(val2)
         self.robots.append(val1)
       return self
     except struct.error as e:
@@ -302,13 +353,13 @@ float64 z"""
       length = len(self.robots)
       buff.write(_struct_I.pack(length))
       for val1 in self.robots:
-        _v23 = val1.header
-        _x = _v23.seq
+        _v35 = val1.header
+        _x = _v35.seq
         buff.write(_get_struct_I().pack(_x))
-        _v24 = _v23.stamp
-        _x = _v24
+        _v36 = _v35.stamp
+        _x = _v36
         buff.write(_get_struct_2I().pack(_x.secs, _x.nsecs))
-        _x = _v23.frame_id
+        _x = _v35.frame_id
         length = len(_x)
         if python3 or type(_x) == unicode:
           _x = _x.encode('utf-8')
@@ -320,26 +371,26 @@ float64 z"""
           _x = _x.encode('utf-8')
           length = len(_x)
         buff.write(struct.Struct('<I%ss'%length).pack(length, _x))
-        _v25 = val1.pose
-        _v26 = _v25.pose
-        _v27 = _v26.position
-        _x = _v27
+        _v37 = val1.pose
+        _v38 = _v37.pose
+        _v39 = _v38.position
+        _x = _v39
         buff.write(_get_struct_3d().pack(_x.x, _x.y, _x.z))
-        _v28 = _v26.orientation
-        _x = _v28
+        _v40 = _v38.orientation
+        _x = _v40
         buff.write(_get_struct_4d().pack(_x.x, _x.y, _x.z, _x.w))
-        buff.write(_v25.covariance.tostring())
-        _v29 = val1.twist
-        _v30 = _v29.twist
-        _v31 = _v30.linear
-        _x = _v31
+        buff.write(_v37.covariance.tostring())
+        _v41 = val1.twist
+        _v42 = _v41.twist
+        _v43 = _v42.linear
+        _x = _v43
         buff.write(_get_struct_3d().pack(_x.x, _x.y, _x.z))
-        _v32 = _v30.angular
-        _x = _v32
+        _v44 = _v42.angular
+        _x = _v44
         buff.write(_get_struct_3d().pack(_x.x, _x.y, _x.z))
-        buff.write(_v29.covariance.tostring())
-        _v33 = val1.size
-        _x = _v33
+        buff.write(_v41.covariance.tostring())
+        _v45 = val1.size
+        _x = _v45
         buff.write(_get_struct_3d().pack(_x.x, _x.y, _x.z))
         _x = val1.label
         length = len(_x)
@@ -347,6 +398,23 @@ float64 z"""
           _x = _x.encode('utf-8')
           length = len(_x)
         buff.write(struct.Struct('<I%ss'%length).pack(length, _x))
+        length = len(val1.keypoints)
+        buff.write(_struct_I.pack(length))
+        for val2 in val1.keypoints:
+          _v46 = val2.position
+          _x = _v46
+          buff.write(_get_struct_3d().pack(_x.x, _x.y, _x.z))
+          _v47 = val2.orientation
+          _x = _v47
+          buff.write(_get_struct_4d().pack(_x.x, _x.y, _x.z, _x.w))
+        length = len(val1.keypoint_names)
+        buff.write(_struct_I.pack(length))
+        for val2 in val1.keypoint_names:
+          length = len(val2)
+          if python3 or type(val2) == unicode:
+            val2 = val2.encode('utf-8')
+            length = len(val2)
+          buff.write(struct.Struct('<I%ss'%length).pack(length, val2))
     except struct.error as se: self._check_types(struct.error("%s: '%s' when writing '%s'" % (type(se), str(se), str(locals().get('_x', self)))))
     except TypeError as te: self._check_types(ValueError("%s: '%s' when writing '%s'" % (type(te), str(te), str(locals().get('_x', self)))))
 
@@ -368,12 +436,12 @@ float64 z"""
       self.robots = []
       for i in range(0, length):
         val1 = bw_interfaces_msg_EstimatedObject()
-        _v34 = val1.header
+        _v48 = val1.header
         start = end
         end += 4
-        (_v34.seq,) = _get_struct_I().unpack(bytes_[start:end])
-        _v35 = _v34.stamp
-        _x = _v35
+        (_v48.seq,) = _get_struct_I().unpack(bytes_[start:end])
+        _v49 = _v48.stamp
+        _x = _v49
         start = end
         end += 8
         (_x.secs, _x.nsecs,) = _get_struct_2I().unpack(bytes_[start:end])
@@ -383,9 +451,9 @@ float64 z"""
         start = end
         end += length
         if python3:
-          _v34.frame_id = bytes_[start:end].decode('utf-8', 'rosmsg')
+          _v48.frame_id = bytes_[start:end].decode('utf-8', 'rosmsg')
         else:
-          _v34.frame_id = bytes_[start:end]
+          _v48.frame_id = bytes_[start:end]
         start = end
         end += 4
         (length,) = _struct_I.unpack(bytes_[start:end])
@@ -395,38 +463,38 @@ float64 z"""
           val1.child_frame_id = bytes_[start:end].decode('utf-8', 'rosmsg')
         else:
           val1.child_frame_id = bytes_[start:end]
-        _v36 = val1.pose
-        _v37 = _v36.pose
-        _v38 = _v37.position
-        _x = _v38
+        _v50 = val1.pose
+        _v51 = _v50.pose
+        _v52 = _v51.position
+        _x = _v52
         start = end
         end += 24
         (_x.x, _x.y, _x.z,) = _get_struct_3d().unpack(bytes_[start:end])
-        _v39 = _v37.orientation
-        _x = _v39
+        _v53 = _v51.orientation
+        _x = _v53
         start = end
         end += 32
         (_x.x, _x.y, _x.z, _x.w,) = _get_struct_4d().unpack(bytes_[start:end])
         start = end
         end += 288
-        _v36.covariance = numpy.frombuffer(bytes_[start:end], dtype=numpy.float64, count=36)
-        _v40 = val1.twist
-        _v41 = _v40.twist
-        _v42 = _v41.linear
-        _x = _v42
+        _v50.covariance = numpy.frombuffer(bytes_[start:end], dtype=numpy.float64, count=36)
+        _v54 = val1.twist
+        _v55 = _v54.twist
+        _v56 = _v55.linear
+        _x = _v56
         start = end
         end += 24
         (_x.x, _x.y, _x.z,) = _get_struct_3d().unpack(bytes_[start:end])
-        _v43 = _v41.angular
-        _x = _v43
+        _v57 = _v55.angular
+        _x = _v57
         start = end
         end += 24
         (_x.x, _x.y, _x.z,) = _get_struct_3d().unpack(bytes_[start:end])
         start = end
         end += 288
-        _v40.covariance = numpy.frombuffer(bytes_[start:end], dtype=numpy.float64, count=36)
-        _v44 = val1.size
-        _x = _v44
+        _v54.covariance = numpy.frombuffer(bytes_[start:end], dtype=numpy.float64, count=36)
+        _v58 = val1.size
+        _x = _v58
         start = end
         end += 24
         (_x.x, _x.y, _x.z,) = _get_struct_3d().unpack(bytes_[start:end])
@@ -439,6 +507,38 @@ float64 z"""
           val1.label = bytes_[start:end].decode('utf-8', 'rosmsg')
         else:
           val1.label = bytes_[start:end]
+        start = end
+        end += 4
+        (length,) = _struct_I.unpack(bytes_[start:end])
+        val1.keypoints = []
+        for i in range(0, length):
+          val2 = geometry_msgs_msg_Pose()
+          _v59 = val2.position
+          _x = _v59
+          start = end
+          end += 24
+          (_x.x, _x.y, _x.z,) = _get_struct_3d().unpack(bytes_[start:end])
+          _v60 = val2.orientation
+          _x = _v60
+          start = end
+          end += 32
+          (_x.x, _x.y, _x.z, _x.w,) = _get_struct_4d().unpack(bytes_[start:end])
+          val1.keypoints.append(val2)
+        start = end
+        end += 4
+        (length,) = _struct_I.unpack(bytes_[start:end])
+        val1.keypoint_names = []
+        for i in range(0, length):
+          start = end
+          end += 4
+          (length,) = _struct_I.unpack(bytes_[start:end])
+          start = end
+          end += length
+          if python3:
+            val2 = bytes_[start:end].decode('utf-8', 'rosmsg')
+          else:
+            val2 = bytes_[start:end]
+          val1.keypoint_names.append(val2)
         self.robots.append(val1)
       return self
     except struct.error as e:

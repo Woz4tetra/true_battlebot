@@ -4,3 +4,5 @@ geometry_msgs/PoseWithCovariance pose
 geometry_msgs/TwistWithCovariance twist
 geometry_msgs/Vector3 size
 string label
+geometry_msgs/Pose[] keypoints
+string[] keypoint_names

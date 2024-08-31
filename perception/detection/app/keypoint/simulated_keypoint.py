@@ -7,7 +7,7 @@ from app.keypoint.keypoint_interface import KeypointInterface
 from bw_interfaces.msg import EstimatedObject, KeypointInstance, KeypointInstanceArray, LabelMap
 from bw_shared.enums.keypoint_name import KeypointName
 from bw_shared.enums.label import Label, ModelLabel
-from bw_shared.geometry.projection_math.project_object_to_uv import ProjectionError, project_object_to_uv
+from bw_shared.geometry.projection_math.project_object_to_uv import ProjectionError, project_object_to_front_back_uv
 from image_geometry import PinholeCameraModel
 from perception_tools.messages.image import Image
 from sensor_msgs.msg import CameraInfo
@@ -77,7 +77,7 @@ class SimulatedKeypoint(KeypointInterface):
         object_index = object_counts[label]
         object_counts[label] += 1
         try:
-            forward_pixel, backward_pixel = project_object_to_uv(robot, model)
+            forward_pixel, backward_pixel = project_object_to_front_back_uv(robot, model)
         except ProjectionError as e:
             self.logger.warning(f"Projection error: {e}")
             return None

@@ -17,7 +17,7 @@ from geometry_msgs.msg._Vector3 import Vector3 as geometry_msgs_msg_Vector3
 from std_msgs.msg._Header import Header as std_msgs_msg_Header
 
 class EstimatedObject(genpy.Message):
-  _md5sum: str = "affecfd33560537f4c35cd0836d232f0"
+  _md5sum: str = "e174c0d2a01251d7d2647e3b468b4d22"
   _type: str = "bw_interfaces/EstimatedObject"
   _has_header: bool = True  # flag to mark the presence of a Header object
   _full_text: str = """std_msgs/Header header
@@ -26,6 +26,8 @@ geometry_msgs/PoseWithCovariance pose
 geometry_msgs/TwistWithCovariance twist
 geometry_msgs/Vector3 size
 string label
+geometry_msgs/Pose[] keypoints
+string[] keypoint_names
 
 ================================================================================
 MSG: std_msgs/Header
@@ -107,15 +109,17 @@ MSG: geometry_msgs/Vector3
 float64 x
 float64 y
 float64 z"""
-  __slots__: List[str] = ['header','child_frame_id','pose','twist','size','label']
-  _slot_types: List[str] = ['std_msgs/Header','string','geometry_msgs/PoseWithCovariance','geometry_msgs/TwistWithCovariance','geometry_msgs/Vector3','string']
+  __slots__: List[str] = ['header','child_frame_id','pose','twist','size','label','keypoints','keypoint_names']
+  _slot_types: List[str] = ['std_msgs/Header','string','geometry_msgs/PoseWithCovariance','geometry_msgs/TwistWithCovariance','geometry_msgs/Vector3','string','geometry_msgs/Pose[]','string[]']
 
   def __init__(self, header: std_msgs_msg_Header = None,
     child_frame_id: str = None,
     pose: geometry_msgs_msg_PoseWithCovariance = None,
     twist: geometry_msgs_msg_TwistWithCovariance = None,
     size: geometry_msgs_msg_Vector3 = None,
-    label: str = None):
+    label: str = None,
+    keypoints: List[geometry_msgs_msg_Pose] = None,
+    keypoint_names: List[str] = None):
     """
     Constructor. Any message fields that are implicitly/explicitly
     set to None will be assigned a default value. The recommend
@@ -123,13 +127,13 @@ float64 z"""
     changes.  You cannot mix in-order arguments and keyword arguments.
 
     The available fields are:
-      header,child_frame_id,pose,twist,size,label
+      header,child_frame_id,pose,twist,size,label,keypoints,keypoint_names
 
     :param args: complete set of field values, in .msg order
     :param kwds: use keyword arguments corresponding to message field names
     to set specific fields.
     """
-    super(EstimatedObject, self).__init__(**{'header': header, 'child_frame_id': child_frame_id, 'pose': pose, 'twist': twist, 'size': size, 'label': label})
+    super(EstimatedObject, self).__init__(**{'header': header, 'child_frame_id': child_frame_id, 'pose': pose, 'twist': twist, 'size': size, 'label': label, 'keypoints': keypoints, 'keypoint_names': keypoint_names})
     if self.header is None:
       self.header: std_msgs_msg_Header = std_msgs_msg_Header()
     else:
@@ -154,6 +158,14 @@ float64 z"""
       self.label: str = ''
     else:
       self.label = label
+    if self.keypoints is None:
+      self.keypoints: List[geometry_msgs_msg_Pose] = []
+    else:
+      self.keypoints = keypoints
+    if self.keypoint_names is None:
+      self.keypoint_names: List[str] = []
+    else:
+      self.keypoint_names = keypoint_names
 
   def _get_types(self):
     """
@@ -195,6 +207,23 @@ float64 z"""
         _x = _x.encode('utf-8')
         length = len(_x)
       buff.write(struct.Struct('<I%ss'%length).pack(length, _x))
+      length = len(self.keypoints)
+      buff.write(_struct_I.pack(length))
+      for val1 in self.keypoints:
+        _v1 = val1.position
+        _x = _v1
+        buff.write(_get_struct_3d().pack(_x.x, _x.y, _x.z))
+        _v2 = val1.orientation
+        _x = _v2
+        buff.write(_get_struct_4d().pack(_x.x, _x.y, _x.z, _x.w))
+      length = len(self.keypoint_names)
+      buff.write(_struct_I.pack(length))
+      for val1 in self.keypoint_names:
+        length = len(val1)
+        if python3 or type(val1) == unicode:
+          val1 = val1.encode('utf-8')
+          length = len(val1)
+        buff.write(struct.Struct('<I%ss'%length).pack(length, val1))
     except struct.error as se: self._check_types(struct.error("%s: '%s' when writing '%s'" % (type(se), str(se), str(locals().get('_x', self)))))
     except TypeError as te: self._check_types(ValueError("%s: '%s' when writing '%s'" % (type(te), str(te), str(locals().get('_x', self)))))
 
@@ -214,6 +243,8 @@ float64 z"""
         self.twist = geometry_msgs_msg_TwistWithCovariance()
       if self.size is None:
         self.size = geometry_msgs_msg_Vector3()
+      if self.keypoints is None:
+        self.keypoints = None
       end = 0
       _x = self
       start = end
@@ -264,6 +295,38 @@ float64 z"""
         self.label = bytes_[start:end].decode('utf-8', 'rosmsg')
       else:
         self.label = bytes_[start:end]
+      start = end
+      end += 4
+      (length,) = _struct_I.unpack(bytes_[start:end])
+      self.keypoints = []
+      for i in range(0, length):
+        val1 = geometry_msgs_msg_Pose()
+        _v3 = val1.position
+        _x = _v3
+        start = end
+        end += 24
+        (_x.x, _x.y, _x.z,) = _get_struct_3d().unpack(bytes_[start:end])
+        _v4 = val1.orientation
+        _x = _v4
+        start = end
+        end += 32
+        (_x.x, _x.y, _x.z, _x.w,) = _get_struct_4d().unpack(bytes_[start:end])
+        self.keypoints.append(val1)
+      start = end
+      end += 4
+      (length,) = _struct_I.unpack(bytes_[start:end])
+      self.keypoint_names = []
+      for i in range(0, length):
+        start = end
+        end += 4
+        (length,) = _struct_I.unpack(bytes_[start:end])
+        start = end
+        end += length
+        if python3:
+          val1 = bytes_[start:end].decode('utf-8', 'rosmsg')
+        else:
+          val1 = bytes_[start:end]
+        self.keypoint_names.append(val1)
       return self
     except struct.error as e:
       raise genpy.DeserializationError(e)  # most likely buffer underfill
@@ -304,6 +367,23 @@ float64 z"""
         _x = _x.encode('utf-8')
         length = len(_x)
       buff.write(struct.Struct('<I%ss'%length).pack(length, _x))
+      length = len(self.keypoints)
+      buff.write(_struct_I.pack(length))
+      for val1 in self.keypoints:
+        _v5 = val1.position
+        _x = _v5
+        buff.write(_get_struct_3d().pack(_x.x, _x.y, _x.z))
+        _v6 = val1.orientation
+        _x = _v6
+        buff.write(_get_struct_4d().pack(_x.x, _x.y, _x.z, _x.w))
+      length = len(self.keypoint_names)
+      buff.write(_struct_I.pack(length))
+      for val1 in self.keypoint_names:
+        length = len(val1)
+        if python3 or type(val1) == unicode:
+          val1 = val1.encode('utf-8')
+          length = len(val1)
+        buff.write(struct.Struct('<I%ss'%length).pack(length, val1))
     except struct.error as se: self._check_types(struct.error("%s: '%s' when writing '%s'" % (type(se), str(se), str(locals().get('_x', self)))))
     except TypeError as te: self._check_types(ValueError("%s: '%s' when writing '%s'" % (type(te), str(te), str(locals().get('_x', self)))))
 
@@ -324,6 +404,8 @@ float64 z"""
         self.twist = geometry_msgs_msg_TwistWithCovariance()
       if self.size is None:
         self.size = geometry_msgs_msg_Vector3()
+      if self.keypoints is None:
+        self.keypoints = None
       end = 0
       _x = self
       start = end
@@ -374,6 +456,38 @@ float64 z"""
         self.label = bytes_[start:end].decode('utf-8', 'rosmsg')
       else:
         self.label = bytes_[start:end]
+      start = end
+      end += 4
+      (length,) = _struct_I.unpack(bytes_[start:end])
+      self.keypoints = []
+      for i in range(0, length):
+        val1 = geometry_msgs_msg_Pose()
+        _v7 = val1.position
+        _x = _v7
+        start = end
+        end += 24
+        (_x.x, _x.y, _x.z,) = _get_struct_3d().unpack(bytes_[start:end])
+        _v8 = val1.orientation
+        _x = _v8
+        start = end
+        end += 32
+        (_x.x, _x.y, _x.z, _x.w,) = _get_struct_4d().unpack(bytes_[start:end])
+        self.keypoints.append(val1)
+      start = end
+      end += 4
+      (length,) = _struct_I.unpack(bytes_[start:end])
+      self.keypoint_names = []
+      for i in range(0, length):
+        start = end
+        end += 4
+        (length,) = _struct_I.unpack(bytes_[start:end])
+        start = end
+        end += length
+        if python3:
+          val1 = bytes_[start:end].decode('utf-8', 'rosmsg')
+        else:
+          val1 = bytes_[start:end]
+        self.keypoint_names.append(val1)
       return self
     except struct.error as e:
       raise genpy.DeserializationError(e)  # most likely buffer underfill
@@ -400,6 +514,12 @@ def _get_struct_3d():
     if _struct_3d is None:
         _struct_3d = struct.Struct("<3d")
     return _struct_3d
+_struct_4d = None
+def _get_struct_4d():
+    global _struct_4d
+    if _struct_4d is None:
+        _struct_4d = struct.Struct("<4d")
+    return _struct_4d
 _struct_6d = None
 def _get_struct_6d():
     global _struct_6d

@@ -166,6 +166,37 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!1 &374321994759577203
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 118778384193983853}
+  m_Layer: 3
+  m_Name: Front Keypoint
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &118778384193983853
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 374321994759577203}
+  m_LocalRotation: {x: -0, y: -0, z: 0.09109596, w: 0.99584216}
+  m_LocalPosition: {x: 0.072, y: -0.0037, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4753042992299041544}
+  m_RootOrder: -1
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 10.45332}
 --- !u!1 &752595754588931373
 GameObject:
   m_ObjectHideFlags: 0
@@ -439,6 +470,8 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 118778384193983853}
+  - {fileID: 5092413715291012541}
   - {fileID: 988239295218426862}
   - {fileID: 5922209810278439447}
   - {fileID: 8519221282859051774}
@@ -458,6 +491,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3057683c8798007c9b1065b5472043e3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  keypoints:
+  - name: front
+    transform: {fileID: 118778384193983853}
+  - name: back
+    transform: {fileID: 5092413715291012541}
 --- !u!1 &1381130929897899455
 GameObject:
   m_ObjectHideFlags: 0
@@ -3380,6 +3418,37 @@ Transform:
   m_Father: {fileID: 8627153379284174318}
   m_RootOrder: -1
   m_LocalEulerAnglesHint: {x: 90, y: 0, z: 90}
+--- !u!1 &8474526022583496607
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5092413715291012541}
+  m_Layer: 3
+  m_Name: Back Keypoint
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5092413715291012541
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8474526022583496607}
+  m_LocalRotation: {x: -0, y: -0, z: 0.09109596, w: 0.99584216}
+  m_LocalPosition: {x: -0.0606, y: -0.0282, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4753042992299041544}
+  m_RootOrder: -1
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 10.45332}
 --- !u!1 &8735173977684595730
 GameObject:
   m_ObjectHideFlags: 0

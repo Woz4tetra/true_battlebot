@@ -21,7 +21,7 @@ from bw_interfaces.msg import (
 from bw_interfaces.msg import Labels as LabelMsg
 from bw_shared.enums.label import ModelLabel
 from bw_shared.geometry.projection_math.look_rotation import look_rotation
-from bw_shared.geometry.projection_math.project_object_to_uv import ProjectionError, project_object_to_uv
+from bw_shared.geometry.projection_math.project_object_to_uv import ProjectionError, project_object_to_front_back_uv
 from bw_shared.geometry.transform3d import Transform3D
 from cv_bridge import CvBridge
 from geometry_msgs.msg import Quaternion, Vector3
@@ -41,7 +41,24 @@ from perception_tools.training.yolo_keypoint_dataset import (
 )
 from sensor_msgs.msg import CameraInfo, Image
 from std_msgs.msg import String
-from synthetic_dataset_labels import ALL_LABELS, MODEL_LABEL_TO_SEGMENTATION_LABEL_MAP
+
+ALL_LABELS = (
+    ModelLabel.MR_STABS_MK1,
+    ModelLabel.MR_STABS_MK2,
+    ModelLabel.MRS_BUFF_MK1,
+    ModelLabel.MRS_BUFF_MK2,
+    ModelLabel.ROBOT,
+    ModelLabel.REFEREE,
+)
+
+MODEL_LABEL_TO_SEGMENTATION_LABEL_MAP = {
+    ModelLabel.MR_STABS_MK1: ModelLabel.MINI_BOT,
+    ModelLabel.MR_STABS_MK2: ModelLabel.MINI_BOT,
+    ModelLabel.MRS_BUFF_MK1: ModelLabel.MAIN_BOT,
+    ModelLabel.MRS_BUFF_MK2: ModelLabel.MAIN_BOT,
+    ModelLabel.ROBOT: ModelLabel.ROBOT,
+    ModelLabel.REFEREE: ModelLabel.REFEREE,
+}
 
 BRIDGE = CvBridge()
 
@@ -139,7 +156,7 @@ def make_annotation_from_robot(
         return None
     contours = contour_map[segmentation_label]
     try:
-        forward, backward = project_object_to_uv(robot, model)
+        forward, backward = project_object_to_front_back_uv(robot, model)
     except ProjectionError as e:
         print(f"Projection error: {e}")
         return None

@@ -337,6 +337,37 @@ Transform:
   m_Father: {fileID: 1428641221256041723}
   m_RootOrder: -1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &2571901160923177209
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5607111568062288728}
+  m_Layer: 11
+  m_Name: Front Keypoint
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5607111568062288728
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2571901160923177209}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -0.151, y: -0.0098, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2686584406585381427}
+  m_RootOrder: -1
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &3517788328238062876
 GameObject:
   m_ObjectHideFlags: 0
@@ -630,6 +661,8 @@ Transform:
   m_Children:
   - {fileID: 2614672598159729208}
   - {fileID: 5515219673074338740}
+  - {fileID: 5607111568062288728}
+  - {fileID: 2204383518953233408}
   m_Father: {fileID: 7827245993423774302}
   m_RootOrder: -1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -645,6 +678,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3057683c8798007c9b1065b5472043e3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  keypoints:
+  - name: front
+    transform: {fileID: 5607111568062288728}
+  - name: back
+    transform: {fileID: 2204383518953233408}
 --- !u!1 &5535444871539130503
 GameObject:
   m_ObjectHideFlags: 0
@@ -700,6 +738,37 @@ CapsuleCollider:
   m_Height: 2
   m_Direction: 1
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!1 &5618775543987361505
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2204383518953233408}
+  m_Layer: 11
+  m_Name: Back Keypoint
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2204383518953233408
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5618775543987361505}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0.152, y: -0.0098, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2686584406585381427}
+  m_RootOrder: -1
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &6247531587822717185
 GameObject:
   m_ObjectHideFlags: 0
@@ -1068,6 +1137,7 @@ MonoBehaviour:
   reverseLeft: 0
   reverseRight: 0
   referenceObject: {fileID: 0}
+  spawnHere: {fileID: 0}
 --- !u!114 &272246524054674127
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1242,7 +1312,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9c1a0cf1d5ada30d0b0dd3a8f9b5db91, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  sequenceProgressTopicName: /referee/sequence_progress
 --- !u!1 &7115712350661572775
 GameObject:
   m_ObjectHideFlags: 0

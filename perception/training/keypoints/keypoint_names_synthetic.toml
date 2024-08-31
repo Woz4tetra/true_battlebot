@@ -1,7 +1,0 @@
-[keypoint_names]
-"mr_stabs_mk1" = ["back", "front"]
-"mr_stabs_mk2" = ["back", "front"]
-"mrs_buff_mk1" = ["back", "front"]
-"mrs_buff_mk2" = ["back", "front"]
-"robot" = ["back", "front"]
-"referee" = ["back", "front"]

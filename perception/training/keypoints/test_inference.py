@@ -53,7 +53,7 @@ def main() -> None:
     print("Loading YOLO model")
     model = YOLO(model_path)
 
-    keypoint_names = load_keypoints_config(config_path)
+    config = load_keypoints_config(config_path)
 
     diffs = []
     for image_path in tqdm.tqdm(image_paths):
@@ -77,8 +77,8 @@ def main() -> None:
             keypoint = keypoint.tolist()
             front_keypoint = keypoint[0]
             back_keypoint = keypoint[1]
-            front_label = keypoint_names[label][0]
-            back_label = keypoint_names[label][1]
+            front_label = config.keypoint_names[label][0]
+            back_label = config.keypoint_names[label][1]
             cv2.putText(
                 img_array,
                 front_label,

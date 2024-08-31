@@ -1,7 +1,9 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 public class RobotTracker : MonoBehaviour
 {
+    [SerializeField] List<ConfigurableKeypoint> keypoints;
     Bounds bounds;
     TransformFrame frame;
     Renderer trackerRenderer;
@@ -24,6 +26,11 @@ public class RobotTracker : MonoBehaviour
     public string GetLabel()
     {
         return mainTag.ToLower();
+    }
+
+    public List<ConfigurableKeypoint> GetKeypoints()
+    {
+        return keypoints;
     }
 
     public Bounds GetBounds()
