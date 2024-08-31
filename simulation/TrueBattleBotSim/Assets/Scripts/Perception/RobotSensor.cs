@@ -46,7 +46,8 @@ public class RobotSensor : BaseGameObjectSensor
                 objectId = 0,
                 dimensions = robot.GetBounds().size,
                 cameraRelativePose = GetObjectPoseInCamera(obj.transform),
-                frame = robot.GetFrame()
+                frame = robot.GetFrame(),
+                label = robot.GetLabel()
             };
             targetList.Add(tagMsg);
         }
@@ -87,7 +88,7 @@ public class RobotSensor : BaseGameObjectSensor
                 },
                 child_frame_id = target.frame.GetFrameId(),
                 size = size,
-                label = target.frame.GetFrameId()
+                label = target.label
             };
             robots.Add(msg);
         }

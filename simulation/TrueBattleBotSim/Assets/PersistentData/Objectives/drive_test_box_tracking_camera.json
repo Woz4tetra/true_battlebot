@@ -1,0 +1,13 @@
+{
+    "type": "idle",
+    "init": {
+        "type": "world",
+        "x": -1.1,
+        "y": 0.72,
+        "z": 0.0,
+        "roll": 36.943,
+        "pitch": 89.773,
+        "yaw": 0.0
+    },
+    "sequence": []
+}

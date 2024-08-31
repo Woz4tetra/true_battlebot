@@ -11,12 +11,12 @@
         {
             "name": "slow_camera",
             "model": "ZED 2i",
-            "objective": "blue_slow_camera"
+            "objective": "drive_test_box_slow_camera"
         },
         {
             "name": "tracking_camera",
             "model": "OAK-1",
-            "objective": "blue_tracking_camera"
+            "objective": "drive_test_box_tracking_camera"
         },
         {
             "name": "mini_bot",

@@ -10,6 +10,11 @@ TagManager:
   - Enemy bot
   - Referee
   - Cage
+  - mr_stabs_mk1
+  - mr_stabs_mk2
+  - mrs_buff_mk1
+  - mrs_buff_mk2
+  - robot
   layers:
   - Default
   - TransparentFX

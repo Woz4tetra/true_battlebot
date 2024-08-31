@@ -6,10 +6,12 @@ public class RobotTracker : MonoBehaviour
     TransformFrame frame;
     Renderer trackerRenderer;
     Renderer[] childRenderers;
+    string mainTag;
 
     void Start()
     {
         frame = ObjectUtils.GetComponentInTree<TransformFrame>(gameObject);
+        mainTag = frame.gameObject.tag;
         trackerRenderer = gameObject.GetComponent<Renderer>();
         childRenderers = transform.GetComponentsInChildren<Renderer>();
     }
@@ -17,6 +19,11 @@ public class RobotTracker : MonoBehaviour
     public TransformFrame GetFrame()
     {
         return frame;
+    }
+
+    public string GetLabel()
+    {
+        return mainTag.ToLower();
     }
 
     public Bounds GetBounds()

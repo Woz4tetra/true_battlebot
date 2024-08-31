@@ -44,11 +44,29 @@ def main() -> None:
             x1 = int(annotation.x1 * width)
             y1 = int(annotation.y1 * height)
             cv2.rectangle(image, (x0, y0), (x1, y1), (0, 255, 0), 2)
+            cv2.putText(
+                image,
+                str(annotation.class_index),
+                (x0, y0 - 10),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.5,
+                (0, 255, 0),
+                1,
+            )
 
-            for keypoint in annotation.keypoints:
+            for index, keypoint in enumerate(annotation.keypoints):
                 x = int(keypoint[0] * width)
                 y = int(keypoint[1] * height)
                 cv2.circle(image, (x, y), 3, (0, 0, 255), -1)
+                cv2.putText(
+                    image,
+                    str(index),
+                    (x, y),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.5,
+                    (0, 0, 255),
+                    1,
+                )
 
         cv2.imshow("image", image)
         key = chr(cv2.waitKey(-1) & 0xFF)

@@ -12483,7 +12483,7 @@ GameObject:
   - component: {fileID: 909851971524367275}
   m_Layer: 7
   m_Name: MRS BUFF B-03 Bizarro
-  m_TagString: Enemy bot
+  m_TagString: robot
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -12802,7 +12802,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9c1a0cf1d5ada30d0b0dd3a8f9b5db91, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  sequenceProgressTopicName: /simulation/sequence_progress
 --- !u!1 &5751517069502705138
 GameObject:
   m_ObjectHideFlags: 0

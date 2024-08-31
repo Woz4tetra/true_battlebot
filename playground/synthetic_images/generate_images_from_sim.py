@@ -41,7 +41,7 @@ from perception_tools.training.yolo_keypoint_dataset import (
 )
 from sensor_msgs.msg import CameraInfo, Image
 from std_msgs.msg import String
-from synthetic_dataset_labels import ALL_LABELS, SYNTHETIC_ROBOT_GROUP
+from synthetic_dataset_labels import ALL_LABELS, MODEL_LABEL_TO_SEGMENTATION_LABEL_MAP
 
 BRIDGE = CvBridge()
 
@@ -109,9 +109,12 @@ def ground_truth_callback(data_snapshot: DataShapshot, msg: EstimatedObjectArray
             del GROUND_TRUTH_CACHE[min(GROUND_TRUTH_CACHE.keys())]
 
 
+SEGMENTATION_LABELS = tuple(set(MODEL_LABEL_TO_SEGMENTATION_LABEL_MAP.values()))
+
+
 def simulated_segmentation_label_callback(data_snapshot: DataShapshot, msg: SegmentationInstanceArray) -> None:
     with data_snapshot.lock:
-        color_to_model_label_map, skipped_labels = make_simulated_segmentation_color_map(msg, ALL_LABELS)
+        color_to_model_label_map, skipped_labels = make_simulated_segmentation_color_map(msg, SEGMENTATION_LABELS)
         if color_to_model_label_map != data_snapshot.color_to_model_label_map:
             data_snapshot.color_to_model_label_map = color_to_model_label_map
             labels = [label.value for label in data_snapshot.color_to_model_label_map.values()]
@@ -130,12 +133,11 @@ def make_annotation_from_robot(
 ) -> YoloKeypointAnnotation | None:
     width, height = image_size
     label = ModelLabel(robot.label)
-    if label in SYNTHETIC_ROBOT_GROUP:
-        label = ModelLabel.ROBOT
-    if label not in contour_map:
-        print(f"Missing contour for label: {label}")
+    segmentation_label = MODEL_LABEL_TO_SEGMENTATION_LABEL_MAP[label]
+    if segmentation_label not in contour_map:
+        print(f"Missing contour for label: {segmentation_label} -> {label}. Known labels: {contour_map.keys()}")
         return None
-    contours = contour_map[label]
+    contours = contour_map[segmentation_label]
     try:
         forward, backward = project_object_to_uv(robot, model)
     except ProjectionError as e:
@@ -193,7 +195,7 @@ def record_image_and_keypoints(output_dir: Path, data_snapshot: DataShapshot) ->
         image_size = (width, height)
 
         segmentations, exceptions = simulated_mask_to_contours(
-            layer, data_snapshot.color_to_model_label_map, ALL_LABELS
+            layer, data_snapshot.color_to_model_label_map, SEGMENTATION_LABELS
         )
         contour_map = segmentation_array_to_contour_map(segmentations)
         for robot in robots.robots:
@@ -229,9 +231,13 @@ def compute_camera_pose(distance: float, azimuth_angle: float, elevation_angle: 
 
 def get_random_camera_pose() -> Transform3D:
     angle_inset = 0.2
-    distance_range = (2.2, 2.5)
+    if LAST_CAGE == "Drive Test Box":
+        distance_range = (1.0, 1.5)
+        elevation_angle_range = (0.2, 0.9)
+    else:
+        distance_range = (2.2, 2.5)
+        elevation_angle_range = (0.4, 0.5)
     azimuth_angle_range = (-np.pi / 4 + angle_inset, np.pi / 4 - angle_inset)
-    elevation_angle_range = (0.4, 0.5)
     flip_azimuth = random.uniform(0.0, 1.0) > 0.5
 
     distance = random.uniform(*distance_range)
@@ -345,8 +351,8 @@ CAGE_MODELS = {"Drive Test Box": 1.15, "NHRL 3lb Cage": 2.35}
 
 def generate_scenario() -> dict:
     global LAST_CAGE, LAST_BACKGROUND, LAST_SKYIMAGE
-    change_cage = random.uniform(0, 1) > 0.9
-    change_background = random.uniform(0, 1) > 0.9
+    change_cage = random.uniform(0, 1) > 0.7
+    change_background = random.uniform(0, 1) > 0.7
 
     if change_cage or LAST_CAGE is None:
         LAST_CAGE = random.choice(list(CAGE_MODELS.keys()))
@@ -378,15 +384,18 @@ def generate_scenario() -> dict:
 
     num_robots = random.randint(1, 3)
 
+    mini_bot_model = "MR STABS MK2" if random.uniform(0, 1) < 0.7 else "MR STABS A-02"
+    main_bot_model = "MRS BUFF MK2" if random.uniform(0, 1) < 0.7 else "MRS BUFF B-03"
+
     mini_bot_objective = "randomized_start_target_opponent" if num_robots >= 3 else "mini_bot_randomized_sequence"
     mr_stabs_mk2 = {
         "name": "mini_bot",
-        "model": "MR STABS MK2",
+        "model": mini_bot_model,
         "objective": mini_bot_objective,
     }
     mrs_buff_mk2 = {
         "name": "main_bot",
-        "model": "MRS BUFF MK2",
+        "model": main_bot_model,
         "objective": "main_bot_randomized_sequence",
     }
     opponent_1 = {

@@ -8282,7 +8282,7 @@ GameObject:
   - component: {fileID: 5981156845928206069}
   m_Layer: 3
   m_Name: MR STABS A-02
-  m_TagString: Mini bot
+  m_TagString: mr_stabs_mk1
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -8588,7 +8588,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9c1a0cf1d5ada30d0b0dd3a8f9b5db91, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  sequenceProgressTopicName: /simulation/sequence_progress
 --- !u!1 &8232069915364635531
 GameObject:
   m_ObjectHideFlags: 0

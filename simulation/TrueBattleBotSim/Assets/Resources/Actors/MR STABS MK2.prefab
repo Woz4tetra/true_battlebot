@@ -3659,7 +3659,7 @@ GameObject:
   - component: {fileID: 1585465407388377772}
   m_Layer: 3
   m_Name: MR STABS MK2
-  m_TagString: Mini bot
+  m_TagString: mr_stabs_mk2
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0

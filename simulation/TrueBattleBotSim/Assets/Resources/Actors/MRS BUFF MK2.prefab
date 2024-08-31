@@ -19185,7 +19185,7 @@ GameObject:
   - component: {fileID: 7497032502809390632}
   m_Layer: 6
   m_Name: MRS BUFF MK2
-  m_TagString: Main bot
+  m_TagString: mrs_buff_mk2
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -19504,7 +19504,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9c1a0cf1d5ada30d0b0dd3a8f9b5db91, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  sequenceProgressTopicName: /simulation/sequence_progress
 --- !u!1 &4873835809751640464
 GameObject:
   m_ObjectHideFlags: 0
