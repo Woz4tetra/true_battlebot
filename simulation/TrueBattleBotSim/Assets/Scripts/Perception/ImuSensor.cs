@@ -6,6 +6,9 @@ using Unity.Robotics.ROSTCPConnector.ROSGeometry;
 class ImuSensor : MonoBehaviour
 {
     [SerializeField] private string FrameId = "imu";
+    [SerializeField] private double[] orientationCovariance = { 0.1f, 0.0f, 0.0f, 0.0f, 0.1f, 0.0f, 0.0f, 0.0f, 0.1f };
+    [SerializeField] private double[] angularVelocityCovariance = { 0.1f, 0.0f, 0.0f, 0.0f, 0.1f, 0.0f, 0.0f, 0.0f, 0.1f };
+    [SerializeField] private double[] linearAccelerationCovariance = { 0.1f, 0.0f, 0.0f, 0.0f, 0.1f, 0.0f, 0.0f, 0.0f, 0.1f };
 
     private ImuMsg imuMsg;
     private Vector3 prevVelocity = new Vector3();
@@ -30,21 +33,9 @@ class ImuSensor : MonoBehaviour
 
         imuMsg.header.frame_id = FrameId;
 
-        imuMsg.orientation_covariance = new double[] {
-            1e-1, 0.0, 0.0,
-            0.0, 1e-1, 0.0,
-            0.0, 0.0, 1e-1
-        };
-        imuMsg.angular_velocity_covariance = new double[] {
-            1e-1, 0.0, 0.0,
-            0.0, 1e-1, 0.0,
-            0.0, 0.0, 1e-1
-        };
-        imuMsg.linear_acceleration_covariance = new double[] {
-            1e-2, 0.0, 0.0,
-            0.0, 1e-2, 0.0,
-            0.0, 0.0, 1e-2
-        };
+        imuMsg.orientation_covariance = orientationCovariance;
+        imuMsg.angular_velocity_covariance = angularVelocityCovariance;
+        imuMsg.linear_acceleration_covariance = linearAccelerationCovariance;
 
         startOrientation = Quaternion.Inverse(sensorBody.transform.rotation);
     }

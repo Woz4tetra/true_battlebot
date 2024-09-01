@@ -15,5 +15,4 @@ estimation_topics:
 tag_topics:
     - /camera_1/robot_tags
 orientation_topics:
-    mini_bot:
-        - /mini_bot/imu
+    mini_bot: /mini_bot/imu
