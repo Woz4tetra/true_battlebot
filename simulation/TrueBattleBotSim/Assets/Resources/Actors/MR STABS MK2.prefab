@@ -3597,6 +3597,7 @@ GameObject:
   m_Component:
   - component: {fileID: 130224684619478553}
   - component: {fileID: 5134695328941944354}
+  - component: {fileID: 7747734105879363651}
   m_Layer: 3
   m_Name: IMU
   m_TagString: Untagged
@@ -3632,8 +3633,65 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   FrameId: mini_bot
+  orientationCovariance:
+  - 0.00001
+  - 0
+  - 0
+  - 0
+  - 0.00001
+  - 0
+  - 0
+  - 0
+  - 0.00001
+  angularVelocityCovariance:
+  - 0.10000000149011612
+  - 0
+  - 0
+  - 0
+  - 0.10000000149011612
+  - 0
+  - 0
+  - 0
+  - 0.10000000149011612
+  linearAccelerationCovariance:
+  - 0.10000000149011612
+  - 0
+  - 0
+  - 0
+  - 0.10000000149011612
+  - 0
+  - 0
+  - 0
+  - 0.10000000149011612
   publishDelay: 0.2
   topic: /mini_bot/imu
+--- !u!54 &7747734105879363651
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7640060907516823901}
+  serializedVersion: 4
+  m_Mass: 0.0000001
+  m_Drag: 0
+  m_AngularDrag: 0
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 0
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
 --- !u!1 &7670633461149510717
 GameObject:
   m_ObjectHideFlags: 0

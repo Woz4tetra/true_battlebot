@@ -130,7 +130,7 @@ class RobotFilter:
             self.tags_subs[topic] = rospy.Subscriber(topic, EstimatedObjectArray, self.tags_callback, queue_size=25)
 
         self.orientation_subs: dict[str, rospy.Subscriber] = {}
-        for robot_name, topic in self.orientation_topics:
+        for robot_name, topic in self.orientation_topics.items():
             self.orientation_subs[topic] = rospy.Subscriber(
                 topic, Imu, lambda msg, name=robot_name: self.imu_callback(name, msg), queue_size=25
             )
