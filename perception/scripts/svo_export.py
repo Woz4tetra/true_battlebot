@@ -80,7 +80,7 @@ def main(opt: argparse.Namespace):
         # Create video writer with MPEG-4 part 2 codec
         video_writer = cv2.VideoWriter(
             output,
-            cv2.VideoWriter_fourcc("M", "4", "S", "2"),
+            cv2.VideoWriter_fourcc("M", "4", "S", "2"),  # type: ignore
             max(zed.get_camera_information().camera_configuration.fps, 25),
             (width, height),
         )

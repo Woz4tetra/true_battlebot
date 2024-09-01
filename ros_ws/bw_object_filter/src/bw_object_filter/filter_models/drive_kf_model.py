@@ -6,7 +6,7 @@ import numpy as np
 from bw_shared.configs.robot_fleet_config import RobotConfig
 from bw_shared.geometry.pose2d import Pose2D
 from bw_shared.geometry.xy import XY
-from geometry_msgs.msg import PoseWithCovariance, Quaternion, TwistWithCovariance, Vector3
+from geometry_msgs.msg import PoseWithCovariance, TwistWithCovariance, Vector3
 
 from .helpers import (
     NUM_MEASUREMENTS,

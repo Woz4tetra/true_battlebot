@@ -63,7 +63,10 @@ def tick(app: AppData):
             print(f"Average FPS: {average_fps}. Size: {image_size[0]}x{image_size[1]}")
             if app.save_video and average_fps > 0:
                 app.video_writer = cv2.VideoWriter(
-                    video_path, cv2.VideoWriter_fourcc(*"MJPG"), int(average_fps), image_size
+                    video_path,
+                    cv2.VideoWriter_fourcc(*"MJPG"),  # type: ignore
+                    int(average_fps),
+                    image_size,
                 )
                 print(f"Saving video to {video_path}")
             app.time_samples = None

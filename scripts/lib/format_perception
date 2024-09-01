@@ -9,6 +9,7 @@ CHECK_DIRS=(
     "${PROJECT_DIR}/perception/detection"
     "${PROJECT_DIR}/perception/packages/perception_tools"
     "${PROJECT_DIR}/perception/training"
+    "${PROJECT_DIR}/perception/scripts"
     "${PROJECT_DIR}/shared/bw_shared"
 )
 

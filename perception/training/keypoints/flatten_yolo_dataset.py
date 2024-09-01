@@ -25,8 +25,7 @@ def main() -> None:
                 images_paths.append(image_path)
             elif filename.endswith(".txt"):
                 name = os.path.splitext(filename)[0]
-                annotation_path = os.path.join(dirpath, filename)
-                annotation_paths[name] = Path(annotation_path)
+                annotation_paths[name] = Path(os.path.join(dirpath, filename))
 
     with tqdm(total=len(images_paths)) as pbar:
         for image_path in images_paths:
