@@ -1,5 +1,6 @@
 import argparse
 import os
+import shutil
 from pathlib import Path
 
 from tqdm import tqdm
@@ -20,20 +21,22 @@ def main() -> None:
 
     for dirpath, dirnames, filenames in os.walk(image_path):
         for filename in sorted(filenames):
-            if filename.endswith(".jpg"):
+            if filename.lower().endswith(".jpg"):
                 image_path = Path(os.path.join(dirpath, filename))
                 images_paths.append(image_path)
             elif filename.endswith(".txt"):
                 name = os.path.splitext(filename)[0]
                 annotation_paths[name] = Path(os.path.join(dirpath, filename))
 
+    print(f"Flattening {len(images_paths)} images")
+
     with tqdm(total=len(images_paths)) as pbar:
         for image_path in images_paths:
             name = image_path.stem
             annotation_path = annotation_paths[name]
 
-            image_path.rename(output_path / image_path.name)
-            annotation_path.rename(output_path / annotation_path.name)
+            shutil.copy(str(image_path), str(output_path / image_path.name))
+            shutil.copy(str(annotation_path), str(output_path / annotation_path.name))
 
             pbar.update(1)
 

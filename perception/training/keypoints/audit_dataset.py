@@ -2,6 +2,7 @@ import argparse
 import os
 
 import cv2
+from perception_tools.training.keypoints_config import load_keypoints_config
 from perception_tools.training.yolo_keypoint_dataset import YoloKeypointImage
 
 
@@ -9,11 +10,21 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Visualize YOLO dataset")
     parser.add_argument("images", help="Path to images")
     parser.add_argument("-i", "--index", type=int, default=0, help="Start index")
+    parser.add_argument(
+        "-c",
+        "--config",
+        type=str,
+        default="",
+        help="Path to the configuration file. ex: ./keypoint_names_v1.toml",
+    )
     args = parser.parse_args()
 
     image_path = args.images
+    config_path = args.config
     images_paths = []
     annotation_paths = {}
+
+    config = load_keypoints_config(config_path) if config_path else None
 
     for dirpath, dirnames, filenames in os.walk(image_path):
         for filename in sorted(filenames):
@@ -46,7 +57,7 @@ def main() -> None:
             cv2.rectangle(image, (x0, y0), (x1, y1), (0, 255, 0), 2)
             cv2.putText(
                 image,
-                str(annotation.class_index),
+                str(annotation.class_index) if config is None else config.labels[annotation.class_index],
                 (x0, y0 - 10),
                 cv2.FONT_HERSHEY_SIMPLEX,
                 0.5,
@@ -60,7 +71,9 @@ def main() -> None:
                 cv2.circle(image, (x, y), 3, (0, 0, 255), -1)
                 cv2.putText(
                     image,
-                    str(index),
+                    str(index)
+                    if config is None
+                    else config.keypoint_mapping[config.labels[annotation.class_index]][index],
                     (x, y),
                     cv2.FONT_HERSHEY_SIMPLEX,
                     0.5,

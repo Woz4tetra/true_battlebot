@@ -34,6 +34,7 @@ from perception_tools.inference.simulated_mask_to_contours import (
 )
 from perception_tools.rosbridge.check_connection import check_connection
 from perception_tools.rosbridge.wait_for_ros_connection import wait_for_ros_connection
+from perception_tools.training.keypoints_config import load_keypoints_config
 from perception_tools.training.yolo_keypoint_dataset import (
     YoloKeypointAnnotation,
     YoloKeypointDataset,
@@ -42,15 +43,6 @@ from perception_tools.training.yolo_keypoint_dataset import (
 )
 from sensor_msgs.msg import CameraInfo, Image
 from std_msgs.msg import String
-
-ALL_LABELS = (
-    ModelLabel.MR_STABS_MK1,
-    ModelLabel.MR_STABS_MK2,
-    ModelLabel.MRS_BUFF_MK1,
-    ModelLabel.MRS_BUFF_MK2,
-    ModelLabel.ROBOT,
-    ModelLabel.REFEREE,
-)
 
 MODEL_LABEL_TO_SEGMENTATION_LABEL_MAP = {
     ModelLabel.MR_STABS_MK1: ModelLabel.MINI_BOT,
@@ -148,6 +140,7 @@ def make_annotation_from_robot(
     model: PinholeCameraModel,
     contour_map: dict[ModelLabel, list[np.ndarray]],
     image_size: tuple[int, int],
+    labels: list[ModelLabel],
 ) -> YoloKeypointAnnotation | None:
     width, height = image_size
     label = ModelLabel(robot.label)
@@ -176,10 +169,10 @@ def make_annotation_from_robot(
     bh /= height
 
     keypoints = [(point.x / width, point.y / height, YoloVisibility.LABELED_VISIBLE) for point in (forward, backward)]
-    return YoloKeypointAnnotation.from_xywh(bx, by, bw, bh, class_index=ALL_LABELS.index(label), keypoints=keypoints)
+    return YoloKeypointAnnotation.from_xywh(bx, by, bw, bh, class_index=labels.index(label), keypoints=keypoints)
 
 
-def record_image_and_keypoints(output_dir: Path, data_snapshot: DataShapshot) -> None:
+def record_image_and_keypoints(output_dir: Path, data_snapshot: DataShapshot, labels: list[ModelLabel]) -> None:
     with data_snapshot.lock:
         if data_snapshot.image is None:
             print("Missing image")
@@ -217,7 +210,7 @@ def record_image_and_keypoints(output_dir: Path, data_snapshot: DataShapshot) ->
         )
         contour_map = segmentation_array_to_contour_map(segmentations)
         for robot in robots.robots:
-            annotation = make_annotation_from_robot(robot, model, contour_map, image_size)
+            annotation = make_annotation_from_robot(robot, model, contour_map, image_size, labels)
             if annotation is None:
                 print(f"Skipping annotation. Label: {robot.label}")
                 return
@@ -457,10 +450,12 @@ def callback_wrapper(data_snapshot: DataShapshot, callback: Callable, msg: Any) 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
+    parser.add_argument("config", type=str, help="Path to the configuration file. ex: ./keypoint_names_v1.toml")
     parser.add_argument("-o", "--output_dir", type=str, default="output")
     args = parser.parse_args()
 
     output_dir = Path(args.output_dir)
+    config = load_keypoints_config(args.config)
 
     if not output_dir.exists():
         output_dir.mkdir(parents=True)
@@ -606,7 +601,7 @@ def main() -> None:
         while time.monotonic() - start_time < duration:
             if rospy.is_shutdown():
                 break
-            record_image_and_keypoints(output_dir, data_snapshot)
+            record_image_and_keypoints(output_dir, data_snapshot, config.labels)
             if not check_connection("localhost", 11311):
                 raise RuntimeError("Failed to connect to ROS master.")
             rospy.sleep(0.1)

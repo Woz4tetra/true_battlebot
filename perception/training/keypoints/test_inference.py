@@ -77,8 +77,8 @@ def main() -> None:
             keypoint = keypoint.tolist()
             front_keypoint = keypoint[0]
             back_keypoint = keypoint[1]
-            front_label = config.keypoint_names[label][0]
-            back_label = config.keypoint_names[label][1]
+            front_label = config.keypoint_mapping[label][0]
+            back_label = config.keypoint_mapping[label][1]
             cv2.putText(
                 img_array,
                 front_label,

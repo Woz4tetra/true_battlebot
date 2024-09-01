@@ -58,7 +58,9 @@ def main() -> None:
     colors = [LABEL_COLORS.get(label, default_color) for label in labels]
     config = load_keypoints_config(config_path)
 
-    metadata = ModelMetadata(labels=labels, colors=colors, keypoints=[config.keypoint_names[label] for label in labels])
+    metadata = ModelMetadata(
+        labels=labels, colors=colors, keypoints=[config.keypoint_mapping[label] for label in labels]
+    )
 
     model_metadata_path = os.path.join(os.path.dirname(path), "model_metadata.json")
     with open(model_metadata_path, "w") as f:

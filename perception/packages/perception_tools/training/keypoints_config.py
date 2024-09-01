@@ -20,7 +20,7 @@ class KeypointsConfig:
         for label in self.keypoint_names:
             if label not in self.labels:
                 raise ValueError(f"Keypoint names provided for label {label} which is not in labels")
-        self.keypoint_names = {
+        self.keypoint_mapping = {
             ModelLabel(label): [KeypointName(name) for name in names] for label, names in self.keypoint_names.items()
         }
 
