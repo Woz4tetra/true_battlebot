@@ -31,6 +31,7 @@ public class MainSceneManager : MonoBehaviour
     bool keyboard_been_set = false;
     BackgroundConfig loadedBackgroundConfig = new BackgroundConfig { name = "" };
     ROSConnection ros;
+    FixturesManager fixturesManager;
 
     void Start()
     {
@@ -44,6 +45,13 @@ public class MainSceneManager : MonoBehaviour
         {
             Debug.LogError("PauseManager not found");
         }
+
+        fixturesManager = transform.Find("FixturesManager").GetComponent<FixturesManager>();
+        if (fixturesManager == null)
+        {
+            Debug.LogError("FixturesManager not found");
+        }
+
         Debug.Log($"Current directory: {Application.dataPath}");
         actor_list = Resources.LoadAll<GameObject>("Actors");
         if (actor_list.Length == 0)
@@ -188,7 +196,6 @@ public class MainSceneManager : MonoBehaviour
         }
         activeActors.Clear();
 
-
         Debug.Log($"Loading scenario with {scenario.actors.Count} actors");
         foreach (ActorConfig actor_config in scenario.actors)
         {
@@ -246,6 +253,8 @@ public class MainSceneManager : MonoBehaviour
                 }
             );
         }
+
+        fixturesManager.UpdateFromConfig(scenario.fixtures);
 
         ros.Publish(scenarioLoadedTopic, new SimulationScenarioLoadedEventMsg
         {

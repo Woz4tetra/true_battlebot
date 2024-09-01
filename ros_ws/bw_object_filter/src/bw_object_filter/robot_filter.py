@@ -27,8 +27,10 @@ from geometry_msgs.msg import (
     Vector3,
 )
 from nav_msgs.msg import Odometry
+from sensor_msgs.msg import Imu
 from std_msgs.msg import Header as RosHeader
 
+from bw_object_filter.absolute_imu_tracker import AbsoluteImuTracker
 from bw_object_filter.covariances import ApriltagHeuristics, CmdVelHeuristics, RobotStaticHeuristics
 from bw_object_filter.estimation_topic_metadata import EstimationTopicMetadata
 from bw_object_filter.filter_models import DriveKalmanModel
@@ -51,6 +53,7 @@ class RobotFilter:
         self.map_frame = get_param("~map_frame", "map")
         self.estimation_topics = [EstimationTopicMetadata.from_dict(d) for d in get_param("~estimation_topics", [])]
         self.tag_topics = get_param("~tag_topics", [])
+        self.orientation_topics = get_param("~orientation_topics", {})
 
         self.command_timeout = rospy.Duration.from_sec(get_param("~command_timeout", 0.5))
 
@@ -69,8 +72,6 @@ class RobotFilter:
         initial_covariance = np.diag(initial_variances)
         self.initial_pose = measurement_to_pose(initial_state, initial_covariance)
         self.initial_twist = measurement_to_twist(initial_state, initial_covariance)
-
-        self.check_unique(self.all_robots_config)
 
         self.non_opponent_robot_configs = [
             robot for robot in self.all_robots_config.robots if robot.team != RobotTeam.THEIR_TEAM
@@ -103,6 +104,7 @@ class RobotFilter:
         self.name_to_filter: dict[str, DriveKalmanModel] = {}
         self.filter_state_pubs: dict[str, rospy.Publisher] = {}
 
+        self.absolute_imu_trackers: dict[str, AbsoluteImuTracker] = {}
         self.measurement_sorter = RobotMeasurementSorter()
         self.tf_buffer = tf2_ros.Buffer()
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer)
@@ -126,6 +128,14 @@ class RobotFilter:
         self.tags_subs: dict[str, rospy.Subscriber] = {}
         for topic in self.tag_topics:
             self.tags_subs[topic] = rospy.Subscriber(topic, EstimatedObjectArray, self.tags_callback, queue_size=25)
+
+        self.orientation_subs: dict[str, rospy.Subscriber] = {}
+        for robot_name, topic in self.orientation_topics:
+            self.orientation_subs[topic] = rospy.Subscriber(
+                topic, Imu, lambda msg, name=robot_name: self.imu_callback(name, msg), queue_size=25
+            )
+            self.absolute_imu_trackers[robot_name] = AbsoluteImuTracker()
+
         self.cmd_vel_subs = [
             rospy.Subscriber(
                 f"{filter.config.name}/cmd_vel", Twist, self.cmd_vel_callback, callback_args=filter, queue_size=10
@@ -191,20 +201,6 @@ class RobotFilter:
         self.filter_state_pubs = {
             robot.name: rospy.Publisher(f"{robot.name}/odom", Odometry, queue_size=10) for robot in robot_fleet
         }
-
-    def check_unique(self, config: RobotFleetConfig) -> None:
-        """
-        Check that all robot ids are unique.
-        """
-        ids = []
-        for robot in config.robots:
-            if robot.team == RobotTeam.OUR_TEAM:
-                ids.extend([tag.tag_id for tag in robot.tags])
-        if len(ids) != len(set(ids)):
-            raise ValueError("Robot ids must be unique")
-        names = [bot.name for bot in config.robots]
-        if len(names) != len(set(names)):
-            raise ValueError("Robot names must be unique")
 
     def robot_estimation_callback(self, metadata: EstimationTopicMetadata, msg: EstimatedObjectArray) -> None:
         if not self.field_received():
@@ -290,6 +286,28 @@ class RobotFilter:
             return
         self.transform_tags_to_map(msg)
         self.apply_tag_measurement(msg)
+        self.set_reference_yaws(msg)
+
+    def set_reference_yaws(self, msg: EstimatedObjectArray) -> None:
+        for robot in msg.robots:
+            robot_name = robot.label
+            if robot_name not in self.absolute_imu_trackers:
+                continue
+            yaw = RPY.from_quaternion(robot.pose.pose.orientation).yaw
+            self.absolute_imu_trackers[robot_name].set_references(yaw)
+
+    def imu_callback(self, robot_name: str, msg: Imu) -> None:
+        if robot_name not in self.absolute_imu_trackers:
+            raise ValueError(f"Unknown robot name {robot_name} for IMU callback.")
+        imu_pose = Pose(position=Point(), orientation=msg.orientation)
+        imu_map_pose = self.transform_to_map(msg.header, imu_pose)
+        if imu_map_pose is None:
+            rospy.logwarn(f"Could not transform IMU pose for {robot_name}.")
+            return
+        yaw = RPY.from_quaternion(imu_map_pose.orientation).yaw
+        absolute_yaw = self.absolute_imu_trackers[robot_name].get_absolute_yaw(yaw)
+        robot_filter = self.name_to_filter[robot_name]
+        robot_filter.update_orientation(absolute_yaw, np.array(msg.orientation_covariance).reshape((3, 3)))
 
     def transform_tags_to_map(self, msg: EstimatedObjectArray) -> None:
         for detection in msg.robots:

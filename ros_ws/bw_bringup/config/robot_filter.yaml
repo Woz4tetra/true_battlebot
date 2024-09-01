@@ -12,3 +12,8 @@ estimation_topics:
     - topic: "/camera_1/estimation/robots"
       use_orientation: false
       position_covariance: 0.05
+tag_topics:
+    - /camera_1/robot_tags
+orientation_topics:
+    mini_bot:
+        - /mini_bot/imu

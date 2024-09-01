@@ -6,7 +6,7 @@ import numpy as np
 from bw_shared.configs.robot_fleet_config import RobotConfig
 from bw_shared.geometry.pose2d import Pose2D
 from bw_shared.geometry.xy import XY
-from geometry_msgs.msg import PoseWithCovariance, TwistWithCovariance, Vector3
+from geometry_msgs.msg import PoseWithCovariance, Quaternion, TwistWithCovariance, Vector3
 
 from .helpers import (
     NUM_MEASUREMENTS,
@@ -19,6 +19,7 @@ from .helpers import (
     jit_update,
     measurement_to_pose,
     measurement_to_twist,
+    orientation_to_measurement,
     pose_to_measurement,
     twist_to_measurement,
     warmup,
@@ -64,6 +65,10 @@ class DriveKalmanModel:
         self.position_H = np.zeros((NUM_MEASUREMENTS, NUM_STATES))
         self.position_H[0:2, 0:2] = np.eye(2)
 
+        # measurement function for imu yaw estimation. Use only yaw.
+        self.orientation_H = np.zeros((NUM_MEASUREMENTS, NUM_STATES))
+        self.orientation_H[STATE_t, STATE_t] = 1.0
+
         # measurement function for cmd_vel. Use only velocity.
         self.cmd_vel_H = np.zeros((NUM_MEASUREMENTS, NUM_STATES))
         self.cmd_vel_H[0:NUM_STATES_1ST_ORDER, NUM_STATES_1ST_ORDER:NUM_STATES] = np.eye(NUM_MEASUREMENTS)
@@ -89,6 +94,13 @@ class DriveKalmanModel:
 
     def update_position(self, msg: PoseWithCovariance) -> None:
         self._update_model_pose(msg, self.position_H)
+
+    def update_orientation(self, yaw: float, covariance: np.ndarray) -> None:
+        with self.lock:
+            measurement, noise = orientation_to_measurement(yaw, covariance[STATE_t, STATE_t])
+            self.state, self.covariance = jit_update(
+                self.state, self.covariance, self.orientation_H, measurement, noise, (STATE_t,)
+            )
 
     def _update_model_pose(self, msg: PoseWithCovariance, observation_model: np.ndarray) -> None:
         if self._is_initialized:

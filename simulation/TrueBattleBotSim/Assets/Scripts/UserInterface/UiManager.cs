@@ -13,7 +13,6 @@ public class UiManager : MonoBehaviour
     [SerializeField] TMP_Dropdown qualityDropdown;
     [SerializeField] TMP_Dropdown scenarioDropdown;
     [SerializeField] Toggle toggleFullscreen;
-    [SerializeField] Toggle toggleSpotlight;
     [SerializeField] TMP_Text fpsReadout;
     [SerializeField] GameObject settingsPanel;
     [SerializeField] GameObject settingsBackground;
@@ -24,7 +23,6 @@ public class UiManager : MonoBehaviour
     [SerializeField] MainSceneManager sceneManager;
     [SerializeField] RestartButton restartButton;
     [SerializeField] PlayPauseButton playPauseButton;
-    [SerializeField] TwoObjectToggle spotlightToggleManager;
 
     DisplayReadoutManager displayReadoutManager;
 
@@ -63,7 +61,6 @@ public class UiManager : MonoBehaviour
         public static PreferenceKey ResolutionPreference { get { return new PreferenceKey("ResolutionPreference"); } }
         public static PreferenceKey FullscreenPreference { get { return new PreferenceKey("FullscreenPreference"); } }
         public static PreferenceKey ScenarioPreference { get { return new PreferenceKey("ScenarioPreference"); } }
-        public static PreferenceKey SpotlightPreference { get { return new PreferenceKey("SpotlightPreference"); } }
 
         public override string ToString()
         {
@@ -167,10 +164,6 @@ public class UiManager : MonoBehaviour
     {
         SetScenario(scenarioIndex);
     }
-    public void SetSpotlightCallback(bool isSpotlight)
-    {
-        SetSpotlight(isSpotlight);
-    }
 
     private void SetFullscreen(bool isFullscreen)
     {
@@ -197,14 +190,6 @@ public class UiManager : MonoBehaviour
         PlayerPrefs.SetString(PreferenceKey.ScenarioPreference.Value, scenarioName);
         PlayerPrefs.Save();
         sceneManager.LoadScenarioByName(scenarioName);
-    }
-
-    private void SetSpotlight(bool isSpotlight)
-    {
-        Debug.Log($"Setting spotlight to {isSpotlight}");
-        PlayerPrefs.SetInt(PreferenceKey.SpotlightPreference.Value, Convert.ToInt32(isSpotlight));
-        PlayerPrefs.Save();
-        spotlightToggleManager.SetObjectActive(isSpotlight);
     }
 
     private void SetTextureQuality(int textureIndex)
@@ -330,7 +315,6 @@ public class UiManager : MonoBehaviour
         qualityDropdown.value = LoadPreferenceInt(PreferenceKey.QualitySettingPreference, 3);
         resolutionDropdown.value = LoadPreferenceInt(PreferenceKey.ResolutionPreference, currentResolutionIndex);
         toggleFullscreen.isOn = Convert.ToBoolean(LoadPreferenceInt(PreferenceKey.FullscreenPreference, 0));
-        toggleSpotlight.isOn = Convert.ToBoolean(LoadPreferenceInt(PreferenceKey.SpotlightPreference, 1));
         string scenario_key = LoadPreferenceString(PreferenceKey.ScenarioPreference, "");
         if (scenarioIndex.ContainsKey(scenario_key))
         {
@@ -342,7 +326,6 @@ public class UiManager : MonoBehaviour
             scenarioDropdown.value = 0;
         }
         SetFullscreen(toggleFullscreen.isOn);
-        SetSpotlight(toggleSpotlight.isOn);
     }
 
     void RemoteScenarioSelectionCallback(StringMsg msg)

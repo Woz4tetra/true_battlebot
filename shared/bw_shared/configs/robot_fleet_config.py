@@ -53,6 +53,17 @@ class RobotConfig:
 class RobotFleetConfig:
     robots: list[RobotConfig] = field(default_factory=lambda: [])
 
+    def __post_init__(self):
+        ids = []
+        for robot in self.robots:
+            if robot.team == RobotTeam.OUR_TEAM:
+                ids.extend([tag.tag_id for tag in robot.tags])
+        if len(ids) != len(set(ids)):
+            raise ValueError("Robot ids must be unique")
+        names = [bot.name for bot in self.robots]
+        if len(names) != len(set(names)):
+            raise ValueError("Robot names must be unique")
+
     @classmethod
     def from_dict(cls, data: dict) -> RobotFleetConfig:
         return from_dict(cls, data)

@@ -22,6 +22,7 @@ public class ScenarioConfig
         }
     };
     public List<ActorConfig> actors = new List<ActorConfig>();
+    public FixturesConfig fixtures = new FixturesConfig();
 
     public string ToJson()
     {

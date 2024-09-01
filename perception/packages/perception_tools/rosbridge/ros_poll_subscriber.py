@@ -35,19 +35,22 @@ class RosPollSubscriber(Generic[T]):
         return return_val
 
     def _callback(self, msg: T) -> None:
-        if self.log and (len(self.exclude_filters) == 0 or self.topic_name not in self.exclude_filters):
-            self.logger.debug(f"{self.topic_name} received a message")
-        if self.queue_size == 1:
-            self.last_value = msg
-            return
+        try:
+            if self.log and (len(self.exclude_filters) == 0 or self.topic_name not in self.exclude_filters):
+                self.logger.debug(f"{self.topic_name} received a message")
+            if self.queue_size == 1:
+                self.last_value = msg
+                return
 
-        while True:
-            try:
-                self.queue.put_nowait(msg)
-                break
-            except Full:
-                self.logger.debug(f"{self.topic_name} dropping a message from the queue")
-                self._pop_message()
+            while True:
+                try:
+                    self.queue.put_nowait(msg)
+                    break
+                except Full:
+                    self.logger.debug(f"{self.topic_name} dropping a message from the queue")
+                    self._pop_message()
+        except BaseException as e:
+            self.logger.error(f"Error in callback for {self.topic_name}: {e}", exc_info=True)
 
     def _pop_message(self) -> T | None:
         try:

@@ -83,6 +83,15 @@ def measurement_to_twist(state: np.ndarray, covariance: np.ndarray) -> TwistWith
     return twist
 
 
+def orientation_to_measurement(yaw: float, yaw_covariance: float) -> Tuple[np.ndarray, np.ndarray]:
+    measurement = np.array([0.0, 0.0, yaw])
+
+    measurement_noise = np.zeros((NUM_MEASUREMENTS, NUM_MEASUREMENTS))
+    measurement_noise[2, 2] = yaw_covariance
+
+    return measurement, measurement_noise
+
+
 @njit
 def input_modulus(value: float, min_value: float, max_value: float) -> float:
     """

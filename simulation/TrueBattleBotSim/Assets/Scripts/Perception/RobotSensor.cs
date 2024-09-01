@@ -35,6 +35,12 @@ public class RobotSensor : BaseGameObjectSensor
             {
                 continue;
             }
+
+            Dictionary<string, Matrix4x4> keypointsInCamera = new Dictionary<string, Matrix4x4>();
+            foreach (ConfigurableKeypoint keypoint in robot.GetKeypoints())
+            {
+                keypointsInCamera[keypoint.name] = GetObjectPoseInCamera(keypoint.transform);
+            }
             VisibleTarget tagMsg = new VisibleTarget
             {
                 header = new HeaderMsg
@@ -48,7 +54,7 @@ public class RobotSensor : BaseGameObjectSensor
                 cameraRelativePose = GetObjectPoseInCamera(obj.transform),
                 frame = robot.GetFrame(),
                 label = robot.GetLabel(),
-                keypoints = robot.GetKeypoints().ToArray()
+                keypoints = keypointsInCamera
             };
             targetList.Add(tagMsg);
         }
@@ -69,16 +75,18 @@ public class RobotSensor : BaseGameObjectSensor
         {
             List<PoseMsg> keypoints = new List<PoseMsg>();
             List<string> keypoint_names = new List<string>();
-            foreach (ConfigurableKeypoint keypoint in target.keypoints)
+            Matrix4x4 tf_camera_from_robot = target.cameraRelativePose;
+            foreach (KeyValuePair<string, Matrix4x4> keypointPair in target.keypoints)
             {
+                Matrix4x4 tf_camera_from_keypoint = keypointPair.Value;
+                Matrix4x4 tf_robot_from_keypoint = tf_camera_from_robot.inverse * tf_camera_from_keypoint;
                 keypoints.Add(new PoseMsg
                 {
-                    position = keypoint.transform.position.To<FLU>(),
-                    orientation = keypoint.transform.rotation.To<FLU>()
+                    position = tf_robot_from_keypoint.GetT().To<FLU>(),
+                    orientation = tf_robot_from_keypoint.GetR().To<FLU>()
                 });
-                keypoint_names.Add(keypoint.name);
+                keypoint_names.Add(keypointPair.Key);
             }
-            Matrix4x4 targetPose = target.cameraRelativePose;
             Vector3Msg size = target.dimensions.To<FLU>();
             size = new Vector3Msg
             {
@@ -94,8 +102,8 @@ public class RobotSensor : BaseGameObjectSensor
                 {
                     pose = new PoseMsg
                     {
-                        position = targetPose.GetT().To<FLU>(),
-                        orientation = targetPose.GetR().To<FLU>()
+                        position = tf_camera_from_robot.GetT().To<FLU>(),
+                        orientation = tf_camera_from_robot.GetR().To<FLU>()
                     }
                 },
                 child_frame_id = target.frame.GetFrameId(),

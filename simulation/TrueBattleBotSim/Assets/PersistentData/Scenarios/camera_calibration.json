@@ -7,6 +7,14 @@
             "y": 2.5
         }
     },
+    "fixtures": {
+        "spotlight": {
+            "enabled": false
+        },
+        "even_lighting": {
+            "enabled": true
+        }
+    },
     "actors": [
         {
             "name": "slow_camera",

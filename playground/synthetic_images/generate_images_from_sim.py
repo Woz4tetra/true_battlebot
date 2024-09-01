@@ -2,6 +2,7 @@ import argparse
 import json
 import random
 import time
+import traceback
 from dataclasses import dataclass, field
 from pathlib import Path
 from threading import Event, Lock
@@ -401,6 +402,16 @@ def generate_scenario() -> dict:
 
     num_robots = random.randint(1, 3)
 
+    fixtures_config = {
+        "spotlight": {
+            "enabled": True,
+            "range": random.uniform(2.5, 3.5),
+            "spot_angle": random.uniform(105, 120),
+            "intensity": random.uniform(5.0, 7.0),
+            "shadow_strength": random.uniform(0.6, 0.8),
+        }
+    }
+
     mini_bot_model = "MR STABS MK2" if random.uniform(0, 1) < 0.7 else "MR STABS A-02"
     main_bot_model = "MRS BUFF MK2" if random.uniform(0, 1) < 0.7 else "MRS BUFF B-03"
 
@@ -430,6 +441,7 @@ def generate_scenario() -> dict:
         actors.append({"name": "referee", "model": "Referee", "objective": "randomized_idle"})
     return {
         "cage": {"dims": {"x": cage_x, "y": cage_y}, "cage_type": LAST_CAGE, "display_readout": False},
+        "fixtures": fixtures_config,
         "background": {"name": LAST_BACKGROUND, "sky_image": LAST_SKYIMAGE},
         "actors": actors,
     }
@@ -439,6 +451,7 @@ def callback_wrapper(data_snapshot: DataShapshot, callback: Callable, msg: Any) 
     try:
         callback(data_snapshot, msg)
     except Exception as e:
+        traceback.print_exc()
         print(f"Error in callback: {e}")
 
 
