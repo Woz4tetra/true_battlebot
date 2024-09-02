@@ -103,7 +103,7 @@ def generate_random_robot_grid_scenario(
     change_background = random.uniform(0, 1) > 0.7
 
     if change_cage:
-        scene_session.last_cage = random.choice(list(CageModel))
+        scene_session.last_cage = random.choice(list(cage_sizes.keys()))
         scene_session.last_skyimage = random.choice(list(SimulationSkyImage))
 
     if change_background:

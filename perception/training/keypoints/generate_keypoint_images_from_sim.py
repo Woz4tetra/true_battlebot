@@ -8,10 +8,8 @@ import cv2
 import numpy as np
 import rospy
 from bw_interfaces.msg import EstimatedObject
-from bw_shared.configs.maps_config import MapsConfig
 from bw_shared.configs.shared_config import SharedConfig
-from bw_shared.configs.size import Size
-from bw_shared.enums.cage_model import CAGE_MODEL_MAPPING, CageModel
+from bw_shared.enums.cage_model import CageModel
 from bw_shared.enums.label import ModelLabel
 from bw_shared.geometry.projection_math.project_object_to_uv import ProjectionError, project_object_to_front_back_uv
 from image_geometry import PinholeCameraModel
@@ -22,9 +20,10 @@ from perception_tools.inference.simulated_mask_to_contours import (
 from perception_tools.initialize_logger import initialize
 from perception_tools.rosbridge.check_connection import check_connection
 from perception_tools.rosbridge.wait_for_ros_connection import wait_for_ros_connection
+from perception_tools.simulation_control.load_cage_model_sizes import load_cage_model_sizes
 from perception_tools.simulation_control.randomized.random_robot_grid import SceneSession, generate_random_robot_grid
 from perception_tools.simulation_control.simulation_controller import make_simulation_controller
-from perception_tools.simulation_control.simulation_topic_sync import DataShapshot, SimulationTopicSync
+from perception_tools.simulation_control.simulation_robot_topic_sync import RobotDataShapshot, SimulationRobotTopicSync
 from perception_tools.training.keypoints_config import load_keypoints_config
 from perception_tools.training.yolo_keypoint_dataset import (
     YoloKeypointAnnotation,
@@ -83,7 +82,7 @@ def make_annotation_from_robot(
     return YoloKeypointAnnotation.from_xywh(bx, by, bw, bh, class_index=labels.index(label), keypoints=keypoints)
 
 
-def record_image_and_keypoints(output_dir: Path, data_snapshot: DataShapshot, labels: list[ModelLabel]) -> None:
+def record_image_and_keypoints(output_dir: Path, data_snapshot: RobotDataShapshot, labels: list[ModelLabel]) -> bool:
     logger = logging.getLogger("perception")
     color_to_model_label_map = data_snapshot.color_to_model_label_map
     robot = data_snapshot.robots.robots[0]
@@ -104,7 +103,7 @@ def record_image_and_keypoints(output_dir: Path, data_snapshot: DataShapshot, la
         annotation = make_annotation_from_robot(robot, model, contour_map, image_size, labels)
         if annotation is None:
             logger.info(f"Skipping annotation. Label: {robot.label}")
-            return
+            return False
         logger.info(f"Adding annotation for label: {robot.label}")
 
         image_annotation.labels.append(annotation)
@@ -115,19 +114,13 @@ def record_image_and_keypoints(output_dir: Path, data_snapshot: DataShapshot, la
 
     with open(output_dir / f"{filename}.txt", "w") as file:
         file.write(image_annotation.to_txt())
-
-
-def load_cage_model_sizes(maps: MapsConfig) -> dict[CageModel, Size]:
-    cage_model_sizes = {}
-    for cage_model in CageModel:
-        field_type = CAGE_MODEL_MAPPING[cage_model]
-        cage_model_sizes[cage_model] = maps.maps_map[field_type].size
-    return cage_model_sizes
+    return True
 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("config", type=str, help="Path to the configuration file. ex: ./keypoint_names_v1.toml")
+    parser.add_argument("num_images", type=int, help="Number of images to generate")
     parser.add_argument("-o", "--output_dir", type=str, default="output")
     args = parser.parse_args()
 
@@ -140,25 +133,28 @@ def main() -> None:
 
     output_dir = Path(args.output_dir)
     config = load_keypoints_config(args.config)
+    num_images = args.num_images
 
     if not output_dir.exists():
         output_dir.mkdir(parents=True)
 
     scene_session = SceneSession()
     shared_config = SharedConfig.from_files()
-    cage_sizes = load_cage_model_sizes(shared_config.maps)
+    written_images = 0
+    cage_sizes = load_cage_model_sizes(shared_config.maps, [CageModel.DRIVE_TEST_BOX, CageModel.NHRL_3LB_CAGE])
 
     uri = wait_for_ros_connection()
     logger.info(f"Connected to ROS master at {uri}")
-    rospy.init_node("generate_images_from_sim")
+    rospy.init_node("generate_images_from_sim", log_level=rospy.DEBUG, disable_signals=True)
 
-    simulation_topic_sync = SimulationTopicSync(SEGMENTATION_LABELS)
+    simulation_topic_sync = SimulationRobotTopicSync(SEGMENTATION_LABELS)
     simulation_controller = make_simulation_controller()
 
     rospy.sleep(2.0)  # wait for publishers to connect
 
     try:
-        while not rospy.is_shutdown():
+        is_done = False
+        while not rospy.is_shutdown() and not is_done:
             # select number of robots and duration. Set camera pose.
             duration = random.uniform(1, 2)
 
@@ -170,7 +166,11 @@ def main() -> None:
                 data_snapshot = simulation_topic_sync.get_snapshot()
                 if not data_snapshot:
                     continue
-                record_image_and_keypoints(output_dir, data_snapshot, config.labels)
+                if record_image_and_keypoints(output_dir, data_snapshot, config.labels):
+                    written_images += 1
+                    if written_images >= num_images:
+                        is_done = True
+                        break
                 if not check_connection("localhost", 11311):
                     raise RuntimeError("Failed to connect to ROS master.")
     finally:

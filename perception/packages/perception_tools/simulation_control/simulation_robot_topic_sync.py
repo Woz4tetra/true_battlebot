@@ -13,7 +13,7 @@ from sensor_msgs.msg import Image as ImageMsg
 
 
 @dataclass
-class DataShapshot:
+class RobotDataShapshot:
     model: PinholeCameraModel
     image: Image
     layer: Image
@@ -21,7 +21,7 @@ class DataShapshot:
     color_to_model_label_map: dict[int, ModelLabel]
 
 
-class SimulationTopicSync:
+class SimulationRobotTopicSync:
     def __init__(self, filter_labels: tuple[ModelLabel, ...]) -> None:
         self.logger = logging.getLogger("perception")
         self.model: PinholeCameraModel | None = None
@@ -34,7 +34,7 @@ class SimulationTopicSync:
 
         self.image_layer_max_delay = 0.001
         self.image_ground_max_delay = 0.015
-        self.layer_cache_size = 5
+        self.cache_size = 5
         self.layer_cache: dict[float, Image] = {}
         self.ground_truth_cache: dict[float, EstimatedObjectArray] = {}
 
@@ -72,7 +72,7 @@ class SimulationTopicSync:
             queue_size=1,
         )
 
-    def get_snapshot(self) -> DataShapshot | None:
+    def get_snapshot(self) -> RobotDataShapshot | None:
         with self.lock:
             if self.image is None:
                 self.logger.warning("Missing image")
@@ -100,7 +100,7 @@ class SimulationTopicSync:
             self.robots = None
             model = self.model
 
-            return DataShapshot(model, image, layer, robots, self.color_to_model_label_map)
+            return RobotDataShapshot(model, image, layer, robots, self.color_to_model_label_map)
 
     def image_callback(self, msg: ImageMsg) -> None:
         with self.lock:
@@ -117,7 +117,7 @@ class SimulationTopicSync:
             selected_msg = self.layer_cache[selected_key]
             if abs(selected_key - self.image_timestamp) <= self.image_layer_max_delay:
                 self.layer = selected_msg
-            while len(self.layer_cache) > self.layer_cache_size:
+            while len(self.layer_cache) > self.cache_size:
                 del self.layer_cache[min(self.layer_cache.keys())]
 
     def camera_info_callback(self, msg: CameraInfo) -> None:
@@ -137,10 +137,10 @@ class SimulationTopicSync:
                 self.robots = selected_msg
             else:
                 self.logger.info(
-                    f"Ground truth and image timestamps are too far apart. {selected_key -self.image_timestamp}"
+                    f"Ground truth and image timestamps are too far apart. {selected_key - self.image_timestamp}"
                 )
                 self.robots = None
-            while len(self.ground_truth_cache) > self.layer_cache_size:
+            while len(self.ground_truth_cache) > self.cache_size:
                 del self.ground_truth_cache[min(self.ground_truth_cache.keys())]
 
     def simulated_segmentation_label_callback(self, msg: SegmentationInstanceArray) -> None:

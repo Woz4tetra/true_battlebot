@@ -304,7 +304,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 512
   debugRayCast: 0
-  publishRate: 1
+  publishRate: 30
   viewAngleThreshold: 70
   debugVisibilityReason: 0
   topic: /camera_0/simulated_field_result
@@ -323,6 +323,36 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   FrameId: imu
+  orientationCovariance:
+  - 0.10000000149011612
+  - 0
+  - 0
+  - 0
+  - 0.10000000149011612
+  - 0
+  - 0
+  - 0
+  - 0.10000000149011612
+  angularVelocityCovariance:
+  - 0.10000000149011612
+  - 0
+  - 0
+  - 0
+  - 0.10000000149011612
+  - 0
+  - 0
+  - 0
+  - 0.10000000149011612
+  linearAccelerationCovariance:
+  - 0.10000000149011612
+  - 0
+  - 0
+  - 0
+  - 0.10000000149011612
+  - 0
+  - 0
+  - 0
+  - 0.10000000149011612
   publishDelay: 0
   topic: /camera_0/imu/data
 --- !u!114 &5188401520910755081

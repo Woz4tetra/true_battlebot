@@ -455,6 +455,36 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   FrameId: imu
+  orientationCovariance:
+  - 0.10000000149011612
+  - 0
+  - 0
+  - 0
+  - 0.10000000149011612
+  - 0
+  - 0
+  - 0
+  - 0.10000000149011612
+  angularVelocityCovariance:
+  - 0.10000000149011612
+  - 0
+  - 0
+  - 0
+  - 0.10000000149011612
+  - 0
+  - 0
+  - 0
+  - 0.10000000149011612
+  linearAccelerationCovariance:
+  - 0.10000000149011612
+  - 0
+  - 0
+  - 0
+  - 0.10000000149011612
+  - 0
+  - 0
+  - 0
+  - 0.10000000149011612
   publishDelay: 0
   topic: /camera_0/imu/data
 --- !u!114 &9131033546723738220
@@ -530,7 +560,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9c1a0cf1d5ada30d0b0dd3a8f9b5db91, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  sequenceProgressTopicName: /simulation/sequence_progress
 --- !u!114 &6001035542632619913
 MonoBehaviour:
   m_ObjectHideFlags: 0

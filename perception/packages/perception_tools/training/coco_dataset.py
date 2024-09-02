@@ -65,14 +65,26 @@ class DatasetInfo:
     url: str
     date_created: str
 
+    @classmethod
+    def make_default(cls) -> DatasetInfo:
+        now = datetime.datetime.now(tz=datetime.timezone.utc)
+        return DatasetInfo(
+            year=now.strftime("%Y"),
+            version="1.0",
+            description="Default dataset",
+            contributor="Unknown",
+            url="http://example.com",
+            date_created=now.strftime("%Y-%m-%dT%H:%M:%S%z"),
+        )
+
 
 @dataclass
 class CocoDataset:
-    info: DatasetInfo
-    licenses: List[DatasetLicense]
-    categories: List[DatasetCategory]
-    images: List[DatasetImage]
-    annotations: List[DatasetAnnotation]
+    info: DatasetInfo = field(default_factory=DatasetInfo.make_default)
+    licenses: List[DatasetLicense] = field(default_factory=list)
+    categories: List[DatasetCategory] = field(default_factory=list)
+    images: List[DatasetImage] = field(default_factory=list)
+    annotations: List[DatasetAnnotation] = field(default_factory=list)
 
     def get_annotation_by_id(self, annotation_id: int) -> DatasetAnnotation:
         for annotation in self.annotations:
@@ -83,7 +95,7 @@ class CocoDataset:
 
 @dataclass
 class CocoMetaDataset:
-    dataset: CocoDataset
+    dataset: CocoDataset = field(default_factory=CocoDataset)
     image_id_to_annotations: Dict[int, List[int]] = field(default_factory=dict)
 
     def __post_init__(self):
@@ -116,9 +128,13 @@ class CocoMetaDataset:
             self.image_id_to_annotations[annotation.image_id].append(annotation.id)
 
     def _next_image_id(self) -> int:
+        if len(self.dataset.images) == 0:
+            return 0
         return max([image.id for image in self.dataset.images]) + 1
 
     def _next_annotation_id(self) -> int:
+        if len(self.dataset.annotations) == 0:
+            return 0
         return max([annotation.id for annotation in self.dataset.annotations]) + 1
 
     def slice(self, lower_index: int, upper_index: int) -> CocoMetaDataset:
