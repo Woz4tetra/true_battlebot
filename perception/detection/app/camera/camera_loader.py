@@ -25,7 +25,7 @@ def make_simulated_camera(camera_config: SimulatedCameraConfig, container: Conta
     ns = config.camera_topic.namespace
 
     color_image_sub = RosPollSubscriber(ns + "/rgb/image_raw", Image, buff_size=2 << 24)
-    depth_image_sub = RosPollSubscriber(ns + "/depth/depth_registered", Image, buff_size=2 << 24)
+    depth_image_sub = RosPollSubscriber(ns + "/depth/depth_registered", Image, buff_size=2 << 32)
     camera_info_sub = RosPollSubscriber(ns + "/rgb/camera_info", CameraInfo)
     depth_request_pub = RosPublisher(ns + "/depth/request", Empty)
 

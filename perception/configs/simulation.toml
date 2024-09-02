@@ -42,10 +42,15 @@ exclude_filters = [
 
 [robot_keypoint]
 type = "YoloKeypoint"
-model_path = "yolov8-pose_2024-08-29_5000.pt"
-metadata_path = "yolov8-pose_2024-08-29_5000.json"
+debug = true
+model_path = "yolov8-pose_2024-09-01.pt"
+metadata_path = "yolov8-pose_2024-09-01.json"
 
 [robot_keypoint.model_to_system_labels.mapping]
+"mr_stabs_mk1" = "controlled_robot"
+"mr_stabs_mk2" = "controlled_robot"
+"mrs_buff_mk1" = "friendly_robot"
+"mrs_buff_mk2" = "friendly_robot"
 "mini_bot" = "controlled_robot"
 "main_bot" = "friendly_robot"
 "robot" = "robot"

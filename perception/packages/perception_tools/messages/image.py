@@ -133,8 +133,11 @@ class Image:
             LOGGER.error(f"Failed to convert image message to cv2: {e}")
             data = np.zeros((0, 0, 3), dtype=np.uint8)
 
+        if desired_encoding == "passthrough":
+            desired_encoding = msg.encoding
+
         return Image(
             header=Header.from_msg(msg.header),
             data=data,
-            encoding=Encoding(msg.encoding),
+            encoding=Encoding(desired_encoding),
         )

@@ -10,8 +10,8 @@ type = "PointCloudFieldFilter"
 [field_segmentation]
 type = "SemanticSegmentation"
 debug = true
-model_path = "field_deeplabv3_mbv3_2024-07-24.torchscript"
-metadata_path = "field_deeplabv3_mbv3_2024-07-24.json"
+model_path = "field_deeplabv3_r50_2024-07-24.torchscript"
+metadata_path = "field_deeplabv3_r50_2024-07-24.json"
 
 [field_segmentation.model_to_system_labels.mapping]
 "field" = "field"
@@ -32,8 +32,8 @@ exclude_filters = [
 
 [robot_keypoint]
 type = "YoloKeypoint"
-model_path = "yolov8-pose_2024-07-24.pt"
-metadata_path = "yolov8-pose_2024-07-24.json"
+model_path = "yolov8-pose_2024-09-01.pt"
+metadata_path = "yolov8-pose_2024-09-01.json"
 
 [robot_keypoint.model_to_system_labels.mapping]
 "mr_stabs_mk1" = "controlled_robot"

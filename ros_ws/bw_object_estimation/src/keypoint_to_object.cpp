@@ -70,8 +70,8 @@ void KeypointToObject::keypoint_callback(const bw_interfaces::KeypointInstanceAr
         }
 
         std::vector<cv::Point3d> points = project_keypoints_to_field(instance);
-        int back_index = get_index(instance.names, _front_keypoint_name);
-        int front_index = get_index(instance.names, _back_keypoint_name);
+        int back_index = get_index(instance.names, _back_keypoint_name);
+        int front_index = get_index(instance.names, _front_keypoint_name);
         if (front_index == -1 || back_index == -1)
         {
             ROS_WARN("Front or back keypoint not found");
@@ -107,7 +107,7 @@ std::vector<cv::Point3d> KeypointToObject::project_keypoints_to_field(bw_interfa
         if (!project_to_field(pixel, plane_center, plane_normal, center))
         {
             ROS_WARN("Failed to project keypoint to field");
-            continue;
+            return std::vector<cv::Point3d>();
         }
         points.push_back(center);
     }

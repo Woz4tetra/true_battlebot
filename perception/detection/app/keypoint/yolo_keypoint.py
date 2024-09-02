@@ -61,7 +61,7 @@ class YoloKeypoint(KeypointInterface):
 
         keypoint_instances = []
         object_counts = {label: 0 for label in Label}
-        for keypoint, model_label, class_idx in zip(keypoints, labels, ids):
+        for keypoint, model_label in zip(keypoints, labels):
             if model_label == ModelLabel.BACKGROUND:
                 continue
             keypoint_names = self.keypoint_names[model_label]
