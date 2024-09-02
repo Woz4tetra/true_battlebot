@@ -166,6 +166,14 @@ class CocoMetaDataset:
                 warnings.warn(f"Image {image} has no annotations")
             self.add_annotation(image, annotations)
 
+    def remove_images(self, image_ids: List[int]) -> None:
+        for image_id in image_ids:
+            self.dataset.images = [image for image in self.dataset.images if image.id != image_id]
+            self.dataset.annotations = [
+                annotation for annotation in self.dataset.annotations if annotation.image_id != image_id
+            ]
+            self.image_id_to_annotations.pop(image_id)
+
     @classmethod
     def from_json(cls, d: Dict) -> CocoMetaDataset:
         return CocoMetaDataset(from_dict(CocoDataset, d))

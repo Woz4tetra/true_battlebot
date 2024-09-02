@@ -7,7 +7,7 @@ import tqdm
 from detectron2.data import transforms
 from perception_tools.training.augment_dataset_image import augment_dataset_image
 from perception_tools.training.augmentations import RandomRadialHomography
-from perception_tools.training.helpers import (
+from perception_tools.training.instance_helpers import (
     copy_dataset,
     load_dataset,
     write_augmented_image,

@@ -13,7 +13,6 @@ from bw_shared.enums.label import ModelLabel
 from bw_shared.geometry.projection_math.project_object_to_uv import ProjectionError, project_box_object_to_uv
 from perception_tools.inference.simulated_mask_to_contours import to_contour_array
 from perception_tools.initialize_logger import initialize
-from perception_tools.rosbridge.check_connection import check_connection
 from perception_tools.rosbridge.wait_for_ros_connection import wait_for_ros_connection
 from perception_tools.simulation_control.load_cage_model_sizes import load_cage_model_sizes
 from perception_tools.simulation_control.randomized.random_robot_grid import SceneSession, generate_random_robot_grid
@@ -25,7 +24,7 @@ from perception_tools.training.coco_dataset import (
     DatasetCategory,
     DatasetImage,
 )
-from perception_tools.training.helpers import write_dataset
+from perception_tools.training.instance_helpers import write_dataset
 
 SEGMENTATION_LABELS = (ModelLabel.BACKGROUND, ModelLabel.FIELD)
 
@@ -136,8 +135,6 @@ def main() -> None:
                         break
                     if written_images % 50 == 0:
                         write_dataset(dataset, annotations_path)
-                if not check_connection("localhost", 11311):
-                    raise RuntimeError("Failed to connect to ROS master.")
     finally:
         write_dataset(dataset, annotations_path)
         rospy.signal_shutdown("Exiting")

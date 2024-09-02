@@ -5,7 +5,9 @@ from typing import List
 
 import cv2
 import numpy as np
+from bw_shared.enums.label import ModelLabel
 
+from perception_tools.config.model_metadata import LABEL_COLORS
 from perception_tools.training.coco_dataset import CocoMetaDataset, DatasetAnnotation
 
 
@@ -15,20 +17,26 @@ def load_dataset(dataset_path: str) -> CocoMetaDataset:
     return CocoMetaDataset.from_json(dataset)
 
 
-def plot_annotated_image(image: np.ndarray, annotations: List[DatasetAnnotation]) -> None:
+def plot_annotated_image(metadataset: CocoMetaDataset, image: np.ndarray, annotations: List[DatasetAnnotation]) -> None:
     for annotation in annotations:
+        label = metadataset.categories[annotation.category_id].name
+        color = LABEL_COLORS[ModelLabel(label)].to_cv_color()
+
         box = annotation.bbox
-        coords = [
-            box[0],
-            box[1],
-            box[0] + box[2],
-            box[1] + box[3],
-        ]
+        coords = np.array(
+            [
+                box[0],
+                box[1],
+                box[0] + box[2],
+                box[1] + box[3],
+            ]
+        ).astype(int)
         for segmentation in annotation.segmentation:
             segmentation = np.array(segmentation).reshape(-1, 2)
             segmentation = np.append(segmentation, [segmentation[0]], axis=0)
-            cv2.polylines(image, [segmentation], isClosed=True, color=(0, 255, 0), thickness=2)
-        cv2.rectangle(image, (coords[0], coords[1]), (coords[2], coords[3]), (0, 90, 0), 2)  # type: ignore
+            cv2.polylines(image, [segmentation.astype(int)], isClosed=True, color=color, thickness=2)
+        cv2.rectangle(image, (coords[0], coords[1]), (coords[2], coords[3]), color, 2)  # type: ignore
+        cv2.putText(image, label, (coords[0], coords[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1)
 
 
 def copy_dataset(dataset_path: str, destination_path: str) -> None:

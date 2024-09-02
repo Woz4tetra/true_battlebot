@@ -28,7 +28,7 @@ from torch import ScriptModule, Tensor, nn
 from torch.jit._serialization import save as save_model
 
 from perception_tools.config.model_metadata import LABEL_COLORS, LabelColor, ModelMetadata
-from perception_tools.training.helpers import load_dataset
+from perception_tools.training.instance_helpers import load_dataset
 from perception_tools.training.nhrl_trainer import NhrlTrainer
 
 

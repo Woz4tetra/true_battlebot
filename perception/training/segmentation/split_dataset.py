@@ -4,7 +4,7 @@ import random
 import shutil
 from pathlib import Path
 
-from perception_tools.training.helpers import load_dataset, write_dataset
+from perception_tools.training.instance_helpers import load_dataset, write_dataset
 
 
 def main():
@@ -14,12 +14,12 @@ def main():
         type=str,
         help="Path to the directory containing the images and annotations",
     )
-    parser.add_argument("out_name", type=str, help="Output name for the dataset")
+    parser.add_argument("-o", "--output", nargs="?", type=str, help="Path to the output directory", default="")
     parser.add_argument("-t", "--train", type=float, help="Train percentage", default=0.8)
     parser.add_argument("-v", "--val", type=float, help="Validation percentage", default=0.15)
     args = parser.parse_args()
     source_path = Path(args.source_path)
-    dest_path = source_path.parent / str(args.out_name)
+    dest_path = args.output if args.output else Path(str(source_path) + "_split")
     print(f"Splitting dataset from {source_path} to {dest_path}")
     annotations_name = "_annotations.coco.json"
     source_annotations_path = source_path / annotations_name

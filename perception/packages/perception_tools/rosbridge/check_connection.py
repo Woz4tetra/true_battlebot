@@ -33,13 +33,10 @@ def check_connection(hostname: str, port: int) -> bool:
     # See if the connection can be made over any interface.
     with SocketContext(hostname, port) as sock:
         try:
-            logger.info("checking connection to port {}".format(port))
             sock.connect()
             return True
-        except socket.gaierror as e:
-            logger.info("got error {}".format(e))
-        except socket.error as e:
-            logger.info("got error {}".format(e))
+        except (socket.gaierror, socket.error) as e:
+            logger.warning(f"Got error while attempting to connect to {(hostname, port)}: {e}")
 
     # Connection could not be made
     return False

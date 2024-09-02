@@ -1,23 +1,15 @@
 import argparse
-import csv
 from pathlib import Path
 
 import cv2
 import tqdm
 from bw_shared.get_image_size import get_image_size
-from perception_tools.training.helpers import (
+from perception_tools.training.instance_helpers import (
     copy_dataset,
     load_dataset,
     segmentation_annotations_to_masks,
 )
-
-
-def write_classes(classes: dict[int, str], path: str) -> None:
-    with open(path, mode="w") as file:
-        writer = csv.writer(file)
-        writer.writerow(["Pixel Value", "Class"])
-        for index, class_name in classes.items():
-            writer.writerow([index, class_name])
+from perception_tools.training.semantic_helpers import write_classes
 
 
 def main():
