@@ -15,6 +15,10 @@ class ModelToSystemLabelsMap:
     def __post_init__(self):
         self.labels = {ModelLabel(label): Label(system_label) for label, system_label in self.mapping.items()}
 
+    @classmethod
+    def from_labels(cls, labels: dict[ModelLabel, Label]) -> ModelToSystemLabelsMap:
+        return cls(mapping={model_label.value: system_label.value for model_label, system_label in labels.items()})
+
     def get_class_indices(self, model_labels: Iterable[ModelLabel]) -> dict[Label, int]:
         class_indices = {}
         for idx, model_label in enumerate(model_labels):

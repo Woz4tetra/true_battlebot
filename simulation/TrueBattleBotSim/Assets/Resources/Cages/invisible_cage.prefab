@@ -517,7 +517,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8221586511891641982}
   m_Layer: 0
-  m_Name: Invisible Cage
+  m_Name: invisible_cage
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

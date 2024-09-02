@@ -11,7 +11,6 @@ from app.container import Container
 from app.field_filter.field_filter_interface import FieldFilterInterface
 from app.field_filter.field_filter_loader import load_field_filter
 from app.field_filter.field_request_handler import FieldRequestHandler
-from app.json_logger import initialize
 from app.keypoint.keypoint_interface import KeypointInterface
 from app.keypoint.keypoint_loader import load_keypoint
 from app.segmentation.segmentation_interface import SegmentationInterface
@@ -22,6 +21,8 @@ from bw_shared.enums.field_type import FieldType
 from bw_shared.environment import get_map, get_robot
 from bw_shared.messages.header import Header
 from bw_shared.tick_regulator import regulate_tick
+from perception_tools.initialize_logger import initialize
+from perception_tools.json_logger import CustomJsonFormatter
 from perception_tools.messages.camera_data import CameraData
 from perception_tools.rosbridge.ros_poll_subscriber import RosPollSubscriber
 from perception_tools.rosbridge.ros_publisher import RosPublisher
@@ -238,7 +239,7 @@ def main() -> None:
     shared_config = SharedConfig.from_files()
     config = load_config(config_dir, get_robot())
 
-    initialize()
+    initialize(CustomJsonFormatter())
     print()  # Start log on a fresh line
     logger = logging.getLogger("perception")
     logger.info("Initializing perception")

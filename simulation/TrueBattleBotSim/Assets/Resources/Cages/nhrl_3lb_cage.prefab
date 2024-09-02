@@ -2257,7 +2257,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8243485073148179727}
   m_Layer: 0
-  m_Name: NHRL 3lb Cage
+  m_Name: nhrl_3lb_cage
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

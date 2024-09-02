@@ -1130,7 +1130,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3993189858487244568}
   m_Layer: 0
-  m_Name: Drive Test Box
+  m_Name: drive_test_box
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

@@ -37,18 +37,22 @@ def load_simulated_segmentation_manager(container: Container) -> SimulatedSegmen
     return SimulatedSegmentationManager(sim_segmentation_image_sub, simulated_segmentation_sub, layer_request_pub)
 
 
+def load_simulated_segmentation(container: Container, config: SimulatedSegmentationConfig) -> SimulatedSegmentation:
+    if container.is_registered(SimulatedSegmentationManager):
+        manager = container.resolve(SimulatedSegmentationManager)
+    else:
+        manager = load_simulated_segmentation_manager(container)
+        container.register(manager)
+    return SimulatedSegmentation(config, manager)
+
+
 def load_segmentation(container: Container, config: SegmentationConfig) -> SegmentationImplementation:
     if isinstance(config, InstanceSegmentationConfig):
         return InstanceSegmentation(config)
     elif isinstance(config, NoopSegmentationConfig):
         return NoopSegmentation(config)
     elif isinstance(config, SimulatedSegmentationConfig):
-        if container.is_registered(SimulatedSegmentationManager):
-            manager = container.resolve(SimulatedSegmentationManager)
-        else:
-            manager = load_simulated_segmentation_manager(container)
-            container.register(manager)
-        return SimulatedSegmentation(config, manager)
+        return load_simulated_segmentation(container, config)
     elif isinstance(config, SemanticSegmentationConfig):
         return SemanticSegmentation(config)
     else:

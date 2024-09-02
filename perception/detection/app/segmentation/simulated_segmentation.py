@@ -196,15 +196,14 @@ class SimulatedSegmentation(SegmentationInterface):
                 self.prev_random_sample_time = now
             segmentation_array = self.noise_grid.apply_noise(segmentation_array)
 
-        object_counts = {label: 0 for label in self.system_labels}
+        object_counts = {}
         for instance in segmentation_array.instances:
             label = self.model_to_system_labels.get(ModelLabel(instance.label))
             if label is None:
                 continue
             instance.label = label
             instance.class_index = self.class_indices[label]
-            object_index = object_counts[label]
-            instance.object_index = object_index
+            instance.object_index = object_counts.setdefault(label, 0)
             object_counts[label] += 1
 
         return segmentation_array, debug_image

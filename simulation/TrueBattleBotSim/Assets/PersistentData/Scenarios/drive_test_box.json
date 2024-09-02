@@ -1,6 +1,6 @@
 {
     "cage": {
-        "cage_type": "Drive Test Box",
+        "cage_type": "drive_test_box",
         "display_readout": false,
         "dims": {
             "x": 1.15,
