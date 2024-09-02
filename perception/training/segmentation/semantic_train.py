@@ -305,14 +305,14 @@ def main() -> None:
         "-b",
         "--batch-size",
         type=int,
-        default=2,
+        default=8,
         help="Batch size",
     )
     parser.add_argument(
         "-nw",
         "--num-workers",
         type=int,
-        default=2,
+        default=4,
         help="Number of workers",
     )
     parser.add_argument(

@@ -11,13 +11,6 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("images", help="Path to images")
     parser.add_argument("-i", "--index", type=int, default=0, help="Start index")
-    parser.add_argument(
-        "-c",
-        "--config",
-        type=str,
-        default="",
-        help="Path to the configuration file. ex: ./keypoint_names_v1.toml",
-    )
     args = parser.parse_args()
 
     image_path = args.images

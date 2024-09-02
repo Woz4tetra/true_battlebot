@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import datetime
 import warnings
 from dataclasses import dataclass, field
@@ -113,6 +114,7 @@ class CocoMetaDataset:
         return [self.dataset.get_annotation_by_id(annotation_id) for annotation_id in annotation_ids]
 
     def add_annotation(self, image: DatasetImage, annotations: List[DatasetAnnotation]):
+        image = copy.deepcopy(image)
         image.id = self._next_image_id()
         self.dataset.images.append(image)
         self.image_id_to_annotations[image.id] = []
@@ -122,6 +124,7 @@ class CocoMetaDataset:
         for annotation in annotations:
             if annotation.category_id not in self.categories.keys():
                 raise ValueError(f"Category {annotation.category_id} not found")
+            annotation = copy.deepcopy(annotation)
             annotation.id = self._next_annotation_id()
             annotation.image_id = image.id
             self.dataset.annotations.append(annotation)
@@ -168,11 +171,24 @@ class CocoMetaDataset:
 
     def remove_images(self, image_ids: List[int]) -> None:
         for image_id in image_ids:
-            self.dataset.images = [image for image in self.dataset.images if image.id != image_id]
-            self.dataset.annotations = [
-                annotation for annotation in self.dataset.annotations if annotation.image_id != image_id
-            ]
-            self.image_id_to_annotations.pop(image_id)
+            annotation_ids = self.image_id_to_annotations.pop(image_id)
+            image_index = -1
+            for index, image in enumerate(self.dataset.images):
+                if image.id == image_id:
+                    image_index = index
+                    break
+            if image_index == -1:
+                raise ValueError(f"Image {image_id} not found")
+            self.dataset.images.pop(image_index)
+            for annotation_id in annotation_ids:
+                annotation_index = -1
+                for index, annotation in enumerate(self.dataset.annotations):
+                    if annotation.id == annotation_id:
+                        annotation_index = index
+                        break
+                if annotation_index == -1:
+                    raise ValueError(f"Annotation {annotation_id} not found")
+                self.dataset.annotations.pop(annotation_index)
 
     @classmethod
     def from_json(cls, d: Dict) -> CocoMetaDataset:

@@ -10,6 +10,7 @@ build/
 playground/**/*.jpg*
 playground/**/*.png*
 *.bag
+*.blob
 
 lightning_logs/
 runs/

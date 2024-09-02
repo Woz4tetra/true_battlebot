@@ -3,6 +3,7 @@ from pathlib import Path
 
 import cv2
 import tqdm
+from bw_shared.enums.label import ModelLabel
 from bw_shared.get_image_size import get_image_size
 from perception_tools.training.instance_helpers import (
     copy_dataset,
@@ -36,7 +37,7 @@ def main():
         new_subdir = output_path / subdir.name
         classes_path = new_subdir / classes_name
 
-        classes = {0: "background"}
+        classes = {0: ModelLabel.BACKGROUND}
 
         metadataset = load_dataset(str(annotations_path))
         try:
@@ -50,7 +51,9 @@ def main():
                         continue
                     width, height = get_image_size(image_path)
                     for annotation in annotations:
-                        classes[annotation.category_id] = metadataset.categories[annotation.category_id].name
+                        classes[annotation.category_id] = ModelLabel(
+                            metadataset.categories[annotation.category_id].name
+                        )
                     mask = segmentation_annotations_to_masks(width, height, annotations)
                     mask_filename = image_path.name.replace(".jpg", "_mask.png")
                     cv2.imwrite(str(new_subdir / mask_filename), mask)
