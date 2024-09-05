@@ -3,15 +3,17 @@ target_tick_rate = 60.0
 [camera]
 type = "SimulatedCamera"
 
-[field_filter]
-# type = "SimulatedFieldFilter"
-type = "PointCloudFieldFilter"
-
 [field_request]
 stale_image_timeout = 2.0
 
+[field_filter]
+type = "PointCloudFieldFilter"
+
 [field_segmentation]
-type = "SimulatedSegmentation"
+type = "SemanticSegmentation"
+debug = true
+model_path = "field_deeplabv3_r50_2024-09-05.torchscript"
+metadata_path = "field_deeplabv3_r50_2024-09-05.json"
 
 [field_segmentation.model_to_system_labels.mapping]
 "field" = "field"
@@ -37,14 +39,14 @@ exclude_filters = [
     "/perception/heartbeat",
 ]
 
-# [robot_keypoint]
-# type = "SimulatedKeypoint"
-
 [robot_keypoint]
-type = "YoloKeypoint"
-debug = true
-model_path = "yolov8-pose_2024-09-01.pt"
-metadata_path = "yolov8-pose_2024-09-01.json"
+type = "SimulatedKeypoint"
+
+# [robot_keypoint]
+# type = "YoloKeypoint"
+# debug = true
+# model_path = "yolov8-pose_2024-09-01.pt"
+# metadata_path = "yolov8-pose_2024-09-01.json"
 
 [robot_keypoint.model_to_system_labels.mapping]
 "mr_stabs_mk1" = "controlled_robot"

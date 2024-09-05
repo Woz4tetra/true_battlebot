@@ -10,8 +10,8 @@ type = "PointCloudFieldFilter"
 [field_segmentation]
 type = "SemanticSegmentation"
 debug = true
-model_path = "field_deeplabv3_r50_2024-07-24.torchscript"
-metadata_path = "field_deeplabv3_r50_2024-07-24.json"
+model_path = "field_deeplabv3_r50_2024-09-05.torchscript"
+metadata_path = "field_deeplabv3_r50_2024-09-05.json"
 
 [field_segmentation.model_to_system_labels.mapping]
 "field" = "field"
