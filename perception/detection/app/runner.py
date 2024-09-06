@@ -15,7 +15,7 @@ from app.keypoint.keypoint_interface import KeypointInterface
 from app.keypoint.keypoint_loader import load_keypoint
 from app.segmentation.segmentation_interface import SegmentationInterface
 from app.segmentation.segmentation_loader import load_segmentation
-from bw_interfaces.msg import EstimatedObject, KeypointInstanceArray, LabelMap, SegmentationInstanceArray
+from bw_interfaces.msg import EstimatedObject, Heartbeat, KeypointInstanceArray, LabelMap, SegmentationInstanceArray
 from bw_shared.configs.shared_config import SharedConfig
 from bw_shared.enums.field_type import FieldType
 from bw_shared.environment import get_map, get_robot
@@ -29,13 +29,12 @@ from perception_tools.rosbridge.ros_publisher import RosPublisher
 from perception_tools.rosbridge.wait_for_ros_connection import wait_for_ros_connection
 from sensor_msgs.msg import Image, PointCloud2
 from std_msgs.msg import Empty
-from std_msgs.msg import Header as RosHeader
 
 
 class Runner:
     def __init__(self, container: Container) -> None:
         self.container = container
-        self.heartbeat_publisher: RosPublisher[RosHeader] = self.container.resolve_by_name("heartbeat_publisher")
+        self.heartbeat_publisher: RosPublisher[Heartbeat] = self.container.resolve_by_name("heartbeat_publisher")
         self.camera = self.container.resolve(CameraInterface)
 
         self.field_filter = self.container.resolve(FieldFilterInterface)
@@ -76,7 +75,7 @@ class Runner:
     def loop(self) -> None:
         if rospy.is_shutdown():
             raise KeyboardInterrupt("ROS is shutting down")
-        self.heartbeat_publisher.publish(Header.auto().to_msg())
+        self.heartbeat_publisher.publish(Heartbeat(header=Header.auto().to_msg(), node_name="perception"))
         if self.field_request_handler.has_request():
             self.is_field_request_active = True
         if self.is_field_request_active:
@@ -164,7 +163,7 @@ def make_ros_comms(container: Container) -> None:
     RosPollSubscriber.log = config.ros.log
     RosPollSubscriber.exclude_filters = config.ros.exclude_filters
 
-    heartbeat_publisher = RosPublisher("/perception/heartbeat", RosHeader)
+    heartbeat_publisher = RosPublisher("/perception/heartbeat", Heartbeat)
     container.register(heartbeat_publisher, "heartbeat_publisher")
 
 

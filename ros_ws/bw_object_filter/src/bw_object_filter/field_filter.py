@@ -6,7 +6,7 @@ from typing import Optional, Tuple
 import rospy
 import tf2_ros
 from bw_interfaces.msg import CageCorner as RosCageCorner
-from bw_interfaces.msg import EstimatedObject
+from bw_interfaces.msg import EstimatedObject, Heartbeat
 from bw_shared.enums.field_type import FieldType
 from bw_shared.enums.label import Label
 from bw_shared.environment import get_map
@@ -44,11 +44,12 @@ class FieldFilter:
         }
         self.estimated_field = EstimatedObject()
         self.field_rotate_tf = self.field_rotations[CageCorner.BLUE_SIDE]
+        self.perception_heartbeat = Heartbeat()
+        self.field_request_pending = False
 
         self.tf_broadcaster = tf2_ros.TransformBroadcaster()
 
         self.request_pub = rospy.Publisher("/perception/field/request", Empty, queue_size=1)
-        self.response_sub = rospy.Subscriber("/perception/field/response", EstimatedObject, self.response_callback)
         self.estimated_field_pub = rospy.Publisher("filter/field", EstimatedObject, queue_size=1, latch=True)
         self.estimated_field_marker_pub = rospy.Publisher("filter/field/marker", MarkerArray, queue_size=1, latch=True)
         self.corner_pub = rospy.Publisher("cage_corner", RosCageCorner, queue_size=1, latch=True)
@@ -59,6 +60,10 @@ class FieldFilter:
         self.corner_side_sub = rospy.Subscriber(
             "set_cage_corner", RosCageCorner, self.corner_side_callback, queue_size=1
         )
+        self.response_sub = rospy.Subscriber("/perception/field/response", EstimatedObject, self.response_callback)
+        self.perception_heartbeat_sub = rospy.Subscriber(
+            "/perception/heartbeat", Heartbeat, self.perception_header, queue_size=1
+        )
 
         if auto_initialize:
             self.request_field()
@@ -67,9 +72,22 @@ class FieldFilter:
         rospy.loginfo("Manual plane request received")
         self.request_field()
 
+    def perception_header(self, heartbeat: Heartbeat) -> None:
+        self.perception_heartbeat = heartbeat
+
     def request_field(self) -> None:
         rospy.loginfo("Requesting field")
-        self.request_pub.publish(Empty())
+        self.field_request_pending = True
+
+    def check_pending_field_request(self) -> None:
+        if self.field_request_pending:
+            delay = rospy.Time.now() - self.perception_heartbeat.header.stamp
+            if delay > rospy.Duration(1):
+                rospy.logwarn(f"Field request pending. Perception node is not responding. Delay: {delay.to_sec()}")
+            else:
+                rospy.loginfo("Field request pending. Sending request.")
+                self.request_pub.publish(Empty())
+                self.field_request_pending = False
 
     def response_callback(self, field: EstimatedObject) -> None:
         rospy.loginfo("Received field response")
@@ -187,6 +205,7 @@ class FieldFilter:
     def run(self) -> None:
         while not rospy.is_shutdown():
             rospy.sleep(0.5)
+            self.check_pending_field_request()
             if len(self.estimated_field.header.frame_id) == 0:
                 continue
             self.estimated_field.header.stamp = rospy.Time.now()

@@ -14,6 +14,7 @@ from ._GoToGoalFeedback import *
 from ._GoToGoalGoal import *
 from ._GoToGoalResult import *
 from ._HealthSummary import *
+from ._Heartbeat import *
 from ._KeypointInstance import *
 from ._KeypointInstanceArray import *
 from ._LabelMap import *

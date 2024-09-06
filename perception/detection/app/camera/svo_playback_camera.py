@@ -65,12 +65,14 @@ class SvoPlaybackCamera(CameraInterface):
             self.field_data.set_header(header)
             return self.field_data
 
+        t0 = time.perf_counter()
         self.camera.retrieve_image(self.color_image, sl.VIEW.LEFT)
+        t1 = time.perf_counter()
         color_image_data = self.color_image.get_data()[..., 0:3]
 
         header = self.next_header()
         now = time.time()
-        self.logger.debug(f"Frame time: {header.stamp}. Delay: {now - header.stamp}")
+        self.logger.debug(f"Frame time: {header.stamp}. Delay: {now - header.stamp}. Image retrieval time: {t1 - t0}")
         self.field_data.camera_info.header = header.to_msg()
         image = Image(header, color_image_data)
         point_cloud = PointCloud(header, np.array([]), np.array([]), color_encoding=CloudFieldName.BGRA)
@@ -143,7 +145,8 @@ class SvoPlaybackCamera(CameraInterface):
         status = self.camera.open(self.init_params)
         if status != sl.ERROR_CODE.SUCCESS:
             raise Exception(f"Error opening camera: {status}")
-        self.logger.debug(f"Jumping to frame index: {self.config.start_index}")
+        self.logger.info(f"SVO has {self.camera.get_svo_number_of_frames()} frames")
+        self.logger.info(f"Jumping to frame index: {self.config.start_index}")
         self.camera.set_svo_position(self.config.start_index)
 
         return camera_data
