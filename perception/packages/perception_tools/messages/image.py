@@ -7,6 +7,7 @@ from enum import Enum
 import numpy as np
 from bw_shared.messages.header import Header
 from cv_bridge import CvBridge
+from sensor_msgs.msg import CompressedImage
 from sensor_msgs.msg import Image as RosImage
 
 
@@ -122,6 +123,11 @@ class Image:
 
     def to_msg(self) -> RosImage:
         msg = CV_BRIDGE.cv2_to_imgmsg(self.data, self.encoding.value)
+        msg.header = self.header.to_msg()
+        return msg
+
+    def to_compressed_msg(self) -> CompressedImage:
+        msg = CV_BRIDGE.cv2_to_compressed_imgmsg(self.data)
         msg.header = self.header.to_msg()
         return msg
 

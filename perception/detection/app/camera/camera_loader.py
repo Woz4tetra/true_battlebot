@@ -9,6 +9,7 @@ from app.config.config import Config
 from app.container import Container
 from perception_tools.rosbridge.ros_poll_subscriber import RosPollSubscriber
 from perception_tools.rosbridge.ros_publisher import RosPublisher
+from perception_tools.rosbridge.ros_threaded_publisher import RosThreadedPublisher
 from sensor_msgs.msg import CameraInfo, Image
 from std_msgs.msg import Empty
 
@@ -53,7 +54,7 @@ def make_svo_camera(camera_config: SvoPlaybackCameraConfig, container: Container
     config = container.resolve(Config)
     ns = config.camera_topic.namespace
 
-    color_image_pub = RosPublisher(ns + "/rgb/image_raw", Image)
+    color_image_pub = RosThreadedPublisher(ns + "/rgb/image_raw", Image, publish_callback=lambda x: x.to_msg())
     camera_info_pub = RosPublisher(ns + "/rgb/camera_info", CameraInfo)
 
     return SvoPlaybackCamera(camera_config, config.camera_topic, color_image_pub, camera_info_pub)

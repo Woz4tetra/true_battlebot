@@ -55,7 +55,9 @@ class SvoPlaybackCamera(CameraInterface):
         return True
 
     def poll(self) -> CameraData | None:
+        t0 = time.perf_counter()
         status = self.camera.grab(self.runtime_parameters)
+        t1 = time.perf_counter()
         if status != sl.ERROR_CODE.SUCCESS:
             self.logger.error(f"ZED Camera failed to grab frame: {status.name} ({status.value}): {str(status)}")
             return None
@@ -65,25 +67,26 @@ class SvoPlaybackCamera(CameraInterface):
             self.field_data.set_header(header)
             return self.field_data
 
-        t0 = time.perf_counter()
         self.camera.retrieve_image(self.color_image, sl.VIEW.LEFT)
-        t1 = time.perf_counter()
         color_image_data = self.color_image.get_data()[..., 0:3]
 
         header = self.next_header()
         now = time.time()
-        self.logger.debug(f"Frame time: {header.stamp}. Delay: {now - header.stamp}. Image retrieval time: {t1 - t0}")
+        self.logger.debug(f"Frame time: {header.stamp}. Delay: {now - header.stamp}. Image grab time: {t1 - t0}")
         self.field_data.camera_info.header = header.to_msg()
         image = Image(header, color_image_data)
         point_cloud = PointCloud(header, np.array([]), np.array([]), color_encoding=CloudFieldName.BGRA)
 
+        t2 = time.perf_counter()
         camera_data = CameraData(
             color_image=image,
             point_cloud=point_cloud,
             camera_info=self.field_data.camera_info,
         )
+        t3 = time.perf_counter()
+        self.logger.info(f"Poll time: {t3 - t0}. Image processing time: {t3 - t2}")
 
-        self.color_image_pub.publish(image.to_msg())
+        self.color_image_pub.publish(image)
         self.camera_info_pub.publish(self.field_data.camera_info)
 
         return camera_data
