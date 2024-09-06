@@ -5,8 +5,26 @@ using UnityEngine;
 
 public class PIDFollowerEngine : BaseFollowerEngine
 {
-    [SerializeField] PID linearPID = new PID(2.0f, 0.0f, 0.0f, 1.0f);
-    [SerializeField] PID angularPID = new PID(10.0f, 0.1f, 1.0f, 1.0f);
+    [SerializeField] PidConfig linearPIDConfig = new PidConfig(2.0f, 0.0f, 0.0f, 1.0f);
+    [SerializeField] PidConfig angularPIDConfig = new PidConfig(10.0f, 0.1f, 1.0f, 1.0f);
+
+    PID linearPID, angularPID;
+
+    public PIDFollowerEngine() : base()
+    {
+        linearPID = new PID(linearPIDConfig);
+        angularPID = new PID(angularPIDConfig);
+    }
+
+    public void SetLinearPIDConfig(PidConfig config)
+    {
+        linearPID.SetConfig(config);
+    }
+
+    public void SetAngularPIDConfig(PidConfig config)
+    {
+        angularPID.SetConfig(config);
+    }
 
     public override void Reset()
     {

@@ -15,7 +15,11 @@ public class StaticGroundTruthPublisher : MonoBehaviour
     void Start()
     {
         ros = ROSConnection.GetOrCreateInstance();
-        ros.RegisterPublisher<PoseStampedMsg>(topic);
+        RosTopicState topicState = ros.GetTopic(topic);
+        if (topicState == null)
+        {
+            ros.RegisterPublisher<PoseStampedMsg>(topic);
+        }
     }
 
     void Update()

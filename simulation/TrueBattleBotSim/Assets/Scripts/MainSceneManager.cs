@@ -334,7 +334,7 @@ public class MainSceneManager : MonoBehaviour
                     Debug.LogError("Waypoint follower not found");
                     break;
                 }
-                followerEngine = GetFollowerEngine(objective_config.follower_engine, actor);
+                followerEngine = GetFollowerEngine(objective_config.follower_engine, actor, objective_config);
                 waypoint_follower.enabled = true;
                 waypoint_follower.SetSequence(actor_config.name, actor_config.objective, GetScaledSequence(objective_config.init, objective_config.sequence));
                 waypoint_follower.SetFollowerEngine(followerEngine);
@@ -345,7 +345,7 @@ public class MainSceneManager : MonoBehaviour
                     Debug.LogError("Target follower not found");
                     break;
                 }
-                followerEngine = GetFollowerEngine(objective_config.follower_engine, actor);
+                followerEngine = GetFollowerEngine(objective_config.follower_engine, actor, objective_config);
                 target_follower.enabled = true;
                 target_follower.SetSequence(actor_config.name, actor_config.objective, objective_config.sequence);
                 target_follower.SetActiveActors(actors);
@@ -377,7 +377,7 @@ public class MainSceneManager : MonoBehaviour
         }
     }
 
-    BaseFollowerEngine GetFollowerEngine(string followerType, GameObject actor)
+    BaseFollowerEngine GetFollowerEngine(string followerType, GameObject actor, ObjectiveConfig objective_config)
     {
         PIDFollowerEngine pid_follower_engine = actor.GetComponent<PIDFollowerEngine>();
         RamseteFollowerEngine ramsete_follower_engine = actor.GetComponent<RamseteFollowerEngine>();
@@ -399,6 +399,7 @@ public class MainSceneManager : MonoBehaviour
                     break;
                 }
                 ramsete_follower_engine.enabled = true;
+                ramsete_follower_engine.SetRamseteConfig(objective_config.ramsete);
                 followerEngine = ramsete_follower_engine;
                 break;
             case "PID":
@@ -408,6 +409,8 @@ public class MainSceneManager : MonoBehaviour
                     break;
                 }
                 pid_follower_engine.enabled = true;
+                pid_follower_engine.SetLinearPIDConfig(objective_config.linear_pid);
+                pid_follower_engine.SetAngularPIDConfig(objective_config.angular_pid);
                 followerEngine = pid_follower_engine;
                 break;
             default:

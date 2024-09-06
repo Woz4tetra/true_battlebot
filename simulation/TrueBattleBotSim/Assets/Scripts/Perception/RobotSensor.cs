@@ -6,6 +6,7 @@ using System;
 using RosMessageTypes.Geometry;
 using Unity.Robotics.ROSTCPConnector.ROSGeometry;
 using MathExtensions;
+using Unity.Robotics.ROSTCPConnector;
 
 public class RobotSensor : BaseGameObjectSensor
 {
@@ -22,7 +23,11 @@ public class RobotSensor : BaseGameObjectSensor
 
     protected override void BaseGameObjectSensorStart()
     {
-        ros.RegisterPublisher<EstimatedObjectArrayMsg>(topic);
+        RosTopicState topicState = ros.GetTopic(topic);
+        if (topicState == null)
+        {
+            ros.RegisterPublisher<EstimatedObjectArrayMsg>(topic);
+        }
     }
 
     private VisibleTarget[] ProcessObjects(RobotTracker[] robot_trackers)

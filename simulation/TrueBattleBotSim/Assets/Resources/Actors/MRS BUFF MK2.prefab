@@ -19332,7 +19332,7 @@ MonoBehaviour:
   - {fileID: 4698265243669232854}
   followRightWheels:
   - {fileID: 8349046392604143524}
-  linearPid:
+  linearPIDConfig:
     kp: 0.01
     ki: 0
     kd: 0
@@ -19341,12 +19341,12 @@ MonoBehaviour:
     i_max: 0
     epsilon: 0.000000001
     tolerance: 0
-  angularPid:
+  angularPIDConfig:
     kp: 2
     ki: 0.1
     kd: 0.001
     kf: 1
-    i_zone: 10
+    i_zone: 0
     i_max: 0
     epsilon: 0.000000001
     tolerance: 0
@@ -19445,8 +19445,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3695846776a4ee2739ba112c8c2d4777, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  zeta: 16
-  b: 12
+  ramseteConfig:
+    zeta: 2
+    b: 0.7
 --- !u!114 &4707992231250535821
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -19459,8 +19460,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7e4961b0a573f1cd0a9ef87897ff0a5f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  linearPID:
-    kp: 3
+  linearPIDConfig:
+    kp: 2
     ki: 0
     kd: 0
     kf: 1
@@ -19468,8 +19469,8 @@ MonoBehaviour:
     i_max: 0
     epsilon: 0.000000001
     tolerance: 0
-  angularPID:
-    kp: 50
+  angularPIDConfig:
+    kp: 10
     ki: 0.1
     kd: 1
     kf: 1

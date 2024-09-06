@@ -1,38 +1,15 @@
 using UnityEngine;
-using Unity.Robotics.ROSTCPConnector;
 using RosMessageTypes.Geometry;
 using Unity.Robotics.ROSTCPConnector.ROSGeometry;
 using MathExtensions;
 
-class SetPoseTopic
-{
-    private ROSConnection ros;
-    private Optional<PoseMsg> pose = Optional<PoseMsg>.CreateEmpty();
-    public SetPoseTopic(string topic)
-    {
-        ros = ROSConnection.GetOrCreateInstance();
-        ros.Subscribe<PoseMsg>(topic, PoseCallback);
-    }
-
-    private void PoseCallback(PoseMsg pose)
-    {
-        this.pose = Optional<PoseMsg>.Create(pose);
-    }
-
-    public Optional<PoseMsg> Receive()
-    {
-        Optional<PoseMsg> result = pose;
-        pose = Optional<PoseMsg>.CreateEmpty();
-        return result;
-    }
-}
 
 class TeleportToPoseTopic : MonoBehaviour
 {
     [SerializeField] private string topic = "";
     [SerializeField] private GameObject referenceObject;
 
-    static SetPoseTopic setPoseTopic = null;
+    RosPollSubscriber<PoseMsg> setPoseTopic;
 
     public void Start()
     {
@@ -40,10 +17,8 @@ class TeleportToPoseTopic : MonoBehaviour
         {
             referenceObject = GameObject.Find("Coordinate Frame");
         }
-        if (setPoseTopic == null)
-        {
-            setPoseTopic = new SetPoseTopic(topic);
-        }
+
+        setPoseTopic = new RosPollSubscriber<PoseMsg>(topic);
     }
 
     void Update()
