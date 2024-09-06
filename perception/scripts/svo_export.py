@@ -81,7 +81,7 @@ def main(opt: argparse.Namespace):
         video_writer = cv2.VideoWriter(
             output,
             cv2.VideoWriter_fourcc("M", "4", "S", "2"),  # type: ignore
-            max(zed.get_camera_information().camera_configuration.fps, 25),
+            max(zed.get_camera_information().camera_configuration.fps, 100),
             (width, height),
         )
         if not video_writer.isOpened():

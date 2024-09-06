@@ -40,6 +40,9 @@ class SvoPlaybackCamera(CameraInterface):
         self.runtime_parameters = sl.RuntimeParameters()
 
         self.mode = CameraMode.ROBOT_FINDER
+        self.camera_fps = 0.0
+        self.real_time_start = 0.0
+        self.camera_start_time = 0.0
 
         self.color_image = sl.Mat()
         self.point_cloud = sl.Mat()
@@ -77,17 +80,21 @@ class SvoPlaybackCamera(CameraInterface):
         image = Image(header, color_image_data)
         point_cloud = PointCloud(header, np.array([]), np.array([]), color_encoding=CloudFieldName.BGRA)
 
-        t2 = time.perf_counter()
         camera_data = CameraData(
             color_image=image,
             point_cloud=point_cloud,
             camera_info=self.field_data.camera_info,
         )
-        t3 = time.perf_counter()
-        self.logger.info(f"Poll time: {t3 - t0}. Image processing time: {t3 - t2}")
 
-        self.color_image_pub.publish(image)
+        self.color_image_pub.publish(image.to_msg())
         self.camera_info_pub.publish(self.field_data.camera_info)
+
+        real_time = self.get_real_time()
+        camera_time = self.get_camera_time()
+        self.logger.debug(f"Capture time: {camera_time}. Real time: {real_time}")
+        if real_time > camera_time:
+            self.logger.warning(f"Capture time is behind real time: {camera_time} < {real_time}")
+            self.set_svo_time(real_time)
 
         return camera_data
 
@@ -115,13 +122,20 @@ class SvoPlaybackCamera(CameraInterface):
         if status != sl.ERROR_CODE.SUCCESS:
             raise Exception(f"Error opening camera: {status}")
 
-        self.logger.debug(f"Jumping to frame index: {self.config.field_grab_index}")
-        self.camera.set_svo_position(self.config.field_grab_index)
+        zed_info = self.camera.get_camera_information()
+        self.camera_fps = zed_info.camera_configuration.fps
+        self.logger.info(f"Camera FPS: {self.camera_fps}")
+
         status = self.camera.grab(self.runtime_parameters)
         if status != sl.ERROR_CODE.SUCCESS:
-            raise Exception(
-                f"Error grabbing field frame: {status}. Attempted to get index: {self.config.field_grab_index}"
-            )
+            raise Exception(f"Error grabbing initial frame: {status}")
+        self.camera_start_time = self.next_header().stamp
+
+        self.logger.debug(f"Jumping to frame index: {self.config.field_grab_time}")
+        self.set_svo_time(self.config.field_grab_time)
+        status = self.camera.grab(self.runtime_parameters)
+        if status != sl.ERROR_CODE.SUCCESS:
+            raise Exception(f"Error grabbing field frame: {status}. Attempted to get: {self.config.field_grab_time}")
         self.logger.debug("Grabbed field frame")
 
         self.camera.retrieve_image(self.color_image, sl.VIEW.LEFT)
@@ -137,7 +151,7 @@ class SvoPlaybackCamera(CameraInterface):
         self.logger.debug(f"Field frame time: {header.stamp}. Delay: {now - header.stamp}")
         image = Image(header, color_image_data)
         point_cloud = PointCloud(header, points, colors, color_encoding=CloudFieldName.BGRA)
-        camera_info = zed_to_ros_camera_info(self.camera.get_camera_information())
+        camera_info = zed_to_ros_camera_info(zed_info)
         camera_data = CameraData(color_image=image, point_cloud=point_cloud, camera_info=camera_info)
 
         self.logger.debug("Closing camera")
@@ -149,7 +163,24 @@ class SvoPlaybackCamera(CameraInterface):
         if status != sl.ERROR_CODE.SUCCESS:
             raise Exception(f"Error opening camera: {status}")
         self.logger.info(f"SVO has {self.camera.get_svo_number_of_frames()} frames")
-        self.logger.info(f"Jumping to frame index: {self.config.start_index}")
-        self.camera.set_svo_position(self.config.start_index)
+        self.logger.info(f"Jumping to time: {self.config.start_time}")
+
+        self.set_svo_time(self.config.start_time)
+        status = self.camera.grab(self.runtime_parameters)
+        if status != sl.ERROR_CODE.SUCCESS:
+            raise Exception(f"Error grabbing field frame: {status}. Attempted to get: {self.config.start_time}")
+
+        self.real_time_start = time.perf_counter() - self.config.start_time
 
         return camera_data
+
+    def set_svo_time(self, time_since_start: float) -> None:
+        position = int(time_since_start * self.camera_fps)
+        self.logger.debug(f"Setting SVO position to: {position}")
+        self.camera.set_svo_position(position)
+
+    def get_real_time(self) -> float:
+        return time.perf_counter() - self.real_time_start
+
+    def get_camera_time(self) -> float:
+        return self.header.stamp - self.camera_start_time

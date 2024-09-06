@@ -6,5 +6,5 @@ from typing import Literal
 class SvoPlaybackCameraConfig:
     type: Literal["SvoPlaybackCamera"] = "SvoPlaybackCamera"
     path: str = "/media/storage/svo/playback.svo"
-    field_grab_index: int = 0
-    start_index: int = 0
+    field_grab_time: float = 0.0
+    start_time: float = 0.0

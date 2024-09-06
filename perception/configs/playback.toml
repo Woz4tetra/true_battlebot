@@ -5,7 +5,7 @@ type = "SvoPlaybackCamera"
 # path = "/media/storage/svo/mini_bot_2024-03-02T17-59-26.svo"
 
 path = "/media/storage/svo/mini_bot_2024-03-02T19-00-40.svo"
-start_index = 500
+start_time = 10.0
 
 [field_filter]
 type = "PointCloudFieldFilter"
