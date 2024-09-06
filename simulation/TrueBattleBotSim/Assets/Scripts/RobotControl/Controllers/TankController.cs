@@ -15,8 +15,8 @@ class TankController : MonoBehaviour, ControllerInterface
 
     [SerializeField] private Wheel[] followLeftWheels;
     [SerializeField] private Wheel[] followRightWheels;
-    [SerializeField] private PID linearPid;
-    [SerializeField] private PID angularPid;
+    [SerializeField] private PidConfig linearPIDConfig;
+    [SerializeField] private PidConfig angularPIDConfig;
     [SerializeField] private bool enablePid;
     [SerializeField] private bool reverseLeft;
     [SerializeField] private bool reverseRight;
@@ -27,9 +27,12 @@ class TankController : MonoBehaviour, ControllerInterface
     private TwistMsg setpoint = new TwistMsg();
     private TransformFrame frame;
     private Matrix4x4 tf_spawnhere_from_body;
+    private PID linearPid, angularPid;
 
     public void Start()
     {
+        linearPid = new PID(linearPIDConfig);
+        angularPid = new PID(angularPIDConfig);
         if (referenceObject == null)
         {
             referenceObject = GameObject.Find("Coordinate Frame");

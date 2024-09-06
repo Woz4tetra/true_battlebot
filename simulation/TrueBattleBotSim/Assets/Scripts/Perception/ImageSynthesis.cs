@@ -72,7 +72,7 @@ public class ImageSynthesis : MonoBehaviour
         public Camera camera;
         public RosTopicState imageTopicState;
         public RosTopicState infoTopicState;
-        public RosTopicState requestTopicState;
+        public RosPollSubscriber<EmptyMsg> requestTopicSub;
     };
 
     private ROSConnection ros;
@@ -83,7 +83,6 @@ public class ImageSynthesis : MonoBehaviour
     private float prevPublishTime = 0.0f;
 
     private SegmentationInstanceArrayMsg segmentationMsg = new SegmentationInstanceArrayMsg();
-    private Dictionary<string, bool> hasRequest = new Dictionary<string, bool>();
 
 
     // cached materials
@@ -156,28 +155,29 @@ public class ImageSynthesis : MonoBehaviour
         }
         foreach (CapturePass pass in passes)
         {
-            pass.imageTopicState = ros.GetOrCreateTopic(GetImageTopic(pass.imageTopic), MessageRegistry.GetRosMessageName<ImageMsg>());
-            pass.infoTopicState = ros.GetOrCreateTopic(GetImageTopic(pass.infoTopic), MessageRegistry.GetRosMessageName<CameraInfoMsg>());
-            if (!pass.imageTopicState.IsPublisher)
+            pass.imageTopicState = ros.GetTopic(GetImageTopic(pass.imageTopic));
+            pass.infoTopicState = ros.GetTopic(GetImageTopic(pass.infoTopic));
+            if (pass.imageTopicState == null)
             {
-                ros.RegisterPublisher<ImageMsg>(pass.imageTopicState.Topic, queue_size: 1);
+                pass.imageTopicState = ros.RegisterPublisher<ImageMsg>(GetImageTopic(pass.imageTopic), queue_size: 10);
             }
-            if (!pass.infoTopicState.IsPublisher)
+            if (pass.infoTopicState == null)
             {
-                ros.RegisterPublisher<CameraInfoMsg>(pass.infoTopicState.Topic, queue_size: 1);
+                pass.infoTopicState = ros.RegisterPublisher<CameraInfoMsg>(GetImageTopic(pass.infoTopic), queue_size: 10);
             }
             if (pass.requestTopic.Length > 0)
             {
-                hasRequest[pass.name] = false;
-                ros.Subscribe<EmptyMsg>(GetImageTopic(pass.requestTopic), (msg) =>
-                {
-                    Debug.Log($"Received request for {pass.name}");
-                    hasRequest[pass.name] = true;
-                });
+                pass.requestTopicSub = new RosPollSubscriber<EmptyMsg>(GetImageTopic(pass.requestTopic));
             }
         }
         if (publishSegmentationLabels)
-            ros.RegisterPublisher<SegmentationInstanceArrayMsg>(baseTopic + "/" + segmentationTopic, queue_size: 1);
+        {
+            RosTopicState segmentationTopicState = ros.GetTopic(GetImageTopic(segmentationTopic));
+            if (segmentationTopicState == null)
+            {
+                ros.RegisterPublisher<SegmentationInstanceArrayMsg>(GetImageTopic(segmentationTopic), queue_size: 10);
+            }
+        }
 
         // default fallbacks, if shaders are unspecified
         if (!uberReplacementShader)
@@ -410,13 +410,16 @@ public class ImageSynthesis : MonoBehaviour
 
         foreach (CapturePass pass in capturePasses)
         {
-            if (hasRequest.ContainsKey(pass.name))
+            if (pass.requestTopic.Length > 0)
             {
-                if (!hasRequest[pass.name])
+                if (pass.requestTopicSub.Receive().TryGet(out EmptyMsg request))
+                {
+                    Debug.Log("Received request for " + pass.name);
+                }
+                else
                 {
                     continue;
                 }
-                hasRequest[pass.name] = false;
             }
 
             pass.outputWidth = imageWidth;

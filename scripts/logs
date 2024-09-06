@@ -6,6 +6,7 @@ import glob
 import json
 import os
 import re
+import select
 import sys
 import time
 from dataclasses import dataclass
@@ -200,7 +201,7 @@ def find_latest_log_file(search_dir: str) -> str:
         sys.stdout.write(f"Waiting for log files to appear in {latest_path}\n")
         while not os.path.isfile(latest_path):
             time.sleep(1.0)
-    return latest_path
+    return os.readlink(latest_path)
 
 
 def print_entire_file(filename: str, args: ParserInput) -> None:
@@ -262,18 +263,35 @@ def follow(fp: BufferedReader, num_lines: int) -> Generator[bytes, None, None]:
         fp.seek(offset)
 
     while True:
+        readers, _, _ = select.select([fp], [], [])
+        if not readers:
+            yield b""
+            continue
         line = fp.readline()
         if not line:
+            yield b""
             time.sleep(0.1)
             continue
         yield line
 
 
-def follow_and_process(filename: str, args: ParserInput) -> None:
+def follow_and_process(filename: str, args: ParserInput, log_dir: str) -> None:
     incomplete_line_tracker = IncompleteLineTracker()
-    with open(filename, "rb") as file:
-        for line in follow(file, args.num_lines):
-            process_line(line, args, incomplete_line_tracker)
+    last_file_check_time = time.monotonic()
+    while True:
+        with open(filename, "rb") as file:
+            for line in follow(file, args.num_lines):
+                process_line(line, args, incomplete_line_tracker)
+                now = time.monotonic()
+                if now - last_file_check_time < 1.0:
+                    continue
+                last_file_check_time = now
+                new_filename = find_latest_log_file(log_dir)
+                if new_filename == filename:
+                    continue
+                print(f"{COLORS.RESET}Watching {new_filename}")
+                filename = new_filename
+                break
 
 
 def make_log_filters(args: argparse.Namespace) -> LogFilter:
@@ -325,7 +343,7 @@ def main() -> None:
             print(f"\n{COLORS.RESET}Log path: {os.path.realpath(filename)}")
         return
     try:
-        follow_and_process(filename, inputs)
+        follow_and_process(filename, inputs, log_dir)
     except KeyboardInterrupt:
         pass
     finally:

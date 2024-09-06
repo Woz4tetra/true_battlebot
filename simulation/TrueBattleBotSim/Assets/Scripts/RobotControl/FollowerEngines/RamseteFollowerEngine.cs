@@ -5,11 +5,15 @@ using UnityEngine;
 
 public class RamseteFollowerEngine : BaseFollowerEngine
 {
-    [SerializeField] float zeta = 4.0f;  // Larger values adds damping in the response
-    [SerializeField] float b = 8.0f;  // Larger values make convergence more aggressive like a proportional gain
+    [SerializeField] RamseteConfig ramseteConfig = new RamseteConfig(2.0f, 0.7f);
     public override void Reset()
     {
 
+    }
+
+    public void SetRamseteConfig(RamseteConfig config)
+    {
+        ramseteConfig = config;
     }
 
     public override TwistMsg ComputeVelocity(Matrix4x4 currentPose, Matrix4x4 goalPose, Vector3 currentVelocity, Vector3 goalVelocity)
@@ -27,15 +31,15 @@ public class RamseteFollowerEngine : BaseFollowerEngine
         float vtRef = goalVelocity.z;  // rad/s
         float k = (
             2.0f
-            * zeta
-            * Mathf.Sqrt(vtRef * vtRef + b * vxRef * vxRef)
+            * ramseteConfig.zeta
+            * Mathf.Sqrt(vtRef * vtRef + ramseteConfig.b * vxRef * vxRef)
         );
 
         float vxInput = vxRef * Mathf.Cos(relativeAngle) + k * relativePosition.x;
         float vtInput = (
             vtRef
             + k * relativeAngle
-            + b * vxRef * Mathf.Sin(relativeAngle) * relativePosition.y
+            + ramseteConfig.b * vxRef * Mathf.Sin(relativeAngle) * relativePosition.y
         );
 
         return new TwistMsg

@@ -28,7 +28,11 @@ class ImuSensor : MonoBehaviour
         imuMsg = new ImuMsg();
 
         ros = ROSConnection.GetOrCreateInstance();
-        ros.RegisterPublisher<ImuMsg>(topic);
+        RosTopicState imuTopic = ros.GetTopic(topic);
+        if (imuTopic == null)
+        {
+            ros.RegisterPublisher<ImuMsg>(topic);
+        }
         _prevPublishTime = Time.realtimeSinceStartup;
 
         imuMsg.header.frame_id = FrameId;

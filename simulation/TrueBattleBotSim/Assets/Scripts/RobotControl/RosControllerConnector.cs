@@ -6,40 +6,44 @@ using RosMessageTypes.Nav;
 class RosControllerConnector : MonoBehaviour
 
 {
-    [SerializeField] private string baseTopic = "";
-    private ROSConnection ros;
-    private ControllerInterface controller;
-    private string cmdVelTopic;
+    [SerializeField] string baseTopic = "";
+    [SerializeField] float commandTimeout = 0.1f;
+    ROSConnection ros;
+    ControllerInterface controller;
     RosTopicState groundTruthTopic;
+    RosPollSubscriber<TwistMsg> cmdVelTopic;
+    float lastCommandTime;
+
     public void Start()
     {
         ros = ROSConnection.GetOrCreateInstance();
-        cmdVelTopic = baseTopic + "/cmd_vel";
-        ros.Subscribe<TwistMsg>(cmdVelTopic, cmdVelCallback);
-        groundTruthTopic = ros.RegisterPublisher<OdometryMsg>(baseTopic + "/ground_truth");
+        cmdVelTopic = new RosPollSubscriber<TwistMsg>(baseTopic + "/cmd_vel");
+        groundTruthTopic = ros.GetTopic(baseTopic + "/ground_truth");
+        if (groundTruthTopic == null)
+        {
+            groundTruthTopic = ros.RegisterPublisher<OdometryMsg>(baseTopic + "/ground_truth");
+        }
         controller = GetComponent<ControllerInterface>();
+        lastCommandTime = Time.time;
     }
 
     public void Update()
     {
         updateOdometry();
+
+        if (cmdVelTopic.Receive().TryGet(out TwistMsg command))
+        {
+            controller.SetCommand(command);
+            lastCommandTime = Time.time;
+        }
+        if (Time.time - lastCommandTime > commandTimeout)
+        {
+            controller.SetCommand(new TwistMsg());
+        }
     }
 
     private void updateOdometry()
     {
         groundTruthTopic.Publish(controller.GetGroundTruth());
-    }
-
-    private void cmdVelCallback(TwistMsg twist)
-    {
-        controller.SetCommand(twist);
-    }
-
-    public void OnDestroy()
-    {
-        if (ros != null)
-        {
-            ros.Unsubscribe(cmdVelTopic);
-        }
     }
 }

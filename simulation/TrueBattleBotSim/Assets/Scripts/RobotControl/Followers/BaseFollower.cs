@@ -20,7 +20,8 @@ public abstract class BaseFollower : MonoBehaviour
     int objectiveIndex = 0;
     string objectiveName = "";
     string actorName = "";
-    static RosTopicState sequenceProgressTopic = null;
+    RosTopicState sequenceProgressTopic;
+    string objectiveProgressTopic = "simulation/objective_progress";
 
     public virtual void Awake()
     {
@@ -29,9 +30,10 @@ public abstract class BaseFollower : MonoBehaviour
         controller = GetComponent<ControllerInterface>();
 
         ros = ROSConnection.GetOrCreateInstance();
+        sequenceProgressTopic = ros.GetTopic(objectiveProgressTopic);
         if (sequenceProgressTopic == null)
         {
-            sequenceProgressTopic = ros.RegisterPublisher<SimulationObjectiveProgressMsg>("simulation/objective_progress", queue_size: 100);
+            sequenceProgressTopic = ros.RegisterPublisher<SimulationObjectiveProgressMsg>(objectiveProgressTopic, queue_size: 100);
         }
     }
 

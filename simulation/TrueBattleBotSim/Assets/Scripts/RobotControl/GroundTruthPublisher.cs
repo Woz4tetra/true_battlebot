@@ -15,8 +15,16 @@ class GroundTruthPublisher : MonoBehaviour
     {
         controller = GetComponent<ControllerInterface>();
         ros = ROSConnection.GetOrCreateInstance();
-        groundTruthTopic = ros.RegisterPublisher<OdometryMsg>(baseTopic + "/ground_truth");
-        groundTruthPoseTopic = ros.RegisterPublisher<PoseStampedMsg>(baseTopic + "/ground_truth/pose");
+        groundTruthTopic = ros.GetTopic(baseTopic + "/ground_truth");
+        if (groundTruthTopic == null)
+        {
+            groundTruthTopic = ros.RegisterPublisher<OdometryMsg>(baseTopic + "/ground_truth");
+        }
+        groundTruthPoseTopic = ros.GetTopic(baseTopic + "/ground_truth/pose");
+        if (groundTruthPoseTopic == null)
+        {
+            groundTruthPoseTopic = ros.RegisterPublisher<PoseStampedMsg>(baseTopic + "/ground_truth/pose");
+        }
     }
 
     public void Update()

@@ -1,23 +1,30 @@
 using UnityEngine;
-[System.Serializable]
+
 public class PID
 {
-    [SerializeField] private float kp, ki = 0.0f, kd = 0.0f, kf = 0.0f;
-    [SerializeField] private float i_zone = 0.0f, i_max = 0.0f;
-    [SerializeField] private float epsilon = 1e-9f, tolerance = 0.0f;
+    private float kp, ki = 0.0f, kd = 0.0f, kf = 0.0f;
+    private float i_zone = 0.0f, i_max = 0.0f;
+    private float epsilon = 1e-9f, tolerance = 0.0f;
     private float i_accum = 0.0f;
     private float prev_error = float.NaN;
 
-    public PID(float kp, float ki = 0.0f, float kd = 0.0f, float kf = 0.0f, float i_zone = 0.0f, float i_max = 0.0f, float epsilon = 1e-9f, float tolerance = 0.0f)
+    public PID(PidConfig config)
     {
-        this.kp = kp;
-        this.ki = ki;
-        this.kd = kd;
-        this.kf = kf;
-        this.i_zone = i_zone;
-        this.i_max = i_max;
-        this.epsilon = epsilon;
-        this.tolerance = tolerance;
+        SetConfig(config);
+    }
+
+    public void SetConfig(PidConfig config)
+    {
+        kp = config.kp;
+        ki = config.ki;
+        kd = config.kd;
+        kf = config.kf;
+        i_zone = config.i_zone;
+        i_max = config.i_max;
+        epsilon = config.epsilon;
+        tolerance = config.tolerance;
+
+        Reset();
     }
 
     public void Reset()

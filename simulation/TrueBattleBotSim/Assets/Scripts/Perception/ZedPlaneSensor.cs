@@ -4,6 +4,7 @@ using Unity.Robotics.ROSTCPConnector.ROSGeometry;
 using MathExtensions;
 using RosMessageTypes.Std;
 using UnityEngine;
+using Unity.Robotics.ROSTCPConnector;
 
 public class ZedPlaneSensor : BaseRectangleSensor
 {
@@ -14,7 +15,11 @@ public class ZedPlaneSensor : BaseRectangleSensor
 
     override protected void BaseGameObjectSensorStart()
     {
-        ros.RegisterPublisher<PoseStampedMsg>(plane_response_topic);
+        RosTopicState responseTopicState = ros.GetTopic(plane_response_topic);
+        if (responseTopicState == null)
+        {
+            ros.RegisterPublisher<PoseStampedMsg>(plane_response_topic);
+        }
         ros.Subscribe<PointStampedMsg>(plane_request_topic, PlaneRequestCallback);
     }
 

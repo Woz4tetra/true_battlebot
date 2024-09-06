@@ -22,3 +22,8 @@ def input_modulus(value: T, min_value: float, max_value: float) -> T:
     value += min_value
 
     return value
+
+
+def normalize_angle(angle: float) -> float:
+    # normalize angle to -pi..pi
+    return input_modulus(angle, -np.pi, np.pi)
