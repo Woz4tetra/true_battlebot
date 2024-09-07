@@ -8,3 +8,4 @@ class SvoPlaybackCameraConfig:
     path: str = "/media/storage/svo/playback.svo"
     field_grab_time: float = 0.0
     start_time: float = 0.0
+    time_sync_threshold: float = 0.1  # seconds
