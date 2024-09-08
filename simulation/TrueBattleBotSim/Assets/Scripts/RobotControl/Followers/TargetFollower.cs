@@ -12,6 +12,7 @@ class TargetFollower : BaseVelocityFollower
 
     public void SetActiveActors(Dictionary<string, GameObject> active_actors)
     {
+        Debug.Log($"Setting active actors: {string.Join(", ", active_actors.Keys)}");
         this.active_actors = active_actors;
     }
 
@@ -61,7 +62,7 @@ class TargetFollower : BaseVelocityFollower
             }
         }
 
-        Debug.LogError("Target not found: " + target_name);
+        Debug.LogError($"Target not found {target_name}. Available targets: {string.Join(", ", active_actors.Keys)}");
         next = current;
         return false;
     }

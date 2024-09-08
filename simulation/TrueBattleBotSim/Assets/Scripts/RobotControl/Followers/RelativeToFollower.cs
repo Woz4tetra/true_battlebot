@@ -13,6 +13,7 @@ class RelativeToFollower : BaseFollower
 
     public void SetActiveActors(Dictionary<string, GameObject> active_actors)
     {
+        Debug.Log($"Setting active actors: {string.Join(", ", active_actors.Keys)}");
         this.active_actors = active_actors;
     }
 

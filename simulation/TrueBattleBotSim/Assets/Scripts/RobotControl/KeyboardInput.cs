@@ -5,6 +5,7 @@ class KeyboardInput : MonoBehaviour
 {
     [SerializeField] private float linearScale = 1.0f;
     [SerializeField] private float angularScale = 3.0f;
+    [SerializeField] private bool useJoystick = false;
 
     private ControllerInterface controller;
     public void Start()
@@ -49,7 +50,7 @@ class KeyboardInput : MonoBehaviour
             linear += -linearScale;
         }
 
-        if (angular == 0.0f && linear == 0.0f)
+        if (useJoystick && angular == 0.0f && linear == 0.0f)
         {
             linear = Input.GetAxis("Vertical") * -linearScale;
             angular = Input.GetAxis("Horizontal") * -angularScale;

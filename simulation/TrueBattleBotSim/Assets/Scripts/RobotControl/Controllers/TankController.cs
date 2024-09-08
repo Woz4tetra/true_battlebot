@@ -183,7 +183,13 @@ class TankController : MonoBehaviour, ControllerInterface
 
     public void Reset()
     {
-        linearPid.Reset();
-        angularPid.Reset();
+        if (linearPid != null)
+        {
+            linearPid.Reset();
+        }
+        if (angularPid != null)
+        {
+            angularPid.Reset();
+        }
     }
 }
