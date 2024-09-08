@@ -32,6 +32,7 @@ from sensor_msgs.msg import Imu
 from std_msgs.msg import Header as RosHeader
 
 from bw_object_filter.absolute_imu_tracker import AbsoluteImuTracker
+from bw_object_filter.cmd_vel_tracker import CmdVelTracker
 from bw_object_filter.covariances import ApriltagHeuristics, CmdVelHeuristics, RobotStaticHeuristics
 from bw_object_filter.estimation_topic_metadata import EstimationTopicMetadata
 from bw_object_filter.filter_models import DriveKalmanModel, TrackingKalmanModel
@@ -57,7 +58,7 @@ class RobotFilter:
         self.tag_topics = get_param("~tag_topics", [])
         self.orientation_topics = get_param("~orientation_topics", {})
 
-        self.command_timeout = rospy.Duration.from_sec(get_param("~command_timeout", 0.5))
+        self.command_timeout = rospy.Duration.from_sec(get_param("~command_timeout", 0.1))
 
         self.apriltag_base_covariance_scalar = get_param("~apriltag_base_covariance_scalar", 0.00001)
         initial_variances = get_param("~initial_variances", [0.25, 0.25, 10.0, 1.0, 1.0, 10.0])
@@ -111,6 +112,7 @@ class RobotFilter:
 
         self.absolute_imu_trackers: dict[str, AbsoluteImuTracker] = {}
         self.tag_rolling_medians: dict[str, RollingMedianOrientation] = {}
+        self.cmd_vel_trackers: dict[str, CmdVelTracker] = {}
         self.measurement_sorter = RobotMeasurementSorter()
         self.tf_buffer = tf2_ros.Buffer()
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer)
@@ -160,6 +162,7 @@ class RobotFilter:
         self._init_name_to_filter(self.robot_filters)
         self._init_filter_state_pubs(robot_fleet)
         self._init_tag_filters(robot_fleet)
+        self._init_cmd_vel_trackers(robot_fleet)
 
     def _init_filters(self, robot_fleet: list[RobotConfig]) -> list[ModelBase]:
         self.filters: list[ModelBase] = []
@@ -170,7 +173,7 @@ class RobotFilter:
                         robot_config,
                         self.update_delay,
                         self.process_noise,
-                        self.friction_factor,
+                        1.0,
                         self.stale_timeout,
                         self.robot_min_radius,
                         self.robot_max_radius,
@@ -235,6 +238,11 @@ class RobotFilter:
     def _init_tag_filters(self, robot_fleet: list[RobotConfig]) -> None:
         self.tag_rolling_medians = {
             robot.name: RollingMedianOrientation(self.tag_rolling_median_window) for robot in robot_fleet
+        }
+
+    def _init_cmd_vel_trackers(self, robot_fleet: list[RobotConfig]) -> None:
+        self.cmd_vel_trackers = {
+            robot.name: CmdVelTracker(self.robot_cmd_vel_heuristics, self.command_timeout) for robot in robot_fleet
         }
 
     def robot_estimation_callback(self, metadata: EstimationTopicMetadata, msg: EstimatedObjectArray) -> None:
@@ -392,14 +400,20 @@ class RobotFilter:
     def cmd_vel_callback(self, msg: Twist, robot_filter: ModelBase) -> None:
         if not self.field_received():
             return
-        measurement = TwistWithCovariance(twist=msg)
-        measurement.covariance = self.robot_cmd_vel_heuristics.compute_covariance(measurement)  # type: ignore
+        self.cmd_vel_trackers[robot_filter.config.name].set_command(msg)
 
+    def apply_cmd_vel(self, robot_filter: ModelBase, measurement: TwistWithCovariance) -> None:
         try:
             robot_filter.update_cmd_vel(measurement)
         except np.linalg.LinAlgError as e:
             rospy.logwarn(f"Failed to update from velocity. Resetting filter. {e}")
             robot_filter.reset()
+
+    def update_all_cmd_vels(self) -> None:
+        for robot_name, tracker in self.cmd_vel_trackers.items():
+            cmd_vel = tracker.get_command()
+            robot_filter = self.name_to_filter[robot_name]
+            self.apply_cmd_vel(robot_filter, cmd_vel)
 
     def field_callback(self, msg: EstimatedObject) -> None:
         self.field = msg
@@ -508,6 +522,7 @@ class RobotFilter:
         while not rospy.is_shutdown():
             self.predict_all_filters()
             self.publish_all_filters()
+            self.update_all_cmd_vels()
             rate.sleep()
 
 
