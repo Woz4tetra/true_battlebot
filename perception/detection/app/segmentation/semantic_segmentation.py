@@ -6,8 +6,9 @@ import torch
 from app.config.segmentation_config.semantic_segmentation_config import SemanticSegmentationConfig
 from app.segmentation.segmentation_interface import SegmentationInterface
 from bw_interfaces.msg import LabelMap, SegmentationInstance, SegmentationInstanceArray
+from bw_shared.messages.contours import contour_to_msg
 from perception_tools.data_directory import get_data_directory
-from perception_tools.inference.common import contour_to_msg, get_default_device, load_metadata, mask_to_polygons
+from perception_tools.inference.common import get_default_device, load_metadata, mask_to_polygons
 from perception_tools.inference.deeplabv3 import IMAGE_SIZE, DeepLabV3Inference
 from perception_tools.messages.image import Image
 

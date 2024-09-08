@@ -7,18 +7,23 @@ MotionTracker::MotionTracker(ros::NodeHandle *nodehandle) : BaseEstimation(nodeh
     int processing_width, processing_height;
     ros::param::param<int>("~processing_width", processing_width, 480);
     ros::param::param<int>("~processing_height", processing_height, 270);
-    ros::param::param<int>("~blur_size", _blur_size, 3);
-    ros::param::param<int>("~blur_iterations", _blur_iterations, 3);
+    ros::param::param<int>("~morph_kernel_size", _morph_kernel_size, 3);
+    ros::param::param<int>("~blur_iterations", _morph_iterations, 3);
     ros::param::param<int>("~min_area", _min_area, 25);
+    ros::param::param<int>("~max_area", _max_area, 10000);
+    ros::param::param<int>("~gaussian_kernel_size", _gaussian_kernel_size, 5);
     ros::param::param<std::string>("~label", _label, "robot");
 
-    _image_sub = nh.subscribe<sensor_msgs::Image>("image_raw", 1, &MotionTracker::image_callback, this);
+    ROS_INFO("Motion tracker parameters:");
+    ROS_INFO("  gaussian_kernel_size: %d", _gaussian_kernel_size);
+
+    _image_sub = nh.subscribe<sensor_msgs::Image>("image", 1, &MotionTracker::image_callback, this);
     _debug_image_pub = nh.advertise<sensor_msgs::Image>("debug_image", 1);
     _robot_pub = nh.advertise<bw_interfaces::EstimatedObjectArray>("estimation/robots", 10);
     _robot_marker_pub = nh.advertise<visualization_msgs::MarkerArray>("estimation/robot_markers", 10);
 
     _back_subtractor = cv::createBackgroundSubtractorMOG2();
-    _blur_kernel = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(_blur_size, _blur_size));
+    _blur_kernel = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(_morph_kernel_size, _morph_kernel_size));
     _processing_size = cv::Size(processing_width, processing_height);
 }
 
@@ -50,9 +55,11 @@ void MotionTracker::image_callback(const sensor_msgs::ImageConstPtr &image_msg)
     }
     _is_reset = true;
 
+    cv::GaussianBlur(processing_image, processing_image, cv::Size(_gaussian_kernel_size, _gaussian_kernel_size), 0);
+
     cv::Mat fg_mask;
     _back_subtractor->apply(processing_image, fg_mask, learning_rate);
-    cv::morphologyEx(fg_mask, fg_mask, cv::MORPH_OPEN, _blur_kernel, cv::Point(-1, -1), _blur_iterations);
+    cv::erode(fg_mask, fg_mask, _blur_kernel, cv::Point(-1, -1), _morph_iterations);
     std::vector<std::vector<cv::Point>> contours;
     cv::findContours(fg_mask, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
 
@@ -74,7 +81,8 @@ void MotionTracker::image_callback(const sensor_msgs::ImageConstPtr &image_msg)
 
     for (size_t index = 0; index < contours.size(); index++)
     {
-        if (cv::contourArea(contours[index]) < _min_area)
+        double area = cv::contourArea(contours[index]);
+        if (area < _min_area || area > _max_area)
         {
             continue;
         }

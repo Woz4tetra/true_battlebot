@@ -8,8 +8,8 @@ from bw_shared.enums.label import Label, ModelLabel
 @pytest.fixture(scope="module")
 def yolo_keypoint_config() -> YoloKeypointConfig:
     return YoloKeypointConfig(
-        model_path="yolov8-pose_2024-08-24_2000.pt",
-        metadata_path="yolov8-pose_2024-08-24_2000.json",
+        model_path="yolov8n-pose_2024-09-02.pt",
+        metadata_path="yolov8n-pose_2024-09-02.json",
         debug=True,
         model_to_system_labels=ModelToSystemLabelsMap(
             {

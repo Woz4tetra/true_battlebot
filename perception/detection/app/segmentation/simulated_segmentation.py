@@ -196,7 +196,7 @@ class SimulatedSegmentation(SegmentationInterface):
                 self.prev_random_sample_time = now
             segmentation_array = self.noise_grid.apply_noise(segmentation_array)
 
-        object_counts = {}
+        object_counts: dict[Label, int] = {}
         for instance in segmentation_array.instances:
             label = self.model_to_system_labels.get(ModelLabel(instance.label))
             if label is None:

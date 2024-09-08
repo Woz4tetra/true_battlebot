@@ -8,6 +8,7 @@ from bw_interfaces.msg import EstimatedObject, EstimatedObjectArray, RobotFleetC
 from bw_shared.configs.robot_fleet_config import RobotConfig, RobotFleetConfig
 from bw_shared.enums.label import Label
 from bw_shared.enums.robot_team import RobotTeam
+from bw_shared.filters.rolling_median_orientation import RollingMedianOrientation
 from bw_shared.geometry.rpy import RPY
 from bw_shared.geometry.transform3d import Transform3D
 from bw_shared.geometry.xy import XY
@@ -33,12 +34,13 @@ from std_msgs.msg import Header as RosHeader
 from bw_object_filter.absolute_imu_tracker import AbsoluteImuTracker
 from bw_object_filter.covariances import ApriltagHeuristics, CmdVelHeuristics, RobotStaticHeuristics
 from bw_object_filter.estimation_topic_metadata import EstimationTopicMetadata
-from bw_object_filter.filter_models import DriveKalmanModel
+from bw_object_filter.filter_models import DriveKalmanModel, TrackingKalmanModel
 from bw_object_filter.filter_models.helpers import (
     NUM_STATES,
     measurement_to_pose,
     measurement_to_twist,
 )
+from bw_object_filter.filter_models.model_base import ModelBase
 from bw_object_filter.robot_measurement_sorter import RobotMeasurementSorter
 
 
@@ -63,9 +65,12 @@ class RobotFilter:
         self.friction_factor = get_param("~friction_factor", 0.8)
         self.process_noise = get_param("~process_noise", 1e-4)
         self.motion_speed_threshold = get_param("~motion_speed_threshold", 0.25)
-        self.robot_min_radius = get_param("~robot_min_radius", 0.1)
+        self.stale_timeout = get_param("~stale_timeout", 10.0)
+        self.robot_min_radius = get_param("~robot_min_radius", 0.05)
+        self.robot_max_radius = get_param("~robot_max_radius", 0.15)
         self.ignore_measurement_near_tag_threshold = get_param("~ignore_measurement_near_tag_threshold", 0.05)
         field_buffer = get_param("~field_buffer", 0.2)
+        self.tag_rolling_median_window = get_param("~tag_rolling_median_window", 5)
         self.field_buffer = XYZ(field_buffer, field_buffer, field_buffer)
 
         initial_state = np.zeros(NUM_STATES)
@@ -97,14 +102,15 @@ class RobotFilter:
             Label.ROBOT,
         ]
 
-        self.robot_filters: list[DriveKalmanModel] = []
-        self.label_to_filter: dict[Label, list[DriveKalmanModel]] = {}
-        self.team_to_filter: dict[RobotTeam, list[DriveKalmanModel]] = {}
-        self.label_to_filter_initialization: dict[Label, list[DriveKalmanModel]] = {}
-        self.name_to_filter: dict[str, DriveKalmanModel] = {}
+        self.robot_filters: list[ModelBase] = []
+        self.label_to_filter: dict[Label, list[ModelBase]] = {}
+        self.team_to_filter: dict[RobotTeam, list[ModelBase]] = {}
+        self.label_to_filter_initialization: dict[Label, list[ModelBase]] = {}
+        self.name_to_filter: dict[str, ModelBase] = {}
         self.filter_state_pubs: dict[str, rospy.Publisher] = {}
 
         self.absolute_imu_trackers: dict[str, AbsoluteImuTracker] = {}
+        self.tag_rolling_medians: dict[str, RollingMedianOrientation] = {}
         self.measurement_sorter = RobotMeasurementSorter()
         self.tf_buffer = tf2_ros.Buffer()
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer)
@@ -153,14 +159,38 @@ class RobotFilter:
         self._init_label_to_filter_initialization(self.robot_filters)
         self._init_name_to_filter(self.robot_filters)
         self._init_filter_state_pubs(robot_fleet)
+        self._init_tag_filters(robot_fleet)
 
-    def _init_filters(self, robot_fleet: list[RobotConfig]) -> list[DriveKalmanModel]:
-        return [
-            DriveKalmanModel(robot_config, self.update_delay, self.process_noise, self.friction_factor)
-            for robot_config in robot_fleet
-        ]
+    def _init_filters(self, robot_fleet: list[RobotConfig]) -> list[ModelBase]:
+        self.filters: list[ModelBase] = []
+        for robot_config in robot_fleet:
+            if robot_config.is_controlled:
+                self.filters.append(
+                    DriveKalmanModel(
+                        robot_config,
+                        self.update_delay,
+                        self.process_noise,
+                        self.friction_factor,
+                        self.stale_timeout,
+                        self.robot_min_radius,
+                        self.robot_max_radius,
+                    )
+                )
+            else:
+                self.filters.append(
+                    TrackingKalmanModel(
+                        robot_config,
+                        self.update_delay,
+                        self.process_noise,
+                        self.friction_factor,
+                        self.stale_timeout,
+                        self.robot_min_radius,
+                        self.robot_max_radius,
+                    )
+                )
+        return self.filters
 
-    def _init_label_to_filter(self, robot_filters: list[DriveKalmanModel]) -> None:
+    def _init_label_to_filter(self, robot_filters: list[ModelBase]) -> None:
         self.label_to_filter = {
             Label.ROBOT: [filter for filter in robot_filters if filter.config.team != RobotTeam.REFEREE],
             Label.FRIENDLY_ROBOT: [
@@ -177,7 +207,7 @@ class RobotFilter:
             RobotTeam.REFEREE: [filter for filter in robot_filters if filter.config.team == RobotTeam.REFEREE],
         }
 
-    def _init_label_to_filter_initialization(self, robot_filters: list[DriveKalmanModel]) -> None:
+    def _init_label_to_filter_initialization(self, robot_filters: list[ModelBase]) -> None:
         self.label_to_filter_initialization = {label: [] for label in self.label_to_filter.keys()}
         for filter in robot_filters:
             team = filter.config.team
@@ -192,7 +222,7 @@ class RobotFilter:
             else:
                 raise ValueError(f"Filter doesn't have an initialization label: {filter.config.name}")
 
-    def _init_name_to_filter(self, robot_filters: list[DriveKalmanModel]) -> None:
+    def _init_name_to_filter(self, robot_filters: list[ModelBase]) -> None:
         self.name_to_filter = {}
         for robot_filter in robot_filters:
             self.name_to_filter[robot_filter.config.name] = robot_filter
@@ -200,6 +230,11 @@ class RobotFilter:
     def _init_filter_state_pubs(self, robot_fleet: list[RobotConfig]) -> None:
         self.filter_state_pubs = {
             robot.name: rospy.Publisher(f"{robot.name}/odom", Odometry, queue_size=10) for robot in robot_fleet
+        }
+
+    def _init_tag_filters(self, robot_fleet: list[RobotConfig]) -> None:
+        self.tag_rolling_medians = {
+            robot.name: RollingMedianOrientation(self.tag_rolling_median_window) for robot in robot_fleet
         }
 
     def robot_estimation_callback(self, metadata: EstimationTopicMetadata, msg: EstimatedObjectArray) -> None:
@@ -218,7 +253,7 @@ class RobotFilter:
             measurements[label].append(robot)
         for label, robot_filters in self.label_to_filter_initialization.items():
             for robot_filter in robot_filters:
-                if not robot_filter.is_initialized and len(measurements[label]) > 0:
+                if not robot_filter.is_initialized() and len(measurements[label]) > 0:
                     measurement = measurements[label].pop()
                     measurement.pose.covariance = self.initial_pose.covariance
                     robot_filter.teleport(measurement.pose, self.initial_twist)
@@ -234,7 +269,7 @@ class RobotFilter:
 
     def apply_update_with_sorter(
         self,
-        available_filters: list[DriveKalmanModel],
+        available_filters: list[ModelBase],
         robot_measurements: list[EstimatedObject],
         use_orientation: bool,
     ) -> None:
@@ -264,7 +299,7 @@ class RobotFilter:
 
     def apply_sorted_measurement(
         self,
-        robot_filter: DriveKalmanModel,
+        robot_filter: ModelBase,
         map_measurement: PoseWithCovariance,
         camera_measurement: EstimatedObject,
         use_orientation: bool,
@@ -324,11 +359,17 @@ class RobotFilter:
     def apply_tag_measurement(self, msg: EstimatedObjectArray) -> None:
         for detection in msg.robots:
             pose = detection.pose.pose
+            # robot_name = detection.label
             if not self.is_in_field_bounds(pose.position):
                 rospy.logdebug(f"Tag for {detection.label} is out of bounds. Skipping.")
                 continue
             covariance = self.tag_heurstics.compute_covariance(detection)
             detection.pose.covariance = covariance  # type: ignore
+            rpy = RPY.from_quaternion(pose.orientation)
+            if abs(rpy.roll) < np.pi / 2:
+                rospy.logdebug(f"Tag for {detection.label} is too tilted. Skipping.")
+                continue
+            # detection.pose.pose.orientation = self.tag_rolling_medians[robot_name].update(pose.orientation)
             if robot_filter := self.name_to_filter.get(detection.label, None):
                 try:
                     robot_filter.update_pose(detection.pose)
@@ -348,7 +389,7 @@ class RobotFilter:
         rotated_tag = tag_tf.transform_by(rotate_tf)
         return rotated_tag.quaternion
 
-    def cmd_vel_callback(self, msg: Twist, robot_filter: DriveKalmanModel) -> None:
+    def cmd_vel_callback(self, msg: Twist, robot_filter: ModelBase) -> None:
         if not self.field_received():
             return
         measurement = TwistWithCovariance(twist=msg)

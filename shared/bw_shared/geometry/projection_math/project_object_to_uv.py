@@ -2,10 +2,10 @@ import numpy as np
 from bw_interfaces.msg import Contour, EstimatedObject, UVKeypoint
 from geometry_msgs.msg import Point
 from image_geometry import PinholeCameraModel
-from perception_tools.inference.common import contour_to_msg
 
 from bw_shared.enums.keypoint_name import KeypointName
 from bw_shared.geometry.transform3d import Transform3D
+from bw_shared.messages.contours import contour_to_msg
 
 
 class ProjectionError(Exception):

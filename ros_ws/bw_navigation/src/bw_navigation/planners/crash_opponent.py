@@ -13,9 +13,9 @@ from bw_navigation.planners.planner_interface import PlannerInterface
 class CrashOpponent(PlannerInterface):
     def __init__(self, controlled_robot: str) -> None:
         self.controlled_robot = controlled_robot
-        linear_pid = PidConfig(kp=0.5, ki=0.0, kd=0.01, kf=1.0)
-        angular_pid = PidConfig(kp=1.0, ki=0.01, kd=0.0, kf=0.2)
-        self.pid_follower = PidFollowerEngine(linear_pid, angular_pid)
+        linear_pid = PidConfig(kp=3.0, ki=0.0, kd=0.1, kf=1.0)
+        angular_pid = PidConfig(kp=5.0, ki=0.01, kd=0.1, kf=0.2)
+        self.pid_follower = PidFollowerEngine(linear_pid, angular_pid, always_face_forward=True)
 
     def go_to_goal(
         self, dt: float, goal_pose: Pose2D, robot_states: dict[str, EstimatedObject], field: EstimatedObject

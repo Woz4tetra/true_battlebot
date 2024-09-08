@@ -30,9 +30,10 @@ private:
     double _learning_rate;
     bool _is_reset = false;
     cv::Size _processing_size;
-    int _blur_iterations;
-    int _blur_size;
-    int _min_area;
+    int _morph_iterations;
+    int _morph_kernel_size;
+    int _min_area, _max_area;
+    int _gaussian_kernel_size;
     double _z_limit;
     std::string _label;
 

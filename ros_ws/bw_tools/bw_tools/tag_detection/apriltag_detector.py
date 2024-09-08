@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+import cv2
 import numpy as np
 from cv2 import aruco
 
@@ -10,6 +11,8 @@ from bw_tools.tag_detection.tag_family import TagFamily
 @dataclass
 class ApriltagDetectorConfig:
     tag_family: TagFamily = TagFamily.TAG36H11
+    detector_params_path: str = ""
+    refine_params_path: str = ""
 
 
 FAMILY_MAPPING = {
@@ -23,13 +26,31 @@ FAMILY_MAPPING = {
 class ApriltagDetector:
     def __init__(self, config: ApriltagDetectorConfig) -> None:
         self.config = config
-        detect_params = aruco.DetectorParameters()
-        refine_params = aruco.RefineParameters()
+        detect_params = self.load_detect_params_from_file(config.detector_params_path)
+        refine_params = self.load_refine_params_from_file(config.refine_params_path)
         self.detector = aruco.ArucoDetector(
             aruco.getPredefinedDictionary(FAMILY_MAPPING[self.config.tag_family]),
             detect_params,
             refine_params,
         )
+
+    def load_detect_params_from_file(self, parameter_path: str) -> aruco.DetectorParameters:
+        if not parameter_path:
+            return aruco.DetectorParameters()
+        detect_params = aruco.DetectorParameters()
+        fs = cv2.FileStorage(parameter_path, cv2.FILE_STORAGE_READ | cv2.FILE_STORAGE_FORMAT_JSON)
+        fnode: cv2.FileNode = fs.root()
+        detect_params.readDetectorParameters(fnode)
+        return detect_params
+
+    def load_refine_params_from_file(self, parameter_path: str) -> aruco.RefineParameters:
+        if not parameter_path:
+            return aruco.RefineParameters()
+        refine_params = aruco.RefineParameters()
+        fs = cv2.FileStorage(parameter_path, cv2.FILE_STORAGE_READ | cv2.FILE_STORAGE_FORMAT_JSON)
+        fnode: cv2.FileNode = fs.root()
+        refine_params.readRefineParameters(fnode)
+        return refine_params
 
     def detect(self, image: np.ndarray) -> list[TagDetection]:
         all_corners, ids, rejected = self.detector.detectMarkers(image)

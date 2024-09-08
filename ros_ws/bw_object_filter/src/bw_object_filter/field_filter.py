@@ -31,7 +31,7 @@ class FieldFilter:
         self.relative_map_frame = get_param("~relative_map_frame", "map_relative")
         auto_initialize = get_param("~auto_initialize", False)
         self.expected_size = XYZ.from_size(map_config.size)
-        field_dims_buffer = get_param("~field_dims_buffer", 0.25)
+        field_dims_buffer = get_param("~field_dims_buffer", 0.35)
         buffer_extents = XYZ(field_dims_buffer, field_dims_buffer, field_dims_buffer)
         self.extents_range = (self.expected_size - buffer_extents, self.expected_size + buffer_extents)
         rospy.loginfo(f"Map name: {map_name}")

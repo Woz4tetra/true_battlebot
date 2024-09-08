@@ -4,7 +4,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 import torch
-from bw_interfaces.msg import Contour, UVKeypoint
+from bw_interfaces.msg import Contour
 from bw_shared.enums.label import ModelLabel
 
 from perception_tools.config.model_metadata import ModelMetadata
@@ -47,16 +47,6 @@ def mask_to_polygons(mask: np.ndarray, metadata: ModelMetadata) -> dict[ModelLab
 
 def get_default_device() -> torch.device:
     return torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-
-def contour_to_msg(contours: list[np.ndarray]) -> list[Contour]:
-    contour_msgs = []
-    for contour in contours:
-        points = [UVKeypoint(x, y) for x, y in contour]
-        area = cv2.contourArea(contour.astype(np.int32))
-        contour_msg = Contour(points=points, area=area)
-        contour_msgs.append(contour_msg)
-    return contour_msgs
 
 
 def msg_to_mask(contour: Contour, width: int, height: int) -> np.ndarray:

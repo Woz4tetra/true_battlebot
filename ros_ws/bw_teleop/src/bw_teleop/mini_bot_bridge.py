@@ -127,7 +127,7 @@ class MiniBotBridge:
             self.device.write(b"telemetry off\r\n")
 
     def twist_callback(self, msg: Twist) -> None:
-        linear_x, angular_z = self.lookup_table.lookup(msg.linear.x, msg.angular.z)
+        linear_x, angular_z = self.lookup_table.lookup(msg.linear.x, -1 * msg.angular.z)
         linear_value = int(self.neutral_command * linear_x)
         angular_value = int(self.neutral_command * angular_z)
         linear_value = max(self.min_command, min(self.max_command, linear_value))

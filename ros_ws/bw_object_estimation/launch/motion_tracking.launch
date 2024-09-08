@@ -1,8 +1,12 @@
 <launch>
+    <arg name="tracking_config" default="$(find bw_bringup)/config/motion_tracking.yaml" />
 	<group ns="camera_1">
 		<node pkg="bw_object_estimation" type="motion_tracker" name="motion_tracker"
 			output="screen" respawn="true">
 			<remap from="field" to="/filter/field" />
+			<remap from="image" to="image_rect" />
+			<remap from="debug_image" to="debug_motion_image" />
+			<rosparam command="load" file="$(arg tracking_config)" ns="" />
 		</node>
 	</group>
 </launch>

@@ -3,6 +3,7 @@ import os
 
 import cv2
 import numpy as np
+from bw_shared.enums.label import ModelLabel
 from perception_tools.config.model_metadata import LABEL_COLORS
 from perception_tools.training.semantic_helpers import read_classes
 
@@ -33,7 +34,7 @@ def main() -> None:
                 class_path = os.path.join(dirpath, filename)
                 class_paths.append(class_path)
 
-    classes = {}
+    classes: dict[int, ModelLabel] = {}
     for class_path in class_paths:
         next_classes = read_classes(class_path)
         if not classes:
@@ -62,8 +63,8 @@ def main() -> None:
             label = classes[label_id]
             color = LABEL_COLORS[label].to_cv_color()
             layer_seg = np.zeros((mask.shape[0], mask.shape[1], 3), dtype=np.uint8)
-            layer_seg[mask == label_id] = color
-            color_seg = cv2.addWeighted(color_seg, 1, layer_seg, 1, 0)
+            layer_seg[mask == label_id] = np.array(color, dtype=np.uint8)
+            color_seg = cv2.addWeighted(color_seg, 1, layer_seg, 1, 0).astype(np.uint8)
 
         image = cv2.addWeighted(image, 0.5, color_seg, 0.5, 0)
 

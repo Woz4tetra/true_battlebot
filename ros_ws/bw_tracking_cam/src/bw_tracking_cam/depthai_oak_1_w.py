@@ -38,6 +38,8 @@ class DepthAiOak1W:
         self.resolution_mode = Oak1ResolutionMode("mode_" + get_param("~resolution_mode", "1080_p"))
         self.debug_image = get_param("~debug_image", False)
         self.camera_matrix_alpha = get_param("~camera_matrix_alpha", 0.0)
+        self.detect_params_path = get_param("~detect_params_path", "")
+        self.refine_params_path = get_param("~refine_params_path", "")
 
         detector_config = ApriltagDetectorConfig(tag_family=TagFamily.TAG36H11)
         self.tag_detector = ApriltagDetector(detector_config)

@@ -1,7 +1,8 @@
 import numpy as np
 import pytest
 from bw_interfaces.msg import Contour, UVKeypoint
-from perception_tools.inference.common import contour_to_msg, multi_msg_to_mask
+from bw_shared.messages.contours import contour_to_msg
+from perception_tools.inference.common import multi_msg_to_mask
 
 
 @pytest.mark.parametrize(

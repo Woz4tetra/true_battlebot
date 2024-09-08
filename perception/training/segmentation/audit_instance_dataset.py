@@ -7,7 +7,7 @@ from perception_tools.training.coco_dataset import DatasetImage
 from perception_tools.training.instance_helpers import load_dataset, plot_annotated_image, write_dataset
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("images_path", type=str, help="Path to the images directory")
     parser.add_argument("-i", "--index", type=int, default=0, help="Start index")
@@ -51,9 +51,9 @@ def main():
     finally:
         if images_to_remove:
             metadataset.remove_images([image.id for image in images_to_remove])
-            for image in images_to_remove:
-                print(f"Removing {image.file_name}")
-                os.remove(os.path.join(images_path, image.file_name))
+            for annotation in images_to_remove:
+                print(f"Removing {annotation.file_name}")
+                os.remove(os.path.join(images_path, annotation.file_name))
             write_dataset(metadataset, annotations_path)
 
 

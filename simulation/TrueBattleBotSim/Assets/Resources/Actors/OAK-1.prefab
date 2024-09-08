@@ -520,7 +520,7 @@ MonoBehaviour:
   publishSegmentationLabels: 1
   captureConfig:
   - name: image
-    imageTopic: image_raw
+    imageTopic: image_rect
     infoTopic: camera_info
     requestTopic: 
     renderTexture: {fileID: 8400000, guid: db58390c5d35b7c5b808a363aef6de06, type: 2}

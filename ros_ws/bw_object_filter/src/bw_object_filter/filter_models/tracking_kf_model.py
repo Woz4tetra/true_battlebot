@@ -2,10 +2,7 @@ import numpy as np
 from bw_shared.configs.robot_fleet_config import RobotConfig
 from geometry_msgs.msg import PoseWithCovariance, TwistWithCovariance
 
-from bw_object_filter.filter_models.model_base import ModelBase
-
-from .drive_kf_impl import kf_predict
-from .helpers import (
+from bw_object_filter.filter_models.helpers import (
     NUM_MEASUREMENTS,
     NUM_STATES,
     NUM_STATES_1ST_ORDER,
@@ -15,9 +12,11 @@ from .helpers import (
     pose_to_measurement,
     twist_to_measurement,
 )
+from bw_object_filter.filter_models.model_base import ModelBase
+from bw_object_filter.filter_models.tracking_kf_impl import kf_predict
 
 
-class DriveKalmanModel(ModelBase):
+class TrackingKalmanModel(ModelBase):
     def __init__(
         self,
         config: RobotConfig,
@@ -29,6 +28,7 @@ class DriveKalmanModel(ModelBase):
         robot_max_radius: float = 0.15,
     ) -> None:
         super().__init__(config, stale_timeout, robot_min_radius, robot_max_radius)
+        self.state_prior = np.zeros(NUM_STATES)
         self.dt = dt
         self.friction_factor = friction_factor
         self.process_noise = process_noise
@@ -53,9 +53,11 @@ class DriveKalmanModel(ModelBase):
     def predict(self) -> None:
         with self.lock:
             self._clamp_divergent()
-            self.state, self.covariance = kf_predict(
-                self.state, self.covariance, self.process_noise_q, self.dt, self.friction_factor
+            next_state, self.covariance = kf_predict(
+                self.state, self.state_prior, self.covariance, self.process_noise_q, self.dt, self.friction_factor
             )
+            self.state_prior = self.state
+            self.state = next_state
 
     def update_pose(self, msg: PoseWithCovariance) -> None:
         self._update_model_pose(msg, self.pose_H)

@@ -8,8 +8,8 @@ from bw_shared.enums.label import Label, ModelLabel
 @pytest.fixture(scope="module")
 def semantic_segmentation_config() -> SemanticSegmentationConfig:
     return SemanticSegmentationConfig(
-        model_path="field_deeplabv3_mbv3_2024-06-17.torchscript",
-        metadata_path="field_deeplabv3_mbv3_2024-06-17.json",
+        model_path="field_deeplabv3_r50_2024-09-05.torchscript",
+        metadata_path="field_deeplabv3_r50_2024-09-05.json",
         debug=True,
         model_to_system_labels=ModelToSystemLabelsMap(
             {ModelLabel.FIELD: Label.FIELD, ModelLabel.BACKGROUND: Label.BACKGROUND}
