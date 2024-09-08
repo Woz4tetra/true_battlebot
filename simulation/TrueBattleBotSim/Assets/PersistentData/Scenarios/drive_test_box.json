@@ -7,6 +7,10 @@
             "y": 1.15
         }
     },
+    "background": {
+        "name": "Panorama Scene",
+        "sky_image": "drive_test_box_1"
+    },
     "actors": [
         {
             "name": "slow_camera",
