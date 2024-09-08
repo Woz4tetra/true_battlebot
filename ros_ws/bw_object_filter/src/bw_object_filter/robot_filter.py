@@ -35,12 +35,8 @@ from bw_object_filter.absolute_imu_tracker import AbsoluteImuTracker
 from bw_object_filter.cmd_vel_tracker import CmdVelTracker
 from bw_object_filter.covariances import ApriltagHeuristics, CmdVelHeuristics, RobotStaticHeuristics
 from bw_object_filter.estimation_topic_metadata import EstimationTopicMetadata
-from bw_object_filter.filter_models import DriveKalmanModel, TrackingKalmanModel
-from bw_object_filter.filter_models.helpers import (
-    NUM_STATES,
-    measurement_to_pose,
-    measurement_to_twist,
-)
+from bw_object_filter.filter_models import DriveKalmanModel, TrackingModel
+from bw_object_filter.filter_models.helpers import NUM_STATES, measurement_to_pose, measurement_to_twist
 from bw_object_filter.filter_models.model_base import ModelBase
 from bw_object_filter.robot_measurement_sorter import RobotMeasurementSorter
 
@@ -181,11 +177,9 @@ class RobotFilter:
                 )
             else:
                 self.filters.append(
-                    TrackingKalmanModel(
+                    TrackingModel(
                         robot_config,
                         self.update_delay,
-                        self.process_noise,
-                        self.friction_factor,
                         self.stale_timeout,
                         self.robot_min_radius,
                         self.robot_max_radius,

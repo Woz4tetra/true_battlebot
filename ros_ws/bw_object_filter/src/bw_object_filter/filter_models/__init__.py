@@ -1,7 +1,7 @@
 from .drive_kf_model import DriveKalmanModel
-from .tracking_kf_model import TrackingKalmanModel
+from .tracking_model import TrackingModel
 
 __all__ = [
     "DriveKalmanModel",
-    "TrackingKalmanModel",
+    "TrackingModel",
 ]

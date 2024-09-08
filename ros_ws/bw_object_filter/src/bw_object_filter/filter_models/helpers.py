@@ -8,6 +8,7 @@ from numba import njit
 
 NUM_MEASUREMENTS = 3
 NUM_POSE_STATES_ROS = 6
+
 NUM_STATES = 6
 NUM_STATES_1ST_ORDER = 3
 
