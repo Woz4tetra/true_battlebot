@@ -14,9 +14,6 @@ MotionTracker::MotionTracker(ros::NodeHandle *nodehandle) : BaseEstimation(nodeh
     ros::param::param<int>("~gaussian_kernel_size", _gaussian_kernel_size, 5);
     ros::param::param<std::string>("~label", _label, "robot");
 
-    ROS_INFO("Motion tracker parameters:");
-    ROS_INFO("  gaussian_kernel_size: %d", _gaussian_kernel_size);
-
     _image_sub = nh.subscribe<sensor_msgs::Image>("image", 1, &MotionTracker::image_callback, this);
     _debug_image_pub = nh.advertise<sensor_msgs::Image>("debug_image", 1);
     _robot_pub = nh.advertise<bw_interfaces::EstimatedObjectArray>("estimation/robots", 10);

@@ -1,0 +1,39 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+import pyzed.sl as sl
+
+ZED_2I_SETTINGS = (
+    sl.VIDEO_SETTINGS.BRIGHTNESS,
+    sl.VIDEO_SETTINGS.CONTRAST,
+    sl.VIDEO_SETTINGS.HUE,
+    sl.VIDEO_SETTINGS.SATURATION,
+    sl.VIDEO_SETTINGS.SHARPNESS,
+    sl.VIDEO_SETTINGS.GAMMA,
+    sl.VIDEO_SETTINGS.GAIN,
+    sl.VIDEO_SETTINGS.EXPOSURE,
+    sl.VIDEO_SETTINGS.AEC_AGC,
+    sl.VIDEO_SETTINGS.AEC_AGC_ROI,
+    sl.VIDEO_SETTINGS.WHITEBALANCE_TEMPERATURE,
+    sl.VIDEO_SETTINGS.WHITEBALANCE_AUTO,
+    sl.VIDEO_SETTINGS.LED_STATUS,
+    sl.VIDEO_SETTINGS.EXPOSURE_TIME,
+    sl.VIDEO_SETTINGS.ANALOG_GAIN,
+    sl.VIDEO_SETTINGS.DIGITAL_GAIN,
+    sl.VIDEO_SETTINGS.AUTO_EXPOSURE_TIME_RANGE,
+    sl.VIDEO_SETTINGS.AUTO_ANALOG_GAIN_RANGE,
+    sl.VIDEO_SETTINGS.AUTO_DIGITAL_GAIN_RANGE,
+    sl.VIDEO_SETTINGS.EXPOSURE_COMPENSATION,
+    sl.VIDEO_SETTINGS.DENOISING,
+    sl.VIDEO_SETTINGS.LAST,
+)
+
+
+@dataclass
+class Zed2iVideoSettings:
+    brightness: int = 4
+
+    @classmethod
+    def from_camera(cls, camera: sl.Camera) -> Zed2iVideoSettings:
+        pass

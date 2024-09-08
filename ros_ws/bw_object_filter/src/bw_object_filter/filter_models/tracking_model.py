@@ -28,8 +28,8 @@ class TrackingModel(ModelBase):
         with self.lock:
             measurement, noise = pose_to_measurement(msg)
             measurement = np.nan_to_num(measurement, copy=False)
-            self.state = measurement
-            self.covariance = noise
+            self.state[0:3] = measurement
+            self.covariance[0:3, 0:3] = noise
             self.reset_stale_timer()
 
     def update_position(self, msg: PoseWithCovariance) -> None:

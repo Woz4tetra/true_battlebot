@@ -4,7 +4,11 @@ import numpy as np
 import pyzed.sl as sl
 import rospy
 from app.camera.camera_interface import CameraInterface, CameraMode
-from app.camera.zed_helpers import set_field_finder_settings, set_robot_finder_settings, zed_to_ros_camera_info
+from app.camera.zed.helpers import (
+    set_field_finder_settings,
+    set_robot_finder_settings,
+    zed_to_ros_camera_info,
+)
 from app.config.camera_config.zed_camera_config import ZedCameraConfig
 from app.config.camera_topic_config import CameraTopicConfig
 from bw_shared.messages.header import Header
@@ -78,6 +82,11 @@ class ZedCamera(CameraInterface):
                 break
             self.logger.error("ZED Camera failed to open. Retrying...")
             self.camera.close()
+
+        self.logger.info("ZED Camera opened successfully")
+
+        # settings = self.camera.get_camera_settings()
+        # self.logger.info(f"Camera settings: {settings}")
 
         self.camera_info = self.load_camera_info()
         self.is_open = True
