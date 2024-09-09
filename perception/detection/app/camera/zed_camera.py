@@ -1,4 +1,5 @@
 import logging
+from pprint import pformat
 
 import numpy as np
 import pyzed.sl as sl
@@ -9,6 +10,7 @@ from app.camera.zed.helpers import (
     set_robot_finder_settings,
     zed_to_ros_camera_info,
 )
+from app.camera.zed.video_settings import Zed2iVideoSettings, ZedParameterError
 from app.config.camera_config.zed_camera_config import ZedCameraConfig
 from app.config.camera_topic_config import CameraTopicConfig
 from bw_shared.messages.header import Header
@@ -83,10 +85,16 @@ class ZedCamera(CameraInterface):
             self.logger.error("ZED Camera failed to open. Retrying...")
             self.camera.close()
 
-        self.logger.info("ZED Camera opened successfully")
+        try:
+            self.config.camera_settings.apply_to_camera(self.camera)
+        except ZedParameterError:
+            self.logger.error("Failed to apply camera settings")
+            self.close()
+            return False
 
-        # settings = self.camera.get_camera_settings()
-        # self.logger.info(f"Camera settings: {settings}")
+        self.logger.info(f"ZED camera settings: {pformat(Zed2iVideoSettings.from_camera(self.camera).to_dict())}")
+
+        self.logger.info("ZED Camera opened successfully")
 
         self.camera_info = self.load_camera_info()
         self.is_open = True

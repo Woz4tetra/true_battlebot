@@ -1,10 +1,10 @@
 <launch>
     <node pkg="bw_shared_config" type="shared_config_node.py" name="shared_config_node"
-        output="screen" />
+        output="screen" clear_params="true" />
 
     <group ns="mini_bot">
         <node name="motor_characterize" pkg="bw_teleop" type="hall_effect_characterize_node.py"
-            output="screen" required="true">
+            output="screen" required="true" clear_params="true">
             <param name="sensor_path"
                 value="/dev/serial/by-id/usb-Silicon_Labs_CP2104_USB_to_UART_Bridge_Controller_0161856F-if00-port0" />
         </node>
@@ -12,6 +12,6 @@
             <param name="lookup_table" value="passthrough" />
         </include>
         <node pkg="rosbag" type="record" name="rosbag_characterize_motors"
-            args="record -o /media/storage/bags/characterize_motors -a" />
+            args="record -o /media/storage/bags/characterize_motors -a" clear_params="true" />
     </group>
 </launch>

@@ -1,5 +1,5 @@
 <launch>
     <node name="mini_bot_bridge" pkg="bw_teleop" type="mini_bot_bridge.py" output="screen"
-        respawn="true">
+        respawn="true" clear_params="true">
     </node>
 </launch>

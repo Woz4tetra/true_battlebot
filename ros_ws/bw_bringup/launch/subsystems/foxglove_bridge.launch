@@ -18,12 +18,13 @@
     <arg name="service_type_retrieval_timeout_ms" default="250" />
 
     <node pkg="nodelet" type="nodelet" name="foxglove_nodelet_manager" args="manager"
-        if="$(eval nodelet_manager == 'foxglove_nodelet_manager')">
+        if="$(eval nodelet_manager == 'foxglove_nodelet_manager')" clear_params="true">
         <param name="num_worker_threads" type="int" value="$(arg num_threads)" />
     </node>
 
     <node pkg="nodelet" type="nodelet" name="foxglove_bridge" respawn="true" output="screen"
-        args="load foxglove_bridge/foxglove_bridge_nodelet $(arg nodelet_manager)">
+        args="load foxglove_bridge/foxglove_bridge_nodelet $(arg nodelet_manager)"
+        clear_params="true">
         <param name="port" type="int" value="$(arg port)" />
         <param name="address" type="string" value="$(arg address)" />
         <param name="tls" type="bool" value="$(arg tls)" />

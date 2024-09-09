@@ -1,11 +1,15 @@
 <launch>
-    <node name="usb_joystick" pkg="joy" type="joy_node" output="screen" required="false">
-        <param name="dev" value="/dev/input/by-id/usb-Microsoft_Controller_3032564C30323832373534313236-joystick" type="str" />
+    <node name="usb_joystick" pkg="joy" type="joy_node" output="screen" required="false"
+        clear_params="true">
+        <param name="dev"
+            value="/dev/input/by-id/usb-Microsoft_Controller_3032564C30323832373534313236-joystick"
+            type="str" />
         <param name="deadzone" value="0.05" />
         <param name="autorepeat_rate" value="30.0" />
     </node>
 
-    <node pkg="teleop_twist_joy" type="teleop_node" name="tank_teleop" output="screen">
+    <node pkg="teleop_twist_joy" type="teleop_node" name="tank_teleop" output="screen"
+        clear_params="true">
         <param name="axis_linear" value="1" />
         <param name="axis_angular" value="3" />
         <param name="enable_button" value="5" />

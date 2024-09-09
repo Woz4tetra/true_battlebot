@@ -1,3 +1,4 @@
 <launch>
-    <node name="bw_teleop" pkg="bw_teleop" type="teleop_node.py" output="screen" required="false" />
+    <node name="bw_teleop" pkg="bw_teleop" type="teleop_node.py" output="screen" required="false"
+        clear_params="true" />
 </launch>

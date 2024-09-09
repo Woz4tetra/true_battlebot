@@ -1,6 +1,6 @@
 <launch>
     <node name="bw_behaviors" pkg="bw_behaviors" type="trees_node.py" output="screen"
-        required="false">
+        required="false" clear_params="true">
         <remap from="cmd_vel" to="/mini_bot/cmd_vel/navigation" />
     </node>
 </launch>

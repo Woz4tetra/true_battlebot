@@ -1,3 +1,4 @@
 <launch>
-    <node name="node_monitor" pkg="bw_system_health" type="node_monitor.py" output="screen" />
+    <node name="node_monitor" pkg="bw_system_health" type="node_monitor.py" output="screen"
+        clear_params="true" />
 </launch>
