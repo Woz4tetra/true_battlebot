@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pprint import pformat
 
 import pyzed.sl as sl
 from bw_shared.messages.dataclass_utils import from_dict, to_dict
@@ -20,10 +21,8 @@ ZED_2I_SETTINGS = (
     sl.VIDEO_SETTINGS.GAIN,
     sl.VIDEO_SETTINGS.EXPOSURE,
     sl.VIDEO_SETTINGS.AEC_AGC,
-    sl.VIDEO_SETTINGS.AEC_AGC_ROI,
     sl.VIDEO_SETTINGS.WHITEBALANCE_TEMPERATURE,
     sl.VIDEO_SETTINGS.WHITEBALANCE_AUTO,
-    sl.VIDEO_SETTINGS.LED_STATUS,
 )
 
 
@@ -42,11 +41,8 @@ class Zed2iVideoSettings:
     exposure: int | None = None
     aec_agc: int | None = None  # Controls if gain and exposure are in automatic mode or not. [0 - 1]
     # Controls the region of interest for automatic exposure/gain computation. sl::Rect
-    aec_agc_roi: tuple[int, int, int, int] | None = None
     whitebalance_temperature: int | None = None  # Controls camera white balance. [2800 - 6500]
     whitebalance_auto: int | None = None  # Controls camera white balance automatic mode. [0 - 1]
-    # Controls the status of the camera front LED. Set to 0 to disable the light, 1 to enable the light. [0 - 1]
-    led_status: int | None = None
 
     @classmethod
     def from_camera(cls, camera: sl.Camera) -> Zed2iVideoSettings:
@@ -72,3 +68,6 @@ class Zed2iVideoSettings:
 
     def to_dict(self) -> dict:
         return to_dict(self)
+
+    def __str__(self) -> str:
+        return pformat(self.to_dict())[1:-1]

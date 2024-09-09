@@ -8,4 +8,4 @@ from app.camera.zed.video_settings import Zed2iVideoSettings
 class ZedCameraConfig:
     type: Literal["ZedCamera"] = "ZedCamera"
     serial_number: int = -1
-    camera_settings: Zed2iVideoSettings = field(default_factory=Zed2iVideoSettings)
+    video_settings: Zed2iVideoSettings = field(default_factory=Zed2iVideoSettings)

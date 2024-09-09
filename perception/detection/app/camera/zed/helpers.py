@@ -34,7 +34,7 @@ def zed_to_ros_camera_info(camera_information: Any) -> CameraInfo:
 def set_robot_finder_settings(init_params: Any):
     init_params.depth_mode = sl.DEPTH_MODE.PERFORMANCE
     init_params.camera_resolution = sl.RESOLUTION.HD1080
-    init_params.camera_fps = 15
+    init_params.camera_fps = 30
     init_params.coordinate_units = sl.UNIT.METER
 
 

@@ -27,8 +27,8 @@ class ZedCamera(CameraInterface):
         self,
         config: ZedCameraConfig,
         camera_topic_config: CameraTopicConfig,
-        color_image_pub: RosPublisher[RosImage],
-        camera_info_pub: RosPublisher[CameraInfo],
+        color_image_pub: RosPublisher[RosImage] | None,
+        camera_info_pub: RosPublisher[CameraInfo] | None,
     ) -> None:
         self.logger = logging.getLogger("perception")
 
@@ -86,13 +86,13 @@ class ZedCamera(CameraInterface):
             self.camera.close()
 
         try:
-            self.config.camera_settings.apply_to_camera(self.camera)
+            self.config.video_settings.apply_to_camera(self.camera)
         except ZedParameterError:
             self.logger.error("Failed to apply camera settings")
             self.close()
             return False
 
-        self.logger.info(f"ZED camera settings: {pformat(Zed2iVideoSettings.from_camera(self.camera).to_dict())}")
+        self.logger.info(f"ZED camera settings: {str(Zed2iVideoSettings.from_camera(self.camera))}")
 
         self.logger.info("ZED Camera opened successfully")
 
@@ -138,8 +138,10 @@ class ZedCamera(CameraInterface):
             camera_info=self.camera_info,
         )
 
-        self.color_image_pub.publish(image.to_msg())
-        self.camera_info_pub.publish(self.camera_info)
+        if self.color_image_pub:
+            self.color_image_pub.publish(image.to_msg())
+        if self.camera_info_pub:
+            self.camera_info_pub.publish(self.camera_info)
 
         return camera_data
 
