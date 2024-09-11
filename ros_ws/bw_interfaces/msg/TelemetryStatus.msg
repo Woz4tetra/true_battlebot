@@ -1,3 +1,4 @@
+bool controller_connected
 bool is_armed
 bool is_ready
 bool is_connected

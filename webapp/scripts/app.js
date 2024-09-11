@@ -4,8 +4,16 @@ var robotModePub;
 var requestFieldPub;
 var recordService;
 var recordState = false;
-var connection_status;
-var connection_icon;
+var connection_status,
+    teleop_controller_status,
+    teleop_connected_status,
+    teleop_is_ready_status,
+    teleop_is_armed_status;
+var connection_icon,
+    teleop_controller_icon,
+    teleop_connected_icon,
+    teleop_is_ready_icon,
+    teleop_is_armed_icon;
 var opponent_template_names = [];
 var connection_icons = {
     connected: "resources/check_circle_black_24dp.svg",
@@ -107,6 +115,40 @@ function initTreeSnapshotSubscriber() {
 
     listener.subscribe(function (message) {
         document.getElementById("tree-snapshot").innerHTML = message.data;
+    });
+}
+
+function initTelemetrySubscriber() {
+    var listener = new ROSLIB.Topic({
+        ros: ros,
+        name: "/mini_bot/telemetry_status",
+        messageType: "bw_interfaces/TelemetryStatus",
+    });
+
+    listener.subscribe(function (message) {
+        document.getElementById(
+            "teleop-battery-voltage"
+        ).innerHTML = `Battery: ${message.battery_voltage.toFixed(2)} V`;
+        document.getElementById("teleop-mode").innerHTML = message.flight_mode;
+        setConnectionIconState(
+            teleop_controller_icon,
+            message.controller_connected
+        );
+        setConnectionIconState(teleop_connected_icon, message.is_connected);
+        setConnectionIconState(teleop_is_ready_icon, message.is_ready);
+        setConnectionIconState(teleop_is_armed_icon, message.is_armed);
+        teleop_controller_status.innerHTML = message.controller_connected
+            ? "Controller Connected"
+            : "Controller Disconnected";
+        teleop_connected_status.innerHTML = message.is_connected
+            ? "Telemetry Connected"
+            : "Telemetry Disconnected";
+        teleop_is_ready_status.innerHTML = message.is_ready
+            ? "Is ready"
+            : "Not ready";
+        teleop_is_armed_status.innerHTML = message.is_armed
+            ? "Is armed"
+            : "Not armed";
     });
 }
 
@@ -309,6 +351,26 @@ function preloadImages(array) {
     }
 }
 
+function initConnectionIcon(element_id) {
+    icon_element = document.getElementById(element_id);
+    icon_element.src = "resources/error_black_24dp.svg";
+    icon_element.className = "filter-red";
+    icon_element.ondragstart = function () {
+        return false;
+    };
+    return icon_element;
+}
+
+function setConnectionIconState(icon, state, text) {
+    if (state) {
+        icon.src = connection_icons.connected;
+        icon.className = "filter-green";
+    } else {
+        icon.src = connection_icons.disconnected;
+        icon.className = "filter-red";
+    }
+}
+
 function reconnectRosBridge() {
     preloadImages(Object.values(connection_icons));
 
@@ -326,24 +388,21 @@ function reconnectRosBridge() {
     ros.connect(url);
 
     ros.on("connection", function () {
-        connection_status.innerHTML = "Connected";
-        connection_icon.src = connection_icons.connected;
-        connection_icon.className = "filter-green";
         console.log("Connected to websocket server.");
+        connection_status.innerHTML = "Connected";
+        setConnectionIconState(connection_icon, true);
     });
 
     ros.on("error", function (error) {
         console.log("Error connecting to websocket server: ", error);
         connection_status.innerHTML = "Error: " + error;
-        connection_icon.src = connection_icons.disconnected;
-        connection_icon.className = "filter-red";
+        setConnectionIconState(connection_icon, false);
     });
 
     ros.on("close", function () {
         console.log("Connection to websocket server closed.");
         connection_status.innerHTML = "Disconnected";
-        connection_icon.src = connection_icons.disconnected;
-        connection_icon.className = "filter-red";
+        setConnectionIconState(connection_icon, false);
     });
 
     initSummarySubscriber();
@@ -356,16 +415,30 @@ function reconnectRosBridge() {
     initHealthSummarySubscriber();
     initOpponentConfigurationPublisher();
     initOpponentTemplateSubscriber();
+    initTelemetrySubscriber();
 }
 
 window.onload = function () {
     connection_status = document.getElementById("connection-status");
-    connection_icon = document.getElementById("connection-icon");
-    connection_icon.src = "resources/error_black_24dp.svg";
-    connection_icon.className = "filter-red";
-    connection_icon.ondragstart = function () {
-        return false;
-    };
+    teleop_controller_status = document.getElementById(
+        "teleop-controller-status"
+    );
+    teleop_connected_status = document.getElementById(
+        "teleop-connected-status"
+    );
+    teleop_is_ready_status = document.getElementById("teleop-is-ready-status");
+    teleop_is_armed_status = document.getElementById("teleop-is-armed-status");
+
+    teleop_controller_status.innerHTML = "No controller";
+    teleop_connected_status.innerHTML = "No connection";
+    teleop_is_ready_status.innerHTML = "Not ready";
+    teleop_is_armed_status.innerHTML = "Not armed";
+
+    connection_icon = initConnectionIcon("connection-icon");
+    teleop_controller_icon = initConnectionIcon("teleop-controller-icon");
+    teleop_connected_icon = initConnectionIcon("teleop-connected-icon");
+    teleop_is_ready_icon = initConnectionIcon("teleop-is-ready-icon");
+    teleop_is_armed_icon = initConnectionIcon("teleop-is-armed-icon");
 
     document.getElementById("num-opponents").value = 1;
     updateOpponentConfigurationGrid();

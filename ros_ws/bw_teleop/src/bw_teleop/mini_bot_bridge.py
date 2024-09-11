@@ -100,8 +100,6 @@ class MiniBotBridge:
             ),
         }[self.lookup_table_key]
 
-        self.device = find_transmitter()
-        self.set_telemetry(True)
         self.parser = CrsfParser()
         self.packet_callbacks: dict[FrameType, Callable[[Any], None]] = {
             FrameType.BATTERY: self.battery_callback,
@@ -116,15 +114,24 @@ class MiniBotBridge:
         self.did_status_update = False
 
         self.imu_pub = rospy.Publisher("imu", Imu, queue_size=1)
-        self.twist_sub = rospy.Subscriber("cmd_vel", Twist, self.twist_callback, queue_size=1)
-        self.telemetry_pub = rospy.Publisher("telemetry_status", TelemetryStatus, queue_size=1)
+        self.telemetry_pub = rospy.Publisher("telemetry_status", TelemetryStatus, queue_size=1, latch=True)
         self.trainer_port_pub = rospy.Publisher("trainer_port", String, queue_size=1)
+
+        self.telemetry_pub.publish(self.telemetry_status)
+
+        self.device = find_transmitter()
+        self.set_telemetry(True)
+
+        self.twist_sub = rospy.Subscriber("cmd_vel", Twist, self.twist_callback, queue_size=1)
 
     def set_telemetry(self, telemetry: bool) -> None:
         if telemetry:
             self.device.write(b"telemetry on\r\n")
+            self.telemetry_status.controller_connected = True
         else:
             self.device.write(b"telemetry off\r\n")
+            self.telemetry_status.controller_connected = False
+        self.telemetry_pub.publish(self.telemetry_status)
 
     def twist_callback(self, msg: Twist) -> None:
         linear_x, angular_z = self.lookup_table.lookup(msg.linear.x, -1 * msg.angular.z)

@@ -9,10 +9,11 @@ import struct
 import genpy
 
 class TelemetryStatus(genpy.Message):
-  _md5sum: str = "90b1c2bd5acd90a989373069734b506e"
+  _md5sum: str = "22ecc309acd933609a381421b73cafc7"
   _type: str = "bw_interfaces/TelemetryStatus"
   _has_header: bool = False  # flag to mark the presence of a Header object
-  _full_text: str = """bool is_armed
+  _full_text: str = """bool controller_connected
+bool is_armed
 bool is_ready
 bool is_connected
 float32 battery_voltage
@@ -20,10 +21,11 @@ float32 battery_current
 float32 battery_consumption
 string link_stats_json
 string flight_mode"""
-  __slots__: List[str] = ['is_armed','is_ready','is_connected','battery_voltage','battery_current','battery_consumption','link_stats_json','flight_mode']
-  _slot_types: List[str] = ['bool','bool','bool','float32','float32','float32','string','string']
+  __slots__: List[str] = ['controller_connected','is_armed','is_ready','is_connected','battery_voltage','battery_current','battery_consumption','link_stats_json','flight_mode']
+  _slot_types: List[str] = ['bool','bool','bool','bool','float32','float32','float32','string','string']
 
-  def __init__(self, is_armed: bool = None,
+  def __init__(self, controller_connected: bool = None,
+    is_armed: bool = None,
     is_ready: bool = None,
     is_connected: bool = None,
     battery_voltage: float = None,
@@ -38,13 +40,17 @@ string flight_mode"""
     changes.  You cannot mix in-order arguments and keyword arguments.
 
     The available fields are:
-      is_armed,is_ready,is_connected,battery_voltage,battery_current,battery_consumption,link_stats_json,flight_mode
+      controller_connected,is_armed,is_ready,is_connected,battery_voltage,battery_current,battery_consumption,link_stats_json,flight_mode
 
     :param args: complete set of field values, in .msg order
     :param kwds: use keyword arguments corresponding to message field names
     to set specific fields.
     """
-    super(TelemetryStatus, self).__init__(**{'is_armed': is_armed, 'is_ready': is_ready, 'is_connected': is_connected, 'battery_voltage': battery_voltage, 'battery_current': battery_current, 'battery_consumption': battery_consumption, 'link_stats_json': link_stats_json, 'flight_mode': flight_mode})
+    super(TelemetryStatus, self).__init__(**{'controller_connected': controller_connected, 'is_armed': is_armed, 'is_ready': is_ready, 'is_connected': is_connected, 'battery_voltage': battery_voltage, 'battery_current': battery_current, 'battery_consumption': battery_consumption, 'link_stats_json': link_stats_json, 'flight_mode': flight_mode})
+    if self.controller_connected is None:
+      self.controller_connected: bool = False
+    else:
+      self.controller_connected = controller_connected
     if self.is_armed is None:
       self.is_armed: bool = False
     else:
@@ -91,7 +97,7 @@ string flight_mode"""
     """
     try:
       _x = self
-      buff.write(_get_struct_3B3f().pack(_x.is_armed, _x.is_ready, _x.is_connected, _x.battery_voltage, _x.battery_current, _x.battery_consumption))
+      buff.write(_get_struct_4B3f().pack(_x.controller_connected, _x.is_armed, _x.is_ready, _x.is_connected, _x.battery_voltage, _x.battery_current, _x.battery_consumption))
       _x = self.link_stats_json
       length = len(_x)
       if python3 or type(_x) == unicode:
@@ -118,8 +124,9 @@ string flight_mode"""
       end = 0
       _x = self
       start = end
-      end += 15
-      (_x.is_armed, _x.is_ready, _x.is_connected, _x.battery_voltage, _x.battery_current, _x.battery_consumption,) = _get_struct_3B3f().unpack(bytes_[start:end])
+      end += 16
+      (_x.controller_connected, _x.is_armed, _x.is_ready, _x.is_connected, _x.battery_voltage, _x.battery_current, _x.battery_consumption,) = _get_struct_4B3f().unpack(bytes_[start:end])
+      self.controller_connected = bool(self.controller_connected)
       self.is_armed = bool(self.is_armed)
       self.is_ready = bool(self.is_ready)
       self.is_connected = bool(self.is_connected)
@@ -154,7 +161,7 @@ string flight_mode"""
     """
     try:
       _x = self
-      buff.write(_get_struct_3B3f().pack(_x.is_armed, _x.is_ready, _x.is_connected, _x.battery_voltage, _x.battery_current, _x.battery_consumption))
+      buff.write(_get_struct_4B3f().pack(_x.controller_connected, _x.is_armed, _x.is_ready, _x.is_connected, _x.battery_voltage, _x.battery_current, _x.battery_consumption))
       _x = self.link_stats_json
       length = len(_x)
       if python3 or type(_x) == unicode:
@@ -182,8 +189,9 @@ string flight_mode"""
       end = 0
       _x = self
       start = end
-      end += 15
-      (_x.is_armed, _x.is_ready, _x.is_connected, _x.battery_voltage, _x.battery_current, _x.battery_consumption,) = _get_struct_3B3f().unpack(bytes_[start:end])
+      end += 16
+      (_x.controller_connected, _x.is_armed, _x.is_ready, _x.is_connected, _x.battery_voltage, _x.battery_current, _x.battery_consumption,) = _get_struct_4B3f().unpack(bytes_[start:end])
+      self.controller_connected = bool(self.controller_connected)
       self.is_armed = bool(self.is_armed)
       self.is_ready = bool(self.is_ready)
       self.is_connected = bool(self.is_connected)
@@ -213,9 +221,9 @@ _struct_I = genpy.struct_I
 def _get_struct_I():
     global _struct_I
     return _struct_I
-_struct_3B3f = None
-def _get_struct_3B3f():
-    global _struct_3B3f
-    if _struct_3B3f is None:
-        _struct_3B3f = struct.Struct("<3B3f")
-    return _struct_3B3f
+_struct_4B3f = None
+def _get_struct_4B3f():
+    global _struct_4B3f
+    if _struct_4B3f is None:
+        _struct_4B3f = struct.Struct("<4B3f")
+    return _struct_4B3f
