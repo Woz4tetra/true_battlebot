@@ -1,7 +1,8 @@
 morph_kernel_size: 3
-blur_iterations: 3
+morph_iterations: 3
 min_area: 100
-max_area: 1000
+max_area: 5000
 gaussian_kernel_size: 5
-history_length: 100
-var_threshold: 8
+history_length: 300
+var_threshold: 16
+learning_rate: -1

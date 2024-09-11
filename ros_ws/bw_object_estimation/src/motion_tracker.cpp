@@ -8,7 +8,7 @@ MotionTracker::MotionTracker(ros::NodeHandle *nodehandle) : BaseEstimation(nodeh
     ros::param::param<int>("~processing_width", processing_width, 480);
     ros::param::param<int>("~processing_height", processing_height, 270);
     ros::param::param<int>("~morph_kernel_size", _morph_kernel_size, 3);
-    ros::param::param<int>("~blur_iterations", _morph_iterations, 3);
+    ros::param::param<int>("~morph_iterations", _morph_iterations, 3);
     ros::param::param<int>("~min_area", _min_area, 25);
     ros::param::param<int>("~max_area", _max_area, 10000);
     ros::param::param<int>("~gaussian_kernel_size", _gaussian_kernel_size, 5);
@@ -55,22 +55,29 @@ void MotionTracker::image_callback(const sensor_msgs::ImageConstPtr &image_msg)
     }
     _is_reset = true;
 
+    if (publish_debug_image)
+    {
+        debug_image = processing_image.clone();
+    }
+
     cv::GaussianBlur(processing_image, processing_image, cv::Size(_gaussian_kernel_size, _gaussian_kernel_size), 0);
 
     cv::Mat fg_mask;
     _back_subtractor->apply(processing_image, fg_mask, learning_rate);
     double shadow_threshold = _back_subtractor->getShadowThreshold();
 
-    cv::threshold(fg_mask, fg_mask, (int)shadow_threshold + 1, 255, cv::THRESH_BINARY);
-
-    cv::morphologyEx(fg_mask, fg_mask, cv::MORPH_OPEN, _blur_kernel, cv::Point(-1, -1), _morph_iterations);
-    std::vector<std::vector<cv::Point>> contours;
-    cv::findContours(fg_mask, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
-
     if (publish_debug_image)
     {
-        cv::cvtColor(fg_mask, debug_image, cv::COLOR_GRAY2BGR);
+        cv::Mat fg_mask_color;
+        cv::cvtColor(fg_mask, fg_mask_color, cv::COLOR_GRAY2BGR);
+        cv::addWeighted(debug_image, 0.7, fg_mask_color, 0.3, 0, debug_image);
     }
+
+    cv::threshold(fg_mask, fg_mask, (int)shadow_threshold - 1, 255, cv::THRESH_BINARY);
+
+    cv::dilate(fg_mask, fg_mask, _blur_kernel, cv::Point(-1, -1), _morph_iterations);
+    std::vector<std::vector<cv::Point>> contours;
+    cv::findContours(fg_mask, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
 
     cv::Point3d plane_center = get_plane_center();
     cv::Point3d plane_normal = get_plane_normal();
