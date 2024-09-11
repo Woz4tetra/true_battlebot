@@ -2,6 +2,7 @@ import argparse
 import time
 
 import rospy
+import tqdm
 from bw_interfaces.msg import EstimatedObject
 from rosbag.bag import Bag
 from sensor_msgs.msg import CameraInfo, Image
@@ -30,19 +31,25 @@ def main() -> None:
 
     bag_file = args.bag_file
     with Bag(bag_file, "r") as bag:
-        start_time = time.perf_counter()
-        bag_start_time = bag.get_start_time()
-        for topic, msg, timestamp in bag.read_messages(topics=topics.keys()):  # type: ignore
-            bag_time = get_bag_time(timestamp.to_sec())
-            real_time = get_real_time()
+        bag_duration = round(bag.get_end_time() - bag.get_start_time(), 2)
+        with tqdm.tqdm(
+            total=bag_duration,
+            bar_format="{desc}: {percentage:3.0f}%|{bar}| {n:.2f}/{total_fmt} [{elapsed}<{remaining}]",
+        ) as pbar:
+            start_time = time.perf_counter()
+            bag_start_time = bag.get_start_time()
+            for topic, msg, timestamp in bag.read_messages(topics=topics.keys()):  # type: ignore
+                bag_time = get_bag_time(timestamp.to_sec())
+                real_time = get_real_time()
+                pbar.update(round(bag_time - pbar.n, 2))
 
-            if bag_time > real_time:
-                rospy.sleep(bag_time - real_time)
+                if bag_time > real_time:
+                    rospy.sleep(bag_time - real_time)
 
-            publishers[topic].publish(msg)
+                publishers[topic].publish(msg)
 
-            if rospy.is_shutdown():
-                break
+                if rospy.is_shutdown():
+                    break
 
 
 if __name__ == "__main__":

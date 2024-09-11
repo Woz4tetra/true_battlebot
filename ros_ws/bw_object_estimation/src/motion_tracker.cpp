@@ -12,6 +12,8 @@ MotionTracker::MotionTracker(ros::NodeHandle *nodehandle) : BaseEstimation(nodeh
     ros::param::param<int>("~min_area", _min_area, 25);
     ros::param::param<int>("~max_area", _max_area, 10000);
     ros::param::param<int>("~gaussian_kernel_size", _gaussian_kernel_size, 5);
+    ros::param::param<int>("~history_length", _history_length, 500);
+    ros::param::param<int>("~var_threshold", _var_threshold, 16);
     ros::param::param<std::string>("~label", _label, "robot");
 
     _image_sub = nh.subscribe<sensor_msgs::Image>("image", 1, &MotionTracker::image_callback, this);
@@ -19,7 +21,7 @@ MotionTracker::MotionTracker(ros::NodeHandle *nodehandle) : BaseEstimation(nodeh
     _robot_pub = nh.advertise<bw_interfaces::EstimatedObjectArray>("estimation/robots", 10);
     _robot_marker_pub = nh.advertise<visualization_msgs::MarkerArray>("estimation/robot_markers", 10);
 
-    _back_subtractor = cv::createBackgroundSubtractorMOG2();
+    _back_subtractor = cv::createBackgroundSubtractorMOG2(_history_length, _var_threshold, true);
     _blur_kernel = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(_morph_kernel_size, _morph_kernel_size));
     _processing_size = cv::Size(processing_width, processing_height);
 }
@@ -43,6 +45,7 @@ void MotionTracker::image_callback(const sensor_msgs::ImageConstPtr &image_msg)
     }
 
     cv::Mat image = color_ptr->image;
+    cv::Mat debug_image;
     cv::Mat processing_image;
     cv::resize(image, processing_image, _processing_size);
     double learning_rate = _is_reset ? _learning_rate : 1.0;
@@ -56,11 +59,13 @@ void MotionTracker::image_callback(const sensor_msgs::ImageConstPtr &image_msg)
 
     cv::Mat fg_mask;
     _back_subtractor->apply(processing_image, fg_mask, learning_rate);
-    cv::erode(fg_mask, fg_mask, _blur_kernel, cv::Point(-1, -1), _morph_iterations);
+    double shadow_threshold = _back_subtractor->getShadowThreshold();
+
+    cv::threshold(fg_mask, fg_mask, (int)shadow_threshold + 1, 255, cv::THRESH_BINARY);
+
+    cv::morphologyEx(fg_mask, fg_mask, cv::MORPH_OPEN, _blur_kernel, cv::Point(-1, -1), _morph_iterations);
     std::vector<std::vector<cv::Point>> contours;
     cv::findContours(fg_mask, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
-
-    cv::Mat debug_image;
 
     if (publish_debug_image)
     {

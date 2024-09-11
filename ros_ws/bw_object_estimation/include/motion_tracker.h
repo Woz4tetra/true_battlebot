@@ -34,6 +34,8 @@ private:
     int _morph_kernel_size;
     int _min_area, _max_area;
     int _gaussian_kernel_size;
+    int _history_length;
+    int _var_threshold;
     double _z_limit;
     std::string _label;
 
