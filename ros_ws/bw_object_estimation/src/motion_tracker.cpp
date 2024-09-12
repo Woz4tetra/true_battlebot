@@ -3,17 +3,28 @@
 MotionTracker::MotionTracker(ros::NodeHandle *nodehandle) : BaseEstimation(nodehandle)
 {
     ros::param::param<double>("~z_limit", _z_limit, 0.2);
-    ros::param::param<double>("~learning_rate", _learning_rate, -1.0);
+
     int processing_width, processing_height;
     ros::param::param<int>("~processing_width", processing_width, 480);
     ros::param::param<int>("~processing_height", processing_height, 270);
+
     ros::param::param<int>("~morph_kernel_size", _morph_kernel_size, 3);
     ros::param::param<int>("~morph_iterations", _morph_iterations, 3);
-    ros::param::param<int>("~min_area", _min_area, 25);
-    ros::param::param<int>("~max_area", _max_area, 10000);
     ros::param::param<int>("~gaussian_kernel_size", _gaussian_kernel_size, 5);
+
+    ros::param::param<double>("~learning_rate", _learning_rate, -1.0);
     ros::param::param<int>("~history_length", _history_length, 500);
     ros::param::param<int>("~var_threshold", _var_threshold, 16);
+
+    ros::param::param<bool>("filter_by_area", _filter_by_area, true);
+    ros::param::param<int>("blob_min_area", _blob_min_area, 100.0);
+    ros::param::param<bool>("filter_by_circularity", _filter_by_circularity, true);
+    ros::param::param<double>("min_circularity", _min_circularity, 0.9);
+    ros::param::param<bool>("filter_by_convexity", _filter_by_convexity, true);
+    ros::param::param<double>("min_convexity", _min_convexity, 0.2);
+    ros::param::param<bool>("filter_by_inertia", _filter_by_inertia, true);
+    ros::param::param<double>("min_inertia_ratio", _min_inertia_ratio, 0.01);
+
     ros::param::param<std::string>("~label", _label, "robot");
 
     _image_sub = nh.subscribe<sensor_msgs::Image>("image", 1, &MotionTracker::image_callback, this);
@@ -21,8 +32,21 @@ MotionTracker::MotionTracker(ros::NodeHandle *nodehandle) : BaseEstimation(nodeh
     _robot_pub = nh.advertise<bw_interfaces::EstimatedObjectArray>("estimation/robots", 10);
     _robot_marker_pub = nh.advertise<visualization_msgs::MarkerArray>("estimation/robot_markers", 10);
 
+    cv::SimpleBlobDetector::Params blob_params;
+    blob_params.filterByArea = _filter_by_area;
+    blob_params.minArea = _blob_min_area;
+    // blob_params.filterByColor = true;
+    // blob_params.blobColor = 255;
+    // blob_params.filterByCircularity = _filter_by_circularity;
+    // blob_params.minCircularity = _min_circularity;
+    // blob_params.filterByConvexity = _filter_by_convexity;
+    // blob_params.minConvexity = _min_convexity;
+    // blob_params.filterByInertia = _filter_by_inertia;
+    // blob_params.minInertiaRatio = _min_inertia_ratio;
+
     _back_subtractor = cv::createBackgroundSubtractorMOG2(_history_length, _var_threshold, true);
-    _blur_kernel = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(_morph_kernel_size, _morph_kernel_size));
+    _blob_detector = cv::SimpleBlobDetector::create(blob_params);
+    _morph_kernel = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(_morph_kernel_size, _morph_kernel_size));
     _processing_size = cv::Size(processing_width, processing_height);
 }
 
@@ -66,18 +90,23 @@ void MotionTracker::image_callback(const sensor_msgs::ImageConstPtr &image_msg)
     _back_subtractor->apply(processing_image, fg_mask, learning_rate);
     double shadow_threshold = _back_subtractor->getShadowThreshold();
 
+    cv::threshold(fg_mask, fg_mask, (int)shadow_threshold + 1, 255, cv::THRESH_BINARY);
+    cv::morphologyEx(fg_mask, fg_mask, cv::MORPH_OPEN, _morph_kernel, cv::Point(-1, -1), _morph_iterations);
+
+    cv::Mat masked_image = cv::Mat::zeros(processing_image.size(), processing_image.type());
+    processing_image.copyTo(masked_image, fg_mask);
+
     if (publish_debug_image)
     {
-        cv::Mat fg_mask_color;
-        cv::cvtColor(fg_mask, fg_mask_color, cv::COLOR_GRAY2BGR);
-        cv::addWeighted(debug_image, 0.7, fg_mask_color, 0.3, 0, debug_image);
+        debug_image = masked_image;
+        // cv::Mat fg_mask_color;
+        // cv::cvtColor(fg_mask, fg_mask_color, cv::COLOR_GRAY2BGR);
+        // cv::addWeighted(debug_image, 0.7, fg_mask_color, 0.3, 0, debug_image);
     }
 
-    cv::threshold(fg_mask, fg_mask, (int)shadow_threshold - 1, 255, cv::THRESH_BINARY);
-
-    cv::dilate(fg_mask, fg_mask, _blur_kernel, cv::Point(-1, -1), _morph_iterations);
-    std::vector<std::vector<cv::Point>> contours;
-    cv::findContours(fg_mask, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+    std::vector<cv::KeyPoint> keypoints;
+    _blob_detector->detect(processing_image, keypoints);
+    ROS_INFO("Detected %lu keypoints", keypoints.size());
 
     cv::Point3d plane_center = get_plane_center();
     cv::Point3d plane_normal = get_plane_normal();
@@ -88,24 +117,19 @@ void MotionTracker::image_callback(const sensor_msgs::ImageConstPtr &image_msg)
     double width_ratio = (double)image.cols / _processing_size.width;
     double height_ratio = (double)image.rows / _processing_size.height;
 
-    for (size_t index = 0; index < contours.size(); index++)
+    for (size_t index = 0; index < keypoints.size(); index++)
     {
-        double area = cv::contourArea(contours[index]);
-        if (area < _min_area || area > _max_area)
-        {
-            continue;
-        }
+        cv::KeyPoint keypoint = keypoints[index];
 
-        cv::Point2d centroid_uv = get_centroid(contours[index]);
-        cv::Rect bbox = cv::boundingRect(contours[index]);
-        cv::Point2d max_pt = cv::Point2d(bbox.x, bbox.y);
+        cv::Point2d centroid_uv = keypoint.pt;
+        cv::Point2d max_pt = centroid_uv + cv::Point2d(keypoint.size / 2, keypoint.size / 2);
 
         cv::Point2d centroid_scaled = cv::Point2d(centroid_uv.x * width_ratio, centroid_uv.y * height_ratio);
         cv::Point2d max_pt_scaled = cv::Point2d(max_pt.x * width_ratio, max_pt.y * height_ratio);
 
         if (publish_debug_image)
         {
-            cv::drawContours(debug_image, contours, index, cv::Scalar(0, 255, 0), 1);
+            cv::drawKeypoints(debug_image, keypoints, debug_image, cv::Scalar(0, 255, 0), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
             cv::circle(debug_image, centroid_uv, 3, cv::Scalar(0, 0, 255), -1);
             cv::circle(debug_image, max_pt, 3, cv::Scalar(255, 0, 0), -1);
         }
