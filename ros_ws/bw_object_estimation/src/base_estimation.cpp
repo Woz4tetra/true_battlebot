@@ -21,21 +21,29 @@ void BaseEstimation::camera_info_callback(const sensor_msgs::CameraInfoConstPtr 
 
 void BaseEstimation::field_callback(const bw_interfaces::EstimatedObjectConstPtr &field)
 {
+    ROS_INFO("Field received");
+    _field = *field;
+    _plane_computed = false;
+    field_received_callback();
+}
+
+bool BaseEstimation::compute_plane()
+{
     sensor_msgs::CameraInfo info = _camera_model.cameraInfo();
     if (info.header.frame_id.empty())
     {
         ROS_ERROR("Camera info frame_id is empty. Cannot transform field to camera frame.");
-        return;
+        return false;
     }
     geometry_msgs::TransformStamped transform;
     try
     {
-        transform = _tf_buffer.lookupTransform(info.header.frame_id, field->header.frame_id, ros::Time(0), ros::Duration(5.0));
+        transform = _tf_buffer.lookupTransform(info.header.frame_id, _field.header.frame_id, ros::Time(0), ros::Duration(5.0));
     }
     catch (tf2::TransformException &ex)
     {
-        ROS_ERROR("Failed to look up transform from %s to %s. %s", info.header.frame_id.c_str(), field->header.frame_id.c_str(), ex.what());
-        return;
+        ROS_ERROR("Failed to look up transform from %s to %s. %s", info.header.frame_id.c_str(), _field.header.frame_id.c_str(), ex.what());
+        return false;
     }
 
     // Extract the position and orientation from the pose
@@ -52,9 +60,24 @@ void BaseEstimation::field_callback(const bw_interfaces::EstimatedObjectConstPtr
     normal = normal.normalized();
     _plane_normal = cv::Point3d(normal.x(), normal.y(), normal.z());
 
-    ROS_INFO("Field received");
-    _field_received = true;
-    field_received_callback();
+    return true;
+}
+
+cv::Point3d BaseEstimation::get_plane_center()
+{
+    if (!_plane_computed && compute_plane())
+    {
+        _plane_computed = true;
+    }
+    return _plane_center;
+}
+cv::Point3d BaseEstimation::get_plane_normal()
+{
+    if (!_plane_computed && compute_plane())
+    {
+        _plane_computed = true;
+    }
+    return _plane_normal;
 }
 
 bool BaseEstimation::project_to_field(

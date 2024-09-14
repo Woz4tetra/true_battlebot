@@ -3,9 +3,10 @@ import time
 
 import rospy
 import tqdm
-from bw_interfaces.msg import EstimatedObject
+from bw_interfaces.msg import EstimatedObject, EstimatedObjectArray
 from rosbag.bag import Bag
 from sensor_msgs.msg import CameraInfo, Image
+from tf2_msgs.msg import TFMessage
 
 
 def main() -> None:
@@ -17,8 +18,11 @@ def main() -> None:
 
     topics = {
         "/filter/field": EstimatedObject,
+        "/camera_0/estimation/robots": EstimatedObjectArray,
         "/camera_1/image_rect": Image,
         "/camera_1/camera_info": CameraInfo,
+        "/tf": TFMessage,
+        "/tf_static": TFMessage,
     }
 
     publishers = {topic: rospy.Publisher(topic, msg_type, queue_size=10) for topic, msg_type in topics.items()}

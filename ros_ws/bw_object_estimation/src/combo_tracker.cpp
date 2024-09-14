@@ -12,20 +12,37 @@ ComboTracker::ComboTracker(ros::NodeHandle *nodehandle) : BaseEstimation(nodehan
     _processing_size = cv::Size(processing_width, processing_height);
 
     double reset_cooldown;
-    ros::param::param<double>("~reset_cooldown", reset_cooldown, 0.5);
+    ros::param::param<double>("~reset_cooldown", reset_cooldown, 0.0);
     _reset_cooldown = ros::Duration(reset_cooldown);
 
     ros::param::param<double>("~min_track_size_px", _min_track_size_px, 5.0);
     _min_track_size_px /= 2;
 
+    ros::param::param<int>("~morph_kernel_size", _morph_kernel_size, 3);
+    ros::param::param<int>("~morph_iterations", _morph_iterations, 3);
+    ros::param::param<int>("~min_area", _min_area, 25);
+    ros::param::param<int>("~max_area", _max_area, 10000);
+    ros::param::param<int>("~gaussian_kernel_size", _gaussian_kernel_size, 5);
+    ros::param::param<double>("~learning_rate", _learning_rate, -1.0);
+    ros::param::param<int>("~history_length", _history_length, 500);
+    ros::param::param<int>("~var_threshold", _var_threshold, 16);
+
+    ros::param::param<int>("~tracking_dilation_rate", _tracking_dilation_rate, 5);
+    ros::param::param<int>("~post_contour_dilation", _post_contour_dilation, 5);
+
     _num_trackers = 0;
-    _should_reset = false;
+    _should_reset_tracker = false;
+    _should_reset_background = true;
 
     _image_sub = nh.subscribe<sensor_msgs::Image>("image", 1, &ComboTracker::image_callback, this);
     _source_sub = nh.subscribe<bw_interfaces::EstimatedObjectArray>("source_robots", 1, &ComboTracker::source_callback, this);
     _debug_image_pub = nh.advertise<sensor_msgs::Image>("debug_image", 1);
     _robot_pub = nh.advertise<bw_interfaces::EstimatedObjectArray>("estimation/robots", 10);
     _robot_marker_pub = nh.advertise<visualization_msgs::MarkerArray>("estimation/robot_markers", 10);
+
+    _back_subtractor = cv::createBackgroundSubtractorMOG2(_history_length, _var_threshold, true);
+    _morph_kernel = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(_morph_kernel_size, _morph_kernel_size));
+    _processing_size = cv::Size(processing_width, processing_height);
 }
 
 ComboTracker::~ComboTracker()
@@ -47,11 +64,6 @@ void ComboTracker::source_callback(const bw_interfaces::EstimatedObjectArrayCons
         ROS_ERROR("Camera info frame_id is empty. Cannot project robots to camera.");
         return;
     }
-    for (size_t index = 0; index < _trackers.size(); index++)
-    {
-        _trackers[index].release();
-    }
-    _trackers.clear();
     for (size_t index = _init_boxes.size(); index < robots->robots.size(); index++)
     {
         _init_boxes.push_back(cv::Rect2d());
@@ -94,13 +106,18 @@ void ComboTracker::source_callback(const bw_interfaces::EstimatedObjectArrayCons
 
         _init_boxes[index] = bbox;
     }
-    _should_reset = true;
+    _should_reset_tracker = true;
     _last_reset_time = now;
     ROS_DEBUG("Initialized %d trackers", _num_trackers);
 }
 
 void ComboTracker::image_callback(const sensor_msgs::ImageConstPtr &image_msg)
 {
+    if (_num_trackers == 0)
+    {
+        return;
+    }
+
     bool publish_debug_image = _debug_image_pub.getNumSubscribers() > 0;
     cv_bridge::CvImagePtr color_ptr;
     try
@@ -116,6 +133,28 @@ void ComboTracker::image_callback(const sensor_msgs::ImageConstPtr &image_msg)
     cv::Mat image = color_ptr->image;
     cv::Mat debug_image;
     cv::Mat processing_image;
+    cv::resize(image, processing_image, _processing_size);
+
+    double width_ratio = _resize_image ? (double)image.cols / _processing_size.width : 1.0;
+    double height_ratio = _resize_image ? (double)image.rows / _processing_size.height : 1.0;
+
+    if (_should_reset_tracker)
+    {
+        _tracking_mask = cv::Mat::zeros(processing_image.size(), CV_8UC1);
+        for (size_t index = 0; index < _num_trackers; index++)
+        {
+            cv::Rect2d scaled_bbox;
+            scaled_bbox.x = _init_boxes[index].x / width_ratio;
+            scaled_bbox.y = _init_boxes[index].y / height_ratio;
+            scaled_bbox.width = std::max(_init_boxes[index].width / width_ratio, _min_track_size_px);
+            scaled_bbox.height = std::max(_init_boxes[index].height / height_ratio, _min_track_size_px);
+            ROS_DEBUG("Initializing tracker %lu with bbox (%f, %f, %f, %f)", index, scaled_bbox.x, scaled_bbox.y, scaled_bbox.width, scaled_bbox.height);
+
+            _tracking_mask(scaled_bbox) = 255;
+        }
+        _should_reset_tracker = false;
+    }
+
     if (_resize_image)
     {
         cv::resize(image, processing_image, _processing_size);
@@ -125,37 +164,46 @@ void ComboTracker::image_callback(const sensor_msgs::ImageConstPtr &image_msg)
         processing_image = image;
     }
 
-    double width_ratio = _resize_image ? (double)image.cols / _processing_size.width : 1.0;
-    double height_ratio = _resize_image ? (double)image.rows / _processing_size.height : 1.0;
-
-    if (_should_reset)
-    {
-        ROS_DEBUG("Resetting trackers");
-        for (size_t index = 0; index < _num_trackers; index++)
-        {
-            ROS_DEBUG("Initializing tracker %lu", index);
-            cv::Rect2d scaled_bbox;
-            scaled_bbox.x = _init_boxes[index].x / width_ratio;
-            scaled_bbox.y = _init_boxes[index].y / height_ratio;
-            scaled_bbox.width = std::max(_init_boxes[index].width / width_ratio, _min_track_size_px);
-            scaled_bbox.height = std::max(_init_boxes[index].height / height_ratio, _min_track_size_px);
-
-            ROS_DEBUG("Initializing tracker %lu with bbox (%f, %f, %f, %f)", index, scaled_bbox.x, scaled_bbox.y, scaled_bbox.width, scaled_bbox.height);
-
-            _trackers.push_back(cv::TrackerMOSSE::create());
-
-            if (!_trackers[index]->init(processing_image, scaled_bbox))
-            {
-                ROS_WARN("Failed to initialize tracker %lu", index);
-            }
-        }
-        _should_reset = false;
-        return;
-    }
-
     if (publish_debug_image)
     {
         debug_image = processing_image.clone();
+    }
+
+    if (_tracking_mask.empty())
+    {
+        ROS_WARN("Tracking mask is empty, skipping frame");
+        return;
+    }
+
+    cv::dilate(_tracking_mask, _tracking_mask, _morph_kernel, cv::Point(-1, -1), _tracking_dilation_rate);
+
+    cv::GaussianBlur(processing_image, processing_image, cv::Size(_gaussian_kernel_size, _gaussian_kernel_size), 0);
+
+    double learning_rate = _should_reset_background ? 1.0 : _learning_rate;
+    if (_should_reset_background)
+    {
+        ROS_INFO("Resetting background model of motion tracker");
+        _should_reset_background = false;
+    }
+
+    cv::Mat fg_mask;
+    _back_subtractor->apply(processing_image, fg_mask, learning_rate);
+    double shadow_threshold = _back_subtractor->getShadowThreshold();
+
+    cv::threshold(fg_mask, fg_mask, (int)shadow_threshold + 1, 255, cv::THRESH_BINARY);
+    cv::morphologyEx(fg_mask, fg_mask, cv::MORPH_OPEN, _morph_kernel, cv::Point(-1, -1), _morph_iterations);
+
+    cv::bitwise_and(fg_mask, _tracking_mask, fg_mask);
+
+    std::vector<std::vector<cv::Point>> contours;
+    cv::findContours(fg_mask, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+
+    if (publish_debug_image)
+    {
+        cv::drawContours(debug_image, contours, -1, cv::Scalar(0, 255, 0), 1);
+        cv::Mat fg_mask_color;
+        cv::cvtColor(fg_mask, fg_mask_color, cv::COLOR_GRAY2BGR);
+        cv::addWeighted(debug_image, 0.7, fg_mask_color, 0.3, 0, debug_image);
     }
 
     cv::Point3d plane_center = get_plane_center();
@@ -164,25 +212,56 @@ void ComboTracker::image_callback(const sensor_msgs::ImageConstPtr &image_msg)
     bw_interfaces::EstimatedObjectArray robot_array;
     visualization_msgs::MarkerArray robot_markers;
 
-    for (size_t index = 0; index < _trackers.size(); index++)
+    std::vector<cv::Rect> bounding_boxes;
+    for (size_t index = 0; index < contours.size(); index++)
     {
-        cv::Rect2d bbox;
-        bool success = _trackers[index]->update(image, bbox);
-        if (success)
+        double area = cv::contourArea(contours[index]);
+        if (!(_min_area < area && area < _max_area))
         {
-            if (publish_debug_image)
-            {
-                cv::rectangle(debug_image, bbox, cv::Scalar(0, 255, 0), 2);
-            }
-        }
-        else
-        {
-            ROS_DEBUG("Failed to update tracker %lu", index);
             continue;
         }
 
+        cv::Rect bbox = cv::boundingRect(contours[index]);
+        bbox.x = std::max(0, bbox.x - _post_contour_dilation);
+        bbox.y = std::max(0, bbox.y - _post_contour_dilation);
+        bbox.width = std::min(processing_image.cols - bbox.x, bbox.width + 2 * _post_contour_dilation);
+        bbox.height = std::min(processing_image.rows - bbox.y, bbox.height + 2 * _post_contour_dilation);
+        bounding_boxes.push_back(bbox);
+    }
+
+    std::set<int> to_remove;
+    for (size_t index = 0; index < bounding_boxes.size(); index++)
+    {
+        for (size_t other_index = 0; other_index < bounding_boxes.size(); other_index++)
+        {
+            if (index == other_index)
+            {
+                continue;
+            }
+            cv::Rect intersection = bounding_boxes[index] & bounding_boxes[other_index];
+            if (intersection.area() > 0)
+            {
+                if (cv::contourArea(contours[index]) > cv::contourArea(contours[other_index]))
+                {
+                    to_remove.insert(other_index);
+                }
+                else
+                {
+                    to_remove.insert(index);
+                }
+            }
+        }
+    }
+    for (std::set<int>::reverse_iterator it = to_remove.rbegin(); it != to_remove.rend(); it++)
+    {
+        bounding_boxes.erase(bounding_boxes.begin() + *it);
+    }
+
+    for (size_t index = 0; index < bounding_boxes.size(); index++)
+    {
+        cv::Rect bbox = bounding_boxes[index];
+        cv::Point2d centroid_uv = cv::Point2d(bbox.x + bbox.width / 2, bbox.y + bbox.height / 2);
         cv::Point2d max_pt = cv::Point2d(bbox.x, bbox.y);
-        cv::Point2d centroid_uv = max_pt + cv::Point2d(bbox.width / 2, bbox.height / 2);
 
         cv::Point2d centroid_scaled = cv::Point2d(centroid_uv.x * width_ratio, centroid_uv.y * height_ratio);
         cv::Point2d max_pt_scaled = cv::Point2d(max_pt.x * width_ratio, max_pt.y * height_ratio);
@@ -243,6 +322,7 @@ void ComboTracker::image_callback(const sensor_msgs::ImageConstPtr &image_msg)
 
 void ComboTracker::field_received_callback()
 {
+    _should_reset_background = true;
 }
 
 void ComboTracker::fill_marker_array(int obj_index, bw_interfaces::EstimatedObject &robot_msg, visualization_msgs::MarkerArray &robot_markers)

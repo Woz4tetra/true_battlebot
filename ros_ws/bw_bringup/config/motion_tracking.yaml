@@ -1,8 +1,10 @@
 morph_kernel_size: 3
 morph_iterations: 3
-min_area: 100
-max_area: 5000
+min_area: 200
+max_area: 2500
 gaussian_kernel_size: 5
 history_length: 300
 var_threshold: 16
 learning_rate: -1
+dilation_rate: 10
+post_contour_dilation: 5

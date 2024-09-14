@@ -45,6 +45,8 @@ private:
     int _history_length;
     int _var_threshold;
 
+    int _post_contour_dilation;
+
     std::string _label;
 
     cv::Ptr<cv::BackgroundSubtractorMOG2> _back_subtractor;

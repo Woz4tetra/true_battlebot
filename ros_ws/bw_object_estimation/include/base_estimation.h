@@ -23,7 +23,9 @@ class BaseEstimation
 {
 private:
     cv::Point3d _plane_center, _plane_normal;
-    bool _field_received;
+    bw_interfaces::EstimatedObject _field;
+    bool _plane_computed = false;
+    bool compute_plane();
 
 protected:
     ros::NodeHandle nh; // ROS node handle
@@ -46,9 +48,9 @@ protected:
         cv::Point3d plane_normal,
         cv::Point3d &out_point,
         double epsilon = 1e-6);
-    bool is_field_received() { return _field_received; }
-    cv::Point3d get_plane_center() { return _plane_center; }
-    cv::Point3d get_plane_normal() { return _plane_normal; }
+    bool is_field_received() { return !_field.header.frame_id.empty(); }
+    cv::Point3d get_plane_center();
+    cv::Point3d get_plane_normal();
 
     virtual void field_received_callback() {}
 

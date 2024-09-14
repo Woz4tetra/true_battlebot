@@ -18,6 +18,8 @@ MotionTracker::MotionTracker(ros::NodeHandle *nodehandle) : BaseEstimation(nodeh
     ros::param::param<int>("~history_length", _history_length, 500);
     ros::param::param<int>("~var_threshold", _var_threshold, 16);
 
+    ros::param::param<int>("~post_contour_dilation", _post_contour_dilation, 5);
+
     ros::param::param<std::string>("~label", _label, "robot");
 
     _image_sub = nh.subscribe<sensor_msgs::Image>("image", 1, &MotionTracker::image_callback, this);
@@ -78,6 +80,7 @@ void MotionTracker::image_callback(const sensor_msgs::ImageConstPtr &image_msg)
 
     if (publish_debug_image)
     {
+        cv::drawContours(debug_image, contours, -1, cv::Scalar(0, 255, 0), 1);
         cv::Mat fg_mask_color;
         cv::cvtColor(fg_mask, fg_mask_color, cv::COLOR_GRAY2BGR);
         cv::addWeighted(debug_image, 0.7, fg_mask_color, 0.3, 0, debug_image);
@@ -92,16 +95,51 @@ void MotionTracker::image_callback(const sensor_msgs::ImageConstPtr &image_msg)
     double width_ratio = (double)image.cols / _processing_size.width;
     double height_ratio = (double)image.rows / _processing_size.height;
 
+    std::vector<cv::Rect> bounding_boxes;
     for (size_t index = 0; index < contours.size(); index++)
     {
-        double area = cv::contourArea(contours[index]);
-        if (area < _min_area || area > _max_area)
+        cv::Rect bbox = cv::boundingRect(contours[index]);
+        bbox.x = std::max(0, bbox.x - _post_contour_dilation);
+        bbox.y = std::max(0, bbox.y - _post_contour_dilation);
+        bbox.width = std::min(processing_image.cols - bbox.x, bbox.width + 2 * _post_contour_dilation);
+        bbox.height = std::min(processing_image.rows - bbox.y, bbox.height + 2 * _post_contour_dilation);
+        bounding_boxes.push_back(bbox);
+    }
+
+    // Merge overlapping bounding boxes
+    std::vector<cv::Rect> merged_boxes;
+    for (size_t index = 0; index < bounding_boxes.size(); index++)
+    {
+        cv::Rect current_box = bounding_boxes[index];
+        bool merged = false;
+        for (size_t merged_index = 0; merged_index < merged_boxes.size(); merged_index++)
+        {
+            cv::Rect merged_box = merged_boxes[merged_index];
+            cv::Rect intersection = current_box & merged_box;
+            double overlap = (double)intersection.area() / (double)current_box.area();
+            if (overlap > 0.0)
+            {
+                merged_boxes[merged_index] = current_box | merged_box;
+                merged = true;
+                break;
+            }
+        }
+        if (!merged)
+        {
+            merged_boxes.push_back(current_box);
+        }
+    }
+
+    for (size_t index = 0; index < merged_boxes.size(); index++)
+    {
+        cv::Rect bbox = merged_boxes[index];
+        double area = bbox.area();
+        if (!(_min_area < area && area < _max_area))
         {
             continue;
         }
 
-        cv::Point2d centroid_uv = get_centroid(contours[index]);
-        cv::Rect bbox = cv::boundingRect(contours[index]);
+        cv::Point2d centroid_uv = cv::Point2d(bbox.x + bbox.width / 2, bbox.y + bbox.height / 2);
         cv::Point2d max_pt = cv::Point2d(bbox.x, bbox.y);
 
         cv::Point2d centroid_scaled = cv::Point2d(centroid_uv.x * width_ratio, centroid_uv.y * height_ratio);
@@ -109,7 +147,6 @@ void MotionTracker::image_callback(const sensor_msgs::ImageConstPtr &image_msg)
 
         if (publish_debug_image)
         {
-            cv::drawContours(debug_image, contours, index, cv::Scalar(0, 255, 0), 1);
             cv::circle(debug_image, centroid_uv, 3, cv::Scalar(0, 0, 255), -1);
             cv::circle(debug_image, max_pt, 3, cv::Scalar(255, 0, 0), -1);
         }
@@ -123,7 +160,7 @@ void MotionTracker::image_callback(const sensor_msgs::ImageConstPtr &image_msg)
 
         if (center.z < _z_limit)
         {
-            ROS_DEBUG("Object too close, skipping");
+            ROS_INFO("Object too close, skipping");
             continue;
         }
 

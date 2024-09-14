@@ -5,7 +5,8 @@
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
 #include <opencv2/core.hpp>
-#include <opencv2/tracking.hpp>
+#include <opencv2/features2d.hpp>
+#include <opencv2/video/background_segm.hpp>
 
 #include <geometry_msgs/Point.h>
 #include <geometry_msgs/PoseStamped.h>
@@ -41,11 +42,25 @@ private:
     ros::Duration _reset_cooldown;
     ros::Time _last_reset_time;
     double _min_track_size_px;
+    int _tracking_dilation_rate;
+    int _post_contour_dilation;
+
+    int _min_area, _max_area;
+    int _morph_iterations;
+    int _morph_kernel_size;
+    int _gaussian_kernel_size;
+    double _learning_rate;
+    int _history_length;
+    int _var_threshold;
+
+    cv::Ptr<cv::BackgroundSubtractorMOG2> _back_subtractor;
+    cv::Mat _morph_kernel;
 
     std::vector<cv::Rect2d> _init_boxes;
-    std::vector<cv::Ptr<cv::Tracker>> _trackers;
+    cv::Mat _tracking_mask;
     int _num_trackers;
-    bool _should_reset;
+    bool _should_reset_tracker;
+    bool _should_reset_background;
 
     void fill_marker_array(int obj_index, bw_interfaces::EstimatedObject &robot_msg, visualization_msgs::MarkerArray &robot_markers);
 
