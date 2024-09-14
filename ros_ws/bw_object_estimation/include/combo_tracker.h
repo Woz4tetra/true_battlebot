@@ -5,7 +5,8 @@
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
 #include <opencv2/core.hpp>
-#include <opencv2/tracking.hpp>
+#include "opencv2/calib3d.hpp"
+#include <opencv2/features2d.hpp>
 
 #include <geometry_msgs/Point.h>
 #include <geometry_msgs/PoseStamped.h>
@@ -43,7 +44,10 @@ private:
     double _min_track_size_px;
 
     std::vector<cv::Rect2d> _init_boxes;
-    std::vector<cv::Ptr<cv::Tracker>> _trackers;
+    std::vector<std::vector<cv::KeyPoint>> _tracked_keypoints;
+    std::vector<cv::Mat> _tracked_descriptors;
+    cv::Ptr<cv::ORB> _orb_detector;
+    cv::Ptr<cv::DescriptorMatcher> _matcher;
     int _num_trackers;
     bool _should_reset;
 

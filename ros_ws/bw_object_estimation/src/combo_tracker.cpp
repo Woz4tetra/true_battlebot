@@ -12,7 +12,7 @@ ComboTracker::ComboTracker(ros::NodeHandle *nodehandle) : BaseEstimation(nodehan
     _processing_size = cv::Size(processing_width, processing_height);
 
     double reset_cooldown;
-    ros::param::param<double>("~reset_cooldown", reset_cooldown, 0.5);
+    ros::param::param<double>("~reset_cooldown", reset_cooldown, 0.0);
     _reset_cooldown = ros::Duration(reset_cooldown);
 
     ros::param::param<double>("~min_track_size_px", _min_track_size_px, 5.0);
@@ -20,6 +20,8 @@ ComboTracker::ComboTracker(ros::NodeHandle *nodehandle) : BaseEstimation(nodehan
 
     _num_trackers = 0;
     _should_reset = false;
+    _orb_detector = cv::ORB::create();
+    _matcher = cv::DescriptorMatcher::create(cv::DescriptorMatcher::BRUTEFORCE_HAMMING);
 
     _image_sub = nh.subscribe<sensor_msgs::Image>("image", 1, &ComboTracker::image_callback, this);
     _source_sub = nh.subscribe<bw_interfaces::EstimatedObjectArray>("source_robots", 1, &ComboTracker::source_callback, this);
@@ -47,14 +49,11 @@ void ComboTracker::source_callback(const bw_interfaces::EstimatedObjectArrayCons
         ROS_ERROR("Camera info frame_id is empty. Cannot project robots to camera.");
         return;
     }
-    for (size_t index = 0; index < _trackers.size(); index++)
-    {
-        _trackers[index].release();
-    }
-    _trackers.clear();
     for (size_t index = _init_boxes.size(); index < robots->robots.size(); index++)
     {
         _init_boxes.push_back(cv::Rect2d());
+        _tracked_keypoints.push_back(std::vector<cv::KeyPoint>());
+        _tracked_descriptors.push_back(cv::Mat());
     }
     _num_trackers = robots->robots.size();
 
@@ -133,25 +132,36 @@ void ComboTracker::image_callback(const sensor_msgs::ImageConstPtr &image_msg)
         ROS_DEBUG("Resetting trackers");
         for (size_t index = 0; index < _num_trackers; index++)
         {
-            ROS_DEBUG("Initializing tracker %lu", index);
             cv::Rect2d scaled_bbox;
             scaled_bbox.x = _init_boxes[index].x / width_ratio;
             scaled_bbox.y = _init_boxes[index].y / height_ratio;
             scaled_bbox.width = std::max(_init_boxes[index].width / width_ratio, _min_track_size_px);
             scaled_bbox.height = std::max(_init_boxes[index].height / height_ratio, _min_track_size_px);
-
             ROS_DEBUG("Initializing tracker %lu with bbox (%f, %f, %f, %f)", index, scaled_bbox.x, scaled_bbox.y, scaled_bbox.width, scaled_bbox.height);
 
-            _trackers.push_back(cv::TrackerMOSSE::create());
+            cv::Mat mask = cv::Mat::zeros(processing_image.size(), CV_8UC1);
+            mask(scaled_bbox) = 1;
 
-            if (!_trackers[index]->init(processing_image, scaled_bbox))
+            cv::Mat descriptors;
+            std::vector<cv::KeyPoint> keypoints;
+            _orb_detector->detectAndCompute(processing_image, mask, keypoints, descriptors);
+
+            if (keypoints.size() == 0)
             {
-                ROS_WARN("Failed to initialize tracker %lu", index);
+                ROS_WARN("No keypoints found in mask for tracker %lu", index);
+                continue;
             }
+
+            _tracked_keypoints[index] = keypoints;
+            _tracked_descriptors[index] = descriptors;
         }
         _should_reset = false;
         return;
     }
+
+    cv::Mat all_descriptors;
+    std::vector<cv::KeyPoint> all_keypoints;
+    _orb_detector->detectAndCompute(processing_image, cv::noArray(), all_keypoints, all_descriptors);
 
     if (publish_debug_image)
     {
@@ -164,22 +174,46 @@ void ComboTracker::image_callback(const sensor_msgs::ImageConstPtr &image_msg)
     bw_interfaces::EstimatedObjectArray robot_array;
     visualization_msgs::MarkerArray robot_markers;
 
-    for (size_t index = 0; index < _trackers.size(); index++)
+    for (size_t index = 0; index < _num_trackers; index++)
     {
-        cv::Rect2d bbox;
-        bool success = _trackers[index]->update(image, bbox);
-        if (success)
+        cv::Mat descriptor = _tracked_descriptors[index];
+
+        std::vector<cv::DMatch> matches;
+        _matcher->match(descriptor, all_descriptors, matches);
+
+        if (matches.size() == 0)
         {
-            if (publish_debug_image)
-            {
-                cv::rectangle(debug_image, bbox, cv::Scalar(0, 255, 0), 2);
-            }
-        }
-        else
-        {
-            ROS_DEBUG("Failed to update tracker %lu", index);
+            ROS_WARN("No matches found for tracker %lu", index);
             continue;
         }
+
+        std::vector<cv::Point2f> obj;
+        std::vector<cv::Point2f> scene;
+        for (size_t i = 0; i < matches.size(); i++)
+        {
+            obj.push_back(_tracked_keypoints[index][matches[i].queryIdx].pt);
+            scene.push_back(all_keypoints[matches[i].trainIdx].pt);
+        }
+
+        cv::Mat homography = cv::findHomography(obj, scene, cv::RANSAC);
+
+        if (homography.empty())
+        {
+            ROS_WARN("Failed to find homography for tracker %lu", index);
+            continue;
+        }
+
+        std::vector<cv::Point2f> transformed_corners;
+        cv::perspectiveTransform(
+            std::vector<cv::Point2f>{_init_boxes[index].tl(), _init_boxes[index].br()},
+            transformed_corners,
+            homography);
+
+        cv::Rect2d bbox;
+        bbox.x = std::min(transformed_corners[0].x, transformed_corners[1].x);
+        bbox.y = std::min(transformed_corners[0].y, transformed_corners[1].y);
+        bbox.width = std::abs(transformed_corners[0].x - transformed_corners[1].x);
+        bbox.height = std::abs(transformed_corners[0].y - transformed_corners[1].y);
 
         cv::Point2d max_pt = cv::Point2d(bbox.x, bbox.y);
         cv::Point2d centroid_uv = max_pt + cv::Point2d(bbox.width / 2, bbox.height / 2);
