@@ -16,7 +16,7 @@ class GoToGoalManager:
         self.go_to_goal_client.wait_for_server()
         rospy.loginfo("Go to goal action server is ready")
         self.status = Status.RUNNING
-        self.strategy = GoalStrategy.CRASH_OPPONENT
+        self.strategy = GoalStrategy.CRASH_TRAJECTORY_PLANNER
         self.feedback = GoToGoalFeedback()
 
     def set_strategy(self, strategy: GoalStrategy) -> None:

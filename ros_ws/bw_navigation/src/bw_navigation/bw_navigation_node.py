@@ -27,7 +27,7 @@ from bw_navigation.goal_supplier import (
     GoalSupplierInterface,
     TrackedTargetSupplier,
 )
-from bw_navigation.planners import CrashOpponent, CrashOpponentAvoidFriendly, PlannerInterface
+from bw_navigation.planners import CrashOpponent, CrashTrajectoryPlanner, PlannerInterface
 
 
 class BwNavigationNode:
@@ -59,7 +59,7 @@ class BwNavigationNode:
         }
         self.planners: Dict[GoalStrategy, PlannerInterface] = {
             GoalStrategy.CRASH_OPPONENT: CrashOpponent(self.controlled_robot),
-            GoalStrategy.CRASH_OPPONENT_AVOID_FRIENDLY: CrashOpponentAvoidFriendly(),
+            GoalStrategy.CRASH_TRAJECTORY_PLANNER: CrashTrajectoryPlanner(self.controlled_robot),
         }
 
         self.twist_pub = rospy.Publisher(f"{self.controlled_robot}/cmd_vel/navigation", Twist, queue_size=1)
