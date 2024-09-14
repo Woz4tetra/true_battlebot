@@ -19,7 +19,7 @@ class CrashTrajectoryPlanner(PlannerInterface):
     def __init__(
         self,
         controlled_robot: str,
-        replan_interval: float = 0.2,
+        replan_interval: float = 1.0,
         rotate_180_buffer: float = 0.05,
         angle_tolerance: float = 1.0,
         max_velocity: float = 3.0,

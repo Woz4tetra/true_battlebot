@@ -1,5 +1,3 @@
-from queue import Queue
-from threading import Lock, Thread
 from typing import Optional
 
 import numpy as np
@@ -19,37 +17,25 @@ class TrajectoryPlannerEngine:
         self.config = TrajectoryConfig(maxVelocity=max_velocity, maxAcceleration=max_acceleration)
         self.controller = RamseteController(b=ramsete_b, zeta=ramsete_zeta)
         self.start_time = rospy.Time.now()
-        self.planning_thread = Thread(daemon=True, target=self.planning_task)
-        self.goal_in_queue: Queue[tuple[Pose2D, Pose2D]] = Queue()
-        self.plan_out_queue: Queue[Trajectory] = Queue()
-        self.is_planning = False
-        self.active_trajectory: Optional[Trajectory] = None
-
-    def planning_task(self) -> None:
-        while True:
-            robot_pose, goal_pose = self.goal_in_queue.get()
-            self.is_planning = True
-            self.plan_out_queue.put(
-                TrajectoryGenerator.generateTrajectory(
-                    waypoints=[
-                        geometry.Pose2d(robot_pose.x, robot_pose.y, robot_pose.theta),
-                        geometry.Pose2d(goal_pose.x, goal_pose.y, goal_pose.theta),
-                    ],
-                    config=self.config,
-                )
-            )
-            self.is_planning = False
+        self.generator: Optional[Trajectory] = None
 
     def generate_trajectory(self, robot_pose: Pose2D, goal_pose: Pose2D) -> None:
-        self.goal_in_queue.put((robot_pose, goal_pose))
+        self.generator = TrajectoryGenerator.generateTrajectory(
+            waypoints=[
+                geometry.Pose2d(robot_pose.x, robot_pose.y, robot_pose.theta),
+                geometry.Pose2d(goal_pose.x, goal_pose.y, goal_pose.theta),
+            ],
+            config=self.config,
+        )
+        self.start_time = rospy.Time.now()
 
     def visualize_trajectory(self, num_samples: int = 10) -> MarkerArray:
-        if self.active_trajectory is None:
+        if self.generator is None:
             rospy.logwarn("Trajectory not generated")
             return MarkerArray()
         markers = MarkerArray()
-        for index, time in enumerate(np.linspace(0, self.active_trajectory.totalTime(), num_samples)):
-            traj_pose = self.active_trajectory.sample(time)
+        for index, time in enumerate(np.linspace(0, self.generator.totalTime(), num_samples)):
+            traj_pose = self.generator.sample(time)
             marker = Marker()
             translation = traj_pose.pose.translation()
             rotation = traj_pose.pose.rotation()
@@ -72,7 +58,7 @@ class TrajectoryPlannerEngine:
         return markers
 
     def should_replan(self) -> bool:
-        if self.active_trajectory is None:
+        if self.generator is None:
             return True
         trajectory_duration = rospy.Time.now() - self.start_time
         return trajectory_duration.to_sec() > self.generator.totalTime()
