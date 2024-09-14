@@ -312,9 +312,7 @@ def export_scripting(model_path: str, torch_model: GeneralizedRCNN, cfg: CfgNode
 
     # save model to output directory
     # Get model name from config output directory. Add timestamp
-    # TODO make seperate field for save name after LazyConfig switch
     with open(model_path, "wb") as f:
         save_model(ts_model, f)
-    # TODO remove this or have it save files using model_name
     if ir_dump:
         dump_torchscript_IR(ts_model, str(os.path.dirname(model_path)))
