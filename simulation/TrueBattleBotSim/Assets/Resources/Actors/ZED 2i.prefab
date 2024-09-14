@@ -519,7 +519,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 2248
   debugRayCast: 0
-  publishRate: 30
+  publishRate: 10
   viewAngleThreshold: 180
   debugVisibilityReason: 0
   topic: /camera_0/ground_truth/robots

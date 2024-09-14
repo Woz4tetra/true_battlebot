@@ -57,7 +57,9 @@
   <depend>std_msgs</depend>
   <depend>visualization_msgs</depend>
   <depend>tf</depend>
+  <depend>tf2</depend>
   <depend>tf2_ros</depend>
+  <depend>tf2_geometry_msgs</depend>
   <depend>bw_interfaces</depend>
   <depend>bw_shared_config</depend>
 

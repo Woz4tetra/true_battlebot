@@ -19,7 +19,9 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   visualization_msgs
   tf
+  tf2
   tf2_ros
+  tf2_geometry_msgs
   bw_interfaces
   bw_shared_config
 )
@@ -131,7 +133,9 @@ catkin_package(
   std_msgs
   visualization_msgs
   tf
+  tf2
   tf2_ros
+  tf2_geometry_msgs
   bw_interfaces
   bw_shared_config
 #  DEPENDS system_lib
@@ -166,6 +170,7 @@ add_dependencies(base_estimation ${base_estimation_EXPORTED_TARGETS} ${catkin_EX
 add_executable(segmentation_to_object src/segmentation_to_object.cpp)
 add_executable(motion_tracker src/motion_tracker.cpp)
 add_executable(keypoint_to_object src/keypoint_to_object.cpp)
+add_executable(combo_tracker src/combo_tracker.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -178,6 +183,7 @@ add_executable(keypoint_to_object src/keypoint_to_object.cpp)
 add_dependencies(segmentation_to_object ${segmentation_to_object_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(motion_tracker ${motion_tracker_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(keypoint_to_object ${keypoint_to_object_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(combo_tracker ${combo_tracker_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(base_estimation
@@ -192,6 +198,10 @@ target_link_libraries(motion_tracker
   base_estimation
 )
 target_link_libraries(keypoint_to_object
+  ${catkin_LIBRARIES}
+  base_estimation
+)
+target_link_libraries(combo_tracker
   ${catkin_LIBRARIES}
   base_estimation
 )
@@ -219,6 +229,9 @@ install(TARGETS motion_tracker
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 install(TARGETS keypoint_to_object
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+install(TARGETS combo_tracker
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

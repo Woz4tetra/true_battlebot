@@ -81,10 +81,15 @@ void KeypointToObject::keypoint_callback(const bw_interfaces::KeypointInstanceAr
         cv::Point3d back_point = points[back_index];
         geometry_msgs::Pose pose = get_pose_from_points(front_point, back_point, get_plane_normal());
 
+        double length = cv::norm(front_point - back_point);
+
         bw_interfaces::EstimatedObject robot_msg;
         robot_msg.label = instance.label;
         robot_msg.header = keypoints->header;
         robot_msg.pose.pose = pose;
+        robot_msg.size.x = length;
+        robot_msg.size.y = length;
+        robot_msg.size.z = get_label_height(instance.label);
         robot_array.robots.push_back(robot_msg);
 
         fill_marker_array(instance.object_index, robot_msg, front_point, back_point, robot_markers);

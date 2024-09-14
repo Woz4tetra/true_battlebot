@@ -1,0 +1,11 @@
+<launch>
+	<group ns="camera_1">
+		<node pkg="bw_object_estimation" type="combo_tracker" name="combo_tracker"
+			output="screen" respawn="true" clear_params="true">
+			<remap from="source_robots" to="/camera_0/estimation/robots" />
+			<remap from="field" to="/filter/field" />
+			<remap from="image" to="image_rect" />
+			<remap from="debug_image" to="debug_motion_image" />
+		</node>
+	</group>
+</launch>

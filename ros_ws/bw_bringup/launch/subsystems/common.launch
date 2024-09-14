@@ -8,6 +8,7 @@
 
     <include file="$(find bw_object_estimation)/launch/segmentation_to_object.launch" />
     <include file="$(find bw_object_estimation)/launch/keypoint_to_object.launch" />
+    <include file="$(find bw_object_estimation)/launch/combo_tracking.launch" />
     <!-- <include file="$(find bw_object_estimation)/launch/motion_tracking.launch" >
         <arg name="tracking_config" value="$(find bw_bringup)/config/motion_tracking.yaml" />
     </include> -->
