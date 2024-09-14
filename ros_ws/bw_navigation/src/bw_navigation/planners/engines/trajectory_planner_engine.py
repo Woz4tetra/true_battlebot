@@ -11,9 +11,11 @@ from wpimath.trajectory import Trajectory, TrajectoryConfig, TrajectoryGenerator
 
 
 class TrajectoryPlannerEngine:
-    def __init__(self) -> None:
-        self.config = TrajectoryConfig(maxVelocity=2.5, maxAcceleration=2.0)
-        self.controller = RamseteController(b=2.0, zeta=0.7)
+    def __init__(
+        self, max_velocity: float, max_acceleration: float, ramsete_b: float = 2.0, ramsete_zeta: float = 0.7
+    ) -> None:
+        self.config = TrajectoryConfig(maxVelocity=max_velocity, maxAcceleration=max_acceleration)
+        self.controller = RamseteController(b=ramsete_b, zeta=ramsete_zeta)
         self.start_time = rospy.Time.now()
         self.generator: Optional[Trajectory] = None
 

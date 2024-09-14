@@ -21,12 +21,16 @@ class CrashTrajectoryPlanner(PlannerInterface):
         replan_interval: float = 1.0,
         rotate_180_buffer: float = 0.05,
         angle_tolerance: float = 0.2,
+        max_velocity: float = 2.5,
+        max_acceleration: float = 1.0,
+        ramsete_b: float = 2.0,
+        ramsete_zeta: float = 0.7,
     ) -> None:
         self.controlled_robot = controlled_robot
         self.replan_interval = rospy.Duration.from_sec(replan_interval)
         self.rotate_180_buffer = XY(rotate_180_buffer, rotate_180_buffer)
         self.angle_tolerance = angle_tolerance
-        self.planner = TrajectoryPlannerEngine()
+        self.planner = TrajectoryPlannerEngine(max_velocity, max_acceleration, ramsete_b, ramsete_zeta)
         self.rotate_to_angle = RotateToAngleEngine(PidConfig(kp=1.0, ki=0.0, kd=0.0, kf=0.0))
         self.visualization_publisher = rospy.Publisher(
             "trajectory_visualization", MarkerArray, queue_size=1, latch=True
