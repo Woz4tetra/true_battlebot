@@ -10,7 +10,7 @@ from bw_shared.pid.config import PidConfig
 from geometry_msgs.msg import Twist
 from visualization_msgs.msg import MarkerArray
 
-from bw_navigation.planners.engines.rotate_to_angle_engine import RotateToAngleEngine
+from bw_navigation.planners.engines.pid_follower_engine import PidFollowerEngine
 from bw_navigation.planners.engines.trajectory_planner_engine import TrajectoryPlannerEngine
 from bw_navigation.planners.planner_interface import PlannerInterface
 
@@ -32,7 +32,11 @@ class CrashTrajectoryPlanner(PlannerInterface):
         self.rotate_180_buffer = XY(rotate_180_buffer, rotate_180_buffer)
         self.angle_tolerance = angle_tolerance
         self.planner = TrajectoryPlannerEngine(max_velocity, max_acceleration, ramsete_b, ramsete_zeta)
-        self.rotate_to_angle = RotateToAngleEngine(PidConfig(kp=6.0, ki=0.01, kd=0.1, kf=0.0))
+        self.recover_engine = PidFollowerEngine(
+            linear_pid=PidConfig(kp=3.0, ki=0.0, kd=0.1, kf=1.0),
+            angular_pid=PidConfig(kp=6.0, ki=0.01, kd=0.1, kf=0.0),
+            always_face_forward=False,
+        )
         self.visualization_publisher = rospy.Publisher(
             "trajectory_visualization", MarkerArray, queue_size=1, latch=True
         )
@@ -64,6 +68,6 @@ class CrashTrajectoryPlanner(PlannerInterface):
                 self.visualization_publisher.publish(self.planner.visualize_trajectory())
             twist = self.planner.compute(controlled_robot_pose)
         else:
-            twist = self.rotate_to_angle.compute(dt, controlled_robot_pose.theta, goal_heading)
+            twist = self.recover_engine.compute(dt, controlled_robot_pose, goal_pose)
 
         return twist, False
