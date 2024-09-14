@@ -2,6 +2,7 @@ from typing import Tuple
 
 import rospy
 from bw_interfaces.msg import EstimatedObject
+from bw_shared.geometry.field_bounds import FieldBounds2D
 from bw_shared.geometry.pose2d import Pose2D
 from bw_shared.pid.config import PidConfig
 from geometry_msgs.msg import Twist
@@ -18,7 +19,7 @@ class CrashOpponent(PlannerInterface):
         self.pid_follower = PidFollowerEngine(linear_pid, angular_pid, always_face_forward=True)
 
     def go_to_goal(
-        self, dt: float, goal_pose: Pose2D, robot_states: dict[str, EstimatedObject], field: EstimatedObject
+        self, dt: float, goal_pose: Pose2D, robot_states: dict[str, EstimatedObject], field: FieldBounds2D
     ) -> Tuple[Twist, bool]:
         if self.controlled_robot not in robot_states:
             rospy.logwarn_throttle(1, f"Robot {self.controlled_robot} not found in robot states")

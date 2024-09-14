@@ -53,6 +53,15 @@ class XY(Sequence):
     def __lt__(self, other: Any) -> bool:
         return self.x < other.x and self.y < other.y
 
+    def __le__(self, other: Any) -> bool:
+        return self.x <= other.x and self.y <= other.y
+
+    def __gt__(self, other: Any) -> bool:
+        return self.x > other.x and self.y > other.y
+
+    def __ge__(self, other: Any) -> bool:
+        return self.x >= other.x and self.y >= other.y
+
     @classmethod
     def from_msg(cls, msg: Vector3) -> XY:
         return XY(msg.x, msg.y)

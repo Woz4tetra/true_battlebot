@@ -58,6 +58,15 @@ class XYZ(Sequence):
     def __lt__(self, other: Any) -> bool:
         return self.x < other.x and self.y < other.y and self.z < other.z
 
+    def __le__(self, other: Any) -> bool:
+        return self.x <= other.x and self.y <= other.y and self.z <= other.z
+
+    def __gt__(self, other: Any) -> bool:
+        return self.x > other.x and self.y > other.y and self.z > other.z
+
+    def __ge__(self, other: Any) -> bool:
+        return self.x >= other.x and self.y >= other.y and self.z >= other.z
+
     @classmethod
     def from_msg(cls, msg: Vector3) -> XYZ:
         return XYZ(msg.x, msg.y, msg.z)
