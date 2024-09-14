@@ -1,6 +1,7 @@
 <launch>
-    <node pkg="bw_tags" type="tag_marker_publisher.py" name="tag_visualization" output="screen">
-        <rosparam param="topics" subst_value="True" clear_params="true">
+    <node pkg="bw_tags" type="tag_marker_publisher.py" name="tag_visualization" output="screen"
+        clear_params="true">
+        <rosparam param="topics" subst_value="True">
             [
             /camera_0/tag_detections,
             /camera_1/tag_detections

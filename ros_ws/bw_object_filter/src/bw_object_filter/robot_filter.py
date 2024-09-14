@@ -36,7 +36,8 @@ from bw_object_filter.cmd_vel_tracker import CmdVelTracker
 from bw_object_filter.covariances import ApriltagHeuristics, CmdVelHeuristics, RobotStaticHeuristics
 from bw_object_filter.estimation_topic_metadata import EstimationTopicMetadata
 from bw_object_filter.filter_models import DriveKalmanModel, TrackingModel
-from bw_object_filter.filter_models.helpers import NUM_STATES, measurement_to_pose, measurement_to_twist
+from bw_object_filter.filter_models.drive_kf_impl import NUM_STATES
+from bw_object_filter.filter_models.helpers import measurement_to_pose, measurement_to_twist
 from bw_object_filter.filter_models.model_base import ModelBase
 from bw_object_filter.robot_measurement_sorter import RobotMeasurementSorter
 
@@ -59,7 +60,6 @@ class RobotFilter:
         self.apriltag_base_covariance_scalar = get_param("~apriltag_base_covariance_scalar", 0.00001)
         initial_variances = get_param("~initial_variances", [0.25, 0.25, 10.0, 1.0, 1.0, 10.0])
         self.cmd_vel_base_covariance_scalar = get_param("~cmd_vel_base_covariance_scalar", 0.01)
-        self.friction_factor = get_param("~friction_factor", 0.8)
         self.process_noise = get_param("~process_noise", 1e-4)
         self.motion_speed_threshold = get_param("~motion_speed_threshold", 0.25)
         self.stale_timeout = get_param("~stale_timeout", 10.0)
@@ -169,7 +169,6 @@ class RobotFilter:
                         robot_config,
                         self.update_delay,
                         self.process_noise,
-                        1.0,
                         self.stale_timeout,
                         self.robot_min_radius,
                         self.robot_max_radius,
@@ -180,6 +179,7 @@ class RobotFilter:
                     TrackingModel(
                         robot_config,
                         self.update_delay,
+                        self.process_noise,
                         self.stale_timeout,
                         self.robot_min_radius,
                         self.robot_max_radius,

@@ -7,9 +7,8 @@ from bw_shared.configs.robot_fleet_config import RobotConfig
 from bw_shared.geometry.xy import XY
 from geometry_msgs.msg import PoseWithCovariance, TwistWithCovariance, Vector3
 
+from .drive_kf_impl import NUM_STATES, NUM_STATES_1ST_ORDER
 from .helpers import (
-    NUM_STATES,
-    NUM_STATES_1ST_ORDER,
     StateArray,
     StateSquareMatrix,
     measurement_to_pose,

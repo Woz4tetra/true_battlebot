@@ -177,7 +177,7 @@ void ComboTracker::image_callback(const sensor_msgs::ImageConstPtr &image_msg)
         }
         else
         {
-            ROS_WARN("Failed to update tracker %lu", index);
+            ROS_DEBUG("Failed to update tracker %lu", index);
             continue;
         }
 

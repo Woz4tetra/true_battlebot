@@ -9,10 +9,6 @@ from numba import njit
 NUM_MEASUREMENTS = 3
 NUM_POSE_STATES_ROS = 6
 
-NUM_STATES = 6
-NUM_STATES_1ST_ORDER = 3
-
-
 # "enum" for state indices. numba doesn't support python enums
 STATE_x = 0
 STATE_y = 1
