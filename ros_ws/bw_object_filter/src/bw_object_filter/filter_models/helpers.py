@@ -80,6 +80,13 @@ def measurement_to_twist(state: np.ndarray, covariance: np.ndarray) -> TwistWith
     return twist
 
 
+def position_to_measurement(msg: PoseWithCovariance) -> Tuple[np.ndarray, np.ndarray]:
+    measurement, noise = pose_to_measurement(msg)
+    measurement = measurement[:2]
+    noise = noise[:2, :2]
+    return measurement, noise
+
+
 def orientation_to_measurement(yaw: float, yaw_covariance: float) -> Tuple[np.ndarray, np.ndarray]:
     measurement = np.array([0.0, 0.0, yaw])
 
