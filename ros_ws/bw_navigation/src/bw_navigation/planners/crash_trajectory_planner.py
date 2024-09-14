@@ -3,6 +3,7 @@ from typing import Tuple
 import rospy
 from bw_interfaces.msg import EstimatedObject
 from bw_shared.geometry.field_bounds import FieldBounds2D
+from bw_shared.geometry.input_modulus import normalize_angle
 from bw_shared.geometry.pose2d import Pose2D
 from bw_shared.geometry.xy import XY
 from bw_shared.pid.config import PidConfig
@@ -18,11 +19,11 @@ class CrashTrajectoryPlanner(PlannerInterface):
     def __init__(
         self,
         controlled_robot: str,
-        replan_interval: float = 1.0,
+        replan_interval: float = 0.2,
         rotate_180_buffer: float = 0.05,
-        angle_tolerance: float = 0.2,
-        max_velocity: float = 2.5,
-        max_acceleration: float = 1.0,
+        angle_tolerance: float = 1.0,
+        max_velocity: float = 3.0,
+        max_acceleration: float = 1.5,
         ramsete_b: float = 2.0,
         ramsete_zeta: float = 0.7,
     ) -> None:
@@ -31,7 +32,7 @@ class CrashTrajectoryPlanner(PlannerInterface):
         self.rotate_180_buffer = XY(rotate_180_buffer, rotate_180_buffer)
         self.angle_tolerance = angle_tolerance
         self.planner = TrajectoryPlannerEngine(max_velocity, max_acceleration, ramsete_b, ramsete_zeta)
-        self.rotate_to_angle = RotateToAngleEngine(PidConfig(kp=1.0, ki=0.0, kd=0.0, kf=0.0))
+        self.rotate_to_angle = RotateToAngleEngine(PidConfig(kp=6.0, ki=0.01, kd=0.1, kf=0.0))
         self.visualization_publisher = rospy.Publisher(
             "trajectory_visualization", MarkerArray, queue_size=1, latch=True
         )
@@ -45,14 +46,16 @@ class CrashTrajectoryPlanner(PlannerInterface):
 
         controlled_robot_pose = Pose2D.from_msg(robot_states[self.controlled_robot].pose.pose)
         controlled_robot_point = XY(controlled_robot_pose.x, controlled_robot_pose.y)
+        goal_point = XY(goal_pose.x, goal_pose.y)
 
-        inset_field = (
-            field[0] - self.rotate_180_buffer,
-            field[1] + self.rotate_180_buffer,
+        controlled_robot_size = (
+            max(robot_states[self.controlled_robot].size.x, robot_states[self.controlled_robot].size.y) / 2
         )
+        buffer = self.rotate_180_buffer + XY(controlled_robot_size, controlled_robot_size)
+        inset_field = (field[0] + buffer, field[1] - buffer)
         is_in_bounds = inset_field[0] <= controlled_robot_point <= inset_field[1]
-        goal_heading = goal_pose.relative_to(controlled_robot_pose).heading()
-        is_in_angle_tolerance = abs(goal_heading) < self.angle_tolerance
+        goal_heading = (goal_point - controlled_robot_point).heading()
+        is_in_angle_tolerance = abs(normalize_angle(goal_heading - controlled_robot_pose.theta)) < self.angle_tolerance
 
         if is_in_bounds or is_in_angle_tolerance:
             if self.planner.should_replan() or rospy.Time.now() - self.planner.start_time > (self.replan_interval):

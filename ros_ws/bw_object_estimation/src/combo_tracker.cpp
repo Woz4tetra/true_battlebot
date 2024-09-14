@@ -222,10 +222,10 @@ void ComboTracker::image_callback(const sensor_msgs::ImageConstPtr &image_msg)
         }
 
         cv::Rect bbox = cv::boundingRect(contours[index]);
-        bbox.x = std::max(0, bbox.x - _post_contour_dilation);
-        bbox.y = std::max(0, bbox.y - _post_contour_dilation);
-        bbox.width = std::min(processing_image.cols - bbox.x, bbox.width + 2 * _post_contour_dilation);
-        bbox.height = std::min(processing_image.rows - bbox.y, bbox.height + 2 * _post_contour_dilation);
+        bbox.x = std::max(0, std::min(processing_image.cols - 1, bbox.x));
+        bbox.y = std::max(0, std::min(processing_image.rows - 1, bbox.y));
+        bbox.width = std::min(std::max(1, processing_image.cols - bbox.x), bbox.width + 2 * _post_contour_dilation);
+        bbox.height = std::min(std::max(1, processing_image.rows - bbox.y), bbox.height + 2 * _post_contour_dilation);
         bounding_boxes.push_back(bbox);
     }
 

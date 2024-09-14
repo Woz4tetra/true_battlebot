@@ -36,6 +36,12 @@ class XY(Sequence):
             dy = self.y
         return math.sqrt(dx * dx + dy * dy)
 
+    def heading(self, other: Any = None) -> float:
+        if other is None:
+            return math.atan2(self.y, self.x)
+        else:
+            return math.atan2(other.y - self.y, other.x - self.x)
+
     def __sub__(self, other: Any) -> XY:
         return XY(self.x - other.x, self.y - other.y)
 

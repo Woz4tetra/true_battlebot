@@ -53,7 +53,13 @@ class BwNavigationNode:
         self.field = EstimatedObject()
         self.robots: dict[str, EstimatedObject] = {}
 
-        opponent_names = [robot.name for robot in shared_config.robots.robots if robot.team == RobotTeam.THEIR_TEAM]
+        # opponent_names = [robot.name for robot in shared_config.robots.robots if robot.team == RobotTeam.THEIR_TEAM]
+        # TODO: remove before competition
+        opponent_names = [
+            robot.name
+            for robot in shared_config.robots.robots
+            if (robot.team == RobotTeam.OUR_TEAM and robot.name != self.controlled_robot)
+        ]
 
         self.goal_suppliers: Dict[GoalType, GoalSupplierInterface] = {
             GoalType.FIXED_POSE: FixedPoseSupplier(),
