@@ -96,7 +96,7 @@ def orientation_to_measurement(yaw: float, yaw_covariance: float) -> Tuple[np.nd
     return measurement, measurement_noise
 
 
-@njit
+@njit(cache=True)
 def input_modulus(value: float, min_value: float, max_value: float) -> float:
     """
     Bound the number between min_value and max_value, wrapping around if it goes over.
@@ -116,18 +116,18 @@ def input_modulus(value: float, min_value: float, max_value: float) -> float:
     return value
 
 
-@njit
+@njit(cache=True)
 def normalize_theta(theta):
     # normalize theta to -pi..pi
     return input_modulus(theta, -math.pi, math.pi)
 
 
-@njit
+@njit(cache=True)
 def is_invertible(matrix: np.ndarray) -> bool:
     return matrix.shape[0] == matrix.shape[1] and np.linalg.matrix_rank(matrix) == matrix.shape[0]
 
 
-@njit
+@njit(cache=True)
 def kf_update(
     state_x: np.ndarray,
     covariance_p: np.ndarray,

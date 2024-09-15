@@ -30,15 +30,17 @@ from bw_navigation.goal_supplier import (
     TrackedTargetSupplier,
 )
 from bw_navigation.planners import CrashOpponent, CrashTrajectoryPlanner, PlannerInterface
+from bw_navigation.planners.engines.trajectory_planner_engine_config import TrajectoryPlannerEngineConfig
 
 
 class BwNavigationNode:
     def __init__(self) -> None:
         shared_config = get_shared_config()
 
-        self.controlled_robot = get_param("controlled_robot", "mini_bot")
-        self.goal_tolerance = get_param("goal_tolerance", 0.1)
-        self.tick_rate = get_param("tick_rate", 100.0)
+        self.controlled_robot = get_param("~controlled_robot", "mini_bot")
+        self.goal_tolerance = get_param("~goal_tolerance", 0.1)
+        self.tick_rate = get_param("~tick_rate", 100.0)
+        self.friendly_fire = get_param("~friendly_fire", False)
 
         robot_configs = {robot.name: robot for robot in shared_config.robots.robots}
         if self.controlled_robot not in robot_configs:
@@ -53,13 +55,15 @@ class BwNavigationNode:
         self.field = EstimatedObject()
         self.robots: dict[str, EstimatedObject] = {}
 
-        opponent_names = [robot.name for robot in shared_config.robots.robots if robot.team == RobotTeam.THEIR_TEAM]
-        # TODO: remove before competition
-        # opponent_names = [
-        #     robot.name
-        #     for robot in shared_config.robots.robots
-        #     if (robot.team == RobotTeam.OUR_TEAM and robot.name != self.controlled_robot)
-        # ]
+        if self.friendly_fire:
+            rospy.logwarn("!!! Friendly fire is enabled !!!")
+            opponent_names = [
+                robot.name
+                for robot in shared_config.robots.robots
+                if (robot.team == RobotTeam.OUR_TEAM and robot.name != self.controlled_robot)
+            ]
+        else:
+            opponent_names = [robot.name for robot in shared_config.robots.robots if robot.team == RobotTeam.THEIR_TEAM]
 
         self.goal_suppliers: Dict[GoalType, GoalSupplierInterface] = {
             GoalType.FIXED_POSE: FixedPoseSupplier(),
@@ -67,7 +71,9 @@ class BwNavigationNode:
         }
         self.planners: Dict[GoalStrategy, PlannerInterface] = {
             GoalStrategy.CRASH_OPPONENT: CrashOpponent(self.controlled_robot),
-            GoalStrategy.CRASH_TRAJECTORY_PLANNER: CrashTrajectoryPlanner(self.controlled_robot),
+            GoalStrategy.CRASH_TRAJECTORY_PLANNER: CrashTrajectoryPlanner(
+                self.controlled_robot, TrajectoryPlannerEngineConfig()
+            ),
         }
 
         self.twist_pub = rospy.Publisher(f"{self.controlled_robot}/cmd_vel/navigation", Twist, queue_size=1)

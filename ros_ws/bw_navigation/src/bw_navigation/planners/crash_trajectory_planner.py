@@ -12,6 +12,7 @@ from visualization_msgs.msg import MarkerArray
 
 from bw_navigation.planners.engines.pid_follower_engine import PidFollowerEngine
 from bw_navigation.planners.engines.trajectory_planner_engine import TrajectoryPlannerEngine
+from bw_navigation.planners.engines.trajectory_planner_engine_config import TrajectoryPlannerEngineConfig
 from bw_navigation.planners.planner_interface import PlannerInterface
 
 
@@ -19,23 +20,22 @@ class CrashTrajectoryPlanner(PlannerInterface):
     def __init__(
         self,
         controlled_robot: str,
+        trajectory_config: TrajectoryPlannerEngineConfig,
         replan_interval: float = 0.2,
         rotate_180_buffer: float = 0.05,
         angle_tolerance: float = 1.0,
-        max_velocity: float = 3.0,
-        max_acceleration: float = 1.5,
-        ramsete_b: float = 2.0,
-        ramsete_zeta: float = 0.7,
     ) -> None:
         self.controlled_robot = controlled_robot
         self.replan_interval = rospy.Duration.from_sec(replan_interval)
         self.rotate_180_buffer = XY(rotate_180_buffer, rotate_180_buffer)
         self.angle_tolerance = angle_tolerance
-        self.planner = TrajectoryPlannerEngine(max_velocity, max_acceleration, ramsete_b, ramsete_zeta)
+        self.planner = TrajectoryPlannerEngine(trajectory_config)
         self.recover_engine = PidFollowerEngine(
             linear_pid=PidConfig(kp=3.0, ki=0.0, kd=0.1, kf=1.0),
             angular_pid=PidConfig(kp=6.0, ki=0.01, kd=0.1, kf=0.0),
             always_face_forward=False,
+            clamp_linear=(-trajectory_config.max_velocity, trajectory_config.max_velocity),
+            clamp_angular=(-trajectory_config.max_angular_velocity, trajectory_config.max_angular_velocity),
         )
         self.visualization_publisher = rospy.Publisher(
             "trajectory_visualization", MarkerArray, queue_size=1, latch=True
@@ -48,7 +48,8 @@ class CrashTrajectoryPlanner(PlannerInterface):
             rospy.logwarn_throttle(1, f"Robot {self.controlled_robot} not found in robot states")
             return Twist(), False
 
-        controlled_robot_pose = Pose2D.from_msg(robot_states[self.controlled_robot].pose.pose)
+        controlled_robot_state = robot_states[self.controlled_robot]
+        controlled_robot_pose = Pose2D.from_msg(controlled_robot_state.pose.pose)
         controlled_robot_point = XY(controlled_robot_pose.x, controlled_robot_pose.y)
         goal_point = XY(goal_pose.x, goal_pose.y)
 
@@ -63,8 +64,8 @@ class CrashTrajectoryPlanner(PlannerInterface):
 
         if is_in_bounds or is_in_angle_tolerance:
             if self.planner.should_replan() or rospy.Time.now() - self.planner.start_time > (self.replan_interval):
-                rospy.loginfo(f"Replanning trajectory. {controlled_robot_pose} -> {goal_pose}")
-                self.planner.generate_trajectory(controlled_robot_pose, goal_pose)
+                rospy.logdebug(f"Replanning trajectory. {controlled_robot_pose} -> {goal_pose}")
+                self.planner.generate_trajectory(controlled_robot_state, goal_pose)
                 self.visualization_publisher.publish(self.planner.visualize_trajectory())
             twist = self.planner.compute(controlled_robot_pose)
         else:
