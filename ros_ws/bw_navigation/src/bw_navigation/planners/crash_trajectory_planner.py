@@ -31,7 +31,7 @@ class CrashTrajectoryPlanner(PlannerInterface):
         self.angle_tolerance = angle_tolerance
         self.planner = TrajectoryPlannerEngine(trajectory_config)
         self.recover_engine = PidFollowerEngine(
-            linear_pid=PidConfig(kp=3.0, ki=0.0, kd=0.1, kf=1.0),
+            linear_pid=PidConfig(kp=3.0, ki=0.0, kd=0.1, kf=0.0),
             angular_pid=PidConfig(kp=6.0, ki=0.01, kd=0.1, kf=0.0),
             always_face_forward=False,
             clamp_linear=(-trajectory_config.max_velocity, trajectory_config.max_velocity),
