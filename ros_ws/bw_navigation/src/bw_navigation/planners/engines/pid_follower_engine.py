@@ -17,7 +17,7 @@ class PidFollowerEngine:
         relative_goal = goal_pose.relative_to(current_pose)
         heading = relative_goal.heading()
         linear_velocity = self.linear_pid.update(relative_goal.x, 0.0, dt)
-        if linear_velocity < 0.0 and not self.always_face_forward:
+        if relative_goal.x < 0.0 and not self.always_face_forward:
             heading = normalize_angle(heading + math.pi)
         angular_velocity = self.angular_pid.update(heading, 0.0, dt)
         return Twist(linear=Vector3(x=linear_velocity), angular=Vector3(z=angular_velocity))
