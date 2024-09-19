@@ -13,11 +13,14 @@ class YoloVisibility(IntEnum):
     LABELED_VISIBLE = 2
 
 
+YoloKeypointData = tuple[float, float, YoloVisibility]
+
+
 @dataclass
 class YoloKeypointAnnotation:
     class_index: int = -1
     bbox: list[float] = field(default_factory=lambda: [0, 0, 0, 0])
-    keypoints: list[tuple[float, float, YoloVisibility]] = field(default_factory=list)
+    keypoints: list[YoloKeypointData] = field(default_factory=list)
 
     def __post_init__(self):
         if len(self.bbox) != 4:

@@ -1,0 +1,16 @@
+labels = [
+    "mr_stabs_mk1",
+    "mr_stabs_mk2",
+    "mrs_buff_mk1",
+    "mrs_buff_mk2",
+    "referee",
+    "robot",
+]
+
+[keypoint_names]
+"mr_stabs_mk1" = ["back", "front"]
+"mr_stabs_mk2" = ["back", "front"]
+"mrs_buff_mk1" = ["back", "front"]
+"mrs_buff_mk2" = ["back", "front"]
+"referee" = ["back", "front"]
+"robot" = ["back", "front"]

@@ -3,7 +3,8 @@ import os
 import shutil
 from pathlib import Path
 
-from perception_tools.training.yolo_keypoint_dataset import YoloKeypointAnnotation, YoloKeypointImage
+from perception_tools.training.keypoints_config import load_keypoints_config
+from perception_tools.training.yolo_keypoint_dataset import YoloKeypointData, YoloKeypointImage
 from tqdm import tqdm
 
 
@@ -11,14 +12,23 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Reorder keypoints")
     parser.add_argument("images", help="Path to images")
     parser.add_argument("-o", "--output", type=str, default="", help="Path to the output directory")
-    parser.add_argument("class_index", type=int, help="Class index")
-    parser.add_argument("new_order", type=int, nargs="+", help="New order of keypoints")
+    parser.add_argument(
+        "exising_order",
+        type=str,
+        help="Path to the configuration file defining the current keypoint ordering. "
+        "ex: ./roboflow_keypoint_names.toml",
+    )
+    parser.add_argument(
+        "new_order",
+        type=str,
+        help="Path to the configuration file defining the new keypoint ordering. ex: ./keypoint_names_v2.toml",
+    )
     args = parser.parse_args()
 
     image_path = Path(args.images)
     output_path = Path(args.output) if args.output else Path(str(image_path) + "_reorder")
-    class_index = args.class_index
-    new_order = args.new_order
+    old_config = load_keypoints_config(args.exising_order)
+    new_config = load_keypoints_config(args.new_order)
     images_paths: list[Path] = []
     annotation_paths: dict[str, Path] = {}
 
@@ -45,25 +55,15 @@ def main() -> None:
             with open(annotation_path) as file:
                 annotations = YoloKeypointImage.from_txt(file.read())
 
-            class_annotations: list[YoloKeypointAnnotation] = []
-            remaining_annotations: list[YoloKeypointAnnotation] = []
             for annotation in annotations.labels:
-                if annotation.class_index == class_index:
-                    class_annotations.append(annotation)
-                else:
-                    remaining_annotations.append(annotation)
-
-            if len(class_annotations) == 0:
-                continue
-
-            for annotation in class_annotations:
-                new_keypoints = []
-                for index in new_order:
-                    if index >= len(annotation.keypoints) or index < 0:
-                        raise ValueError(f"Invalid keypoint index: {index}")
-                    keypoint = annotation.keypoints[index]
-                    new_keypoints.append(keypoint)
-                annotation.keypoints = new_keypoints
+                label = old_config.labels[annotation.class_index]
+                new_keypoints: list[YoloKeypointData | None] = [None] * len(annotation.keypoints)
+                for old_keypoint_index, keypoint in enumerate(annotation.keypoints):
+                    old_keypoint_name = old_config.keypoint_mapping[label][old_keypoint_index]
+                    new_keypoint_index = new_config.keypoint_mapping[label].index(old_keypoint_name)
+                    new_keypoints[new_keypoint_index] = keypoint
+                assert all(new_keypoint is not None for new_keypoint in new_keypoints)
+                annotation.keypoints = new_keypoints  # type: ignore
 
             with open(annotation_path, "w") as file:
                 file.write(annotations.to_txt())
