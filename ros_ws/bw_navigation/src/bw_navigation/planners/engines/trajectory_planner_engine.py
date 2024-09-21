@@ -1,3 +1,4 @@
+import random
 from dataclasses import dataclass
 from queue import Queue
 from threading import Thread
@@ -81,25 +82,36 @@ class TrajectoryPlannerEngine:
     def _plan_with_goal_velocity(self, ticket: PlanningTicket) -> Trajectory:
         robot_pose = ticket.robot_pose
         goal_pose = ticket.goal_pose
-        trajectory = self._plan_once(robot_pose, goal_pose)
-        for _ in range(self.config.forward_project_max_iters):
-            total_time = trajectory.totalTime()
-            travel_distance = ticket.goal_velocity.x * total_time
-            projected_goal = Pose2D(travel_distance, 0.0, 0.0).transform_by(goal_pose)
-            projected_goal = self._bound_pose_along_line(goal_pose, projected_goal, ticket.field)
-            if projected_goal.relative_to(goal_pose).magnitude() < self.config.forward_project_converge_threshold:
-                break
-            trajectory = self._plan_once(robot_pose, goal_pose)
+        distance_to_goal = goal_pose.relative_to(robot_pose).magnitude()
+        total_time = distance_to_goal / self.config.max_velocity
+        travel_distance = ticket.goal_velocity.x * total_time
+        projected_goal = Pose2D(travel_distance, 0.0, 0.0).transform_by(goal_pose)
+        projected_goal = self._bound_pose_along_line(goal_pose, projected_goal, ticket.field)
+        trajectory = self._plan_once(robot_pose, projected_goal)
         return trajectory
 
     def _plan_once(self, robot_pose: Pose2D, goal_pose: Pose2D) -> Trajectory:
-        return TrajectoryGenerator.generateTrajectory(
-            waypoints=[
-                geometry.Pose2d(robot_pose.x, robot_pose.y, robot_pose.theta),
-                geometry.Pose2d(goal_pose.x, goal_pose.y, goal_pose.theta),
-            ],
-            config=self.traj_config,
-        )
+        trajectory = None
+        original_goal_pose = goal_pose
+        noise = self.config.planning_failure_random_noise
+        while trajectory is None:
+            try:
+                trajectory = TrajectoryGenerator.generateTrajectory(
+                    waypoints=[
+                        geometry.Pose2d(robot_pose.x, robot_pose.y, robot_pose.theta),
+                        geometry.Pose2d(goal_pose.x, goal_pose.y, goal_pose.theta),
+                    ],
+                    config=self.traj_config,
+                )
+            except RuntimeError as e:
+                rospy.logerr(f"Trajectory generation failed: {e}")
+                # randomize the goal pose to avoid getting stuck in the same failure
+                goal_pose = Pose2D(
+                    original_goal_pose.x + random.uniform(-noise, noise),
+                    original_goal_pose.y + random.uniform(-noise, noise),
+                    original_goal_pose.theta + random.uniform(-noise, noise),
+                )
+        return trajectory
 
     def planning_task(self) -> None:
         while True:

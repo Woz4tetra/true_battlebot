@@ -189,7 +189,7 @@ class RobotFilter:
 
     def _init_label_to_filter(self, robot_filters: list[ModelBase]) -> None:
         self.label_to_filter = {
-            Label.ROBOT: [filter for filter in robot_filters if filter.config.team != RobotTeam.REFEREE],
+            Label.ROBOT: [filter for filter in robot_filters if filter.config.team == RobotTeam.THEIR_TEAM],
             Label.FRIENDLY_ROBOT: [
                 filter
                 for filter in robot_filters

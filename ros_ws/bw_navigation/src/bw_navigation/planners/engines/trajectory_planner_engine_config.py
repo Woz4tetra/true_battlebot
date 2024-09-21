@@ -10,10 +10,9 @@ class TrajectoryPlannerEngineConfig:
     ramsete_b: float = 2.0
     ramsete_zeta: float = 0.7
     track_width: float = 0.2
-    used_measured_velocity: bool = False
-    forward_project_goal_velocity: bool = False
-    forward_project_max_iters: int = 3
-    forward_project_converge_threshold: float = 0.1  # meters
+    used_measured_velocity: bool = True
+    forward_project_goal_velocity: bool = True
+    planning_failure_random_noise: float = 0.001
 
     @property
     def max_angular_velocity(self) -> float:

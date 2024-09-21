@@ -85,14 +85,12 @@ def line_bounds_intersection(segment: np.ndarray, bounds: FieldBounds2D) -> list
     """
     Calculates the intersection point between the segment and the field bounds.
     """
-    bound_segments = np.array(
-        [
-            [bounds[0].x, bounds[0].y],
-            [bounds[1].x, bounds[0].y],
-            [bounds[1].x, bounds[1].y],
-            [bounds[0].x, bounds[1].y],
-        ]
-    )
+    bound_segments = [
+        np.array([[bounds[0].x, bounds[0].y], [bounds[1].x, bounds[0].y]]),
+        np.array([[bounds[1].x, bounds[0].y], [bounds[1].x, bounds[1].y]]),
+        np.array([[bounds[1].x, bounds[1].y], [bounds[0].x, bounds[1].y]]),
+        np.array([[bounds[0].x, bounds[1].y], [bounds[0].x, bounds[0].y]]),
+    ]
     intersections = []
     for bound_segment in bound_segments:
         intersection = line_line_intersection(segment, bound_segment)

@@ -9,8 +9,6 @@ from geometry_msgs.msg import PoseWithCovariance, TwistWithCovariance
 from .helpers import (
     STATE_t,
     STATE_vt,
-    STATE_vx,
-    STATE_vy,
     STATE_x,
     STATE_y,
     kf_update,
@@ -30,7 +28,7 @@ class TrackingModel(ModelBase):
         stale_timeout: float = 10.0,
         robot_min_radius: float = 0.05,
         robot_max_radius: float = 0.15,
-        velocity_damping_constant: float = 0.9,
+        velocity_damping_constant: float = 0.15,
     ) -> None:
         super().__init__(config, stale_timeout, robot_min_radius, robot_max_radius)
         self.dt = dt
@@ -99,11 +97,12 @@ class TrackingModel(ModelBase):
         pass  # Not needed for tracking model
 
     def _rotate_velocity_to_base(self, velocities: np.ndarray, state_theta: float) -> np.ndarray:
-        vx = velocities[STATE_vx]
-        vy = velocities[STATE_vy]
+        state_theta *= -1
+        vx = velocities[0]
+        vy = velocities[1]
         vx = vx * math.cos(state_theta) - vy * math.sin(state_theta)
         vy = vx * math.sin(state_theta) + vy * math.cos(state_theta)
-        return np.array([vx, vy, velocities[STATE_vt]])
+        return np.array([vx, vy, velocities[2]])
 
     def _compute_twist_all(self, state: np.ndarray, next_state: np.ndarray) -> np.ndarray:
         state_theta = state[STATE_t]
