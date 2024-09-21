@@ -4,5 +4,6 @@
         <!-- <param name="exclude_regex"
         value="\/camera_.*\/.*.*image.*|\/camera_.*\/point_cloud.*|\/camera_.*\/depth.*|\/camera_.*\/confidence.*|\/tag_detections_image.*|\/rosout.*"
         /> -->
+        <remap from="record_svo" to="/camera_0/record_svo" />
     </node>
 </launch>

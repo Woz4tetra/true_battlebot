@@ -2,8 +2,8 @@ target_tick_rate = 60.0
 
 [camera]
 type = "ZedCamera"
-# serial_number = 33234316  # polarlized
-serial_number = 33452020  # non-polarlized
+serial_number = 33234316  # polarlized
+# serial_number = 33452020  # non-polarlized
 fps = 60
 resolution = "mode_vga"
 
