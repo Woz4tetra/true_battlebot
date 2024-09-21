@@ -101,6 +101,13 @@ class Pose2D:
         tfmat = np.dot(other.to_matrix(), self.to_matrix())
         return Pose2D.from_matrix(tfmat)
 
+    def forward_by(self, other: Pose2D) -> Pose2D:
+        """
+        Forward this pose by another pose
+        """
+        tfmat = np.dot(self.to_matrix(), other.to_matrix())
+        return Pose2D.from_matrix(tfmat)
+
     def relative_to(self, other: Pose2D) -> Pose2D:
         """
         Get the pose that transforms from other to self

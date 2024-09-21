@@ -20,7 +20,7 @@ class TrackedTargetSupplier(GoalSupplierInterface):
     def initialize(self, goal: GoToGoalGoal, field: EstimatedObject) -> None:
         self.target_type = TargetType(goal.target_type)
 
-    def nearest_target(self, robot_states: dict[str, EstimatedObject]) -> Optional[Pose2D]:
+    def nearest_target(self, robot_states: dict[str, EstimatedObject]) -> Optional[EstimatedObject]:
         if self.controlled_robot not in robot_states:
             return None
         robot_pose = Pose2D.from_msg(robot_states[self.controlled_robot].pose.pose)
@@ -32,7 +32,7 @@ class TrackedTargetSupplier(GoalSupplierInterface):
             target_pose = Pose2D.from_msg(state.pose.pose)
             distance = robot_pose.magnitude(target_pose)
             if distance < nearest_distance:
-                nearest_target = target_pose
+                nearest_target = state
                 nearest_distance = distance
         return nearest_target
 

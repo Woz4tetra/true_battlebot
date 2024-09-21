@@ -42,7 +42,7 @@ class CrashTrajectoryPlanner(PlannerInterface):
         )
 
     def go_to_goal(
-        self, dt: float, goal_pose: Pose2D, robot_states: dict[str, EstimatedObject], field: FieldBounds2D
+        self, dt: float, goal_target: EstimatedObject, robot_states: dict[str, EstimatedObject], field: FieldBounds2D
     ) -> Tuple[Twist, bool]:
         if self.controlled_robot not in robot_states:
             rospy.logwarn_throttle(1, f"Robot {self.controlled_robot} not found in robot states")
@@ -51,6 +51,7 @@ class CrashTrajectoryPlanner(PlannerInterface):
         controlled_robot_state = robot_states[self.controlled_robot]
         controlled_robot_pose = Pose2D.from_msg(controlled_robot_state.pose.pose)
         controlled_robot_point = XY(controlled_robot_pose.x, controlled_robot_pose.y)
+        goal_pose = Pose2D.from_msg(goal_target.pose.pose)
         goal_point = XY(goal_pose.x, goal_pose.y)
 
         controlled_robot_size = (
@@ -65,7 +66,7 @@ class CrashTrajectoryPlanner(PlannerInterface):
         if is_in_bounds or is_in_angle_tolerance:
             if self.planner.should_replan() or rospy.Time.now() - self.planner.start_time > (self.replan_interval):
                 rospy.logdebug(f"Replanning trajectory. {controlled_robot_pose} -> {goal_pose}")
-                self.planner.generate_trajectory(controlled_robot_state, goal_pose)
+                self.planner.generate_trajectory(controlled_robot_state, goal_target, field)
                 self.visualization_publisher.publish(self.planner.visualize_trajectory())
             twist = self.planner.compute(controlled_robot_pose)
         else:

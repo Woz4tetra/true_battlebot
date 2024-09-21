@@ -19,11 +19,12 @@ class CrashOpponent(PlannerInterface):
         self.pid_follower = PidFollowerEngine(linear_pid, angular_pid, always_face_forward=True)
 
     def go_to_goal(
-        self, dt: float, goal_pose: Pose2D, robot_states: dict[str, EstimatedObject], field: FieldBounds2D
+        self, dt: float, goal_target: EstimatedObject, robot_states: dict[str, EstimatedObject], field: FieldBounds2D
     ) -> Tuple[Twist, bool]:
         if self.controlled_robot not in robot_states:
             rospy.logwarn_throttle(1, f"Robot {self.controlled_robot} not found in robot states")
             return Twist(), False
         controlled_robot_pose = Pose2D.from_msg(robot_states[self.controlled_robot].pose.pose)
+        goal_pose = Pose2D.from_msg(goal_target.pose.pose)
         twist = self.pid_follower.compute(dt, controlled_robot_pose, goal_pose)
         return twist, False

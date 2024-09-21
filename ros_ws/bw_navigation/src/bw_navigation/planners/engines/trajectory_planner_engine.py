@@ -6,6 +6,7 @@ from typing import Optional
 import numpy as np
 import rospy
 from bw_interfaces.msg import EstimatedObject
+from bw_shared.geometry.field_bounds import FieldBounds2D
 from bw_shared.geometry.pose2d import Pose2D
 from bw_shared.geometry.twist2d import Twist2D
 from geometry_msgs.msg import Twist
@@ -24,6 +25,8 @@ class PlanningTicket:
     robot_pose: Pose2D
     robot_velocity: Twist2D
     goal_pose: Pose2D
+    goal_velocity: Twist2D
+    field: FieldBounds2D
 
 
 class TrajectoryPlannerEngine:
@@ -56,35 +59,62 @@ class TrajectoryPlannerEngine:
 
         self.planning_thread.start()
 
+    def _bound_pose_along_line(self, pose: Pose2D, projected_pose: Pose2D, bounds: FieldBounds2D) -> Pose2D:
+        # TODO implement
+        return projected_pose
+
+    def _plan_with_goal_velocity(self, ticket: PlanningTicket) -> Trajectory:
+        robot_pose = ticket.robot_pose
+        goal_pose = ticket.goal_pose
+        trajectory = self._plan_once(robot_pose, goal_pose)
+        for _ in range(self.config.forward_project_max_iters):
+            total_time = trajectory.totalTime()
+            travel_distance = ticket.goal_velocity.x * total_time
+            # TODO verify
+            projected_goal = Pose2D(travel_distance, 0.0, 0.0).forward_by(goal_pose)
+            projected_goal = self._bound_pose_along_line(goal_pose, projected_goal, ticket.field)
+            if projected_goal.relative_to(goal_pose).magnitude() < self.config.forward_project_converge_threshold:
+                break
+            trajectory = self._plan_once(robot_pose, goal_pose)
+        return trajectory
+
+    def _plan_once(self, robot_pose: Pose2D, goal_pose: Pose2D) -> Trajectory:
+        return TrajectoryGenerator.generateTrajectory(
+            waypoints=[
+                geometry.Pose2d(robot_pose.x, robot_pose.y, robot_pose.theta),
+                geometry.Pose2d(goal_pose.x, goal_pose.y, goal_pose.theta),
+            ],
+            config=self.traj_config,
+        )
+
     def planning_task(self) -> None:
         while True:
             try:
                 ticket = self.goal_in_queue.get()
-                robot_pose = ticket.robot_pose
-                goal_pose = ticket.goal_pose
 
                 if self.config.used_measured_velocity:
                     robot_velocity = ticket.robot_velocity
                     self.traj_config.setStartVelocity(robot_velocity.x)
                 self.is_planning = True
-                trajectory = TrajectoryGenerator.generateTrajectory(
-                    waypoints=[
-                        geometry.Pose2d(robot_pose.x, robot_pose.y, robot_pose.theta),
-                        geometry.Pose2d(goal_pose.x, goal_pose.y, goal_pose.theta),
-                    ],
-                    config=self.traj_config,
-                )
+                if self.config.forward_project_goal_velocity:
+                    trajectory = self._plan_with_goal_velocity(ticket)
+                else:
+                    trajectory = self._plan_once(ticket.robot_pose, ticket.goal_pose)
                 self.plan_out_queue.put(trajectory)
                 self.is_planning = False
             except Exception as e:
                 rospy.logerr(f"Trajectory planning failed: {e}", exc_info=True)
                 self.is_planning = False
 
-    def generate_trajectory(self, robot_state: EstimatedObject, goal_pose: Pose2D) -> None:
+    def generate_trajectory(
+        self, robot_state: EstimatedObject, goal_target: EstimatedObject, field: FieldBounds2D
+    ) -> None:
         if not self.is_planning:
             robot_pose = Pose2D.from_msg(robot_state.pose.pose)
             robot_velocity = Twist2D.from_msg(robot_state.twist.twist)
-            self.goal_in_queue.put(PlanningTicket(robot_pose, robot_velocity, goal_pose))
+            goal_pose = Pose2D.from_msg(goal_target.pose.pose)
+            goal_velocity = Twist2D.from_msg(goal_target.twist.twist)
+            self.goal_in_queue.put(PlanningTicket(robot_pose, robot_velocity, goal_pose, goal_velocity, field))
         else:
             rospy.logdebug("Trajectory generation already in progress")
 

@@ -1,8 +1,22 @@
+import math
+
 import numpy as np
 from bw_shared.configs.robot_fleet_config import RobotConfig
+from bw_shared.filters.simple_filter import SimpleFilter
+from bw_shared.geometry.input_modulus import normalize_angle
 from geometry_msgs.msg import PoseWithCovariance, TwistWithCovariance
 
-from .helpers import STATE_t, kf_update, pose_to_measurement, position_to_measurement
+from .helpers import (
+    STATE_t,
+    STATE_vt,
+    STATE_vx,
+    STATE_vy,
+    STATE_x,
+    STATE_y,
+    kf_update,
+    pose_to_measurement,
+    position_to_measurement,
+)
 from .model_base import ModelBase
 from .tracking_kf_impl import NUM_MEASUREMENTS, NUM_STATES, kf_predict
 
@@ -16,11 +30,18 @@ class TrackingModel(ModelBase):
         stale_timeout: float = 10.0,
         robot_min_radius: float = 0.05,
         robot_max_radius: float = 0.15,
+        velocity_damping_constant: float = 0.9,
     ) -> None:
         super().__init__(config, stale_timeout, robot_min_radius, robot_max_radius)
         self.dt = dt
         self.process_noise = process_noise
         self.process_noise_q = np.eye(NUM_STATES) * self.process_noise
+
+        self.velocity_filters = [
+            SimpleFilter(velocity_damping_constant),
+            SimpleFilter(velocity_damping_constant),
+            SimpleFilter(velocity_damping_constant),
+        ]
 
         # measurement function for landmarks. Use only pose.
         self.pose_H = np.zeros((NUM_MEASUREMENTS, NUM_STATES))
@@ -49,7 +70,9 @@ class TrackingModel(ModelBase):
             state = self.state[0:NUM_STATES]
             covariance = self.covariance[0:NUM_STATES, 0:NUM_STATES]
             next_state, next_covariance = kf_update(state, covariance, self.pose_H, measurement, noise, (STATE_t,))
+            next_twist = self._compute_twist_all(state, next_state)
             self.state[0:NUM_STATES] = next_state
+            self.state[NUM_STATES:] = next_twist
             self.covariance[0:NUM_STATES, 0:NUM_STATES] = next_covariance
 
             self.reset_stale_timer()
@@ -62,7 +85,9 @@ class TrackingModel(ModelBase):
         state = self.state[0:NUM_STATES]
         covariance = self.covariance[0:NUM_STATES, 0:NUM_STATES]
         next_state, next_covariance = kf_update(state, covariance, self.position_H, measurement, noise, tuple())
+        next_twist = self._compute_twist_xy(state, next_state)
         self.state[0:NUM_STATES] = next_state
+        self.state[NUM_STATES:] = next_twist
         self.covariance[0:NUM_STATES, 0:NUM_STATES] = next_covariance
 
         self.reset_stale_timer()
@@ -72,3 +97,33 @@ class TrackingModel(ModelBase):
 
     def update_cmd_vel(self, msg: TwistWithCovariance) -> None:
         pass  # Not needed for tracking model
+
+    def _rotate_velocity_to_base(self, velocities: np.ndarray, state_theta: float) -> np.ndarray:
+        vx = velocities[STATE_vx]
+        vy = velocities[STATE_vy]
+        vx = vx * math.cos(state_theta) - vy * math.sin(state_theta)
+        vy = vx * math.sin(state_theta) + vy * math.cos(state_theta)
+        return np.array([vx, vy, velocities[STATE_vt]])
+
+    def _compute_twist_all(self, state: np.ndarray, next_state: np.ndarray) -> np.ndarray:
+        state_theta = state[STATE_t]
+        delta_state = next_state - state
+        dx = delta_state[STATE_x]
+        dy = delta_state[STATE_y]
+        dyaw = delta_state[STATE_t]
+        dyaw = normalize_angle(dyaw)
+        velocities = []
+        for delta_state, filter in zip([dx, dy, dyaw], self.velocity_filters):
+            velocities.append(filter.update(delta_state / self.dt))
+        return self._rotate_velocity_to_base(np.array(velocities), state_theta)
+
+    def _compute_twist_xy(self, state: np.ndarray, next_state: np.ndarray) -> np.ndarray:
+        state_theta = state[STATE_t]
+        delta_state = next_state - state
+        dx = delta_state[STATE_x]
+        dy = delta_state[STATE_y]
+        velocities = []
+        for delta_state, filter in zip([dx, dy], self.velocity_filters[0:2]):
+            velocities.append(filter.update(delta_state / self.dt))
+        velocities.append(state[STATE_vt])
+        return self._rotate_velocity_to_base(np.array(velocities), state_theta)

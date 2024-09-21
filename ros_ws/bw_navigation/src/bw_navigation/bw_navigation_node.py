@@ -104,8 +104,9 @@ class BwNavigationNode:
     def robot_states_callback(self, robot_states: EstimatedObjectArray) -> None:
         self.robots = {robot.label: robot for robot in robot_states.robots}
 
-    def compute_feedback_distance(self, goal_pose: Pose2D) -> float:
+    def compute_feedback_distance(self, goal_target: EstimatedObject) -> float:
         robot_pose = Pose2D.from_msg(self.robots[self.controlled_robot].pose.pose)
+        goal_pose = Pose2D.from_msg(goal_target.pose.pose)
         return goal_pose.relative_to(robot_pose).magnitude()
 
     def go_to_goal_callback(self, goal: GoToGoalGoal) -> None:
@@ -141,21 +142,21 @@ class BwNavigationNode:
                 continue
 
             try:
-                goal_pose = goal_supplier.get_goal(self.robots, self.field_bounds_2d)
+                goal_target = goal_supplier.get_goal(self.robots, self.field_bounds_2d)
             except NavigationError as e:
                 rospy.logerr(f"Error getting goal: {e}")
                 self.goal_server.set_aborted()
                 break
 
-            if goal_pose is None:
+            if goal_target is None:
                 rospy.logwarn_throttle(1, f"No goal found. Available robots: {self.robots.keys()}")
                 continue
 
-            goal_feedback.pose = goal_pose.to_msg()
+            goal_feedback.pose = goal_target.pose.pose
             self.goal_pose_pub.publish(goal_feedback)
 
             try:
-                twist, is_done = planner.go_to_goal(dt, goal_pose, self.robots, self.field_bounds_2d)
+                twist, is_done = planner.go_to_goal(dt, goal_target, self.robots, self.field_bounds_2d)
             except NavigationError as e:
                 rospy.logerr(f"Error going to goal: {e}")
                 self.goal_server.set_aborted()
@@ -163,7 +164,7 @@ class BwNavigationNode:
 
             self.twist_pub.publish(twist)
 
-            distance_to_goal = self.compute_feedback_distance(goal_pose)
+            distance_to_goal = self.compute_feedback_distance(goal_target)
             self.goal_server.publish_feedback(
                 GoToGoalFeedback(
                     distance_to_goal=distance_to_goal,
