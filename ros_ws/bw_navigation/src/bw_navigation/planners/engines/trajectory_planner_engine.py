@@ -7,6 +7,7 @@ import numpy as np
 import rospy
 from bw_interfaces.msg import EstimatedObject
 from bw_shared.geometry.field_bounds import FieldBounds2D
+from bw_shared.geometry.in_plane import line_bounds_intersection
 from bw_shared.geometry.pose2d import Pose2D
 from bw_shared.geometry.twist2d import Twist2D
 from geometry_msgs.msg import Twist
@@ -60,8 +61,22 @@ class TrajectoryPlannerEngine:
         self.planning_thread.start()
 
     def _bound_pose_along_line(self, pose: Pose2D, projected_pose: Pose2D, bounds: FieldBounds2D) -> Pose2D:
-        # TODO implement
-        return projected_pose
+        segment = np.array(
+            [
+                [pose.x, pose.y],
+                [projected_pose.x, projected_pose.y],
+            ]
+        )
+        intersections = line_bounds_intersection(segment, bounds)
+        if len(intersections) == 0:
+            return projected_pose
+        intersection_poses = [
+            Pose2D(intersection[0], intersection[1], projected_pose.theta) for intersection in intersections
+        ]
+        closest_intersection = min(
+            intersection_poses, key=lambda intersection: intersection.relative_to(projected_pose).magnitude()
+        )
+        return closest_intersection
 
     def _plan_with_goal_velocity(self, ticket: PlanningTicket) -> Trajectory:
         robot_pose = ticket.robot_pose
@@ -70,8 +85,7 @@ class TrajectoryPlannerEngine:
         for _ in range(self.config.forward_project_max_iters):
             total_time = trajectory.totalTime()
             travel_distance = ticket.goal_velocity.x * total_time
-            # TODO verify
-            projected_goal = Pose2D(travel_distance, 0.0, 0.0).forward_by(goal_pose)
+            projected_goal = Pose2D(travel_distance, 0.0, 0.0).transform_by(goal_pose)
             projected_goal = self._bound_pose_along_line(goal_pose, projected_goal, ticket.field)
             if projected_goal.relative_to(goal_pose).magnitude() < self.config.forward_project_converge_threshold:
                 break

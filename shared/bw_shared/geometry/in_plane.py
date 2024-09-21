@@ -4,6 +4,8 @@ Helper math functions for 2D (in-plane) geometry.
 
 import numpy as np
 
+from bw_shared.geometry.field_bounds import FieldBounds2D
+
 
 def triangle_area(p_1: np.ndarray, p_2: np.ndarray, p_3: np.ndarray) -> float:
     """
@@ -77,3 +79,24 @@ def line_line_intersection(reference_line: np.ndarray, other_line: np.ndarray) -
     t_param = t_num / denom
 
     return interpolate_on_segment(reference_line, t_param)
+
+
+def line_bounds_intersection(segment: np.ndarray, bounds: FieldBounds2D) -> list[np.ndarray]:
+    """
+    Calculates the intersection point between the segment and the field bounds.
+    """
+    bound_segments = np.array(
+        [
+            [bounds[0].x, bounds[0].y],
+            [bounds[1].x, bounds[0].y],
+            [bounds[1].x, bounds[1].y],
+            [bounds[0].x, bounds[1].y],
+        ]
+    )
+    intersections = []
+    for bound_segment in bound_segments:
+        intersection = line_line_intersection(segment, bound_segment)
+        if np.any(np.isnan(intersection)):
+            continue
+        intersections.append(intersection)
+    return intersections
