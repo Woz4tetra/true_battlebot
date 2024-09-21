@@ -45,7 +45,7 @@ class YoloKeypoint(KeypointInterface):
     def process_image(self, camera_info: CameraInfo, msg: Image) -> tuple[KeypointInstanceArray | None, Image | None]:
         result = self.model(
             msg.data,
-            verbose=self.config.debug,
+            verbose=self.config.debug_timing,
             conf=self.config.threshold,
         )[0]
 
@@ -53,7 +53,7 @@ class YoloKeypoint(KeypointInterface):
         keypoints = result.keypoints.cpu().xy.int().numpy()  # get the keypoints
         labels = [ModelLabel(result.names[index]) for index in ids]
 
-        if self.config.debug:
+        if self.config.debug_image:
             img_array = result.plot(kpt_line=True, kpt_radius=6)  # plot a BGR array of predictions
             debug_image = Image(header=msg.header, data=img_array)
         else:

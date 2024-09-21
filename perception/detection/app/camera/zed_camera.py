@@ -41,8 +41,8 @@ class ZedCamera(CameraInterface):
 
         self.init_params = sl.InitParameters()
         self.init_params.depth_mode = sl.DEPTH_MODE.NEURAL_PLUS
-        self.init_params.camera_resolution = sl.RESOLUTION.HD1080
-        self.init_params.camera_fps = 30
+        self.init_params.camera_resolution = self.config.resolution.to_zed()
+        self.init_params.camera_fps = self.config.fps
         self.init_params.coordinate_units = sl.UNIT.METER
 
         if self.config.serial_number != -1:
@@ -107,6 +107,9 @@ class ZedCamera(CameraInterface):
         return True
 
     def switch_mode(self, mode: CameraMode) -> bool:
+        if mode == self.mode:
+            return True
+        self.mode = mode
         return self.mode_callbacks[mode]()
 
     def load_camera_info(self) -> CameraInfo:
@@ -175,5 +178,6 @@ class ZedCamera(CameraInterface):
         return camera_data
 
     def close(self) -> None:
+        self.logger.info("Closing ZED Camera")
         self.camera.close()
         self.is_open = False

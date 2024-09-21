@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 from typing import Literal
 
 from app.camera.zed.video_settings import Zed2iVideoSettings
+from perception_tools.camera.zed_resolutions import Zed2iResolutions
 
 
 @dataclass
@@ -10,3 +11,5 @@ class ZedCameraConfig:
     serial_number: int = -1
     video_settings: Zed2iVideoSettings = field(default_factory=Zed2iVideoSettings)
     svo_directory: str = "/media/storage/svo"
+    resolution: Zed2iResolutions = Zed2iResolutions.MODE_HD1080
+    fps: int = 30

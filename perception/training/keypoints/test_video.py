@@ -1,5 +1,6 @@
 import argparse
 import os
+import time
 from pathlib import Path
 
 import cv2
@@ -103,6 +104,7 @@ def main() -> None:
 
     in_video.set(cv2.CAP_PROP_POS_FRAMES, start_index)
     frame_num = start_index
+    diffs = []
 
     try:
         with tqdm(total=num_frames) as pbar:
@@ -126,7 +128,11 @@ def main() -> None:
                         (width, height),
                     )
 
+                t0 = time.perf_counter()
                 results = model(frame, verbose=False, conf=threshold)[0]
+                t1 = time.perf_counter()
+                delta = t1 - t0
+                diffs.append(delta)
                 debug_image = draw_keypoints(results, metadata)
 
                 cv2.imshow("video", debug_image)
@@ -139,6 +145,10 @@ def main() -> None:
         in_video.release()
         if out_video is not None:
             out_video.release()
+
+        print(f"Warmup time: {diffs.pop(0):0.6f} s")
+        if len(diffs) > 0:
+            print(f"Average inference rate: {len(diffs) / sum(diffs):0.6f} fps")
 
 
 if __name__ == "__main__":

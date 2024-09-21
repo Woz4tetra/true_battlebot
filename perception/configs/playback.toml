@@ -38,7 +38,7 @@ exclude_filters = [
 
 [robot_keypoint]
 type = "YoloKeypoint"
-# debug = true
+debug_image = true
 model_path = "yolov8m-pose_2024-09-03.pt"
 metadata_path = "yolov8m-pose_2024-09-03.json"
 
