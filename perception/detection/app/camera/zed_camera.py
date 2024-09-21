@@ -1,4 +1,5 @@
 import logging
+from pathlib import Path
 
 import numpy as np
 import pyzed.sl as sl
@@ -8,10 +9,12 @@ from app.camera.zed.helpers import zed_to_ros_camera_info
 from app.camera.zed.video_settings import Zed2iVideoSettings, ZedParameterError
 from app.config.camera_config.zed_camera_config import ZedCameraConfig
 from app.config.camera_topic_config import CameraTopicConfig
+from bw_interfaces.msg import ControlRecording
 from bw_shared.messages.header import Header
 from perception_tools.messages.camera_data import CameraData
 from perception_tools.messages.image import Image
 from perception_tools.messages.point_cloud import CloudFieldName, PointCloud
+from perception_tools.rosbridge.ros_poll_subscriber import RosPollSubscriber
 from perception_tools.rosbridge.ros_publisher import RosPublisher
 from sensor_msgs.msg import CameraInfo
 from sensor_msgs.msg import Image as RosImage
@@ -24,6 +27,7 @@ class ZedCamera(CameraInterface):
         camera_topic_config: CameraTopicConfig,
         color_image_pub: RosPublisher[RosImage] | None,
         camera_info_pub: RosPublisher[CameraInfo] | None,
+        record_svo_sub: RosPollSubscriber[ControlRecording],
     ) -> None:
         self.logger = logging.getLogger("perception")
 
@@ -31,6 +35,7 @@ class ZedCamera(CameraInterface):
         self.camera_topic_config = camera_topic_config
         self.color_image_pub = color_image_pub
         self.camera_info_pub = camera_info_pub
+        self.record_svo_sub = record_svo_sub
 
         self.camera = sl.Camera()
 
@@ -47,6 +52,9 @@ class ZedCamera(CameraInterface):
             self.logger.info("Auto detecting ZED Camera serial number")
 
         self.runtime_parameters = sl.RuntimeParameters()
+
+        self.recording_parameters = sl.RecordingParameters()
+        self.recording_parameters.compression_mode = sl.SVO_COMPRESSION_MODE.H264
 
         self.header = Header(0.0, self.camera_topic_config.frame_id, 0)
         self.camera_info = CameraInfo()
@@ -111,7 +119,27 @@ class ZedCamera(CameraInterface):
         self.header.seq += 1
         return self.header
 
+    def _poll_recording(self) -> None:
+        if not (control_msg := self.record_svo_sub.receive()):
+            return
+        command = control_msg.command
+        match command:
+            case ControlRecording.START:
+                self.logger.info("Starting ZED Camera recording")
+                file_path = Path(control_msg.name)
+                file_path = file_path.with_suffix(".svo")
+                file_path = self.config.svo_directory / file_path
+                self.logger.info(f"Recording to {file_path}")
+                self.recording_parameters.video_filename = str(file_path)
+                self.camera.enable_recording(self.recording_parameters)
+            case ControlRecording.STOP:
+                self.logger.info("Stopping ZED Camera recording")
+                self.camera.disable_recording()
+            case _:
+                self.logger.error(f"Invalid ZED Camera recording command: {command}")
+
     def poll(self) -> CameraData | None:
+        self._poll_recording()
         status = self.camera.grab(self.runtime_parameters)
         if status != sl.ERROR_CODE.SUCCESS:
             self.logger.error(f"ZED Camera failed to grab frame: {status.name} ({status.value}): {str(status)}")

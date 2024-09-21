@@ -9,3 +9,4 @@ class ZedCameraConfig:
     type: Literal["ZedCamera"] = "ZedCamera"
     serial_number: int = -1
     video_settings: Zed2iVideoSettings = field(default_factory=Zed2iVideoSettings)
+    svo_directory: str = "/media/storage/svo"

@@ -5,6 +5,7 @@ from ._CollisionInfo import *
 from ._ConfigureSimulation import *
 from ._ConfiguredOpponents import *
 from ._Contour import *
+from ._ControlRecording import *
 from ._EstimatedObject import *
 from ._EstimatedObjectArray import *
 from ._GoToGoalAction import *

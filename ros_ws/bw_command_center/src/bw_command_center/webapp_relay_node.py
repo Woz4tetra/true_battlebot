@@ -4,7 +4,7 @@ from threading import Event
 
 import rospy
 from bw_interfaces.msg import CageCorner as RosCageCorner
-from bw_interfaces.msg import SystemSummary
+from bw_interfaces.msg import ControlRecording, SystemSummary
 from bw_shared.environment import get_robot
 from bw_tools.get_param import get_param
 from bw_tools.messages.cage_corner import CageCorner
@@ -22,6 +22,7 @@ class WebappRelay:
         self.bag_manager = RecordBagManager(
             "/media/storage/bags", self.start_callback, self.stop_callback, exclude_regex=exclude_regex
         )
+        self.record_svo_pub = rospy.Publisher("record_svo", ControlRecording, queue_size=1)
         self.set_record_srv = rospy.Service("set_record", SetBool, self.set_record_callback)
         self.is_recording = False
         self.callback_event = Event()
@@ -39,16 +40,26 @@ class WebappRelay:
             datestr = now.strftime("%Y-%m-%dT%H-%M-%S")
             name = f"{get_robot()}_{datestr}"
             self.bag_manager.start(name)
+            self.start_svo_recording(name)
             self.await_recording_state(True)
             return SetBoolResponse(success=True)
         elif not req.data and self.is_recording:
             rospy.loginfo("Stop recording")
             self.bag_manager.stop()
+            self.stop_svo_recording()
             self.await_recording_state(False)
             return SetBoolResponse(success=True)
         else:
             rospy.loginfo(f"Invalid request: {req.data}. Is recording: {self.is_recording}")
             return SetBoolResponse(success=False)
+
+    def start_svo_recording(self, name: str) -> None:
+        rospy.loginfo(f"Start SVO recording: {name}")
+        self.record_svo_pub.publish(ControlRecording(name=name, command=ControlRecording.START))
+
+    def stop_svo_recording(self) -> None:
+        rospy.loginfo("Stop SVO recording")
+        self.record_svo_pub.publish(ControlRecording(name="", command=ControlRecording.STOP))
 
     def await_recording_state(self, is_recording: bool) -> None:
         rospy.logdebug(f"Awaiting recording state: {is_recording}")

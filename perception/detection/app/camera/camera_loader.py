@@ -7,6 +7,7 @@ from app.config.camera_config.svo_playback_camera_config import SvoPlaybackCamer
 from app.config.camera_config.zed_camera_config import ZedCameraConfig
 from app.config.config import Config
 from app.container import Container
+from bw_interfaces.msg import ControlRecording
 from perception_tools.rosbridge.ros_poll_subscriber import RosPollSubscriber
 from perception_tools.rosbridge.ros_publisher import RosPublisher
 from sensor_msgs.msg import CameraInfo, Image
@@ -46,7 +47,9 @@ def make_zed_camera(camera_config: ZedCameraConfig, container: Container) -> Cam
     color_image_pub = RosPublisher(ns + "/rgb/image_raw", Image)
     camera_info_pub = RosPublisher(ns + "/rgb/camera_info", CameraInfo)
 
-    return ZedCamera(camera_config, config.camera_topic, color_image_pub, camera_info_pub)
+    svo_record_sub = RosPollSubscriber(ns + "/record_svo", ControlRecording)
+
+    return ZedCamera(camera_config, config.camera_topic, color_image_pub, camera_info_pub, svo_record_sub)
 
 
 def make_svo_camera(camera_config: SvoPlaybackCameraConfig, container: Container) -> CameraImplementation:
