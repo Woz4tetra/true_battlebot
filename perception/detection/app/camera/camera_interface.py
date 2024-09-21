@@ -11,7 +11,11 @@ class CameraMode(EnumAutoLowerStr):
 
 class CameraInterface(ABC):
     @abstractmethod
-    def open(self, mode: CameraMode) -> bool:
+    def open(self) -> bool:
+        pass
+
+    @abstractmethod
+    def switch_mode(self, mode: CameraMode) -> bool:
         pass
 
     @abstractmethod

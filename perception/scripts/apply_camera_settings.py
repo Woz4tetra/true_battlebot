@@ -29,7 +29,7 @@ def main() -> None:
         raise Exception(f"Expected ZedCameraConfig. Got {type(config.camera)}")
 
     camera = ZedCamera(config.camera, config.camera_topic, None, None)
-    if not camera.open(mode):
+    if not camera.switch_mode(mode):
         raise Exception("Failed to open ZED camera")
 
     print("Applied camera settings:")

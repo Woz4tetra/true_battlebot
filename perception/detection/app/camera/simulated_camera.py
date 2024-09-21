@@ -37,7 +37,10 @@ class SimulatedCamera(CameraInterface):
         self.depth_receive_time = 0.0
         self.logger = logging.getLogger("perception")
 
-    def open(self, mode: CameraMode) -> bool:
+    def open(self) -> bool:
+        return True
+
+    def switch_mode(self, mode: CameraMode) -> bool:
         if self.mode != mode:
             self.mode_change_time = time.monotonic()
         self.mode = mode

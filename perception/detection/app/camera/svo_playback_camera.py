@@ -4,11 +4,7 @@ import time
 import numpy as np
 import pyzed.sl as sl
 from app.camera.camera_interface import CameraInterface, CameraMode
-from app.camera.zed.helpers import (
-    set_field_finder_settings,
-    set_robot_finder_settings,
-    zed_to_ros_camera_info,
-)
+from app.camera.zed.helpers import zed_to_ros_camera_info
 from app.config.camera_config.svo_playback_camera_config import SvoPlaybackCameraConfig
 from app.config.camera_topic_config import CameraTopicConfig
 from bw_shared.messages.header import Header
@@ -55,7 +51,7 @@ class SvoPlaybackCamera(CameraInterface):
         self.load_field_frame()
         self.logger.debug("SvoPlaybackCamera initialized")
 
-    def open(self, mode: CameraMode) -> bool:
+    def switch_mode(self, mode: CameraMode) -> bool:
         if self.mode != mode:
             self.logger.debug(f"Opening SvoPlaybackCamera in mode: {mode}")
         self.mode = mode
@@ -109,13 +105,15 @@ class SvoPlaybackCamera(CameraInterface):
     def close(self) -> None:
         self.camera.close()
 
-    def _set_robot_finder_settings(self):
+    def _set_robot_finder_settings(self) -> bool:
         self.logger.info("Setting ZED Camera to Robot Finder mode")
-        set_robot_finder_settings(self.init_params)
+        self.runtime_parameters.enable_depth = False
+        return True
 
-    def _set_field_finder_settings(self):
+    def _set_field_finder_settings(self) -> bool:
         self.logger.info("Setting ZED Camera to Field Finder mode")
-        set_field_finder_settings(self.init_params)
+        self.runtime_parameters.enable_depth = True
+        return True
 
     def get_svo_time(self) -> float:
         image_time = self.camera.get_timestamp(sl.TIME_REFERENCE.IMAGE).get_nanoseconds()
@@ -126,11 +124,14 @@ class SvoPlaybackCamera(CameraInterface):
         self.header.seq += 1
         return self.header
 
-    def open_and_grab(self) -> None:
+    def open(self) -> bool:
         status = self.camera.open(self.init_params)
-        if status != sl.ERROR_CODE.SUCCESS:
-            raise Exception(f"Error opening camera: {status}")
+        success = status == sl.ERROR_CODE.SUCCESS
+        if not success:
+            self.logger.error(f"Failed to open camera: {status}")
+        return success
 
+    def grab(self) -> None:
         status = self.camera.grab(self.runtime_parameters)
         if status != sl.ERROR_CODE.SUCCESS:
             raise Exception(f"Error grabbing initial frame: {status}")
@@ -169,7 +170,7 @@ class SvoPlaybackCamera(CameraInterface):
     def load_field_frame(self) -> None:
         self.logger.debug("Loading field frame data")
         self._set_field_finder_settings()
-        self.open_and_grab()
+        self.grab()
 
         self.camera_start_time = self.get_svo_time()
         num_frames = self.get_number_of_frames()
@@ -193,7 +194,7 @@ class SvoPlaybackCamera(CameraInterface):
 
         self._set_robot_finder_settings()
         self.logger.debug("Reopening camera in Robot Finder mode")
-        self.open_and_grab()
+        self.grab()
 
         self.set_svo_time(self.config.start_time)
 

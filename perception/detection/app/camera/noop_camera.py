@@ -11,7 +11,10 @@ class NoopCamera(CameraInterface):
     def __init__(self, config: NoopCameraConfig) -> None:
         pass
 
-    def open(self, mode: CameraMode) -> bool:
+    def open(self) -> bool:
+        return True
+
+    def switch_mode(self, mode: CameraMode) -> bool:
         return True
 
     def poll(self) -> CameraData | None:

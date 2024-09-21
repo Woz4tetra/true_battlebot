@@ -86,26 +86,50 @@ def main() -> None:
         help="Path to the configuration file. ex: ./keypoint_names_v1.toml",
     )
     parser.add_argument(
+        "dataset",
+        type=str,
+        help="Path to dataset yaml",
+    )
+    parser.add_argument(
         "models",
         nargs="+",
         type=str,
         help="Model key to train. ex: yolov8l-pose",
     )
+    parser.add_argument(
+        "-c",
+        "--checkpoint",
+        default="",
+        type=str,
+        help="Resume from checkpoint",
+    )
+    parser.add_argument(
+        "-e",
+        "--epochs",
+        default=0,
+        type=int,
+        help="Overwrite number of epochs",
+    )
     args = parser.parse_args()
 
+    dataset = args.dataset
     config_path = args.config
     models = args.models
+    epochs = args.epochs
+    checkpoint_path = args.checkpoint
     config = load_keypoints_config(config_path)
 
     for model_key in models:
         settings = configs[model_key]
+        if epochs > 0:
+            settings["epochs"] = epochs
 
         # Load the model.
-        model = YOLO(model_key)
+        model = YOLO(checkpoint_path if checkpoint_path else model_key)
 
         # Training.
         model.train(
-            data="/media/storage/training/labeled/keypoints/2024-09-18/2024-09-18/data.yaml",
+            data=dataset,
             name="battlebots_keypoints",
             device=0,
             **settings,

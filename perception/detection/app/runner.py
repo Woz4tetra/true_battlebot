@@ -72,6 +72,9 @@ class Runner:
         self.field_label_map_publisher.publish(self.field_segmentation.get_model_to_system_labels())
         self.robot_label_map_publisher.publish(self.robot_keypoint.get_model_to_system_labels())
 
+        if not self.camera.open():
+            raise RuntimeError("Failed to open camera")
+
     def loop(self) -> None:
         if rospy.is_shutdown():
             raise KeyboardInterrupt("ROS is shutting down")
@@ -85,8 +88,8 @@ class Runner:
             self.perceive_robot()
 
     def perceive_robot(self) -> None:
-        if not self.camera.open(CameraMode.ROBOT_FINDER):
-            self.logger.error("Failed to open camera")
+        if not self.camera.switch_mode(CameraMode.ROBOT_FINDER):
+            self.logger.error("Failed to switch camera mode")
             return
         camera_data = self.camera.poll()
         if camera_data is None or camera_data.color_image.data.size == 0:
@@ -101,8 +104,8 @@ class Runner:
     def perceive_field(self) -> bool:
         self.logger.debug("Processing field request")
 
-        if not self.camera.open(CameraMode.FIELD_FINDER):
-            self.logger.error("Failed to open camera")
+        if not self.camera.switch_mode(CameraMode.FIELD_FINDER):
+            self.logger.error("Failed to switch camera mode")
             return True
 
         camera_data = self.camera.poll()

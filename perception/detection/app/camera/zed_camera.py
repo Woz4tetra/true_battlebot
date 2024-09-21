@@ -4,11 +4,7 @@ import numpy as np
 import pyzed.sl as sl
 import rospy
 from app.camera.camera_interface import CameraInterface, CameraMode
-from app.camera.zed.helpers import (
-    set_field_finder_settings,
-    set_robot_finder_settings,
-    zed_to_ros_camera_info,
-)
+from app.camera.zed.helpers import zed_to_ros_camera_info
 from app.camera.zed.video_settings import Zed2iVideoSettings, ZedParameterError
 from app.config.camera_config.zed_camera_config import ZedCameraConfig
 from app.config.camera_topic_config import CameraTopicConfig
@@ -37,7 +33,13 @@ class ZedCamera(CameraInterface):
         self.camera_info_pub = camera_info_pub
 
         self.camera = sl.Camera()
+
         self.init_params = sl.InitParameters()
+        self.init_params.depth_mode = sl.DEPTH_MODE.NEURAL_PLUS
+        self.init_params.camera_resolution = sl.RESOLUTION.HD1080
+        self.init_params.camera_fps = 30
+        self.init_params.coordinate_units = sl.UNIT.METER
+
         if self.config.serial_number != -1:
             self.init_params.set_from_serial_number(self.config.serial_number, sl.BUS_TYPE.USB)
             self.logger.info(f"ZED Camera serial number: {self.config.serial_number}")
@@ -59,23 +61,20 @@ class ZedCamera(CameraInterface):
             CameraMode.FIELD_FINDER: self._set_field_finder_settings,
         }
 
-    def _set_robot_finder_settings(self):
+    def _set_robot_finder_settings(self) -> bool:
         self.logger.info("Setting ZED Camera to Robot Finder mode")
-        set_robot_finder_settings(self.init_params)
+        self.runtime_parameters.enable_depth = False
+        return True
 
-    def _set_field_finder_settings(self):
+    def _set_field_finder_settings(self) -> bool:
         self.logger.info("Setting ZED Camera to Field Finder mode")
-        set_field_finder_settings(self.init_params)
+        self.runtime_parameters.enable_depth = True
+        return True
 
-    def open(self, mode: CameraMode) -> bool:
+    def open(self) -> bool:
         status = None
         if self.is_open:
-            if mode == self.mode:
-                return True
-            else:
-                self.close()
-        self.mode = mode
-        self.mode_callbacks[mode]()
+            return True
         while not rospy.is_shutdown():
             status = self.camera.open(self.init_params)
             if status == sl.ERROR_CODE.SUCCESS:
@@ -98,6 +97,9 @@ class ZedCamera(CameraInterface):
         self.camera_info = self.load_camera_info()
         self.is_open = True
         return True
+
+    def switch_mode(self, mode: CameraMode) -> bool:
+        return self.mode_callbacks[mode]()
 
     def load_camera_info(self) -> CameraInfo:
         camera_information = self.camera.get_camera_information()
