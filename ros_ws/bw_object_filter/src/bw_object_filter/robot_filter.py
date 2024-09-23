@@ -4,7 +4,7 @@ from typing import Optional
 import numpy as np
 import rospy
 import tf2_ros
-from bw_interfaces.msg import EstimatedObject, EstimatedObjectArray, RobotFleetConfigMsg
+from bw_interfaces.msg import CageCorner, EstimatedObject, EstimatedObjectArray, RobotFleetConfigMsg
 from bw_shared.configs.robot_fleet_config import RobotConfig, RobotFleetConfig
 from bw_shared.enums.label import Label
 from bw_shared.enums.robot_team import RobotTeam
@@ -132,6 +132,7 @@ class RobotFilter:
         self.tags_subs: dict[str, rospy.Subscriber] = {}
         for topic in self.tag_topics:
             self.tags_subs[topic] = rospy.Subscriber(topic, EstimatedObjectArray, self.tags_callback, queue_size=25)
+        self.corner_sub = rospy.Subscriber("cage_corner", CageCorner, self.cage_corner_callback, queue_size=1)
 
         self.orientation_subs: dict[str, rospy.Subscriber] = {}
         for robot_name, topic in self.orientation_topics.items():
@@ -150,6 +151,7 @@ class RobotFilter:
         self.opponent_fleet_sub = rospy.Subscriber(
             "opponent_fleet", RobotFleetConfigMsg, self.opponent_fleet_callback, queue_size=1
         )
+        rospy.loginfo("Robot filter initialized.")
 
     def initialize(self, robot_fleet: list[RobotConfig]) -> None:
         self.robot_filters = self._init_filters(robot_fleet)
@@ -317,6 +319,10 @@ class RobotFilter:
             rospy.logwarn(f"Failed to update from robot measurement. Resetting filter. {e}")
             robot_filter.reset()
 
+    def cage_corner_callback(self, corner: CageCorner) -> None:
+        rospy.loginfo("Cage corner set. Resetting filters.")
+        self.reset_filters()
+
     def tags_callback(self, msg: EstimatedObjectArray) -> None:
         if not self.field_received():
             rospy.logdebug("Field not received. Skipping tag callback.")
@@ -410,6 +416,7 @@ class RobotFilter:
             self.apply_cmd_vel(robot_filter, cmd_vel)
 
     def field_callback(self, msg: EstimatedObject) -> None:
+        rospy.loginfo("Field received.")
         self.field = msg
         half_x = msg.size.x / 2
         half_y = msg.size.y / 2
@@ -423,6 +430,9 @@ class RobotFilter:
         )
         rospy.loginfo("Resetting filters.")
         rospy.sleep(0.2)  # wait for changes in TF tree to propagate
+        self.reset_filters()
+
+    def reset_filters(self) -> None:
         for robot_filter in self.robot_filters:
             robot_filter.reset()
 

@@ -6,13 +6,13 @@ from bw_shared.geometry.field_bounds import FieldBounds2D
 from bw_shared.geometry.input_modulus import normalize_angle
 from bw_shared.geometry.pose2d import Pose2D
 from bw_shared.geometry.xy import XY
-from bw_shared.pid.config import PidConfig
 from geometry_msgs.msg import Twist
 from visualization_msgs.msg import MarkerArray
 
 from bw_navigation.planners.engines.pid_follower_engine import PidFollowerEngine
+from bw_navigation.planners.engines.thrash_engine import ThrashEngine
 from bw_navigation.planners.engines.trajectory_planner_engine import TrajectoryPlannerEngine
-from bw_navigation.planners.engines.trajectory_planner_engine_config import TrajectoryPlannerEngineConfig
+from bw_navigation.planners.engines.trajectory_planner_engine_config import PathPlannerConfig
 from bw_navigation.planners.planner_interface import PlannerInterface
 
 
@@ -20,30 +20,29 @@ class CrashTrajectoryPlanner(PlannerInterface):
     def __init__(
         self,
         controlled_robot: str,
-        trajectory_config: TrajectoryPlannerEngineConfig,
+        config: PathPlannerConfig,
         replan_interval: float = 0.2,
         rotate_180_buffer: float = 0.05,
         angle_tolerance: float = 1.0,
     ) -> None:
+        self.config = config
         self.controlled_robot = controlled_robot
         self.replan_interval = rospy.Duration.from_sec(replan_interval)
         self.rotate_180_buffer = XY(rotate_180_buffer, rotate_180_buffer)
         self.angle_tolerance = angle_tolerance
-        self.planner = TrajectoryPlannerEngine(trajectory_config)
-        self.recover_engine = PidFollowerEngine(
-            linear_pid=PidConfig(kp=3.0, ki=0.0, kd=0.1, kf=0.0),
-            angular_pid=PidConfig(kp=6.0, ki=0.01, kd=0.1, kf=0.0),
-            always_face_forward=False,
-            clamp_linear=(-trajectory_config.max_velocity, trajectory_config.max_velocity),
-            clamp_angular=(-trajectory_config.max_angular_velocity, trajectory_config.max_angular_velocity),
-        )
+        self.planner = TrajectoryPlannerEngine(self.config)
+        self.backaway_recover_engine = PidFollowerEngine(self.config.backaway_recover)
+        self.thrash_recover_engine = ThrashEngine(self.config.thrash_recovery)
         self.visualization_publisher = rospy.Publisher(
             "trajectory_visualization", MarkerArray, queue_size=1, latch=True
         )
+        self.prev_move_time = rospy.Time.now()
+        self.prev_move_pose = Pose2D(0.0, 0.0, 0.0)
 
     def go_to_goal(
         self, dt: float, goal_target: EstimatedObject, robot_states: dict[str, EstimatedObject], field: FieldBounds2D
     ) -> Tuple[Twist, bool]:
+        now = rospy.Time.now()
         if self.controlled_robot not in robot_states:
             rospy.logwarn_throttle(1, f"Robot {self.controlled_robot} not found in robot states")
             return Twist(), False
@@ -53,6 +52,11 @@ class CrashTrajectoryPlanner(PlannerInterface):
         controlled_robot_point = XY(controlled_robot_pose.x, controlled_robot_pose.y)
         goal_pose = Pose2D.from_msg(goal_target.pose.pose)
         goal_point = XY(goal_pose.x, goal_pose.y)
+
+        if controlled_robot_pose.relative_to(self.prev_move_pose).magnitude() > self.config.move_threshold:
+            self.prev_move_time = now
+            self.prev_move_pose = controlled_robot_pose
+        did_controlled_robot_move = (now - self.prev_move_time).to_sec() < self.config.move_timeout
 
         controlled_robot_size = (
             max(robot_states[self.controlled_robot].size.x, robot_states[self.controlled_robot].size.y) / 2
@@ -69,7 +73,9 @@ class CrashTrajectoryPlanner(PlannerInterface):
                 self.planner.generate_trajectory(controlled_robot_state, goal_target, field)
                 self.visualization_publisher.publish(self.planner.visualize_trajectory())
             twist = self.planner.compute(controlled_robot_pose)
+        elif did_controlled_robot_move:
+            twist = self.backaway_recover_engine.compute(dt, controlled_robot_pose, goal_pose)
         else:
-            twist = self.recover_engine.compute(dt, controlled_robot_pose, goal_pose)
+            twist = self.thrash_recover_engine.compute(dt)
 
         return twist, False

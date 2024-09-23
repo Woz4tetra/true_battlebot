@@ -1,27 +1,20 @@
 import math
-from typing import Optional
 
 from bw_shared.geometry.input_modulus import normalize_angle
 from bw_shared.geometry.pose2d import Pose2D
-from bw_shared.pid.config import PidConfig
 from bw_shared.pid.pid import PID
 from geometry_msgs.msg import Twist, Vector3
 
+from bw_navigation.planners.engines.trajectory_planner_engine_config import PidFollowerEngineConfig
+
 
 class PidFollowerEngine:
-    def __init__(
-        self,
-        linear_pid: PidConfig,
-        angular_pid: PidConfig,
-        always_face_forward: bool,
-        clamp_linear: Optional[tuple[float, float]] = None,
-        clamp_angular: Optional[tuple[float, float]] = None,
-    ) -> None:
-        self.linear_pid = PID(linear_pid)
-        self.angular_pid = PID(angular_pid)
-        self.clamp_linear = clamp_linear
-        self.clamp_angular = clamp_angular
-        self.always_face_forward = always_face_forward
+    def __init__(self, config: PidFollowerEngineConfig) -> None:
+        self.linear_pid = PID(config.linear_pid)
+        self.angular_pid = PID(config.angular_pid)
+        self.clamp_linear = config.clamp_linear
+        self.clamp_angular = config.clamp_angular
+        self.always_face_forward = config.always_face_forward
 
     def compute(self, dt: float, current_pose: Pose2D, goal_pose: Pose2D) -> Twist:
         relative_goal = goal_pose.relative_to(current_pose)

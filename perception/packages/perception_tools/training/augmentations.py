@@ -89,6 +89,8 @@ class HomographyTransform(Transform):
         src_corner_normalized_vector = src_center_to_corner_vector - src_center
         src_line_in_dst = src_corner_normalized_vector + dst_center
         intersection_point = line_line_intersection(src_line_in_dst, closest_segment)
+        if intersection_point is None:
+            return 1.0
         dst_corner_magnitude = float(np.linalg.norm(intersection_point - dst_center))
         src_corner_magnitude = float(np.linalg.norm(src_corner_normalized_vector))
         scale_factor = src_corner_magnitude / dst_corner_magnitude

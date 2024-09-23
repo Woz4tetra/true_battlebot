@@ -8,15 +8,19 @@ from bw_shared.pid.config import PidConfig
 from geometry_msgs.msg import Twist
 
 from bw_navigation.planners.engines.pid_follower_engine import PidFollowerEngine
+from bw_navigation.planners.engines.trajectory_planner_engine_config import PidFollowerEngineConfig
 from bw_navigation.planners.planner_interface import PlannerInterface
 
 
 class CrashOpponent(PlannerInterface):
     def __init__(self, controlled_robot: str) -> None:
         self.controlled_robot = controlled_robot
-        linear_pid = PidConfig(kp=3.0, ki=0.0, kd=0.1, kf=1.0)
-        angular_pid = PidConfig(kp=5.0, ki=0.01, kd=0.1, kf=0.2)
-        self.pid_follower = PidFollowerEngine(linear_pid, angular_pid, always_face_forward=True)
+        config = PidFollowerEngineConfig(
+            linear_pid=PidConfig(kp=3.0, ki=0.0, kd=0.1, kf=1.0),
+            angular_pid=PidConfig(kp=5.0, ki=0.01, kd=0.1, kf=0.2),
+            always_face_forward=True,
+        )
+        self.pid_follower = PidFollowerEngine(config)
 
     def go_to_goal(
         self, dt: float, goal_target: EstimatedObject, robot_states: dict[str, EstimatedObject], field: FieldBounds2D

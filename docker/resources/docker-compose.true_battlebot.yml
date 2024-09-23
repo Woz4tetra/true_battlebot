@@ -13,7 +13,7 @@ services:
     true_battlebot:
         image: ${IMAGE_VERSION}
         container_name: ${PROJECT_NAME}
-        restart: "always"
+        restart: "on-failure"
         network_mode: "host"
         privileged: true
         stop_signal: SIGINT
@@ -38,7 +38,7 @@ services:
     true_battlebot_perception:
         image: ${PERCEPTION_IMAGE_VERSION}
         container_name: ${PROJECT_NAME}_perception
-        restart: "always"
+        restart: "on-failure"
         network_mode: "host"
         privileged: true
         stop_signal: SIGINT

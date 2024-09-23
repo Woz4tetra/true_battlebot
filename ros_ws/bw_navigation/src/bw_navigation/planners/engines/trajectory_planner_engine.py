@@ -19,7 +19,7 @@ from wpimath.kinematics import DifferentialDriveKinematics
 from wpimath.trajectory import Trajectory, TrajectoryConfig, TrajectoryGenerator
 from wpimath.trajectory.constraint import CentripetalAccelerationConstraint, DifferentialDriveKinematicsConstraint
 
-from bw_navigation.planners.engines.trajectory_planner_engine_config import TrajectoryPlannerEngineConfig
+from bw_navigation.planners.engines.trajectory_planner_engine_config import PathPlannerConfig
 
 
 @dataclass
@@ -32,24 +32,27 @@ class PlanningTicket:
 
 
 class TrajectoryPlannerEngine:
-    def __init__(self, config: TrajectoryPlannerEngineConfig) -> None:
-        self.config = config
+    def __init__(self, config: PathPlannerConfig) -> None:
+        self.plan_config = config
+        self.engine_config = config.trajectory_planner_engine
         self.traj_config = TrajectoryConfig(
-            maxVelocity=self.config.max_velocity, maxAcceleration=self.config.max_acceleration
+            maxVelocity=self.plan_config.max_velocity, maxAcceleration=self.plan_config.max_acceleration
         )
-        self.kinematics = DifferentialDriveKinematics(self.config.track_width)
+        self.kinematics = DifferentialDriveKinematics(self.plan_config.track_width)
 
-        self.traj_config.setStartVelocity(self.config.max_velocity)
-        self.traj_config.setEndVelocity(self.config.max_velocity)
-        if self.config.max_centripetal_acceleration is not None:
+        self.traj_config.setStartVelocity(self.plan_config.max_velocity)
+        self.traj_config.setEndVelocity(self.plan_config.max_velocity)
+        if self.plan_config.max_centripetal_acceleration is not None:
             self.traj_config.addConstraint(
-                CentripetalAccelerationConstraint(maxCentripetalAcceleration=self.config.max_centripetal_acceleration),
+                CentripetalAccelerationConstraint(
+                    maxCentripetalAcceleration=self.plan_config.max_centripetal_acceleration
+                ),
             )
         self.traj_config.addConstraint(
-            DifferentialDriveKinematicsConstraint(self.kinematics, self.config.max_velocity),
+            DifferentialDriveKinematicsConstraint(self.kinematics, self.plan_config.max_velocity),
         )
 
-        self.controller = RamseteController(b=self.config.ramsete_b, zeta=self.config.ramsete_zeta)
+        self.controller = RamseteController(b=self.plan_config.ramsete.b, zeta=self.plan_config.ramsete.zeta)
 
         self.start_time = rospy.Time.now()
 
@@ -83,7 +86,7 @@ class TrajectoryPlannerEngine:
         robot_pose = ticket.robot_pose
         goal_pose = ticket.goal_pose
         distance_to_goal = goal_pose.relative_to(robot_pose).magnitude()
-        total_time = distance_to_goal / self.config.max_velocity
+        total_time = distance_to_goal / self.plan_config.max_velocity
         travel_distance = ticket.goal_velocity.x * total_time
         projected_goal = Pose2D(travel_distance, 0.0, 0.0).transform_by(goal_pose)
         projected_goal = self._bound_pose_along_line(goal_pose, projected_goal, ticket.field)
@@ -93,7 +96,7 @@ class TrajectoryPlannerEngine:
     def _plan_once(self, robot_pose: Pose2D, goal_pose: Pose2D) -> Trajectory:
         trajectory = None
         original_goal_pose = goal_pose
-        noise = self.config.planning_failure_random_noise
+        noise = self.engine_config.planning_failure_random_noise
         while trajectory is None:
             try:
                 trajectory = TrajectoryGenerator.generateTrajectory(
@@ -118,11 +121,11 @@ class TrajectoryPlannerEngine:
             try:
                 ticket = self.goal_in_queue.get()
 
-                if self.config.used_measured_velocity:
+                if self.engine_config.used_measured_velocity:
                     robot_velocity = ticket.robot_velocity
                     self.traj_config.setStartVelocity(robot_velocity.x)
                 self.is_planning = True
-                if self.config.forward_project_goal_velocity:
+                if self.engine_config.forward_project_goal_velocity:
                     trajectory = self._plan_with_goal_velocity(ticket)
                 else:
                     trajectory = self._plan_once(ticket.robot_pose, ticket.goal_pose)
@@ -182,7 +185,7 @@ class TrajectoryPlannerEngine:
         if not self.plan_out_queue.empty():
             while not self.plan_out_queue.empty():
                 self.active_trajectory = self.plan_out_queue.get()
-            self.start_time = rospy.Time.now()
+            self.start_time = rospy.Time.now() - rospy.Duration.from_sec(self.engine_config.trajectory_lookahead)
         if self.active_trajectory is None:
             rospy.logwarn("Trajectory not generated")
             return Twist()

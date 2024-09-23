@@ -13,6 +13,7 @@ from bw_interfaces.msg import (
     GoToGoalResult,
 )
 from bw_shared.enums.robot_team import RobotTeam
+from bw_shared.geometry.field_bounds import FieldBounds2D
 from bw_shared.geometry.pose2d import Pose2D
 from bw_shared.geometry.xy import XY
 from bw_shared.geometry.xyz import XYZ
@@ -30,7 +31,7 @@ from bw_navigation.goal_supplier import (
     TrackedTargetSupplier,
 )
 from bw_navigation.planners import CrashOpponent, CrashTrajectoryPlanner, PlannerInterface
-from bw_navigation.planners.engines.trajectory_planner_engine_config import TrajectoryPlannerEngineConfig
+from bw_navigation.planners.engines.trajectory_planner_engine_config import PathPlannerConfig
 
 
 class BwNavigationNode:
@@ -54,6 +55,7 @@ class BwNavigationNode:
         )
         self.field = EstimatedObject()
         self.robots: dict[str, EstimatedObject] = {}
+        self.field_bounds_2d: FieldBounds2D = (XY(0.0, 0.0), XY(0.0, 0.0))
 
         if self.friendly_fire:
             rospy.logwarn("!!! Friendly fire is enabled !!!")
@@ -71,9 +73,7 @@ class BwNavigationNode:
         }
         self.planners: Dict[GoalStrategy, PlannerInterface] = {
             GoalStrategy.CRASH_OPPONENT: CrashOpponent(self.controlled_robot),
-            GoalStrategy.CRASH_TRAJECTORY_PLANNER: CrashTrajectoryPlanner(
-                self.controlled_robot, TrajectoryPlannerEngineConfig()
-            ),
+            GoalStrategy.CRASH_TRAJECTORY_PLANNER: CrashTrajectoryPlanner(self.controlled_robot, PathPlannerConfig()),
         }
 
         self.twist_pub = rospy.Publisher(f"{self.controlled_robot}/cmd_vel/navigation", Twist, queue_size=1)

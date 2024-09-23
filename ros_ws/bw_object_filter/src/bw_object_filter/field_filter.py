@@ -112,6 +112,7 @@ class FieldFilter:
         aligned_field.pose.pose = tf_map_from_relativemap.forward_by(tf_camera_from_relativemap).to_pose_msg()
         aligned_field.header.frame_id = self.map_frame
 
+        rospy.loginfo("Publishing field")
         self.estimated_field_pub.publish(aligned_field)
         self.publish_field_markers(aligned_field)
 
@@ -124,8 +125,7 @@ class FieldFilter:
         return self.field_rotations[cage_corner]
 
     def corner_side_callback(self, corner: RosCageCorner) -> None:
-        rospy.loginfo("Cage corner set. Resetting filters.")
-        self.estimated_field_pub.publish(self.estimated_field)
+        rospy.loginfo("Cage corner set.")
         self.cage_corner = CageCorner.from_msg(corner)
         self.corner_pub.publish(corner)
 
