@@ -29,7 +29,7 @@ class ImuSensor : MonoBehaviour
 
         ros = ROSConnection.GetOrCreateInstance();
         RosTopicState imuTopic = ros.GetTopic(topic);
-        if (imuTopic == null)
+        if (imuTopic == null || !imuTopic.IsPublisher)
         {
             ros.RegisterPublisher<ImuMsg>(topic);
         }

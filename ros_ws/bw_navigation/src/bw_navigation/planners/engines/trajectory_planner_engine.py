@@ -7,6 +7,7 @@ from typing import Optional
 import numpy as np
 import rospy
 from bw_interfaces.msg import EstimatedObject
+from bw_interfaces.msg import Trajectory as TrajectoryMsg
 from bw_shared.geometry.field_bounds import FieldBounds2D
 from bw_shared.geometry.in_plane import line_bounds_intersection
 from bw_shared.geometry.pose2d import Pose2D
@@ -30,6 +31,25 @@ class PlanningTicket:
     goal_pose: Pose2D
     goal_velocity: Twist2D
     field: FieldBounds2D
+
+
+def get_theta(rotation: geometry.Rotation2d) -> float:
+    return float(rotation.radians())  # type: ignore
+
+
+def trajectory_to_msg(start_time: rospy.Time, trajectory: Trajectory) -> TrajectoryMsg:
+    msg = TrajectoryMsg()
+    msg.header.stamp = start_time
+    msg.header.frame_id = "map"
+    msg.poses = [
+        Pose2D(x=state.pose.X(), y=state.pose.Y(), theta=get_theta(state.pose.rotation())).to_msg()
+        for state in trajectory.states()
+    ]
+    msg.twists = [
+        Twist2D(x=state.velocity, y=0.0, theta=state.velocity * state.curvature).to_msg()
+        for state in trajectory.states()
+    ]
+    return msg
 
 
 class TrajectoryPlannerEngine:
@@ -62,6 +82,7 @@ class TrajectoryPlannerEngine:
         self.plan_out_queue: Queue[Trajectory] = Queue()
         self.is_planning = False
         self.active_trajectory: Optional[Trajectory] = None
+        self.active_trajectory_msg = TrajectoryMsg()
 
         self.planning_thread.start()
 
@@ -158,7 +179,7 @@ class TrajectoryPlannerEngine:
             marker = Marker()
             translation = traj_pose.pose.translation()
             rotation = traj_pose.pose.rotation()
-            angle: float = rotation.radians()  # type: ignore
+            angle = get_theta(rotation)
             pose = Pose2D(translation.x, translation.y, angle)
             marker.header.frame_id = "map"
             marker.ns = "trajectory"
@@ -186,21 +207,27 @@ class TrajectoryPlannerEngine:
         if not self.plan_out_queue.empty():
             while not self.plan_out_queue.empty():
                 self.active_trajectory = self.plan_out_queue.get()
+            if self.active_trajectory is not None:
+                self.active_trajectory_msg = trajectory_to_msg(self.start_time, self.active_trajectory)
             self.start_time = rospy.Time.now() - rospy.Duration.from_sec(self.engine_config.trajectory_lookahead)
         if self.active_trajectory is None:
             rospy.logwarn("Trajectory not generated")
             return Twist(), GoalProgress(is_done=False)
         current_time = rospy.Time.now()
         time_from_start = (current_time - self.start_time).to_sec()
-        desired_pose = self.active_trajectory.sample(time_from_start)
-        chassis_speeds = self.controller.calculate(
-            geometry.Pose2d(robot_pose.x, robot_pose.y, robot_pose.theta),
-            desired_pose,
-        )
+        desired_state = self.active_trajectory.sample(time_from_start)
+        current_pose = geometry.Pose2d(robot_pose.x, robot_pose.y, robot_pose.theta)
+        chassis_speeds = self.controller.calculate(current_pose, desired_state)
+
         twist = Twist()
         twist.linear.x = chassis_speeds.vx
         twist.angular.z = chassis_speeds.omega
 
         total_time = self.active_trajectory.totalTime()
         is_done = time_from_start > total_time
-        return twist, GoalProgress(is_done=is_done, total_time=total_time, time_left=total_time - time_from_start)
+        return twist, GoalProgress(
+            is_done=is_done,
+            total_time=total_time,
+            time_left=total_time - time_from_start,
+            trajectory=self.active_trajectory_msg,
+        )

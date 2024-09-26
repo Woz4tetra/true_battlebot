@@ -20,3 +20,4 @@ SIM_PID=$!
 
 python ${BASE_DIR}/TrueBattleBotSim/copy_persistent_data.py
 tail -F -n 1000 ~/.config/unity3d/DefaultCompany/TrueBattleBotSim/Player.log
+ps axf | grep TrueBattleBotSim | grep -v grep | awk '{print "kill -9 " $1}'

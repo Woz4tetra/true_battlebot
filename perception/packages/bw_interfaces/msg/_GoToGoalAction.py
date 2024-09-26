@@ -15,15 +15,18 @@ from bw_interfaces.msg._GoToGoalActionResult import GoToGoalActionResult as bw_i
 from bw_interfaces.msg._GoToGoalFeedback import GoToGoalFeedback as bw_interfaces_msg_GoToGoalFeedback
 from bw_interfaces.msg._GoToGoalGoal import GoToGoalGoal as bw_interfaces_msg_GoToGoalGoal
 from bw_interfaces.msg._GoToGoalResult import GoToGoalResult as bw_interfaces_msg_GoToGoalResult
+from bw_interfaces.msg._Trajectory import Trajectory as bw_interfaces_msg_Trajectory
 from geometry_msgs.msg._Point import Point as geometry_msgs_msg_Point
 from geometry_msgs.msg._Pose import Pose as geometry_msgs_msg_Pose
 from geometry_msgs.msg._PoseStamped import PoseStamped as geometry_msgs_msg_PoseStamped
 from geometry_msgs.msg._Quaternion import Quaternion as geometry_msgs_msg_Quaternion
+from geometry_msgs.msg._Twist import Twist as geometry_msgs_msg_Twist
+from geometry_msgs.msg._Vector3 import Vector3 as geometry_msgs_msg_Vector3
 from std_msgs.msg._Header import Header as std_msgs_msg_Header
 import genpy
 
 class GoToGoalAction(genpy.Message):
-  _md5sum: str = "5e3515f95f5b2be1b8b3e403b85fc4c7"
+  _md5sum: str = "80d187c08e5363f9ad06f9eb9b10385d"
   _type: str = "bw_interfaces/GoToGoalAction"
   _has_header: bool = False  # flag to mark the presence of a Header object
   _full_text: str = """GoToGoalActionGoal action_goal
@@ -145,7 +148,32 @@ MSG: bw_interfaces/GoToGoalFeedback
 float64 distance_to_goal
 float64 time_left
 float64 total_time
-"""
+bw_interfaces/Trajectory trajectory
+
+================================================================================
+MSG: bw_interfaces/Trajectory
+Header header
+geometry_msgs/Pose[] poses
+geometry_msgs/Twist[] twists
+
+================================================================================
+MSG: geometry_msgs/Twist
+# This expresses velocity in free space broken into its linear and angular parts.
+Vector3  linear
+Vector3  angular
+
+================================================================================
+MSG: geometry_msgs/Vector3
+# This represents a vector in free space. 
+# It is only meant to represent a direction. Therefore, it does not
+# make sense to apply a translation to it (e.g., when applying a 
+# generic rigid transformation to a Vector3, tf2 will only apply the
+# rotation). If you want your data to be translatable too, use the
+# geometry_msgs/Point message instead.
+
+float64 x
+float64 y
+float64 z"""
   __slots__: List[str] = ['action_goal','action_result','action_feedback']
   _slot_types: List[str] = ['bw_interfaces/GoToGoalActionGoal','bw_interfaces/GoToGoalActionResult','bw_interfaces/GoToGoalActionFeedback']
 
@@ -284,7 +312,31 @@ float64 total_time
         length = len(_x)
       buff.write(struct.Struct('<I%ss'%length).pack(length, _x))
       _x = self
-      buff.write(_get_struct_3d().pack(_x.action_feedback.feedback.distance_to_goal, _x.action_feedback.feedback.time_left, _x.action_feedback.feedback.total_time))
+      buff.write(_get_struct_3d3I().pack(_x.action_feedback.feedback.distance_to_goal, _x.action_feedback.feedback.time_left, _x.action_feedback.feedback.total_time, _x.action_feedback.feedback.trajectory.header.seq, _x.action_feedback.feedback.trajectory.header.stamp.secs, _x.action_feedback.feedback.trajectory.header.stamp.nsecs))
+      _x = self.action_feedback.feedback.trajectory.header.frame_id
+      length = len(_x)
+      if python3 or type(_x) == unicode:
+        _x = _x.encode('utf-8')
+        length = len(_x)
+      buff.write(struct.Struct('<I%ss'%length).pack(length, _x))
+      length = len(self.action_feedback.feedback.trajectory.poses)
+      buff.write(_struct_I.pack(length))
+      for val1 in self.action_feedback.feedback.trajectory.poses:
+        _v61 = val1.position
+        _x = _v61
+        buff.write(_get_struct_3d().pack(_x.x, _x.y, _x.z))
+        _v62 = val1.orientation
+        _x = _v62
+        buff.write(_get_struct_4d().pack(_x.x, _x.y, _x.z, _x.w))
+      length = len(self.action_feedback.feedback.trajectory.twists)
+      buff.write(_struct_I.pack(length))
+      for val1 in self.action_feedback.feedback.trajectory.twists:
+        _v63 = val1.linear
+        _x = _v63
+        buff.write(_get_struct_3d().pack(_x.x, _x.y, _x.z))
+        _v64 = val1.angular
+        _x = _v64
+        buff.write(_get_struct_3d().pack(_x.x, _x.y, _x.z))
     except struct.error as se: self._check_types(struct.error("%s: '%s' when writing '%s'" % (type(se), str(se), str(locals().get('_x', self)))))
     except TypeError as te: self._check_types(ValueError("%s: '%s' when writing '%s'" % (type(te), str(te), str(locals().get('_x', self)))))
 
@@ -452,8 +504,51 @@ float64 total_time
         self.action_feedback.status.text = bytes_[start:end]
       _x = self
       start = end
-      end += 24
-      (_x.action_feedback.feedback.distance_to_goal, _x.action_feedback.feedback.time_left, _x.action_feedback.feedback.total_time,) = _get_struct_3d().unpack(bytes_[start:end])
+      end += 36
+      (_x.action_feedback.feedback.distance_to_goal, _x.action_feedback.feedback.time_left, _x.action_feedback.feedback.total_time, _x.action_feedback.feedback.trajectory.header.seq, _x.action_feedback.feedback.trajectory.header.stamp.secs, _x.action_feedback.feedback.trajectory.header.stamp.nsecs,) = _get_struct_3d3I().unpack(bytes_[start:end])
+      start = end
+      end += 4
+      (length,) = _struct_I.unpack(bytes_[start:end])
+      start = end
+      end += length
+      if python3:
+        self.action_feedback.feedback.trajectory.header.frame_id = bytes_[start:end].decode('utf-8', 'rosmsg')
+      else:
+        self.action_feedback.feedback.trajectory.header.frame_id = bytes_[start:end]
+      start = end
+      end += 4
+      (length,) = _struct_I.unpack(bytes_[start:end])
+      self.action_feedback.feedback.trajectory.poses = []
+      for i in range(0, length):
+        val1 = geometry_msgs_msg_Pose()
+        _v65 = val1.position
+        _x = _v65
+        start = end
+        end += 24
+        (_x.x, _x.y, _x.z,) = _get_struct_3d().unpack(bytes_[start:end])
+        _v66 = val1.orientation
+        _x = _v66
+        start = end
+        end += 32
+        (_x.x, _x.y, _x.z, _x.w,) = _get_struct_4d().unpack(bytes_[start:end])
+        self.action_feedback.feedback.trajectory.poses.append(val1)
+      start = end
+      end += 4
+      (length,) = _struct_I.unpack(bytes_[start:end])
+      self.action_feedback.feedback.trajectory.twists = []
+      for i in range(0, length):
+        val1 = geometry_msgs_msg_Twist()
+        _v67 = val1.linear
+        _x = _v67
+        start = end
+        end += 24
+        (_x.x, _x.y, _x.z,) = _get_struct_3d().unpack(bytes_[start:end])
+        _v68 = val1.angular
+        _x = _v68
+        start = end
+        end += 24
+        (_x.x, _x.y, _x.z,) = _get_struct_3d().unpack(bytes_[start:end])
+        self.action_feedback.feedback.trajectory.twists.append(val1)
       return self
     except struct.error as e:
       raise genpy.DeserializationError(e)  # most likely buffer underfill
@@ -559,7 +654,31 @@ float64 total_time
         length = len(_x)
       buff.write(struct.Struct('<I%ss'%length).pack(length, _x))
       _x = self
-      buff.write(_get_struct_3d().pack(_x.action_feedback.feedback.distance_to_goal, _x.action_feedback.feedback.time_left, _x.action_feedback.feedback.total_time))
+      buff.write(_get_struct_3d3I().pack(_x.action_feedback.feedback.distance_to_goal, _x.action_feedback.feedback.time_left, _x.action_feedback.feedback.total_time, _x.action_feedback.feedback.trajectory.header.seq, _x.action_feedback.feedback.trajectory.header.stamp.secs, _x.action_feedback.feedback.trajectory.header.stamp.nsecs))
+      _x = self.action_feedback.feedback.trajectory.header.frame_id
+      length = len(_x)
+      if python3 or type(_x) == unicode:
+        _x = _x.encode('utf-8')
+        length = len(_x)
+      buff.write(struct.Struct('<I%ss'%length).pack(length, _x))
+      length = len(self.action_feedback.feedback.trajectory.poses)
+      buff.write(_struct_I.pack(length))
+      for val1 in self.action_feedback.feedback.trajectory.poses:
+        _v69 = val1.position
+        _x = _v69
+        buff.write(_get_struct_3d().pack(_x.x, _x.y, _x.z))
+        _v70 = val1.orientation
+        _x = _v70
+        buff.write(_get_struct_4d().pack(_x.x, _x.y, _x.z, _x.w))
+      length = len(self.action_feedback.feedback.trajectory.twists)
+      buff.write(_struct_I.pack(length))
+      for val1 in self.action_feedback.feedback.trajectory.twists:
+        _v71 = val1.linear
+        _x = _v71
+        buff.write(_get_struct_3d().pack(_x.x, _x.y, _x.z))
+        _v72 = val1.angular
+        _x = _v72
+        buff.write(_get_struct_3d().pack(_x.x, _x.y, _x.z))
     except struct.error as se: self._check_types(struct.error("%s: '%s' when writing '%s'" % (type(se), str(se), str(locals().get('_x', self)))))
     except TypeError as te: self._check_types(ValueError("%s: '%s' when writing '%s'" % (type(te), str(te), str(locals().get('_x', self)))))
 
@@ -728,8 +847,51 @@ float64 total_time
         self.action_feedback.status.text = bytes_[start:end]
       _x = self
       start = end
-      end += 24
-      (_x.action_feedback.feedback.distance_to_goal, _x.action_feedback.feedback.time_left, _x.action_feedback.feedback.total_time,) = _get_struct_3d().unpack(bytes_[start:end])
+      end += 36
+      (_x.action_feedback.feedback.distance_to_goal, _x.action_feedback.feedback.time_left, _x.action_feedback.feedback.total_time, _x.action_feedback.feedback.trajectory.header.seq, _x.action_feedback.feedback.trajectory.header.stamp.secs, _x.action_feedback.feedback.trajectory.header.stamp.nsecs,) = _get_struct_3d3I().unpack(bytes_[start:end])
+      start = end
+      end += 4
+      (length,) = _struct_I.unpack(bytes_[start:end])
+      start = end
+      end += length
+      if python3:
+        self.action_feedback.feedback.trajectory.header.frame_id = bytes_[start:end].decode('utf-8', 'rosmsg')
+      else:
+        self.action_feedback.feedback.trajectory.header.frame_id = bytes_[start:end]
+      start = end
+      end += 4
+      (length,) = _struct_I.unpack(bytes_[start:end])
+      self.action_feedback.feedback.trajectory.poses = []
+      for i in range(0, length):
+        val1 = geometry_msgs_msg_Pose()
+        _v73 = val1.position
+        _x = _v73
+        start = end
+        end += 24
+        (_x.x, _x.y, _x.z,) = _get_struct_3d().unpack(bytes_[start:end])
+        _v74 = val1.orientation
+        _x = _v74
+        start = end
+        end += 32
+        (_x.x, _x.y, _x.z, _x.w,) = _get_struct_4d().unpack(bytes_[start:end])
+        self.action_feedback.feedback.trajectory.poses.append(val1)
+      start = end
+      end += 4
+      (length,) = _struct_I.unpack(bytes_[start:end])
+      self.action_feedback.feedback.trajectory.twists = []
+      for i in range(0, length):
+        val1 = geometry_msgs_msg_Twist()
+        _v75 = val1.linear
+        _x = _v75
+        start = end
+        end += 24
+        (_x.x, _x.y, _x.z,) = _get_struct_3d().unpack(bytes_[start:end])
+        _v76 = val1.angular
+        _x = _v76
+        start = end
+        end += 24
+        (_x.x, _x.y, _x.z,) = _get_struct_3d().unpack(bytes_[start:end])
+        self.action_feedback.feedback.trajectory.twists.append(val1)
       return self
     except struct.error as e:
       raise genpy.DeserializationError(e)  # most likely buffer underfill
@@ -756,6 +918,18 @@ def _get_struct_3d():
     if _struct_3d is None:
         _struct_3d = struct.Struct("<3d")
     return _struct_3d
+_struct_3d3I = None
+def _get_struct_3d3I():
+    global _struct_3d3I
+    if _struct_3d3I is None:
+        _struct_3d3I = struct.Struct("<3d3I")
+    return _struct_3d3I
+_struct_4d = None
+def _get_struct_4d():
+    global _struct_4d
+    if _struct_4d is None:
+        _struct_4d = struct.Struct("<4d")
+    return _struct_4d
 _struct_7d = None
 def _get_struct_7d():
     global _struct_7d

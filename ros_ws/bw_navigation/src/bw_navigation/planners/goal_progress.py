@@ -1,6 +1,6 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
-from bw_interfaces.msg import EstimatedObject
+from bw_interfaces.msg import EstimatedObject, GoToGoalFeedback, Trajectory
 from bw_shared.geometry.pose2d import Pose2D
 
 
@@ -16,3 +16,10 @@ class GoalProgress:
     total_time: float = float("nan")
     time_left: float = float("nan")
     distance_to_goal: float = float("nan")
+    trajectory: Trajectory = field(default_factory=lambda: Trajectory())
+
+    def fill_feedback(self, feedback: GoToGoalFeedback) -> None:
+        feedback.distance_to_goal = self.distance_to_goal
+        feedback.total_time = self.total_time
+        feedback.time_left = self.time_left
+        feedback.trajectory = self.trajectory

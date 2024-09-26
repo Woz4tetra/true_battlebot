@@ -14,7 +14,6 @@ from bw_interfaces.msg import (
 )
 from bw_shared.enums.robot_team import RobotTeam
 from bw_shared.geometry.field_bounds import FieldBounds2D
-from bw_shared.geometry.pose2d import Pose2D
 from bw_shared.geometry.xy import XY
 from bw_shared.geometry.xyz import XYZ
 from bw_shared.tick_regulator import regulate_tick
@@ -25,11 +24,7 @@ from bw_tools.messages.goal_type import GoalType
 from geometry_msgs.msg import PoseStamped, Twist
 
 from bw_navigation.exceptions import NavigationError
-from bw_navigation.goal_supplier import (
-    FixedPoseSupplier,
-    GoalSupplierInterface,
-    TrackedTargetSupplier,
-)
+from bw_navigation.goal_supplier import FixedPoseSupplier, GoalSupplierInterface, TrackedTargetSupplier
 from bw_navigation.planners import CrashOpponent, CrashTrajectoryPlanner, PlannerInterface
 from bw_navigation.planners.engines.trajectory_planner_engine_config import PathPlannerConfig
 
@@ -127,6 +122,10 @@ class BwNavigationNode:
         goal_feedback = PoseStamped(header=self.field.header)
 
         for dt in regulate_tick(self.tick_rate):
+            if rospy.is_shutdown():
+                self.goal_server.set_aborted()
+                break
+
             if self.goal_server.is_preempt_requested():
                 rospy.loginfo("Preempted")
                 self.goal_server.set_preempted()
@@ -159,13 +158,9 @@ class BwNavigationNode:
 
             self.twist_pub.publish(twist)
 
-            self.goal_server.publish_feedback(
-                GoToGoalFeedback(
-                    distance_to_goal=goal_progress.distance_to_goal,
-                    time_left=goal_progress.time_left,
-                    total_time=goal_progress.total_time,
-                )
-            )
+            feedback = GoToGoalFeedback()
+            goal_progress.fill_feedback(feedback)
+            self.goal_server.publish_feedback(feedback)
 
             if goal_progress.is_done:
                 is_success = goal_progress.distance_to_goal < self.goal_tolerance

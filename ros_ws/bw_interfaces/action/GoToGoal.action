@@ -5,6 +5,8 @@ string strategy
 ---
 bool success
 ---
+bool is_done
 float64 distance_to_goal
 float64 time_left
 float64 total_time
+bw_interfaces/Trajectory trajectory

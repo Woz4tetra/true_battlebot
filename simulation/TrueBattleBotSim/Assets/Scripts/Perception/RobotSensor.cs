@@ -24,7 +24,7 @@ public class RobotSensor : BaseGameObjectSensor
     protected override void BaseGameObjectSensorStart()
     {
         RosTopicState topicState = ros.GetTopic(topic);
-        if (topicState == null)
+        if (topicState == null || !topicState.IsPublisher)
         {
             ros.RegisterPublisher<EstimatedObjectArrayMsg>(topic);
         }
