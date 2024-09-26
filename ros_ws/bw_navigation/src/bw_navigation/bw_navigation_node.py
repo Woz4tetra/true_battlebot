@@ -104,11 +104,6 @@ class BwNavigationNode:
     def robot_states_callback(self, robot_states: EstimatedObjectArray) -> None:
         self.robots = {robot.label: robot for robot in robot_states.robots}
 
-    def compute_feedback_distance(self, goal_target: EstimatedObject) -> float:
-        robot_pose = Pose2D.from_msg(self.robots[self.controlled_robot].pose.pose)
-        goal_pose = Pose2D.from_msg(goal_target.pose.pose)
-        return goal_pose.relative_to(robot_pose).magnitude()
-
     def go_to_goal_callback(self, goal: GoToGoalGoal) -> None:
         rospy.loginfo("Received goal")
         if not self.field.header.frame_id:
@@ -156,7 +151,7 @@ class BwNavigationNode:
             self.goal_pose_pub.publish(goal_feedback)
 
             try:
-                twist, is_done = planner.go_to_goal(dt, goal_target, self.robots, self.field_bounds_2d)
+                twist, goal_progress = planner.go_to_goal(dt, goal_target, self.robots, self.field_bounds_2d)
             except NavigationError as e:
                 rospy.logerr(f"Error going to goal: {e}")
                 self.goal_server.set_aborted()
@@ -164,21 +159,18 @@ class BwNavigationNode:
 
             self.twist_pub.publish(twist)
 
-            distance_to_goal = self.compute_feedback_distance(goal_target)
             self.goal_server.publish_feedback(
                 GoToGoalFeedback(
-                    distance_to_goal=distance_to_goal,
+                    distance_to_goal=goal_progress.distance_to_goal,
+                    time_left=goal_progress.time_left,
+                    total_time=goal_progress.total_time,
                 )
             )
 
-            if is_done:
-                is_success = distance_to_goal < self.goal_tolerance
+            if goal_progress.is_done:
+                is_success = goal_progress.distance_to_goal < self.goal_tolerance
                 rospy.loginfo(f"Planner finished successfully: {is_success}")
-                self.goal_server.set_succeeded(
-                    GoToGoalResult(
-                        success=is_success,
-                    )
-                )
+                self.goal_server.set_succeeded(GoToGoalResult(success=is_success))
                 break
         self.twist_pub.publish(Twist())
 

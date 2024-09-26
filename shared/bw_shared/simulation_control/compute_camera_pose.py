@@ -1,7 +1,8 @@
 import numpy as np
+from geometry_msgs.msg import Vector3
+
 from bw_shared.geometry.projection_math.look_rotation import look_rotation
 from bw_shared.geometry.transform3d import Transform3D
-from geometry_msgs.msg import Vector3
 
 
 def compute_camera_pose(distance: float, azimuth_angle: float, elevation_angle: float) -> Transform3D:

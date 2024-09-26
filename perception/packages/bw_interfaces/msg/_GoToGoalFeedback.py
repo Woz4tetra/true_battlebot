@@ -9,15 +9,19 @@ import struct
 import genpy
 
 class GoToGoalFeedback(genpy.Message):
-  _md5sum: str = "6ad47d3db7202cba81252eaa6fcd95a5"
+  _md5sum: str = "07aaf873fbaf42b1dd883de8056690ba"
   _type: str = "bw_interfaces/GoToGoalFeedback"
   _has_header: bool = False  # flag to mark the presence of a Header object
   _full_text: str = """float64 distance_to_goal
+float64 time_left
+float64 total_time
 """
-  __slots__: List[str] = ['distance_to_goal']
-  _slot_types: List[str] = ['float64']
+  __slots__: List[str] = ['distance_to_goal','time_left','total_time']
+  _slot_types: List[str] = ['float64','float64','float64']
 
-  def __init__(self, distance_to_goal: float = None):
+  def __init__(self, distance_to_goal: float = None,
+    time_left: float = None,
+    total_time: float = None):
     """
     Constructor. Any message fields that are implicitly/explicitly
     set to None will be assigned a default value. The recommend
@@ -25,17 +29,25 @@ class GoToGoalFeedback(genpy.Message):
     changes.  You cannot mix in-order arguments and keyword arguments.
 
     The available fields are:
-      distance_to_goal
+      distance_to_goal,time_left,total_time
 
     :param args: complete set of field values, in .msg order
     :param kwds: use keyword arguments corresponding to message field names
     to set specific fields.
     """
-    super(GoToGoalFeedback, self).__init__(**{'distance_to_goal': distance_to_goal})
+    super(GoToGoalFeedback, self).__init__(**{'distance_to_goal': distance_to_goal, 'time_left': time_left, 'total_time': total_time})
     if self.distance_to_goal is None:
       self.distance_to_goal: float = 0.
     else:
       self.distance_to_goal = distance_to_goal
+    if self.time_left is None:
+      self.time_left: float = 0.
+    else:
+      self.time_left = time_left
+    if self.total_time is None:
+      self.total_time: float = 0.
+    else:
+      self.total_time = total_time
 
   def _get_types(self):
     """
@@ -49,8 +61,8 @@ class GoToGoalFeedback(genpy.Message):
     :param buff: buffer, ``BytesIO``
     """
     try:
-      _x = self.distance_to_goal
-      buff.write(_get_struct_d().pack(_x))
+      _x = self
+      buff.write(_get_struct_3d().pack(_x.distance_to_goal, _x.time_left, _x.total_time))
     except struct.error as se: self._check_types(struct.error("%s: '%s' when writing '%s'" % (type(se), str(se), str(locals().get('_x', self)))))
     except TypeError as te: self._check_types(ValueError("%s: '%s' when writing '%s'" % (type(te), str(te), str(locals().get('_x', self)))))
 
@@ -63,9 +75,10 @@ class GoToGoalFeedback(genpy.Message):
       codecs.lookup_error("rosmsg").msg_type = self._type
     try:
       end = 0
+      _x = self
       start = end
-      end += 8
-      (self.distance_to_goal,) = _get_struct_d().unpack(bytes_[start:end])
+      end += 24
+      (_x.distance_to_goal, _x.time_left, _x.total_time,) = _get_struct_3d().unpack(bytes_[start:end])
       return self
     except struct.error as e:
       raise genpy.DeserializationError(e)  # most likely buffer underfill
@@ -78,8 +91,8 @@ class GoToGoalFeedback(genpy.Message):
     :param numpy: numpy python module
     """
     try:
-      _x = self.distance_to_goal
-      buff.write(_get_struct_d().pack(_x))
+      _x = self
+      buff.write(_get_struct_3d().pack(_x.distance_to_goal, _x.time_left, _x.total_time))
     except struct.error as se: self._check_types(struct.error("%s: '%s' when writing '%s'" % (type(se), str(se), str(locals().get('_x', self)))))
     except TypeError as te: self._check_types(ValueError("%s: '%s' when writing '%s'" % (type(te), str(te), str(locals().get('_x', self)))))
 
@@ -93,9 +106,10 @@ class GoToGoalFeedback(genpy.Message):
       codecs.lookup_error("rosmsg").msg_type = self._type
     try:
       end = 0
+      _x = self
       start = end
-      end += 8
-      (self.distance_to_goal,) = _get_struct_d().unpack(bytes_[start:end])
+      end += 24
+      (_x.distance_to_goal, _x.time_left, _x.total_time,) = _get_struct_3d().unpack(bytes_[start:end])
       return self
     except struct.error as e:
       raise genpy.DeserializationError(e)  # most likely buffer underfill
@@ -104,9 +118,9 @@ _struct_I = genpy.struct_I
 def _get_struct_I():
     global _struct_I
     return _struct_I
-_struct_d = None
-def _get_struct_d():
-    global _struct_d
-    if _struct_d is None:
-        _struct_d = struct.Struct("<d")
-    return _struct_d
+_struct_3d = None
+def _get_struct_3d():
+    global _struct_3d
+    if _struct_3d is None:
+        _struct_3d = struct.Struct("<3d")
+    return _struct_3d

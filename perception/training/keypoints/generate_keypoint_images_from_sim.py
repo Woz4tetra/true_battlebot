@@ -12,6 +12,9 @@ from bw_shared.configs.shared_config import SharedConfig
 from bw_shared.enums.cage_model import CageModel
 from bw_shared.enums.label import ModelLabel
 from bw_shared.geometry.projection_math.project_object_to_uv import ProjectionError, project_object_to_front_back_uv
+from bw_shared.simulation_control.load_cage_model_sizes import load_cage_model_sizes
+from bw_shared.simulation_control.randomized.random_robot_grid import SceneSession, generate_random_robot_grid
+from bw_shared.simulation_control.simulation_controller import make_simulation_controller
 from image_geometry import PinholeCameraModel
 from perception_tools.inference.simulated_mask_to_contours import (
     segmentation_array_to_contour_map,
@@ -20,9 +23,6 @@ from perception_tools.inference.simulated_mask_to_contours import (
 from perception_tools.initialize_logger import initialize
 from perception_tools.rosbridge.check_connection import check_connection
 from perception_tools.rosbridge.wait_for_ros_connection import wait_for_ros_connection
-from perception_tools.simulation_control.load_cage_model_sizes import load_cage_model_sizes
-from perception_tools.simulation_control.randomized.random_robot_grid import SceneSession, generate_random_robot_grid
-from perception_tools.simulation_control.simulation_controller import make_simulation_controller
 from perception_tools.simulation_control.simulation_robot_topic_sync import RobotDataShapshot, SimulationRobotTopicSync
 from perception_tools.training.keypoints_config import load_keypoints_config
 from perception_tools.training.yolo_keypoint_dataset import (
@@ -149,8 +149,6 @@ def main() -> None:
 
     simulation_topic_sync = SimulationRobotTopicSync(SEGMENTATION_LABELS)
     simulation_controller = make_simulation_controller()
-
-    rospy.sleep(2.0)  # wait for publishers to connect
 
     try:
         is_done = False

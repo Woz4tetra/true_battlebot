@@ -20,6 +20,7 @@ from wpimath.trajectory import Trajectory, TrajectoryConfig, TrajectoryGenerator
 from wpimath.trajectory.constraint import CentripetalAccelerationConstraint, DifferentialDriveKinematicsConstraint
 
 from bw_navigation.planners.engines.trajectory_planner_engine_config import PathPlannerConfig
+from bw_navigation.planners.goal_progress import GoalProgress
 
 
 @dataclass
@@ -181,16 +182,17 @@ class TrajectoryPlannerEngine:
         trajectory_duration = rospy.Time.now() - self.start_time
         return trajectory_duration.to_sec() > self.active_trajectory.totalTime()
 
-    def compute(self, robot_pose: Pose2D) -> Twist:
+    def compute(self, robot_pose: Pose2D) -> tuple[Twist, GoalProgress]:
         if not self.plan_out_queue.empty():
             while not self.plan_out_queue.empty():
                 self.active_trajectory = self.plan_out_queue.get()
             self.start_time = rospy.Time.now() - rospy.Duration.from_sec(self.engine_config.trajectory_lookahead)
         if self.active_trajectory is None:
             rospy.logwarn("Trajectory not generated")
-            return Twist()
+            return Twist(), GoalProgress(is_done=False)
         current_time = rospy.Time.now()
-        desired_pose = self.active_trajectory.sample((current_time - self.start_time).to_sec())
+        time_from_start = (current_time - self.start_time).to_sec()
+        desired_pose = self.active_trajectory.sample(time_from_start)
         chassis_speeds = self.controller.calculate(
             geometry.Pose2d(robot_pose.x, robot_pose.y, robot_pose.theta),
             desired_pose,
@@ -198,4 +200,7 @@ class TrajectoryPlannerEngine:
         twist = Twist()
         twist.linear.x = chassis_speeds.vx
         twist.angular.z = chassis_speeds.omega
-        return twist
+
+        total_time = self.active_trajectory.totalTime()
+        is_done = time_from_start > total_time
+        return twist, GoalProgress(is_done=is_done, total_time=total_time, time_left=total_time - time_from_start)

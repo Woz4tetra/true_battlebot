@@ -14,7 +14,7 @@ from std_msgs.msg._Header import Header as std_msgs_msg_Header
 import genpy
 
 class GoToGoalActionFeedback(genpy.Message):
-  _md5sum: str = "38f9d29e68ce9c1f364514cda9c83dcb"
+  _md5sum: str = "ab3dddb09df158a63deca1645fe9c708"
   _type: str = "bw_interfaces/GoToGoalActionFeedback"
   _has_header: bool = True  # flag to mark the presence of a Header object
   _full_text: str = """Header header
@@ -79,6 +79,8 @@ string id
 ================================================================================
 MSG: bw_interfaces/GoToGoalFeedback
 float64 distance_to_goal
+float64 time_left
+float64 total_time
 """
   __slots__: List[str] = ['header','status','feedback']
   _slot_types: List[str] = ['std_msgs/Header','actionlib_msgs/GoalStatus','bw_interfaces/GoToGoalFeedback']
@@ -149,8 +151,8 @@ float64 distance_to_goal
         _x = _x.encode('utf-8')
         length = len(_x)
       buff.write(struct.Struct('<I%ss'%length).pack(length, _x))
-      _x = self.feedback.distance_to_goal
-      buff.write(_get_struct_d().pack(_x))
+      _x = self
+      buff.write(_get_struct_3d().pack(_x.feedback.distance_to_goal, _x.feedback.time_left, _x.feedback.total_time))
     except struct.error as se: self._check_types(struct.error("%s: '%s' when writing '%s'" % (type(se), str(se), str(locals().get('_x', self)))))
     except TypeError as te: self._check_types(ValueError("%s: '%s' when writing '%s'" % (type(te), str(te), str(locals().get('_x', self)))))
 
@@ -207,9 +209,10 @@ float64 distance_to_goal
         self.status.text = bytes_[start:end].decode('utf-8', 'rosmsg')
       else:
         self.status.text = bytes_[start:end]
+      _x = self
       start = end
-      end += 8
-      (self.feedback.distance_to_goal,) = _get_struct_d().unpack(bytes_[start:end])
+      end += 24
+      (_x.feedback.distance_to_goal, _x.feedback.time_left, _x.feedback.total_time,) = _get_struct_3d().unpack(bytes_[start:end])
       return self
     except struct.error as e:
       raise genpy.DeserializationError(e)  # most likely buffer underfill
@@ -246,8 +249,8 @@ float64 distance_to_goal
         _x = _x.encode('utf-8')
         length = len(_x)
       buff.write(struct.Struct('<I%ss'%length).pack(length, _x))
-      _x = self.feedback.distance_to_goal
-      buff.write(_get_struct_d().pack(_x))
+      _x = self
+      buff.write(_get_struct_3d().pack(_x.feedback.distance_to_goal, _x.feedback.time_left, _x.feedback.total_time))
     except struct.error as se: self._check_types(struct.error("%s: '%s' when writing '%s'" % (type(se), str(se), str(locals().get('_x', self)))))
     except TypeError as te: self._check_types(ValueError("%s: '%s' when writing '%s'" % (type(te), str(te), str(locals().get('_x', self)))))
 
@@ -305,9 +308,10 @@ float64 distance_to_goal
         self.status.text = bytes_[start:end].decode('utf-8', 'rosmsg')
       else:
         self.status.text = bytes_[start:end]
+      _x = self
       start = end
-      end += 8
-      (self.feedback.distance_to_goal,) = _get_struct_d().unpack(bytes_[start:end])
+      end += 24
+      (_x.feedback.distance_to_goal, _x.feedback.time_left, _x.feedback.total_time,) = _get_struct_3d().unpack(bytes_[start:end])
       return self
     except struct.error as e:
       raise genpy.DeserializationError(e)  # most likely buffer underfill
@@ -328,15 +332,15 @@ def _get_struct_3I():
     if _struct_3I is None:
         _struct_3I = struct.Struct("<3I")
     return _struct_3I
+_struct_3d = None
+def _get_struct_3d():
+    global _struct_3d
+    if _struct_3d is None:
+        _struct_3d = struct.Struct("<3d")
+    return _struct_3d
 _struct_B = None
 def _get_struct_B():
     global _struct_B
     if _struct_B is None:
         _struct_B = struct.Struct("<B")
     return _struct_B
-_struct_d = None
-def _get_struct_d():
-    global _struct_d
-    if _struct_d is None:
-        _struct_d = struct.Struct("<d")
-    return _struct_d

@@ -5,10 +5,11 @@ from threading import Lock
 import rospy
 from bw_interfaces.msg import EstimatedObject
 from image_geometry import PinholeCameraModel
-from perception_tools.messages.image import Image
-from perception_tools.rosbridge.ros_poll_subscriber import RosPollSubscriber
 from sensor_msgs.msg import CameraInfo
 from sensor_msgs.msg import Image as ImageMsg
+
+from perception_tools.messages.image import Image
+from perception_tools.rosbridge.ros_poll_subscriber import RosPollSubscriber
 
 
 @dataclass

@@ -2,12 +2,13 @@ import random
 
 import numpy as np
 from bw_interfaces.msg import SimulationConfig
+from geometry_msgs.msg import Quaternion
+
 from bw_shared.enums.cage_model import CageModel
 from bw_shared.geometry.transform3d import Transform3D
-from geometry_msgs.msg import Quaternion
-from perception_tools.simulation_control.camera_objective import make_camera_objective
-from perception_tools.simulation_control.compute_camera_pose import compute_camera_pose
-from perception_tools.simulation_control.make_objective import make_objective
+from bw_shared.simulation_control.camera_objective import make_camera_objective
+from bw_shared.simulation_control.compute_camera_pose import compute_camera_pose
+from bw_shared.simulation_control.make_objective import make_objective
 
 
 def get_random_camera_pose(cage_model: CageModel) -> Transform3D:

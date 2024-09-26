@@ -10,7 +10,7 @@ def yolo_keypoint_config() -> YoloKeypointConfig:
     return YoloKeypointConfig(
         model_path="yolov8n-pose_2024-09-02.pt",
         metadata_path="yolov8n-pose_2024-09-02.json",
-        debug=True,
+        debug_timing=True,
         model_to_system_labels=ModelToSystemLabelsMap(
             {
                 ModelLabel.MR_STABS_MK1: Label.CONTROLLED_ROBOT,

@@ -11,12 +11,12 @@ from bw_shared.configs.shared_config import SharedConfig
 from bw_shared.enums.cage_model import CageModel
 from bw_shared.enums.label import ModelLabel
 from bw_shared.geometry.projection_math.project_object_to_uv import ProjectionError, project_box_object_to_uv
+from bw_shared.simulation_control.load_cage_model_sizes import load_cage_model_sizes
+from bw_shared.simulation_control.randomized.random_robot_grid import SceneSession, generate_random_robot_grid
+from bw_shared.simulation_control.simulation_controller import make_simulation_controller
 from perception_tools.inference.simulated_mask_to_contours import to_contour_array
 from perception_tools.initialize_logger import initialize
 from perception_tools.rosbridge.wait_for_ros_connection import wait_for_ros_connection
-from perception_tools.simulation_control.load_cage_model_sizes import load_cage_model_sizes
-from perception_tools.simulation_control.randomized.random_robot_grid import SceneSession, generate_random_robot_grid
-from perception_tools.simulation_control.simulation_controller import make_simulation_controller
 from perception_tools.simulation_control.simulation_field_topic_sync import FieldDataShapshot, SimulationFieldTopicSync
 from perception_tools.training.coco_dataset import (
     CocoMetaDataset,

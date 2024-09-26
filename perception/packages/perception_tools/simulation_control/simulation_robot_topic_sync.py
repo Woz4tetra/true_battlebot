@@ -6,10 +6,11 @@ import rospy
 from bw_interfaces.msg import EstimatedObjectArray, SegmentationInstanceArray
 from bw_shared.enums.label import ModelLabel
 from image_geometry import PinholeCameraModel
-from perception_tools.inference.simulated_mask_to_contours import make_simulated_segmentation_color_map
-from perception_tools.messages.image import Image
 from sensor_msgs.msg import CameraInfo
 from sensor_msgs.msg import Image as ImageMsg
+
+from perception_tools.inference.simulated_mask_to_contours import make_simulated_segmentation_color_map
+from perception_tools.messages.image import Image
 
 
 @dataclass

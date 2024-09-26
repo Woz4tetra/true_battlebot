@@ -13,6 +13,7 @@ from bw_navigation.planners.engines.pid_follower_engine import PidFollowerEngine
 from bw_navigation.planners.engines.thrash_engine import ThrashEngine
 from bw_navigation.planners.engines.trajectory_planner_engine import TrajectoryPlannerEngine
 from bw_navigation.planners.engines.trajectory_planner_engine_config import PathPlannerConfig
+from bw_navigation.planners.goal_progress import GoalProgress, compute_feedback_distance
 from bw_navigation.planners.planner_interface import PlannerInterface
 
 
@@ -41,11 +42,11 @@ class CrashTrajectoryPlanner(PlannerInterface):
 
     def go_to_goal(
         self, dt: float, goal_target: EstimatedObject, robot_states: dict[str, EstimatedObject], field: FieldBounds2D
-    ) -> Tuple[Twist, bool]:
+    ) -> Tuple[Twist, GoalProgress]:
         now = rospy.Time.now()
         if self.controlled_robot not in robot_states:
             rospy.logwarn_throttle(1, f"Robot {self.controlled_robot} not found in robot states")
-            return Twist(), False
+            return Twist(), GoalProgress(is_done=False)
 
         controlled_robot_state = robot_states[self.controlled_robot]
         controlled_robot_pose = Pose2D.from_msg(controlled_robot_state.pose.pose)
@@ -67,15 +68,17 @@ class CrashTrajectoryPlanner(PlannerInterface):
         goal_heading = (goal_point - controlled_robot_point).heading()
         is_in_angle_tolerance = abs(normalize_angle(goal_heading - controlled_robot_pose.theta)) < self.angle_tolerance
 
+        goal_progress = GoalProgress(is_done=False)
         if is_in_bounds or is_in_angle_tolerance:
             if self.planner.should_replan() or rospy.Time.now() - self.planner.start_time > (self.replan_interval):
                 rospy.logdebug(f"Replanning trajectory. {controlled_robot_pose} -> {goal_pose}")
                 self.planner.generate_trajectory(controlled_robot_state, goal_target, field)
                 self.visualization_publisher.publish(self.planner.visualize_trajectory())
-            twist = self.planner.compute(controlled_robot_pose)
+            twist, goal_progress = self.planner.compute(controlled_robot_pose)
         elif did_controlled_robot_move:
             twist = self.backaway_recover_engine.compute(dt, controlled_robot_pose, goal_pose)
         else:
             twist = self.thrash_recover_engine.compute(dt)
 
-        return twist, False
+        goal_progress.distance_to_goal = compute_feedback_distance(controlled_robot_state, goal_target)
+        return twist, goal_progress

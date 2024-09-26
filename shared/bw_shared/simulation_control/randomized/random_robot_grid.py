@@ -3,12 +3,13 @@ from dataclasses import dataclass
 
 import numpy as np
 from bw_interfaces.msg import ConfigureSimulation, SimulationConfig
+
 from bw_shared.configs.size import Size
 from bw_shared.enums.cage_model import CageModel
 from bw_shared.enums.simulation_scene import SimulationScene
 from bw_shared.enums.simulation_skyimage import SimulationSkyImage
-from perception_tools.simulation_control.make_objective import make_objective
-from perception_tools.simulation_control.randomized.random_camera_objective import get_random_camera_objective
+from bw_shared.simulation_control.make_objective import make_objective
+from bw_shared.simulation_control.randomized.random_camera_objective import get_random_camera_objective
 
 
 @dataclass

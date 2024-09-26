@@ -9,6 +9,7 @@ from geometry_msgs.msg import Twist
 
 from bw_navigation.planners.engines.pid_follower_engine import PidFollowerEngine
 from bw_navigation.planners.engines.trajectory_planner_engine_config import PidFollowerEngineConfig
+from bw_navigation.planners.goal_progress import GoalProgress, compute_feedback_distance
 from bw_navigation.planners.planner_interface import PlannerInterface
 
 
@@ -24,11 +25,14 @@ class CrashOpponent(PlannerInterface):
 
     def go_to_goal(
         self, dt: float, goal_target: EstimatedObject, robot_states: dict[str, EstimatedObject], field: FieldBounds2D
-    ) -> Tuple[Twist, bool]:
+    ) -> Tuple[Twist, GoalProgress]:
         if self.controlled_robot not in robot_states:
             rospy.logwarn_throttle(1, f"Robot {self.controlled_robot} not found in robot states")
-            return Twist(), False
-        controlled_robot_pose = Pose2D.from_msg(robot_states[self.controlled_robot].pose.pose)
+            return Twist(), GoalProgress(is_done=False)
+        controlled_robot = robot_states[self.controlled_robot]
+        controlled_robot_pose = Pose2D.from_msg(controlled_robot.pose.pose)
         goal_pose = Pose2D.from_msg(goal_target.pose.pose)
         twist = self.pid_follower.compute(dt, controlled_robot_pose, goal_pose)
-        return twist, False
+        return twist, GoalProgress(
+            is_done=False, distance_to_goal=compute_feedback_distance(controlled_robot, goal_target)
+        )

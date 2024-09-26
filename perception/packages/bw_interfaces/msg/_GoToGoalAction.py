@@ -23,7 +23,7 @@ from std_msgs.msg._Header import Header as std_msgs_msg_Header
 import genpy
 
 class GoToGoalAction(genpy.Message):
-  _md5sum: str = "31d820d9d731cf5987d32217c5a6bb78"
+  _md5sum: str = "5e3515f95f5b2be1b8b3e403b85fc4c7"
   _type: str = "bw_interfaces/GoToGoalAction"
   _has_header: bool = False  # flag to mark the presence of a Header object
   _full_text: str = """GoToGoalActionGoal action_goal
@@ -143,6 +143,8 @@ GoToGoalFeedback feedback
 ================================================================================
 MSG: bw_interfaces/GoToGoalFeedback
 float64 distance_to_goal
+float64 time_left
+float64 total_time
 """
   __slots__: List[str] = ['action_goal','action_result','action_feedback']
   _slot_types: List[str] = ['bw_interfaces/GoToGoalActionGoal','bw_interfaces/GoToGoalActionResult','bw_interfaces/GoToGoalActionFeedback']
@@ -281,8 +283,8 @@ float64 distance_to_goal
         _x = _x.encode('utf-8')
         length = len(_x)
       buff.write(struct.Struct('<I%ss'%length).pack(length, _x))
-      _x = self.action_feedback.feedback.distance_to_goal
-      buff.write(_get_struct_d().pack(_x))
+      _x = self
+      buff.write(_get_struct_3d().pack(_x.action_feedback.feedback.distance_to_goal, _x.action_feedback.feedback.time_left, _x.action_feedback.feedback.total_time))
     except struct.error as se: self._check_types(struct.error("%s: '%s' when writing '%s'" % (type(se), str(se), str(locals().get('_x', self)))))
     except TypeError as te: self._check_types(ValueError("%s: '%s' when writing '%s'" % (type(te), str(te), str(locals().get('_x', self)))))
 
@@ -448,9 +450,10 @@ float64 distance_to_goal
         self.action_feedback.status.text = bytes_[start:end].decode('utf-8', 'rosmsg')
       else:
         self.action_feedback.status.text = bytes_[start:end]
+      _x = self
       start = end
-      end += 8
-      (self.action_feedback.feedback.distance_to_goal,) = _get_struct_d().unpack(bytes_[start:end])
+      end += 24
+      (_x.action_feedback.feedback.distance_to_goal, _x.action_feedback.feedback.time_left, _x.action_feedback.feedback.total_time,) = _get_struct_3d().unpack(bytes_[start:end])
       return self
     except struct.error as e:
       raise genpy.DeserializationError(e)  # most likely buffer underfill
@@ -555,8 +558,8 @@ float64 distance_to_goal
         _x = _x.encode('utf-8')
         length = len(_x)
       buff.write(struct.Struct('<I%ss'%length).pack(length, _x))
-      _x = self.action_feedback.feedback.distance_to_goal
-      buff.write(_get_struct_d().pack(_x))
+      _x = self
+      buff.write(_get_struct_3d().pack(_x.action_feedback.feedback.distance_to_goal, _x.action_feedback.feedback.time_left, _x.action_feedback.feedback.total_time))
     except struct.error as se: self._check_types(struct.error("%s: '%s' when writing '%s'" % (type(se), str(se), str(locals().get('_x', self)))))
     except TypeError as te: self._check_types(ValueError("%s: '%s' when writing '%s'" % (type(te), str(te), str(locals().get('_x', self)))))
 
@@ -723,9 +726,10 @@ float64 distance_to_goal
         self.action_feedback.status.text = bytes_[start:end].decode('utf-8', 'rosmsg')
       else:
         self.action_feedback.status.text = bytes_[start:end]
+      _x = self
       start = end
-      end += 8
-      (self.action_feedback.feedback.distance_to_goal,) = _get_struct_d().unpack(bytes_[start:end])
+      end += 24
+      (_x.action_feedback.feedback.distance_to_goal, _x.action_feedback.feedback.time_left, _x.action_feedback.feedback.total_time,) = _get_struct_3d().unpack(bytes_[start:end])
       return self
     except struct.error as e:
       raise genpy.DeserializationError(e)  # most likely buffer underfill
@@ -746,6 +750,12 @@ def _get_struct_3I():
     if _struct_3I is None:
         _struct_3I = struct.Struct("<3I")
     return _struct_3I
+_struct_3d = None
+def _get_struct_3d():
+    global _struct_3d
+    if _struct_3d is None:
+        _struct_3d = struct.Struct("<3d")
+    return _struct_3d
 _struct_7d = None
 def _get_struct_7d():
     global _struct_7d
@@ -764,9 +774,3 @@ def _get_struct_B3I():
     if _struct_B3I is None:
         _struct_B3I = struct.Struct("<B3I")
     return _struct_B3I
-_struct_d = None
-def _get_struct_d():
-    global _struct_d
-    if _struct_d is None:
-        _struct_d = struct.Struct("<d")
-    return _struct_d

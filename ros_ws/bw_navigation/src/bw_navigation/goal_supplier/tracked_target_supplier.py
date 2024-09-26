@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Callable, List, Optional
 
 from bw_interfaces.msg import EstimatedObject, GoToGoalGoal
 from bw_shared.geometry.pose2d import Pose2D
@@ -12,7 +12,7 @@ class TrackedTargetSupplier(GoalSupplierInterface):
     def __init__(self, controlled_robot: str, opponent_names: List[str]) -> None:
         self.opponent_names = opponent_names
         self.controlled_robot = controlled_robot
-        self.target_selectors = {
+        self.target_selectors: dict[TargetType, Callable[[dict[str, EstimatedObject]], Optional[EstimatedObject]]] = {
             TargetType.NEAREST_OPPONENT: self.nearest_target,
             TargetType.LARGEST_OPPONENT: self.largest_target,
         }
@@ -36,18 +36,17 @@ class TrackedTargetSupplier(GoalSupplierInterface):
                 nearest_distance = distance
         return nearest_target
 
-    def largest_target(self, robot_states: dict[str, EstimatedObject]) -> Optional[Pose2D]:
-        largest_target = None
+    def largest_target(self, robot_states: dict[str, EstimatedObject]) -> Optional[EstimatedObject]:
+        largest_target: Optional[EstimatedObject] = None
         largest_size = 0.0
         for name, state in robot_states.items():
             if name not in self.opponent_names:
                 continue
-            target_pose = Pose2D.from_msg(state.pose.pose)
             size = XYZ.from_msg(state.size).magnitude()
             if size > largest_size:
-                largest_target = target_pose
+                largest_target = state
                 largest_size = size
         return largest_target
 
-    def get_goal(self, robot_states: dict[str, EstimatedObject], field: EstimatedObject) -> Optional[Pose2D]:
+    def get_goal(self, robot_states: dict[str, EstimatedObject], field: EstimatedObject) -> Optional[EstimatedObject]:
         return self.target_selectors[self.target_type](robot_states)
