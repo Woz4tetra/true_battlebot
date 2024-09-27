@@ -84,6 +84,8 @@ class BwNavigationNode:
         rospy.loginfo("Navigation is ready")
 
     def estimated_field_callback(self, estimated_field: EstimatedObject) -> None:
+        if not self.field.header.frame_id:
+            rospy.loginfo("Field received")
         self.field = estimated_field
         half_x = estimated_field.size.x / 2
         half_y = estimated_field.size.y / 2

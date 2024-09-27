@@ -37,7 +37,7 @@ class ThrashRecoveryConfig:
 @dataclass
 class PathPlannerConfig:
     max_velocity: float = 2.0  # m/s
-    max_acceleration: float = 3.0  # m/s^2
+    max_acceleration: float = 1.0  # m/s^2
     max_centripetal_acceleration: Optional[float] = None  # m/s^2
     track_width: float = 0.2  # meters
 

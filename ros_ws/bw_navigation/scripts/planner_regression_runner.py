@@ -15,7 +15,7 @@ from bw_shared.simulation_control.simulation_controller import SimulationControl
 from bw_tools.messages.cage_corner import CageCorner
 from bw_tools.messages.goal_strategy import GoalStrategy
 from bw_tools.messages.goal_type import GoalType
-from geometry_msgs.msg import PoseStamped, TwistStamped
+from geometry_msgs.msg import PoseStamped, Twist, TwistStamped
 from nav_msgs.msg import Odometry
 from rosbag.bag import Bag
 
@@ -25,9 +25,9 @@ class AppData:
     total_time_set: Event
     bag: Bag
     total_time: float = 0.0
-    expected_trajectory: Trajectory = field(default_factory=lambda: Trajectory())
     recorded_trajectory: Trajectory = field(default_factory=lambda: Trajectory())
     measured_trajectory: Trajectory = field(default_factory=lambda: Trajectory())
+    commands: list[TwistStamped] = field(default_factory=list)
     lock: Lock = field(default_factory=Lock)
     sequence: int = 0
 
@@ -36,15 +36,20 @@ class AppData:
 class RunConfig:
     initial_pose: Pose2D
     goal_pose: Pose2D
-    linear_pid: PidConfig = PidConfig(kp=20.0, ki=0.1, kd=0.005, kf=1.0)
+    linear_pid: PidConfig = PidConfig(kp=30.0, ki=0.1, kd=0.005, kf=3.0)
     angular_pid: PidConfig = PidConfig(kp=30.0, ki=0.01, kd=0.0001, kf=1.0)
 
 
 def feedback_cb(app: AppData, feedback: GoToGoalFeedback) -> None:
     if np.isnan(feedback.total_time):
         return
+    feedback.trajectory.header.seq = app.sequence
+    app.bag.write("expected_trajectory", feedback.trajectory)
     if not app.total_time_set.is_set():
-        app.expected_trajectory = feedback.trajectory
+        print(f"Starting pose: {feedback.trajectory.poses[0]}")
+        with app.lock:
+            app.recorded_trajectory = Trajectory()
+            app.measured_trajectory = Trajectory()
     app.total_time = feedback.total_time
     app.total_time_set.set()
 
@@ -130,9 +135,6 @@ def send_action_goal(app: AppData, go_to_goal_client: SimpleActionClient, run_co
 def wait_for_trajectory(app: AppData, simulation_controller: SimulationController) -> bool:
     app.total_time_set.clear()
     app.total_time_set.wait(timeout=5.0)
-    with app.lock:
-        app.recorded_trajectory = Trajectory()
-        app.measured_trajectory = Trajectory()
     if not app.total_time_set.is_set():
         rospy.logerr("Timed out waiting for total time")
         return False
@@ -143,11 +145,15 @@ def wait_for_trajectory(app: AppData, simulation_controller: SimulationControlle
         if rospy.is_shutdown():
             break
     with app.lock:
-        app.expected_trajectory.header.seq = app.sequence
         app.recorded_trajectory.header.seq = app.sequence
+        app.measured_trajectory.header.seq = app.sequence
         app.sequence += 1
-        app.bag.write("expected_trajectory", app.expected_trajectory)
         app.bag.write("recorded_trajectory", app.recorded_trajectory)
+        app.bag.write("measured_trajectory", app.measured_trajectory)
+        command_trajectory = Trajectory()
+        command_trajectory.header.seq = app.sequence
+        command_trajectory.twists = app.commands
+        app.bag.write("commands", command_trajectory)
     return True
 
 
@@ -173,6 +179,13 @@ def ground_truth_callback(app: AppData, msg: Odometry) -> None:
 
 def measured_callback(app: AppData, msg: Odometry) -> None:
     append_odom_to_trajectory(app, app.measured_trajectory, msg)
+
+
+def record_command(app: AppData, msg: Twist) -> None:
+    twist = TwistStamped()
+    twist.header.stamp = rospy.Time.now()
+    twist.twist = msg
+    app.commands.append(twist)
 
 
 def main() -> None:
@@ -205,14 +218,21 @@ def main() -> None:
         queue_size=1,
     )
 
+    rospy.Subscriber(
+        "/mini_bot/cmd_vel",
+        Twist,
+        lambda msg: record_command(app, msg),
+        queue_size=1,
+    )
+
     go_to_goal_client = SimpleActionClient("go_to_goal", GoToGoalAction)
     rospy.loginfo("Waiting for go to goal action server")
     go_to_goal_client.wait_for_server()
     rospy.loginfo("Go to goal action server is ready")
 
     run_config = RunConfig(
-        initial_pose=Pose2D(x=-1.0, y=0.0, theta=0.0),
-        goal_pose=Pose2D(x=1.0, y=0.0, theta=0.0),
+        initial_pose=Pose2D(x=-0.5, y=0.0, theta=0.0),
+        goal_pose=Pose2D(x=0.5, y=0.0, theta=0.0),
     )
     try:
         configure_simulation(simulation_controller, cage_corner_pub, run_config)
