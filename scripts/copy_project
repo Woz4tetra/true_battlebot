@@ -4,10 +4,11 @@ set -e
 
 echo "Copying project to ${ROS_WS_SRC}/${PROJECT_NAME} from /opt/${ORGANIZATION}/${PROJECT_NAME}"
 sudo chown 1000:1000 "${ROS_WS_ROOT}"
-mkdir -p "${ROS_WS_SRC}"
+rm -r "${ROS_WS_SRC}/${PROJECT_NAME:?}" || true
+mkdir -p "${ROS_WS_SRC}/${PROJECT_NAME}"
 PROJECT_ROS_SRC=/opt/"${ORGANIZATION}"/"${PROJECT_NAME}"/ros_ws/
 for dir in "${PROJECT_ROS_SRC}"/*; do
     if [ -d "${dir}" ]; then
-        ln -s "${dir}" "${ROS_WS_SRC}"
+        ln -s "${dir}" "${ROS_WS_SRC}/${PROJECT_NAME}"
     fi
 done
