@@ -36,7 +36,7 @@ services:
             - /home/${USER}/.ssh:/home/${ORGANIZATION}/.ssh:rw
             - /dev:/dev:rw
 
-        command: bash /opt/${ORGANIZATION}/scripts/lib/watch_for_changes.sh
+        command: sleep infinity
 
     true_battlebot_perception_devcontainer:
         image: ${PERCEPTION_IMAGE_VERSION}
