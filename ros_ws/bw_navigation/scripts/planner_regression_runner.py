@@ -15,7 +15,7 @@ from bw_shared.simulation_control.simulation_controller import SimulationControl
 from bw_tools.messages.cage_corner import CageCorner
 from bw_tools.messages.goal_strategy import GoalStrategy
 from bw_tools.messages.goal_type import GoalType
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped, TwistStamped
 from nav_msgs.msg import Odometry
 from rosbag.bag import Bag
 
@@ -27,6 +27,7 @@ class AppData:
     total_time: float = 0.0
     expected_trajectory: Trajectory = field(default_factory=lambda: Trajectory())
     recorded_trajectory: Trajectory = field(default_factory=lambda: Trajectory())
+    measured_trajectory: Trajectory = field(default_factory=lambda: Trajectory())
     lock: Lock = field(default_factory=Lock)
     sequence: int = 0
 
@@ -42,9 +43,10 @@ class RunConfig:
 def feedback_cb(app: AppData, feedback: GoToGoalFeedback) -> None:
     if np.isnan(feedback.total_time):
         return
+    if not app.total_time_set.is_set():
+        app.expected_trajectory = feedback.trajectory
     app.total_time = feedback.total_time
     app.total_time_set.set()
-    app.expected_trajectory = feedback.trajectory
 
 
 def configure_simulation(
@@ -97,6 +99,22 @@ def configure_simulation(
     cage_corner_pub.publish(CageCorner.BLUE_SIDE.to_msg())
 
 
+def wait_for_poses_to_settle(app: AppData, run_config: RunConfig) -> None:
+    rospy.loginfo("Waiting for poses to settle")
+    while not rospy.is_shutdown():
+        measured_trajectory = app.recorded_trajectory
+        if len(measured_trajectory.poses) == 0:
+            continue
+        last_pose = measured_trajectory.poses[-1]
+        if (
+            np.abs(last_pose.pose.position.x - run_config.initial_pose.x) < 0.01
+            and np.abs(last_pose.pose.position.y - run_config.initial_pose.y) < 0.01
+        ):
+            break
+
+        rospy.sleep(0.1)
+
+
 def send_action_goal(app: AppData, go_to_goal_client: SimpleActionClient, run_config: RunConfig) -> None:
     goal_pose = PoseStamped()
     goal_pose.header.frame_id = "map"
@@ -114,6 +132,7 @@ def wait_for_trajectory(app: AppData, simulation_controller: SimulationControlle
     app.total_time_set.wait(timeout=5.0)
     with app.lock:
         app.recorded_trajectory = Trajectory()
+        app.measured_trajectory = Trajectory()
     if not app.total_time_set.is_set():
         rospy.logerr("Timed out waiting for total time")
         return False
@@ -132,13 +151,28 @@ def wait_for_trajectory(app: AppData, simulation_controller: SimulationControlle
     return True
 
 
-def ground_truth_callback(app: AppData, msg: Odometry) -> None:
+def append_odom_to_trajectory(app: AppData, trajectory: Trajectory, msg: Odometry) -> None:
     with app.lock:
-        trajectory = app.recorded_trajectory
         if trajectory.header.stamp == rospy.Time(0):
             trajectory.header = msg.header
-        trajectory.poses.append(msg.pose.pose)
-        trajectory.twists.append(msg.twist.twist)
+        pose = PoseStamped()
+        pose.header = msg.header
+        pose.pose = msg.pose.pose
+
+        twist = TwistStamped()
+        twist.header = msg.header
+        twist.twist = msg.twist.twist
+
+        trajectory.poses.append(pose)
+        trajectory.twists.append(twist)
+
+
+def ground_truth_callback(app: AppData, msg: Odometry) -> None:
+    append_odom_to_trajectory(app, app.recorded_trajectory, msg)
+
+
+def measured_callback(app: AppData, msg: Odometry) -> None:
+    append_odom_to_trajectory(app, app.measured_trajectory, msg)
 
 
 def main() -> None:
@@ -164,6 +198,13 @@ def main() -> None:
         queue_size=1,
     )
 
+    rospy.Subscriber(
+        "/mini_bot/odom",
+        Odometry,
+        lambda msg: measured_callback(app, msg),
+        queue_size=1,
+    )
+
     go_to_goal_client = SimpleActionClient("go_to_goal", GoToGoalAction)
     rospy.loginfo("Waiting for go to goal action server")
     go_to_goal_client.wait_for_server()
@@ -175,6 +216,7 @@ def main() -> None:
     )
     try:
         configure_simulation(simulation_controller, cage_corner_pub, run_config)
+        wait_for_poses_to_settle(app, run_config)
         send_action_goal(app, go_to_goal_client, run_config)
         wait_for_trajectory(app, simulation_controller)
     finally:

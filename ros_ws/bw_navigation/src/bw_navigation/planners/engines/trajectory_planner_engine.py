@@ -12,7 +12,7 @@ from bw_shared.geometry.field_bounds import FieldBounds2D
 from bw_shared.geometry.in_plane import line_bounds_intersection
 from bw_shared.geometry.pose2d import Pose2D
 from bw_shared.geometry.twist2d import Twist2D
-from geometry_msgs.msg import Twist
+from geometry_msgs.msg import PoseStamped, Twist, TwistStamped
 from visualization_msgs.msg import Marker, MarkerArray
 from wpimath import geometry
 from wpimath.controller import RamseteController
@@ -41,14 +41,16 @@ def trajectory_to_msg(start_time: rospy.Time, trajectory: Trajectory) -> Traject
     msg = TrajectoryMsg()
     msg.header.stamp = start_time
     msg.header.frame_id = "map"
-    msg.poses = [
-        Pose2D(x=state.pose.X(), y=state.pose.Y(), theta=get_theta(state.pose.rotation())).to_msg()
-        for state in trajectory.states()
-    ]
-    msg.twists = [
-        Twist2D(x=state.velocity, y=0.0, theta=state.velocity * state.curvature).to_msg()
-        for state in trajectory.states()
-    ]
+    for state in trajectory.states():
+        pose = PoseStamped()
+        pose.header.stamp = start_time + rospy.Duration.from_sec(state.t)
+        pose.pose = Pose2D(x=state.pose.X(), y=state.pose.Y(), theta=get_theta(state.pose.rotation())).to_msg()
+        msg.poses.append(pose)
+
+        twist = TwistStamped()
+        twist.header.stamp = start_time + rospy.Duration.from_sec(state.t)
+        twist.twist = Twist2D(x=state.velocity, y=0.0, theta=state.velocity * state.curvature).to_msg()
+        msg.twists.append(twist)
     return msg
 
 
