@@ -36,18 +36,20 @@ class AppData:
 class RunConfig:
     initial_pose: Pose2D
     goal_pose: Pose2D
-    linear_pid: PidConfig = PidConfig(kp=30.0, ki=0.1, kd=0.005, kf=3.0)
+    linear_pid: PidConfig = PidConfig(kp=10.0, ki=0.1, kd=0.005, kf=1.0)
     angular_pid: PidConfig = PidConfig(kp=30.0, ki=0.01, kd=0.0001, kf=1.0)
 
 
 def feedback_cb(app: AppData, feedback: GoToGoalFeedback) -> None:
     if np.isnan(feedback.total_time):
         return
-    feedback.trajectory.header.seq = app.sequence
-    app.bag.write("expected_trajectory", feedback.trajectory)
-    if not app.total_time_set.is_set():
-        print(f"Starting pose: {feedback.trajectory.poses[0]}")
-        with app.lock:
+    if rospy.is_shutdown():
+        return
+    with app.lock:
+        feedback.trajectory.header.seq = app.sequence
+        app.bag.write("expected_trajectory", feedback.trajectory)
+        if not app.total_time_set.is_set():
+            print(f"Starting pose: {feedback.trajectory.poses[0]}")
             app.recorded_trajectory = Trajectory()
             app.measured_trajectory = Trajectory()
     app.total_time = feedback.total_time
