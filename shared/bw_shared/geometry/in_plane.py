@@ -7,6 +7,8 @@ from typing import Optional
 import numpy as np
 
 from bw_shared.geometry.field_bounds import FieldBounds2D
+from bw_shared.geometry.pose2d import Pose2D
+from bw_shared.geometry.xy import XY
 
 
 def triangle_area(p_1: np.ndarray, p_2: np.ndarray, p_3: np.ndarray) -> float:
@@ -88,8 +90,9 @@ def line_line_intersection_parameterized(
             second point on the other line.
 
     Returns:
-        float: parameterization t where t = 0,1 corresponds to
-            reference_line[0], reference_line[1]
+        tuple[float, float]:
+            parameterization t where t = 0,1 corresponds to reference_line[0], reference_line[1].
+            parameterization u where u = 0,1 corresponds to other_line[0], other_line[1].
     """
 
     p_1 = reference_line[0]
@@ -125,16 +128,23 @@ def line_line_intersection(reference_line: np.ndarray, other_line: np.ndarray) -
     return interpolate_on_segment(reference_line, params[0])
 
 
-def line_bounds_intersection(segment: np.ndarray, bounds: FieldBounds2D) -> list[np.ndarray]:
+def bound_to_segments(bounds: FieldBounds2D) -> list[np.ndarray]:
     """
-    Calculates the intersection point between the segment and the field bounds.
+    Converts the field bounds into a list of line segments.
     """
-    bound_segments = [
+    return [
         np.array([[bounds[0].x, bounds[0].y], [bounds[1].x, bounds[0].y]]),
         np.array([[bounds[1].x, bounds[0].y], [bounds[1].x, bounds[1].y]]),
         np.array([[bounds[1].x, bounds[1].y], [bounds[0].x, bounds[1].y]]),
         np.array([[bounds[0].x, bounds[1].y], [bounds[0].x, bounds[0].y]]),
     ]
+
+
+def line_bounds_intersection(segment: np.ndarray, bounds: FieldBounds2D) -> list[np.ndarray]:
+    """
+    Calculates the intersection point between the segment and the field bounds.
+    """
+    bound_segments = bound_to_segments(bounds)
     intersections = []
     for bound_segment in bound_segments:
         params = line_line_intersection_parameterized(segment, bound_segment)
@@ -145,3 +155,30 @@ def line_bounds_intersection(segment: np.ndarray, bounds: FieldBounds2D) -> list
             intersection = interpolate_on_segment(segment, t_param)
             intersections.append(intersection)
     return intersections
+
+
+def nearest_projected_point(pose: Pose2D, bounds: FieldBounds2D) -> Optional[XY]:
+    """
+    Calculates the nearest point on the field bounds to the pose when projected along the pose's heading.
+
+    Args:
+        pose: The pose from which to project.
+        bounds: The field bounds.
+
+    Returns:
+        XY: Nearest point on the field bounds to the pose when projected along the pose's heading.
+    """
+    bound_segments = bound_to_segments(bounds)
+    segment = np.array([[pose.x, pose.y], [pose.x + np.cos(pose.theta), pose.y + np.sin(pose.theta)]])
+    nearest_intersection = None
+    nearest_t_param = float("inf")
+    for bound_segment in bound_segments:
+        params = line_line_intersection_parameterized(segment, bound_segment)
+        if params is None:
+            continue
+        t_param, u_param = params
+        if 0 <= t_param and 0 <= u_param <= 1 and t_param < nearest_t_param:
+            intersection = interpolate_on_segment(segment, t_param)
+            nearest_intersection = intersection
+            nearest_t_param = t_param
+    return XY(nearest_intersection[0], nearest_intersection[1]) if nearest_intersection is not None else None

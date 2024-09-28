@@ -11,11 +11,8 @@ import serial
 from bw_interfaces.msg import TelemetryStatus
 from bw_shared.enums.enum_auto_lower import EnumAutoLowerStr, auto
 from bw_shared.geometry.rpy import RPY
-from bw_shared.pid.config import PidConfig
-from bw_shared.pid.pid import PID
 from bw_tools.get_param import get_param
 from geometry_msgs.msg import Twist
-from nav_msgs.msg import Odometry
 from sensor_msgs.msg import Imu
 from serial.tools.list_ports import comports
 from std_msgs.msg import Header, String
@@ -88,7 +85,6 @@ class MiniBotBridge:
         self.lookup_table_key = LookupTableKey(get_param("~lookup_table", "prefitted_lookup"))
         self.lookup_table_path = Path(get_param("~lookup_table_path", "config/lookup_table.json"))
         self.command_timeout = rospy.Duration.from_sec(get_param("~command_timeout", 0.5))
-        self.feedback_topic = get_param("~feedback_topic", "")
         wheel_base_width = get_param("~wheel_base_width", 0.128)
         wheel_radius = get_param("~wheel_radius", 0.025)
         self.linear_deadband_percent = get_param("~linear_deadband_percent", 0.02)
@@ -98,14 +94,7 @@ class MiniBotBridge:
         self.max_command = 1000
         self.min_command = -1000
 
-        self.enable_feedback = bool(self.feedback_topic)
-        if self.enable_feedback:
-            rospy.loginfo(f"Feedback enabled on topic {self.feedback_topic}")
-
         package_path = Path(rospack.get_path("bw_teleop"))
-
-        self.linear_pid = PID(PidConfig(kp=0.1, ki=0.0, kd=0.0, kf=1.0))
-        self.angular_pid = PID(PidConfig(kp=0.1, ki=0.0, kd=0.0, kf=1.0))
 
         self.lookup_table: LookupInterface = {
             LookupTableKey.PASSTHROUGH: PassthroughLookup(),
@@ -126,15 +115,10 @@ class MiniBotBridge:
         self.command: list[bytes] = [b"", b""]
         self.telemetry_status = TelemetryStatus()
         self.did_status_update = False
-        self.last_odom = Odometry()
-        self.last_twist_time = rospy.Time.now()
 
         self.imu_pub = rospy.Publisher("imu", Imu, queue_size=1)
         self.telemetry_pub = rospy.Publisher("telemetry_status", TelemetryStatus, queue_size=1, latch=True)
         self.trainer_port_pub = rospy.Publisher("trainer_port", String, queue_size=1)
-        if self.feedback_topic:
-            self.odom_sub = rospy.Subscriber(self.feedback_topic, Odometry, self.feedback_callback, queue_size=1)
-        self.output_pub = rospy.Publisher("output", Twist, queue_size=10)
 
         self.telemetry_pub.publish(self.telemetry_status)
 
@@ -152,34 +136,14 @@ class MiniBotBridge:
             self.telemetry_status.controller_connected = False
         self.telemetry_pub.publish(self.telemetry_status)
 
-    def apply_feedback(self, input_twist: Twist) -> Twist:
-        if not self.enable_feedback:
-            return input_twist
-
-        linear_x = input_twist.linear.x
-        angular_z = input_twist.angular.z
-
-        now = rospy.Time.now()
-        dt = now - self.last_twist_time
-        self.last_twist_time = now
-        if dt > self.command_timeout:
-            rospy.logwarn(f"Time since last twist command too large: {dt.to_sec()}s. Skipping feedback control.")
-        else:
-            dt_s = dt.to_sec()
-            linear_x = self.linear_pid.update(linear_x, self.last_odom.twist.twist.linear.x, dt_s)
-            angular_z = self.angular_pid.update(angular_z, self.last_odom.twist.twist.angular.z, dt_s)
-
-        output_twist = Twist()
-        output_twist.linear.x = linear_x
-        output_twist.angular.z = angular_z
-
-        return output_twist
-
     def twist_callback(self, msg: Twist) -> None:
-        twist = self.apply_feedback(msg)
-        linear_x, angular_z = self.lookup_table.lookup(twist.linear.x, -1 * twist.angular.z)
+        linear_x = msg.linear.x
+        angular_z = msg.angular.z
+        if abs(linear_x) > 1.0:
+            angular_z *= abs(linear_x) * 0.7
         linear_x = self.apply_deadband(linear_x, self.linear_deadband_percent, self.epsilon_percent)
         angular_z = self.apply_deadband(angular_z, self.angular_deadband_percent, self.epsilon_percent)
+        linear_x, angular_z = self.lookup_table.lookup(linear_x, -1 * angular_z)
         linear_value = int(self.neutral_command * linear_x)
         angular_value = int(self.neutral_command * angular_z)
         linear_value = max(self.min_command, min(self.max_command, linear_value))
@@ -195,9 +159,6 @@ class MiniBotBridge:
         if abs_velocity < deadband_percent:
             return math.copysign(deadband_percent, velocity)
         return velocity
-
-    def feedback_callback(self, msg: Odometry) -> None:
-        self.last_odom = msg
 
     def get_telemetry(self) -> None:
         response = self.device.read_all()

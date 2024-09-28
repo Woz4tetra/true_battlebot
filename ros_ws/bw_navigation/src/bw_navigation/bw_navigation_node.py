@@ -37,6 +37,7 @@ class BwNavigationNode:
         self.goal_tolerance = get_param("~goal_tolerance", 0.1)
         self.tick_rate = get_param("~tick_rate", 100.0)
         self.friendly_fire = get_param("~friendly_fire", False)
+        self.try_again_if_not_in_tolerance = get_param("~try_again_if_not_in_tolerance", True)
 
         robot_configs = {robot.name: robot for robot in shared_config.robots.robots}
         if self.controlled_robot not in robot_configs:
@@ -166,6 +167,9 @@ class BwNavigationNode:
 
             if goal_progress.is_done:
                 is_success = goal_progress.distance_to_goal < self.goal_tolerance
+                if not is_success and self.try_again_if_not_in_tolerance:
+                    rospy.loginfo("Goal not reached, trying again")
+                    continue
                 rospy.loginfo(f"Planner finished successfully: {is_success}")
                 self.goal_server.set_succeeded(GoToGoalResult(success=is_success))
                 break

@@ -6,11 +6,25 @@ from bw_shared.pid.config import PidConfig
 
 @dataclass
 class PidFollowerEngineConfig:
-    linear_pid: PidConfig = PidConfig(kp=3.0, ki=0.0, kd=0.1, kf=0.0)
-    angular_pid: PidConfig = PidConfig(kp=6.0, ki=0.01, kd=0.1, kf=0.0)
+    linear_pid: PidConfig = PidConfig(kp=3.0, ki=0.0, kd=0.0, kf=1.0)
+    angular_pid: PidConfig = PidConfig(kp=6.0, ki=0.0, kd=0.0, kf=1.0)
     always_face_forward: bool = False
     clamp_linear: Optional[tuple[float, float]] = None
     clamp_angular: Optional[tuple[float, float]] = None
+
+
+@dataclass
+class BackawayRecoverConfig:
+    linear_velocity: float = 5.0  # m/s
+    rotate_velocity: float = 8.0  # rad/s
+    angle_in_tolerance: float = 0.1  # radians
+
+
+@dataclass
+class ThrashRecoveryConfig:
+    direction_change_interval: float = 0.5
+    linear_magnitude: float = 5.0
+    angular_magnitude: float = 8.0
 
 
 @dataclass
@@ -28,23 +42,16 @@ class RamseteConfig:
 
 
 @dataclass
-class ThrashRecoveryConfig:
-    direction_change_interval: float = 0.5
-    linear_magnitude: float = 2.0
-    angular_magnitude: float = 0.5
-
-
-@dataclass
 class PathPlannerConfig:
-    max_velocity: float = 2.0  # m/s
-    max_acceleration: float = 1.0  # m/s^2
+    max_velocity: float = 6.0  # m/s
+    max_acceleration: float = 3.0  # m/s^2
     max_centripetal_acceleration: Optional[float] = None  # m/s^2
-    track_width: float = 0.2  # meters
+    track_width: float = 0.128  # meters
 
-    move_threshold: float = 0.05  # meters
+    move_threshold: float = 0.1  # meters
     move_timeout: float = 1.0  # seconds
 
-    backaway_recover: PidFollowerEngineConfig = field(default_factory=PidFollowerEngineConfig)
+    backaway_recover: BackawayRecoverConfig = field(default_factory=BackawayRecoverConfig)
     trajectory_planner_engine: TrajectoryPlannerEngineConfig = field(default_factory=TrajectoryPlannerEngineConfig)
     ramsete: RamseteConfig = field(default_factory=RamseteConfig)
     thrash_recovery: ThrashRecoveryConfig = field(default_factory=ThrashRecoveryConfig)

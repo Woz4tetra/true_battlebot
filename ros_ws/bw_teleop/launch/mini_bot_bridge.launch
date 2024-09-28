@@ -1,6 +1,5 @@
 <launch>
     <node name="mini_bot_bridge" pkg="bw_teleop" type="mini_bot_bridge.py" output="screen"
         respawn="true" clear_params="true">
-        <!-- <param name="feedback_topic" value="/mini_bot/odom"/> -->
     </node>
 </launch>
