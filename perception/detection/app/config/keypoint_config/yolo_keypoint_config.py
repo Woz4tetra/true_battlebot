@@ -10,6 +10,7 @@ class YoloKeypointConfig:
     model_path: str = "model.pt"
     metadata_path: str = "model_metadata.json"
     threshold: float = 0.85
+    iou_threshold: float = 0.5
     debug_timing: bool = False
     debug_image: bool = False
     model_to_system_labels: ModelToSystemLabelsMap = field(default_factory=ModelToSystemLabelsMap)

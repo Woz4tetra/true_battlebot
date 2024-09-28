@@ -245,30 +245,6 @@
             </div>
         </div>
 
-        <!-- Opponent configuration -->
-        <div class="grid-container">
-            <div class="grid-item">
-                <div>Opponent configuration</div>
-            </div>
-
-            <div class="grid-item">
-                <input class="number-input" type="number" id="num-opponents" onkeyup="onSetNumOpponents(this);" onchange="onSetNumOpponents(this);"/>
-            </div>
-
-            <button class="button" onclick="publishOpponentConfiguration()">
-                <div>Send</div>
-            </button>
-
-            <div class="grid-item">
-            </div>
-
-            <div class="grid-item">
-                <div class="grid-container" id="opponent-configuration-grid" style="width: 600px">
-                </div>
-            </div>
-        </div>
-
-
         <!-- Mode -->
         <div class="grid-container">
             <div class="grid-item">
@@ -306,6 +282,29 @@
 
             <button class="button" onclick="setRecordState(this, !recordState)">
                 <div>Start Recording</div>
+            </div>
+        </div>
+
+        <!-- Opponent configuration -->
+        <div class="grid-container">
+            <div class="grid-item">
+                <div>Opponent configuration</div>
+            </div>
+
+            <div class="grid-item">
+                <input class="number-input" type="number" id="num-opponents" onkeyup="onSetNumOpponents(this);" onchange="onSetNumOpponents(this);"/>
+            </div>
+
+            <button class="button" onclick="publishOpponentConfiguration()">
+                <div>Send</div>
+            </button>
+
+            <div class="grid-item">
+            </div>
+
+            <div class="grid-item">
+                <div class="grid-container" id="opponent-configuration-grid" style="width: 600px">
+                </div>
             </div>
         </div>
 

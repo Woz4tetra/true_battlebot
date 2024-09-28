@@ -76,9 +76,20 @@ class CrashTrajectoryPlanner(PlannerInterface):
                 self.visualization_publisher.publish(self.planner.visualize_trajectory())
             twist, goal_progress = self.planner.compute(controlled_robot_pose)
         elif did_controlled_robot_move:
+            rospy.logdebug(f"Backing away from wall. {controlled_robot_pose} -> {goal_pose}")
             twist = self.backaway_recover_engine.compute(dt, controlled_robot_pose, goal_pose)
         else:
+            rospy.logdebug(f"Thrashing to recover. {controlled_robot_pose} -> {goal_pose}")
             twist = self.thrash_recover_engine.compute(dt)
+
+        twist.linear.x = max(
+            -1 * self.config.max_velocity,
+            min(self.config.max_velocity, twist.linear.x),
+        )
+        twist.angular.z = max(
+            -1 * self.config.max_angular_velocity,
+            min(self.config.max_angular_velocity, twist.angular.z),
+        )
 
         goal_progress.distance_to_goal = compute_feedback_distance(controlled_robot_state, goal_target)
         return twist, goal_progress

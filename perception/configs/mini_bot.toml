@@ -4,8 +4,8 @@ target_tick_rate = 60.0
 type = "ZedCamera"
 serial_number = 33234316  # polarlized
 # serial_number = 33452020  # non-polarlized
-fps = 60
-resolution = "mode_vga"
+fps = 30
+resolution = "mode_hd720"
 
 [camera.video_settings]
 brightness = 4
@@ -50,8 +50,8 @@ exclude_filters = [
 type = "YoloKeypoint"
 debug_image = true
 threshold = 0.65
-model_path = "yolov8n-pose_2024-09-19.pt"
-metadata_path = "yolov8n-pose_2024-09-19.json"
+model_path = "yolov8x-pose_2024-09-19.pt"
+metadata_path = "yolov8x-pose_2024-09-19.json"
 
 [robot_keypoint.model_to_system_labels.mapping]
 "mr_stabs_mk1" = "controlled_robot"

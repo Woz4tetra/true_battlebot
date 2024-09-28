@@ -47,6 +47,8 @@ class YoloKeypoint(KeypointInterface):
             msg.data,
             verbose=self.config.debug_timing,
             conf=self.config.threshold,
+            nms=True,
+            iou=self.config.iou_threshold,
         )[0]
 
         ids = result.boxes.cpu().cls.int().numpy()  # get the class ids

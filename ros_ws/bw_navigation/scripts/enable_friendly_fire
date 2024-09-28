@@ -1,0 +1,3 @@
+#!/bin/bash
+
+rosparam set /bw_navigation/friendly_fire true
