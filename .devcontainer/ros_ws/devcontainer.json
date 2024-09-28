@@ -29,10 +29,10 @@
                 "timonwong.shellcheck",
                 "charliermarsh.ruff",
                 "matangover.mypy",
-                "twxs.cmake",
                 "ms-vscode.cpptools-extension-pack",
                 "redhat.vscode-xml",
-                "tamasfe.even-better-toml"
+                "tamasfe.even-better-toml",
+                "josetr.cmake-language-support-vscode"
             ]
         }
     }
