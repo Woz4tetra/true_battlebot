@@ -21,12 +21,13 @@ from geometry_msgs.msg._Pose import Pose as geometry_msgs_msg_Pose
 from geometry_msgs.msg._PoseStamped import PoseStamped as geometry_msgs_msg_PoseStamped
 from geometry_msgs.msg._Quaternion import Quaternion as geometry_msgs_msg_Quaternion
 from geometry_msgs.msg._Twist import Twist as geometry_msgs_msg_Twist
+from geometry_msgs.msg._TwistStamped import TwistStamped as geometry_msgs_msg_TwistStamped
 from geometry_msgs.msg._Vector3 import Vector3 as geometry_msgs_msg_Vector3
 from std_msgs.msg._Header import Header as std_msgs_msg_Header
 import genpy
 
 class GoToGoalAction(genpy.Message):
-  _md5sum: str = "80d187c08e5363f9ad06f9eb9b10385d"
+  _md5sum: str = "10d260c55f40d89566344f59321b5253"
   _type: str = "bw_interfaces/GoToGoalAction"
   _has_header: bool = False  # flag to mark the presence of a Header object
   _full_text: str = """GoToGoalActionGoal action_goal
@@ -145,6 +146,7 @@ GoToGoalFeedback feedback
 
 ================================================================================
 MSG: bw_interfaces/GoToGoalFeedback
+bool is_done
 float64 distance_to_goal
 float64 time_left
 float64 total_time
@@ -153,8 +155,14 @@ bw_interfaces/Trajectory trajectory
 ================================================================================
 MSG: bw_interfaces/Trajectory
 Header header
-geometry_msgs/Pose[] poses
-geometry_msgs/Twist[] twists
+geometry_msgs/PoseStamped[] poses
+geometry_msgs/TwistStamped[] twists
+
+================================================================================
+MSG: geometry_msgs/TwistStamped
+# A twist with reference coordinate frame and timestamp
+Header header
+Twist twist
 
 ================================================================================
 MSG: geometry_msgs/Twist
@@ -312,7 +320,7 @@ float64 z"""
         length = len(_x)
       buff.write(struct.Struct('<I%ss'%length).pack(length, _x))
       _x = self
-      buff.write(_get_struct_3d3I().pack(_x.action_feedback.feedback.distance_to_goal, _x.action_feedback.feedback.time_left, _x.action_feedback.feedback.total_time, _x.action_feedback.feedback.trajectory.header.seq, _x.action_feedback.feedback.trajectory.header.stamp.secs, _x.action_feedback.feedback.trajectory.header.stamp.nsecs))
+      buff.write(_get_struct_B3d3I().pack(_x.action_feedback.feedback.is_done, _x.action_feedback.feedback.distance_to_goal, _x.action_feedback.feedback.time_left, _x.action_feedback.feedback.total_time, _x.action_feedback.feedback.trajectory.header.seq, _x.action_feedback.feedback.trajectory.header.stamp.secs, _x.action_feedback.feedback.trajectory.header.stamp.nsecs))
       _x = self.action_feedback.feedback.trajectory.header.frame_id
       length = len(_x)
       if python3 or type(_x) == unicode:
@@ -322,20 +330,46 @@ float64 z"""
       length = len(self.action_feedback.feedback.trajectory.poses)
       buff.write(_struct_I.pack(length))
       for val1 in self.action_feedback.feedback.trajectory.poses:
-        _v61 = val1.position
-        _x = _v61
-        buff.write(_get_struct_3d().pack(_x.x, _x.y, _x.z))
-        _v62 = val1.orientation
+        _v61 = val1.header
+        _x = _v61.seq
+        buff.write(_get_struct_I().pack(_x))
+        _v62 = _v61.stamp
         _x = _v62
+        buff.write(_get_struct_2I().pack(_x.secs, _x.nsecs))
+        _x = _v61.frame_id
+        length = len(_x)
+        if python3 or type(_x) == unicode:
+          _x = _x.encode('utf-8')
+          length = len(_x)
+        buff.write(struct.Struct('<I%ss'%length).pack(length, _x))
+        _v63 = val1.pose
+        _v64 = _v63.position
+        _x = _v64
+        buff.write(_get_struct_3d().pack(_x.x, _x.y, _x.z))
+        _v65 = _v63.orientation
+        _x = _v65
         buff.write(_get_struct_4d().pack(_x.x, _x.y, _x.z, _x.w))
       length = len(self.action_feedback.feedback.trajectory.twists)
       buff.write(_struct_I.pack(length))
       for val1 in self.action_feedback.feedback.trajectory.twists:
-        _v63 = val1.linear
-        _x = _v63
+        _v66 = val1.header
+        _x = _v66.seq
+        buff.write(_get_struct_I().pack(_x))
+        _v67 = _v66.stamp
+        _x = _v67
+        buff.write(_get_struct_2I().pack(_x.secs, _x.nsecs))
+        _x = _v66.frame_id
+        length = len(_x)
+        if python3 or type(_x) == unicode:
+          _x = _x.encode('utf-8')
+          length = len(_x)
+        buff.write(struct.Struct('<I%ss'%length).pack(length, _x))
+        _v68 = val1.twist
+        _v69 = _v68.linear
+        _x = _v69
         buff.write(_get_struct_3d().pack(_x.x, _x.y, _x.z))
-        _v64 = val1.angular
-        _x = _v64
+        _v70 = _v68.angular
+        _x = _v70
         buff.write(_get_struct_3d().pack(_x.x, _x.y, _x.z))
     except struct.error as se: self._check_types(struct.error("%s: '%s' when writing '%s'" % (type(se), str(se), str(locals().get('_x', self)))))
     except TypeError as te: self._check_types(ValueError("%s: '%s' when writing '%s'" % (type(te), str(te), str(locals().get('_x', self)))))
@@ -504,8 +538,9 @@ float64 z"""
         self.action_feedback.status.text = bytes_[start:end]
       _x = self
       start = end
-      end += 36
-      (_x.action_feedback.feedback.distance_to_goal, _x.action_feedback.feedback.time_left, _x.action_feedback.feedback.total_time, _x.action_feedback.feedback.trajectory.header.seq, _x.action_feedback.feedback.trajectory.header.stamp.secs, _x.action_feedback.feedback.trajectory.header.stamp.nsecs,) = _get_struct_3d3I().unpack(bytes_[start:end])
+      end += 37
+      (_x.action_feedback.feedback.is_done, _x.action_feedback.feedback.distance_to_goal, _x.action_feedback.feedback.time_left, _x.action_feedback.feedback.total_time, _x.action_feedback.feedback.trajectory.header.seq, _x.action_feedback.feedback.trajectory.header.stamp.secs, _x.action_feedback.feedback.trajectory.header.stamp.nsecs,) = _get_struct_B3d3I().unpack(bytes_[start:end])
+      self.action_feedback.feedback.is_done = bool(self.action_feedback.feedback.is_done)
       start = end
       end += 4
       (length,) = _struct_I.unpack(bytes_[start:end])
@@ -520,14 +555,33 @@ float64 z"""
       (length,) = _struct_I.unpack(bytes_[start:end])
       self.action_feedback.feedback.trajectory.poses = []
       for i in range(0, length):
-        val1 = geometry_msgs_msg_Pose()
-        _v65 = val1.position
-        _x = _v65
+        val1 = geometry_msgs_msg_PoseStamped()
+        _v71 = val1.header
+        start = end
+        end += 4
+        (_v71.seq,) = _get_struct_I().unpack(bytes_[start:end])
+        _v72 = _v71.stamp
+        _x = _v72
+        start = end
+        end += 8
+        (_x.secs, _x.nsecs,) = _get_struct_2I().unpack(bytes_[start:end])
+        start = end
+        end += 4
+        (length,) = _struct_I.unpack(bytes_[start:end])
+        start = end
+        end += length
+        if python3:
+          _v71.frame_id = bytes_[start:end].decode('utf-8', 'rosmsg')
+        else:
+          _v71.frame_id = bytes_[start:end]
+        _v73 = val1.pose
+        _v74 = _v73.position
+        _x = _v74
         start = end
         end += 24
         (_x.x, _x.y, _x.z,) = _get_struct_3d().unpack(bytes_[start:end])
-        _v66 = val1.orientation
-        _x = _v66
+        _v75 = _v73.orientation
+        _x = _v75
         start = end
         end += 32
         (_x.x, _x.y, _x.z, _x.w,) = _get_struct_4d().unpack(bytes_[start:end])
@@ -537,14 +591,33 @@ float64 z"""
       (length,) = _struct_I.unpack(bytes_[start:end])
       self.action_feedback.feedback.trajectory.twists = []
       for i in range(0, length):
-        val1 = geometry_msgs_msg_Twist()
-        _v67 = val1.linear
-        _x = _v67
+        val1 = geometry_msgs_msg_TwistStamped()
+        _v76 = val1.header
+        start = end
+        end += 4
+        (_v76.seq,) = _get_struct_I().unpack(bytes_[start:end])
+        _v77 = _v76.stamp
+        _x = _v77
+        start = end
+        end += 8
+        (_x.secs, _x.nsecs,) = _get_struct_2I().unpack(bytes_[start:end])
+        start = end
+        end += 4
+        (length,) = _struct_I.unpack(bytes_[start:end])
+        start = end
+        end += length
+        if python3:
+          _v76.frame_id = bytes_[start:end].decode('utf-8', 'rosmsg')
+        else:
+          _v76.frame_id = bytes_[start:end]
+        _v78 = val1.twist
+        _v79 = _v78.linear
+        _x = _v79
         start = end
         end += 24
         (_x.x, _x.y, _x.z,) = _get_struct_3d().unpack(bytes_[start:end])
-        _v68 = val1.angular
-        _x = _v68
+        _v80 = _v78.angular
+        _x = _v80
         start = end
         end += 24
         (_x.x, _x.y, _x.z,) = _get_struct_3d().unpack(bytes_[start:end])
@@ -654,7 +727,7 @@ float64 z"""
         length = len(_x)
       buff.write(struct.Struct('<I%ss'%length).pack(length, _x))
       _x = self
-      buff.write(_get_struct_3d3I().pack(_x.action_feedback.feedback.distance_to_goal, _x.action_feedback.feedback.time_left, _x.action_feedback.feedback.total_time, _x.action_feedback.feedback.trajectory.header.seq, _x.action_feedback.feedback.trajectory.header.stamp.secs, _x.action_feedback.feedback.trajectory.header.stamp.nsecs))
+      buff.write(_get_struct_B3d3I().pack(_x.action_feedback.feedback.is_done, _x.action_feedback.feedback.distance_to_goal, _x.action_feedback.feedback.time_left, _x.action_feedback.feedback.total_time, _x.action_feedback.feedback.trajectory.header.seq, _x.action_feedback.feedback.trajectory.header.stamp.secs, _x.action_feedback.feedback.trajectory.header.stamp.nsecs))
       _x = self.action_feedback.feedback.trajectory.header.frame_id
       length = len(_x)
       if python3 or type(_x) == unicode:
@@ -664,20 +737,46 @@ float64 z"""
       length = len(self.action_feedback.feedback.trajectory.poses)
       buff.write(_struct_I.pack(length))
       for val1 in self.action_feedback.feedback.trajectory.poses:
-        _v69 = val1.position
-        _x = _v69
+        _v81 = val1.header
+        _x = _v81.seq
+        buff.write(_get_struct_I().pack(_x))
+        _v82 = _v81.stamp
+        _x = _v82
+        buff.write(_get_struct_2I().pack(_x.secs, _x.nsecs))
+        _x = _v81.frame_id
+        length = len(_x)
+        if python3 or type(_x) == unicode:
+          _x = _x.encode('utf-8')
+          length = len(_x)
+        buff.write(struct.Struct('<I%ss'%length).pack(length, _x))
+        _v83 = val1.pose
+        _v84 = _v83.position
+        _x = _v84
         buff.write(_get_struct_3d().pack(_x.x, _x.y, _x.z))
-        _v70 = val1.orientation
-        _x = _v70
+        _v85 = _v83.orientation
+        _x = _v85
         buff.write(_get_struct_4d().pack(_x.x, _x.y, _x.z, _x.w))
       length = len(self.action_feedback.feedback.trajectory.twists)
       buff.write(_struct_I.pack(length))
       for val1 in self.action_feedback.feedback.trajectory.twists:
-        _v71 = val1.linear
-        _x = _v71
+        _v86 = val1.header
+        _x = _v86.seq
+        buff.write(_get_struct_I().pack(_x))
+        _v87 = _v86.stamp
+        _x = _v87
+        buff.write(_get_struct_2I().pack(_x.secs, _x.nsecs))
+        _x = _v86.frame_id
+        length = len(_x)
+        if python3 or type(_x) == unicode:
+          _x = _x.encode('utf-8')
+          length = len(_x)
+        buff.write(struct.Struct('<I%ss'%length).pack(length, _x))
+        _v88 = val1.twist
+        _v89 = _v88.linear
+        _x = _v89
         buff.write(_get_struct_3d().pack(_x.x, _x.y, _x.z))
-        _v72 = val1.angular
-        _x = _v72
+        _v90 = _v88.angular
+        _x = _v90
         buff.write(_get_struct_3d().pack(_x.x, _x.y, _x.z))
     except struct.error as se: self._check_types(struct.error("%s: '%s' when writing '%s'" % (type(se), str(se), str(locals().get('_x', self)))))
     except TypeError as te: self._check_types(ValueError("%s: '%s' when writing '%s'" % (type(te), str(te), str(locals().get('_x', self)))))
@@ -847,8 +946,9 @@ float64 z"""
         self.action_feedback.status.text = bytes_[start:end]
       _x = self
       start = end
-      end += 36
-      (_x.action_feedback.feedback.distance_to_goal, _x.action_feedback.feedback.time_left, _x.action_feedback.feedback.total_time, _x.action_feedback.feedback.trajectory.header.seq, _x.action_feedback.feedback.trajectory.header.stamp.secs, _x.action_feedback.feedback.trajectory.header.stamp.nsecs,) = _get_struct_3d3I().unpack(bytes_[start:end])
+      end += 37
+      (_x.action_feedback.feedback.is_done, _x.action_feedback.feedback.distance_to_goal, _x.action_feedback.feedback.time_left, _x.action_feedback.feedback.total_time, _x.action_feedback.feedback.trajectory.header.seq, _x.action_feedback.feedback.trajectory.header.stamp.secs, _x.action_feedback.feedback.trajectory.header.stamp.nsecs,) = _get_struct_B3d3I().unpack(bytes_[start:end])
+      self.action_feedback.feedback.is_done = bool(self.action_feedback.feedback.is_done)
       start = end
       end += 4
       (length,) = _struct_I.unpack(bytes_[start:end])
@@ -863,14 +963,33 @@ float64 z"""
       (length,) = _struct_I.unpack(bytes_[start:end])
       self.action_feedback.feedback.trajectory.poses = []
       for i in range(0, length):
-        val1 = geometry_msgs_msg_Pose()
-        _v73 = val1.position
-        _x = _v73
+        val1 = geometry_msgs_msg_PoseStamped()
+        _v91 = val1.header
+        start = end
+        end += 4
+        (_v91.seq,) = _get_struct_I().unpack(bytes_[start:end])
+        _v92 = _v91.stamp
+        _x = _v92
+        start = end
+        end += 8
+        (_x.secs, _x.nsecs,) = _get_struct_2I().unpack(bytes_[start:end])
+        start = end
+        end += 4
+        (length,) = _struct_I.unpack(bytes_[start:end])
+        start = end
+        end += length
+        if python3:
+          _v91.frame_id = bytes_[start:end].decode('utf-8', 'rosmsg')
+        else:
+          _v91.frame_id = bytes_[start:end]
+        _v93 = val1.pose
+        _v94 = _v93.position
+        _x = _v94
         start = end
         end += 24
         (_x.x, _x.y, _x.z,) = _get_struct_3d().unpack(bytes_[start:end])
-        _v74 = val1.orientation
-        _x = _v74
+        _v95 = _v93.orientation
+        _x = _v95
         start = end
         end += 32
         (_x.x, _x.y, _x.z, _x.w,) = _get_struct_4d().unpack(bytes_[start:end])
@@ -880,14 +999,33 @@ float64 z"""
       (length,) = _struct_I.unpack(bytes_[start:end])
       self.action_feedback.feedback.trajectory.twists = []
       for i in range(0, length):
-        val1 = geometry_msgs_msg_Twist()
-        _v75 = val1.linear
-        _x = _v75
+        val1 = geometry_msgs_msg_TwistStamped()
+        _v96 = val1.header
+        start = end
+        end += 4
+        (_v96.seq,) = _get_struct_I().unpack(bytes_[start:end])
+        _v97 = _v96.stamp
+        _x = _v97
+        start = end
+        end += 8
+        (_x.secs, _x.nsecs,) = _get_struct_2I().unpack(bytes_[start:end])
+        start = end
+        end += 4
+        (length,) = _struct_I.unpack(bytes_[start:end])
+        start = end
+        end += length
+        if python3:
+          _v96.frame_id = bytes_[start:end].decode('utf-8', 'rosmsg')
+        else:
+          _v96.frame_id = bytes_[start:end]
+        _v98 = val1.twist
+        _v99 = _v98.linear
+        _x = _v99
         start = end
         end += 24
         (_x.x, _x.y, _x.z,) = _get_struct_3d().unpack(bytes_[start:end])
-        _v76 = val1.angular
-        _x = _v76
+        _v100 = _v98.angular
+        _x = _v100
         start = end
         end += 24
         (_x.x, _x.y, _x.z,) = _get_struct_3d().unpack(bytes_[start:end])
@@ -918,12 +1056,6 @@ def _get_struct_3d():
     if _struct_3d is None:
         _struct_3d = struct.Struct("<3d")
     return _struct_3d
-_struct_3d3I = None
-def _get_struct_3d3I():
-    global _struct_3d3I
-    if _struct_3d3I is None:
-        _struct_3d3I = struct.Struct("<3d3I")
-    return _struct_3d3I
 _struct_4d = None
 def _get_struct_4d():
     global _struct_4d
@@ -948,3 +1080,9 @@ def _get_struct_B3I():
     if _struct_B3I is None:
         _struct_B3I = struct.Struct("<B3I")
     return _struct_B3I
+_struct_B3d3I = None
+def _get_struct_B3d3I():
+    global _struct_B3d3I
+    if _struct_B3d3I is None:
+        _struct_B3d3I = struct.Struct("<B3d3I")
+    return _struct_B3d3I

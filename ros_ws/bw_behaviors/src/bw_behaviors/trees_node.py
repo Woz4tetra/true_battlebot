@@ -8,7 +8,7 @@ from py_trees.trees import BehaviourTree
 from py_trees.visitors import DisplaySnapshotVisitor
 from std_msgs.msg import String
 
-from bw_behaviors.container import Container
+from bw_behaviors.container import Container, ContainerConfig
 from bw_behaviors.subtrees import make_mode_tree
 
 
@@ -38,9 +38,18 @@ class SparseDisplaySnapshotVisitor(DisplaySnapshotVisitor):
             self.tree_snapshot_pub.publish(self.ansi_converter.convert(self.status_str))
 
 
+def get_config_from_params() -> ContainerConfig:
+    config = ContainerConfig()
+    for attribute in ContainerConfig.__dataclass_fields__:
+        value = get_param(f"~{attribute}", getattr(config, attribute))
+        if value is not None:
+            setattr(config, attribute, value)
+    return config
+
+
 class TreesNode:
-    def __init__(self) -> None:
-        self.container = Container()
+    def __init__(self, config: ContainerConfig) -> None:
+        self.container = Container(config)
         self.tree = self.make_tree()
         self.tick_rate = get_param("~tick_rate", 10.0)
 
@@ -72,5 +81,6 @@ class TreesNode:
 
 if __name__ == "__main__":
     rospy.init_node("bw_behaviors", log_level=rospy.DEBUG)
-    node = TreesNode()
+    config = get_config_from_params()
+    node = TreesNode(config)
     node.run()

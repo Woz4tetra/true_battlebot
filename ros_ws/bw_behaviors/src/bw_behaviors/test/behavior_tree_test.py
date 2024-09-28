@@ -1,11 +1,12 @@
 import pytest
+from bw_behaviors.container import ContainerConfig
 from bw_behaviors.trees_node import TreesNode
 from bw_tools.messages.behavior_mode import BehaviorMode
 
 
 @pytest.fixture
 def node() -> TreesNode:
-    return TreesNode()
+    return TreesNode(ContainerConfig())
 
 
 def test_tick(node: TreesNode):

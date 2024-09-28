@@ -85,20 +85,20 @@ string frame_id
       length = len(self.objectives)
       buff.write(_struct_I.pack(length))
       for val1 in self.objectives:
-        _v117 = val1.header
-        _x = _v117.seq
+        _v189 = val1.header
+        _x = _v189.seq
         buff.write(_get_struct_I().pack(_x))
-        _v118 = _v117.stamp
-        _x = _v118
+        _v190 = _v189.stamp
+        _x = _v190
         buff.write(_get_struct_2I().pack(_x.secs, _x.nsecs))
-        _x = _v117.frame_id
+        _x = _v189.frame_id
         length = len(_x)
         if python3 or type(_x) == unicode:
           _x = _x.encode('utf-8')
           length = len(_x)
         buff.write(struct.Struct('<I%ss'%length).pack(length, _x))
-        _v119 = val1.duration
-        _x = _v119
+        _v191 = val1.duration
+        _x = _v191
         buff.write(_get_struct_2I().pack(_x.secs, _x.nsecs))
         _x = val1
         buff.write(_get_struct_2I().pack(_x.objective_index, _x.sequence_length))
@@ -134,12 +134,12 @@ string frame_id
       self.objectives = []
       for i in range(0, length):
         val1 = bw_interfaces_msg_SimulationObjectiveProgress()
-        _v120 = val1.header
+        _v192 = val1.header
         start = end
         end += 4
-        (_v120.seq,) = _get_struct_I().unpack(bytes_[start:end])
-        _v121 = _v120.stamp
-        _x = _v121
+        (_v192.seq,) = _get_struct_I().unpack(bytes_[start:end])
+        _v193 = _v192.stamp
+        _x = _v193
         start = end
         end += 8
         (_x.secs, _x.nsecs,) = _get_struct_2I().unpack(bytes_[start:end])
@@ -149,11 +149,11 @@ string frame_id
         start = end
         end += length
         if python3:
-          _v120.frame_id = bytes_[start:end].decode('utf-8', 'rosmsg')
+          _v192.frame_id = bytes_[start:end].decode('utf-8', 'rosmsg')
         else:
-          _v120.frame_id = bytes_[start:end]
-        _v122 = val1.duration
-        _x = _v122
+          _v192.frame_id = bytes_[start:end]
+        _v194 = val1.duration
+        _x = _v194
         start = end
         end += 8
         (_x.secs, _x.nsecs,) = _get_struct_2I().unpack(bytes_[start:end])
@@ -195,20 +195,20 @@ string frame_id
       length = len(self.objectives)
       buff.write(_struct_I.pack(length))
       for val1 in self.objectives:
-        _v123 = val1.header
-        _x = _v123.seq
+        _v195 = val1.header
+        _x = _v195.seq
         buff.write(_get_struct_I().pack(_x))
-        _v124 = _v123.stamp
-        _x = _v124
+        _v196 = _v195.stamp
+        _x = _v196
         buff.write(_get_struct_2I().pack(_x.secs, _x.nsecs))
-        _x = _v123.frame_id
+        _x = _v195.frame_id
         length = len(_x)
         if python3 or type(_x) == unicode:
           _x = _x.encode('utf-8')
           length = len(_x)
         buff.write(struct.Struct('<I%ss'%length).pack(length, _x))
-        _v125 = val1.duration
-        _x = _v125
+        _v197 = val1.duration
+        _x = _v197
         buff.write(_get_struct_2I().pack(_x.secs, _x.nsecs))
         _x = val1
         buff.write(_get_struct_2I().pack(_x.objective_index, _x.sequence_length))
@@ -245,12 +245,12 @@ string frame_id
       self.objectives = []
       for i in range(0, length):
         val1 = bw_interfaces_msg_SimulationObjectiveProgress()
-        _v126 = val1.header
+        _v198 = val1.header
         start = end
         end += 4
-        (_v126.seq,) = _get_struct_I().unpack(bytes_[start:end])
-        _v127 = _v126.stamp
-        _x = _v127
+        (_v198.seq,) = _get_struct_I().unpack(bytes_[start:end])
+        _v199 = _v198.stamp
+        _x = _v199
         start = end
         end += 8
         (_x.secs, _x.nsecs,) = _get_struct_2I().unpack(bytes_[start:end])
@@ -260,11 +260,11 @@ string frame_id
         start = end
         end += length
         if python3:
-          _v126.frame_id = bytes_[start:end].decode('utf-8', 'rosmsg')
+          _v198.frame_id = bytes_[start:end].decode('utf-8', 'rosmsg')
         else:
-          _v126.frame_id = bytes_[start:end]
-        _v128 = val1.duration
-        _x = _v128
+          _v198.frame_id = bytes_[start:end]
+        _v200 = val1.duration
+        _x = _v200
         start = end
         end += 8
         (_x.secs, _x.nsecs,) = _get_struct_2I().unpack(bytes_[start:end])

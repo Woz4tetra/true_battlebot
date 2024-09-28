@@ -78,13 +78,13 @@ string frame_id
       length = len(self.samples)
       buff.write(_struct_I.pack(length))
       for val1 in self.samples:
-        _v109 = val1.header
-        _x = _v109.seq
+        _v181 = val1.header
+        _x = _v181.seq
         buff.write(_get_struct_I().pack(_x))
-        _v110 = _v109.stamp
-        _x = _v110
+        _v182 = _v181.stamp
+        _x = _v182
         buff.write(_get_struct_2I().pack(_x.secs, _x.nsecs))
-        _x = _v109.frame_id
+        _x = _v181.frame_id
         length = len(_x)
         if python3 or type(_x) == unicode:
           _x = _x.encode('utf-8')
@@ -120,12 +120,12 @@ string frame_id
       self.samples = []
       for i in range(0, length):
         val1 = bw_interfaces_msg_MotorCharacterizationSample()
-        _v111 = val1.header
+        _v183 = val1.header
         start = end
         end += 4
-        (_v111.seq,) = _get_struct_I().unpack(bytes_[start:end])
-        _v112 = _v111.stamp
-        _x = _v112
+        (_v183.seq,) = _get_struct_I().unpack(bytes_[start:end])
+        _v184 = _v183.stamp
+        _x = _v184
         start = end
         end += 8
         (_x.secs, _x.nsecs,) = _get_struct_2I().unpack(bytes_[start:end])
@@ -135,9 +135,9 @@ string frame_id
         start = end
         end += length
         if python3:
-          _v111.frame_id = bytes_[start:end].decode('utf-8', 'rosmsg')
+          _v183.frame_id = bytes_[start:end].decode('utf-8', 'rosmsg')
         else:
-          _v111.frame_id = bytes_[start:end]
+          _v183.frame_id = bytes_[start:end]
         _x = val1
         start = end
         end += 12
@@ -172,13 +172,13 @@ string frame_id
       length = len(self.samples)
       buff.write(_struct_I.pack(length))
       for val1 in self.samples:
-        _v113 = val1.header
-        _x = _v113.seq
+        _v185 = val1.header
+        _x = _v185.seq
         buff.write(_get_struct_I().pack(_x))
-        _v114 = _v113.stamp
-        _x = _v114
+        _v186 = _v185.stamp
+        _x = _v186
         buff.write(_get_struct_2I().pack(_x.secs, _x.nsecs))
-        _x = _v113.frame_id
+        _x = _v185.frame_id
         length = len(_x)
         if python3 or type(_x) == unicode:
           _x = _x.encode('utf-8')
@@ -215,12 +215,12 @@ string frame_id
       self.samples = []
       for i in range(0, length):
         val1 = bw_interfaces_msg_MotorCharacterizationSample()
-        _v115 = val1.header
+        _v187 = val1.header
         start = end
         end += 4
-        (_v115.seq,) = _get_struct_I().unpack(bytes_[start:end])
-        _v116 = _v115.stamp
-        _x = _v116
+        (_v187.seq,) = _get_struct_I().unpack(bytes_[start:end])
+        _v188 = _v187.stamp
+        _x = _v188
         start = end
         end += 8
         (_x.secs, _x.nsecs,) = _get_struct_2I().unpack(bytes_[start:end])
@@ -230,9 +230,9 @@ string frame_id
         start = end
         end += length
         if python3:
-          _v115.frame_id = bytes_[start:end].decode('utf-8', 'rosmsg')
+          _v187.frame_id = bytes_[start:end].decode('utf-8', 'rosmsg')
         else:
-          _v115.frame_id = bytes_[start:end]
+          _v187.frame_id = bytes_[start:end]
         _x = val1
         start = end
         end += 12
