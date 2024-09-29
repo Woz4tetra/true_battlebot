@@ -132,7 +132,7 @@ ENV DEP_ROS_WS_SRC=${HOME}/dep_ws/src
 ENV ROS_WS_ROOT=${HOME}/ros_ws
 ENV ROS_WS_SRC=${ROS_WS_ROOT}/src
 
-ENV PATH=/opt/${ORGANIZATION}/scripts${PATH:+:${PATH}} \
+ENV PATH=/opt/${ORGANIZATION}/scripts:/opt/${ORGANIZATION}/${PROJECT_NAME}/ros_ws/scripts${PATH:+:${PATH}} \
     PYTHONPATH=/opt/${ORGANIZATION}/${PROJECT_NAME}/ros_ws/bw_tools:/opt/${ORGANIZATION}/${PROJECT_NAME}/shared${PYTHONPATH:+:${PYTHONPATH}} \
     PYTHONIOENCODING=utf-8 \
     PLATFORMIO_CORE_DIR=${ROS_WS_ROOT}/.platformio \

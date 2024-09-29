@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from enum import Enum, IntEnum
+from enum import Enum
+from typing import Any
 
 import numpy as np
 import open3d as o3d
@@ -22,39 +23,32 @@ class CloudFieldName(Enum):
     BGRA = "bgra"
 
 
-class CloudFieldType(IntEnum):
-    INT8 = 1
-    UINT8 = 2
-    INT16 = 3
-    UINT16 = 4
-    INT32 = 5
-    UINT32 = 6
-    FLOAT32 = 7
-    FLOAT64 = 8
-
-
 FIELD_TYPE_TO_NUMPY = {
-    CloudFieldType.INT8: np.int8,
-    CloudFieldType.UINT8: np.uint8,
-    CloudFieldType.INT16: np.int16,
-    CloudFieldType.UINT16: np.uint16,
-    CloudFieldType.INT32: np.int32,
-    CloudFieldType.UINT32: np.uint32,
-    CloudFieldType.FLOAT32: np.float32,
-    CloudFieldType.FLOAT64: np.float64,
+    PointField.INT8: np.int8,
+    PointField.UINT8: np.uint8,
+    PointField.INT16: np.int16,
+    PointField.UINT16: np.uint16,
+    PointField.INT32: np.int32,
+    PointField.UINT32: np.uint32,
+    PointField.FLOAT32: np.float32,
+    PointField.FLOAT64: np.float64,
 }
 
 
 FIELD_TYPE_TO_SIZE = {
-    CloudFieldType.INT8: 1,
-    CloudFieldType.UINT8: 1,
-    CloudFieldType.INT16: 2,
-    CloudFieldType.UINT16: 2,
-    CloudFieldType.INT32: 4,
-    CloudFieldType.UINT32: 4,
-    CloudFieldType.FLOAT32: 4,
-    CloudFieldType.FLOAT64: 8,
+    PointField.INT8: 1,
+    PointField.UINT8: 1,
+    PointField.INT16: 2,
+    PointField.UINT16: 2,
+    PointField.INT32: 4,
+    PointField.UINT32: 4,
+    PointField.FLOAT32: 4,
+    PointField.FLOAT64: 8,
 }
+
+
+DUMMY_FIELD_PREFIX = "__"
+SUPPORTED_COLOR_FIELDS = ["rgba", "rgb", "bgra", "rgb"]
 
 
 def to_o3d_intrinsics(camera_info: CameraInfo) -> o3d.camera.PinholeCameraIntrinsic:
@@ -78,6 +72,71 @@ def to_uint32_color(colors: np.ndarray) -> np.ndarray:
     colors_uint32 = (colors_uint8[..., 0] << 16) | (colors_uint8[..., 1] << 8) | (colors_uint8[..., 2])
 
     return colors_uint32
+
+
+def from_uint32_color(colors_uint32: np.ndarray, color_order: str) -> np.ndarray:
+    # Extract the individual color channels
+    if color_order.startswith("rgb"):
+        r = colors_uint32 & 0xFF
+        g = (colors_uint32 >> 8) & 0xFF
+        b = (colors_uint32 >> 16) & 0xFF
+    elif color_order.startswith("bgr"):
+        r = (colors_uint32 >> 16) & 0xFF
+        g = (colors_uint32 >> 8) & 0xFF
+        b = colors_uint32 & 0xFF
+
+    # Stack the channels back into an array
+    colors_uint8 = np.stack((r, g, b), axis=-1)
+
+    # Convert to float and scale to [0, 1]
+    colors = colors_uint8.astype(np.float32) / 255.0
+
+    return colors
+
+
+def fields_to_dtype(fields: list[PointField], point_step: int) -> dict[str, list[Any]]:
+    """Convert a list of PointFields to a numpy record datatype."""
+    offset = 0
+    type_def: dict[str, list[Any]] = {
+        "names": [],
+        "formats": [],
+        "offsets": [],
+    }
+    for f in fields:
+        while offset < f.offset:
+            # might be extra padding between fields
+            type_def["names"].append(f"{DUMMY_FIELD_PREFIX}{offset}")
+            type_def["formats"].append(np.uint8)
+            type_def["offsets"].append(offset)
+            offset += 1
+
+        dtype = FIELD_TYPE_TO_NUMPY[f.datatype]
+        if f.count != 1:
+            dtype = np.dtype((dtype, f.count))
+
+        type_def["names"].append(f.name)
+        type_def["formats"].append(dtype)
+        type_def["offsets"].append(f.offset)
+        offset += FIELD_TYPE_TO_SIZE[f.datatype] * f.count
+
+    # might be extra padding between points
+    while offset < point_step:
+        type_def["names"].append(f"{DUMMY_FIELD_PREFIX}{offset}")
+        type_def["formats"].append(np.uint8)
+        type_def["offsets"].append(offset)
+        offset += 1
+
+    return type_def
+
+
+def rospointcloud_to_array(cloud_msg: RosPointCloud):
+    # construct a numpy record type equivalent to the point type of this cloud
+    type_def = fields_to_dtype(cloud_msg.fields, cloud_msg.point_step)  # type: ignore
+
+    np_dtype = np.dtype(type_def)  # type: ignore
+
+    # parse the cloud into an array
+    return np.frombuffer(cloud_msg.data, np_dtype)
 
 
 @dataclass
@@ -138,16 +197,16 @@ class PointCloud:
         msg_fields = []
         if len(self.colors) == 0:
             fields = {
-                CloudFieldName.X: CloudFieldType.FLOAT32,
-                CloudFieldName.Y: CloudFieldType.FLOAT32,
-                CloudFieldName.Z: CloudFieldType.FLOAT32,
+                CloudFieldName.X: PointField.FLOAT32,
+                CloudFieldName.Y: PointField.FLOAT32,
+                CloudFieldName.Z: PointField.FLOAT32,
             }
         else:
             fields = {
-                CloudFieldName.X: CloudFieldType.FLOAT32,
-                CloudFieldName.Y: CloudFieldType.FLOAT32,
-                CloudFieldName.Z: CloudFieldType.FLOAT32,
-                self.color_encoding: CloudFieldType.UINT32,
+                CloudFieldName.X: PointField.FLOAT32,
+                CloudFieldName.Y: PointField.FLOAT32,
+                CloudFieldName.Z: PointField.FLOAT32,
+                self.color_encoding: PointField.UINT32,
             }
         point_step = 0
         for index, (sub_field, field_type) in enumerate(fields.items()):
@@ -190,4 +249,24 @@ class PointCloud:
             row_step=row_step,
             data=cloud_bytes,
             is_dense=bool(self.is_dense),
+        )
+
+    @classmethod
+    def from_msg(cls, msg: RosPointCloud) -> PointCloud:
+        cloud_array = rospointcloud_to_array(msg)
+        x = cloud_array["x"].view(np.float32)
+        y = cloud_array["y"].view(np.float32)
+        z = cloud_array["z"].view(np.float32)
+        points = np.stack((x, y, z), axis=-1)
+        colors = np.array([], dtype=np.uint32)
+        for color_field in SUPPORTED_COLOR_FIELDS:
+            if color_field in cloud_array.dtype.names:  # type: ignore
+                colors = from_uint32_color(cloud_array[color_field].view(np.uint32), color_field)
+                break
+        return PointCloud(
+            header=Header.from_msg(msg.header),
+            points=points,
+            colors=colors,
+            is_bigendian=msg.is_bigendian,
+            is_dense=msg.is_dense,
         )
