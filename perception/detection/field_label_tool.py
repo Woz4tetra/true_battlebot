@@ -7,6 +7,7 @@ import argcomplete
 from app.field_label.command_line_args import CommandLineArgs
 
 BAGS_DIR = "/media/storage/bags"
+DEFAULT_TOPIC = "/camera_0/point_cloud/cloud_registered"
 
 
 def parse_args() -> CommandLineArgs:
@@ -28,11 +29,17 @@ def parse_args() -> CommandLineArgs:
     bag_parser.add_argument(
         "cloud_topic",
         type=str,
-        default="/camera_0/point_cloud/cloud_registered",
+        default=DEFAULT_TOPIC,
         nargs="?",
     )
 
     topic_parser = subparsers.add_parser("topic")
+    topic_parser.add_argument(
+        "cloud_topic",
+        type=str,
+        default=DEFAULT_TOPIC,
+        nargs="?",
+    )
 
     argcomplete.autocomplete(parser)
 

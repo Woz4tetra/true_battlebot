@@ -112,7 +112,7 @@ def fields_to_dtype(fields: list[PointField], point_step: int) -> dict[str, list
 
         dtype = FIELD_TYPE_TO_NUMPY[f.datatype]
         if f.count != 1:
-            dtype = np.dtype((dtype, f.count))
+            dtype = np.dtype((dtype, f.count))  # type: ignore
 
         type_def["names"].append(f.name)
         type_def["formats"].append(dtype)
@@ -134,6 +134,7 @@ def rospointcloud_to_array(cloud_msg: RosPointCloud):
     type_def = fields_to_dtype(cloud_msg.fields, cloud_msg.point_step)  # type: ignore
 
     np_dtype = np.dtype(type_def)  # type: ignore
+    np_dtype = np_dtype.newbyteorder("<" if cloud_msg.is_bigendian else ">")
 
     # parse the cloud into an array
     return np.frombuffer(cloud_msg.data, np_dtype)

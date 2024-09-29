@@ -1,3 +1,5 @@
+from typing import cast
+
 import numpy as np
 import open3d as o3d
 from app.field_label.command_line_args import BagCommandLineArgs, CommandLineArgs, TopicCommandLineArgs
@@ -56,8 +58,8 @@ class FieldLabelApp:
     def run(self) -> None:
         match self.args.command:
             case "bag":
-                self.run_bag(self.args)
+                self.run_bag(cast(BagCommandLineArgs, self.args))
             case "topic":
-                self.run_topic(self.args)
+                self.run_topic(cast(TopicCommandLineArgs, self.args))
             case _:
                 raise RuntimeError(f"Unknown command: {self.args.command}")
