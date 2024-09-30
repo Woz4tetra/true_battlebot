@@ -7,12 +7,12 @@ import numpy as np
 import rospy
 from apriltag_ros.msg import AprilTagDetectionArray
 from bw_interfaces.msg import EstimatedObjectArray
+from bw_shared.geometry.camera.image_rectifier import ImageRectifier
 from bw_tools.configs.rosparam_client import get_shared_config
 from bw_tools.get_param import get_param
 from bw_tools.tag_detection.apriltag_detector import ApriltagDetector, ApriltagDetectorConfig
 from bw_tools.tag_detection.bundle_detector import BundleDetectorInterface, RansacBundleDetector
 from bw_tools.tag_detection.draw_helpers import draw_bundle
-from bw_tools.tag_detection.image_rectifier import ImageRectifier
 from bw_tools.tag_detection.tag_family import TagFamily
 from cv_bridge import CvBridge, CvBridgeError
 from sensor_msgs.msg import CameraInfo, Image

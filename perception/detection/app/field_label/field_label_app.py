@@ -6,16 +6,11 @@ import open3d as o3d
 import open3d.visualization
 from app.field_label.command_line_args import BagCommandLineArgs, CommandLineArgs, TopicCommandLineArgs
 from app.field_label.label_state import LabelState
+from bw_shared.geometry.camera.image_rectifier import ImageRectifier
 from perception_tools.messages.camera_data import CameraData
 from perception_tools.messages.image import Image
 from perception_tools.messages.point_cloud import PointCloud
 from rosbag.bag import Bag
-
-
-def nearest_point_in_cloud(cloud: o3d.geometry.PointCloud, point: np.ndarray) -> np.ndarray:
-    points = np.asarray(cloud.points)
-    distances = np.linalg.norm(points - point, axis=1)
-    return points[np.argmin(distances)]
 
 
 def cloud_to_open3d(cloud: PointCloud, max_value: float = 10.0) -> o3d.geometry.PointCloud:
@@ -78,28 +73,24 @@ class FieldLabelApp:
         cv_window_name = "Image"
         window_height = 800
         ratio = window_height / camera_data.color_image.data.shape[1]
-        self.labels.ratio = ratio
-        image_height, image_width = camera_data.color_image.data.shape[0:2]
         new_image_width = int(camera_data.color_image.data.shape[1] * ratio)
         new_image_height = int(camera_data.color_image.data.shape[0] * ratio)
+        rectifier = ImageRectifier(camera_data.camera_info, new_size=(new_image_width, new_image_height))
 
         anchor_points = np.array(
             [
                 [0.8, 0.8],
-                [0.0, 0.8],
                 [-0.8, 0.8],
-                [-0.8, 0.0],
                 [-0.8, -0.8],
-                [0.0, -0.8],
                 [0.8, -0.8],
-                [0.8, 0.0],
             ]
         )
         anchor_points[:] += 1.0
         anchor_points[:] *= 0.5
         image_points = anchor_points * np.array([new_image_width, new_image_height])
         self.labels.image_points = image_points.astype(np.int32)
-        self.labels.camera_model.fromCameraInfo(camera_data.camera_info)
+        self.labels.camera_model.fromCameraInfo(rectifier.get_rectified_info())
+        rectified_image = rectifier.rectify(camera_data.color_image.data)
 
         self.labels.update_cloud_points(self.cloud)
         self.labels.create_markers()
@@ -121,9 +112,8 @@ class FieldLabelApp:
             for marker in self.labels.markers:
                 vis.update_geometry(marker)
 
-            resized_image = cv2.resize(camera_data.color_image.data, (new_image_width, new_image_height))
-
-            cv2.polylines(resized_image, [self.labels.image_points], isClosed=True, color=(0, 255, 0), thickness=1)
+            show_image = np.copy(rectified_image)
+            cv2.polylines(show_image, [self.labels.image_points], isClosed=True, color=(0, 255, 0), thickness=1)
             for index, point in enumerate(self.labels.image_points):
                 if index == self.labels.highlighted_index:
                     radius = self.labels.highlighted_radius
@@ -131,9 +121,9 @@ class FieldLabelApp:
                 else:
                     radius = self.labels.unhighlighted_radius
                     color = (0, 255, 0)
-                cv2.circle(resized_image, tuple(point), radius, color, -1)
+                cv2.circle(show_image, tuple(point), radius, color, -1)
 
-            cv2.imshow("Image", resized_image)
+            cv2.imshow("Image", show_image)
             key = cv2.waitKey(1)
             if key == ord("q"):
                 break

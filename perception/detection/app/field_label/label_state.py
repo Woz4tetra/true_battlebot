@@ -1,20 +1,23 @@
 import numpy as np
 import open3d
 import open3d as o3d
-from app.field_label.field_label_app import nearest_point_in_cloud
 from image_geometry import PinholeCameraModel
+
+
+def nearest_point_in_cloud(cloud: o3d.geometry.PointCloud, point: np.ndarray) -> np.ndarray:
+    points = np.asarray(cloud.points)
+    distances = np.linalg.norm(points - point, axis=1)
+    return points[np.argmin(distances)]
 
 
 class LabelState:
     def __init__(self) -> None:
-        self.ratio = 1.0
-        self.unhighlighted_radius = 6
+        self.unhighlighted_radius = 3
         self.highlighted_radius = 10
         self.highlighted_index = -1
         self.image_points = np.zeros((0, 2), dtype=np.int32)
         self.cloud_points = np.zeros((0, 3), dtype=np.float32)
         self.is_clicked = False
-        self.interpolate_indices = [1, 3, 5, 7]
         self.camera_model = PinholeCameraModel()
         self.markers = []
 
@@ -38,10 +41,8 @@ class LabelState:
         min_point = np.min(cloud.points, axis=0)
         max_point = np.max(cloud.points, axis=0)
         max_distance = np.linalg.norm(max_point - min_point) * 2
-        print(f"Max distance: {max_distance}")
         self.cloud_points = np.zeros((len(self.image_points), 3), dtype=np.float32)
-        for index, scaled_uv_point in enumerate(self.image_points):
-            uv_point = scaled_uv_point / self.ratio
+        for index, uv_point in enumerate(self.image_points):
             ray = np.array(self.camera_model.projectPixelTo3dRay(uv_point))
             if np.any(np.isnan(ray)):
                 raise RuntimeError("Failed to project pixel to 3D ray")

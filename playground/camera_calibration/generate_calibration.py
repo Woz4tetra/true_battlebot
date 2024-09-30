@@ -8,10 +8,10 @@ import toml
 from apriltag_ros.msg import AprilTagDetectionArray
 from board_config import BoardConfig
 from bw_shared.geometry.camera.camera_info_loader import CameraInfoData
+from bw_shared.geometry.camera.image_rectifier import ImageRectifier
 from bw_shared.geometry.projection_math.points_transform import points_transform_by
 from bw_shared.geometry.transform3d import Transform3D
 from bw_tools.tag_detection.draw_helpers import draw_pose, project_point_array_to_pixel
-from bw_tools.tag_detection.image_rectifier import ImageRectifier
 from cv2 import aruco
 from cv_bridge import CvBridge
 from rosbag.bag import Bag

@@ -77,6 +77,8 @@ class ImageRectifier:
         )
 
     def rectify(self, image: np.ndarray) -> np.ndarray:
+        if image.shape[0] != self.height or image.shape[1] != self.width:
+            image = cv2.resize(image, (self.width, self.height))
         return cv2.remap(image, self.mapx, self.mapy, cv2.INTER_LINEAR)
 
     def get_rectified_info(self) -> CameraInfo:
