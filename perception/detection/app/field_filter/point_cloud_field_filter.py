@@ -12,7 +12,7 @@ from bw_shared.geometry.projection_math.find_minimum_rectangle import (
     get_rectangle_extents,
 )
 from bw_shared.geometry.projection_math.points_transform import points_transform_by
-from bw_shared.geometry.projection_math.rotation_matrix_from_vectors import rotation_matrix_from_vectors
+from bw_shared.geometry.projection_math.rotation_matrix_from_vectors import transform_matrix_from_vectors
 from bw_shared.geometry.rpy import RPY
 from bw_shared.geometry.transform3d import Transform3D
 from bw_shared.geometry.xy import XY
@@ -42,11 +42,7 @@ class PointCloudFieldFilter(FieldFilterInterface):
         self.logger.debug(f"Inlier points shape: {inlier_points.shape}")
 
         # find an orientation for the plane that makes it face the camera
-        up_vec = np.array([0.0, 0.0, 1.0])
-        plane_tfmat = np.eye(4)
-        plane_tfmat[:3, :3] = rotation_matrix_from_vectors(up_vec, plane_normal)
-        plane_tfmat[:3, 3] = plane_center
-        plane_transform = Transform3D(plane_tfmat)
+        plane_transform = transform_matrix_from_vectors(plane_center, plane_normal)
         self.logger.debug(f"Plane transform: {plane_transform}")
 
         # The following steps find an abitrary rotation of the plane to the camera.

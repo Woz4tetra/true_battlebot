@@ -1,4 +1,8 @@
+from typing import Optional
+
 import numpy as np
+
+from bw_shared.geometry.transform3d import Transform3D
 
 
 def rotation_matrix_from_vectors(vec1: np.ndarray, vec2: np.ndarray, epsilon: float = 1e-6) -> np.ndarray:
@@ -27,3 +31,13 @@ def rotation_matrix_from_vectors(vec1: np.ndarray, vec2: np.ndarray, epsilon: fl
     )
     rotation_matrix = np.eye(3) + kmat + kmat.dot(kmat) * ((1 - c) / (s**2))
     return rotation_matrix
+
+
+def transform_matrix_from_vectors(
+    plane_center: np.ndarray, plane_normal: np.ndarray, up_vec: Optional[np.ndarray] = None, epsilon: float = 1e-6
+) -> Transform3D:
+    up_vec = np.array([0.0, 0.0, 1.0]) if up_vec is None else up_vec
+    plane_tfmat = np.eye(4)
+    plane_tfmat[:3, :3] = rotation_matrix_from_vectors(up_vec, plane_normal, epsilon)
+    plane_tfmat[:3, 3] = plane_center
+    return Transform3D(plane_tfmat)

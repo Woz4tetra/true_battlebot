@@ -79,7 +79,6 @@ class FieldLabelApp:
 
         anchor_points = np.array(
             [
-                [0.8, 0.8],
                 [-0.8, 0.8],
                 [-0.8, -0.8],
                 [0.8, -0.8],
@@ -98,8 +97,9 @@ class FieldLabelApp:
         vis = open3d.visualization.Visualizer()  # type: ignore
         vis.create_window(width=window_height, height=window_height)
         vis.add_geometry(self.cloud)
-        for marker in self.labels.markers:
+        for marker in self.labels.point_markers:
             vis.add_geometry(marker)
+        vis.add_geometry(self.labels.plane_marker)
 
         cv2.namedWindow(cv_window_name)
         cv2.moveWindow(cv_window_name, window_height, 0)
@@ -109,7 +109,7 @@ class FieldLabelApp:
             if not vis.poll_events():
                 break
             vis.update_renderer()
-            for marker in self.labels.markers:
+            for marker in self.labels.point_markers:
                 vis.update_geometry(marker)
 
             show_image = np.copy(rectified_image)
