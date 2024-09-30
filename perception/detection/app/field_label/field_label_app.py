@@ -1,56 +1,142 @@
-from typing import cast
+from typing import Any, cast
 
+import cv2
 import numpy as np
 import open3d as o3d
+import open3d.visualization
 from app.field_label.command_line_args import BagCommandLineArgs, CommandLineArgs, TopicCommandLineArgs
-from open3d.visualization.draw import draw
-from perception_tools.messages.point_cloud import from_uint32_color, rospointcloud_to_array
+from app.field_label.label_state import LabelState
+from perception_tools.messages.camera_data import CameraData
+from perception_tools.messages.image import Image
+from perception_tools.messages.point_cloud import PointCloud
 from rosbag.bag import Bag
-from sensor_msgs.msg import PointCloud2 as RosPointCloud
 
 
-def ros_to_open3d(cloud_msg: RosPointCloud, max_value: float = 10.0) -> o3d.geometry.PointCloud:
-    cloud_array = rospointcloud_to_array(cloud_msg)
-
-    x = cloud_array["x"].view(np.float32)
-    y = cloud_array["y"].view(np.float32)
-    z = cloud_array["z"].view(np.float32)
-    points = np.stack((x, y, z), axis=-1)
-    delete_points = np.isnan(points) | ((points > max_value) | (points < -max_value))
-    points = points[~np.any(delete_points, axis=1)]
-
-    cloud = o3d.geometry.PointCloud()
-    cloud.points = o3d.utility.Vector3dVector(points)
-
-    compatible_color_fields = ["rgba", "rgb", "bgra", "rgb"]
-    for color_field in compatible_color_fields:
-        if color_field in cloud_array.dtype.names:  # type: ignore
-            colors = from_uint32_color(cloud_array[color_field].view(np.uint32), color_field)
-            colors = colors[~np.any(delete_points, axis=1)]
-            cloud.colors = o3d.utility.Vector3dVector(colors)
-            break
-
-    return cloud
+def nearest_point_in_cloud(cloud: o3d.geometry.PointCloud, point: np.ndarray) -> np.ndarray:
+    points = np.asarray(cloud.points)
+    distances = np.linalg.norm(points - point, axis=1)
+    return points[np.argmin(distances)]
 
 
-def load_first_cloud_from_bag(bag_file: str, topic: str) -> o3d.geometry.PointCloud:
+def cloud_to_open3d(cloud: PointCloud, max_value: float = 10.0) -> o3d.geometry.PointCloud:
+    delete_points = np.isnan(cloud.points) | ((cloud.points > max_value) | (cloud.points < -max_value))
+    points = cloud.points[~np.any(delete_points, axis=1)]
+
+    cloud_o3d = o3d.geometry.PointCloud()
+    cloud_o3d.points = o3d.utility.Vector3dVector(points)
+    colors = cloud.colors[~np.any(delete_points, axis=1)]
+    cloud_o3d.colors = o3d.utility.Vector3dVector(colors)
+
+    return cloud_o3d
+
+
+def load_from_bag(bag_file: str, cloud_topic: str, image_topic: str, info_topic: str) -> CameraData:
+    point_cloud = None
+    color_image = None
+    camera_info = None
     with Bag(bag_file, "r") as bag:
-        for _, msg, _ in bag.read_messages(topics=topic):
-            return ros_to_open3d(msg)
+        for topic, msg, timestamp in bag.read_messages(topics=[cloud_topic, image_topic, info_topic]):  # type: ignore
+            if topic == cloud_topic:
+                point_cloud = PointCloud.from_msg(msg)
+            elif topic == image_topic:
+                color_image = Image.from_msg(msg)
+            elif topic == info_topic:
+                camera_info = msg
 
-    raise RuntimeError("No PointCloud2 messages found in bag file")
+            if point_cloud is not None and color_image is not None and camera_info is not None:
+                break
+    assert point_cloud is not None and color_image is not None and camera_info is not None
+    return CameraData(color_image=color_image, point_cloud=point_cloud, camera_info=camera_info)
 
 
 class FieldLabelApp:
     def __init__(self, args: CommandLineArgs) -> None:
         self.args = args
+        self.labels = LabelState()
+        self.cloud = PointCloud()
 
     def run_bag(self, args: BagCommandLineArgs) -> None:
-        point_cloud = load_first_cloud_from_bag(args.bag_file, args.cloud_topic)
-        print(point_cloud)
+        camera_data = load_from_bag(args.bag_file, args.cloud_topic, args.image_topic, args.info_topic)
+        self.label_camera_data(camera_data)
 
-        # Visualize the point cloud
-        draw([point_cloud])
+    def on_mouse(self, event: int, x: int, y: int, flags: int, param: Any):
+        if event == cv2.EVENT_MOUSEMOVE:
+            if self.labels.is_clicked:
+                self.labels.image_points[self.labels.highlighted_index] = np.array([x, y])
+            else:
+                self.labels.update_highlighted_index((x, y))
+        elif event == cv2.EVENT_LBUTTONDOWN:
+            self.labels.is_clicked = True
+        elif event == cv2.EVENT_LBUTTONUP:
+            self.labels.is_clicked = False
+            self.labels.update_cloud_points(self.cloud)
+
+    def label_camera_data(self, camera_data: CameraData) -> None:
+        point_cloud = cloud_to_open3d(camera_data.point_cloud)
+        self.cloud = point_cloud.voxel_down_sample(voxel_size=0.02)
+
+        cv_window_name = "Image"
+        window_height = 800
+        ratio = window_height / camera_data.color_image.data.shape[1]
+        self.labels.ratio = ratio
+        image_height, image_width = camera_data.color_image.data.shape[0:2]
+        new_image_width = int(camera_data.color_image.data.shape[1] * ratio)
+        new_image_height = int(camera_data.color_image.data.shape[0] * ratio)
+
+        anchor_points = np.array(
+            [
+                [0.8, 0.8],
+                [0.0, 0.8],
+                [-0.8, 0.8],
+                [-0.8, 0.0],
+                [-0.8, -0.8],
+                [0.0, -0.8],
+                [0.8, -0.8],
+                [0.8, 0.0],
+            ]
+        )
+        anchor_points[:] += 1.0
+        anchor_points[:] *= 0.5
+        image_points = anchor_points * np.array([new_image_width, new_image_height])
+        self.labels.image_points = image_points.astype(np.int32)
+        self.labels.camera_model.fromCameraInfo(camera_data.camera_info)
+
+        self.labels.update_cloud_points(self.cloud)
+        self.labels.create_markers()
+
+        vis = open3d.visualization.Visualizer()  # type: ignore
+        vis.create_window(width=window_height, height=window_height)
+        vis.add_geometry(self.cloud)
+        for marker in self.labels.markers:
+            vis.add_geometry(marker)
+
+        cv2.namedWindow(cv_window_name)
+        cv2.moveWindow(cv_window_name, window_height, 0)
+        cv2.setMouseCallback(cv_window_name, self.on_mouse)
+
+        while True:
+            if not vis.poll_events():
+                break
+            vis.update_renderer()
+            for marker in self.labels.markers:
+                vis.update_geometry(marker)
+
+            resized_image = cv2.resize(camera_data.color_image.data, (new_image_width, new_image_height))
+
+            cv2.polylines(resized_image, [self.labels.image_points], isClosed=True, color=(0, 255, 0), thickness=1)
+            for index, point in enumerate(self.labels.image_points):
+                if index == self.labels.highlighted_index:
+                    radius = self.labels.highlighted_radius
+                    color = (0, 0, 255)
+                else:
+                    radius = self.labels.unhighlighted_radius
+                    color = (0, 255, 0)
+                cv2.circle(resized_image, tuple(point), radius, color, -1)
+
+            cv2.imshow("Image", resized_image)
+            key = cv2.waitKey(1)
+            if key == ord("q"):
+                break
 
     def run_topic(self, args: TopicCommandLineArgs) -> None:
         pass

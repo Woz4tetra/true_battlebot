@@ -7,7 +7,9 @@ import argcomplete
 from app.field_label.command_line_args import CommandLineArgs
 
 BAGS_DIR = "/media/storage/bags"
-DEFAULT_TOPIC = "/camera_0/point_cloud/cloud_registered"
+CLOUD_TOPIC = "/camera_0/point_cloud/cloud_registered"
+IMAGE_TOPIC = "/camera_0/rgb/image_raw"
+INFO_TOPIC = "/camera_0/rgb/camera_info"
 
 
 def parse_args() -> CommandLineArgs:
@@ -29,7 +31,19 @@ def parse_args() -> CommandLineArgs:
     bag_parser.add_argument(
         "cloud_topic",
         type=str,
-        default=DEFAULT_TOPIC,
+        default=CLOUD_TOPIC,
+        nargs="?",
+    )
+    bag_parser.add_argument(
+        "image_topic",
+        type=str,
+        default=IMAGE_TOPIC,
+        nargs="?",
+    )
+    bag_parser.add_argument(
+        "info_topic",
+        type=str,
+        default=INFO_TOPIC,
         nargs="?",
     )
 
@@ -37,7 +51,19 @@ def parse_args() -> CommandLineArgs:
     topic_parser.add_argument(
         "cloud_topic",
         type=str,
-        default=DEFAULT_TOPIC,
+        default=CLOUD_TOPIC,
+        nargs="?",
+    )
+    topic_parser.add_argument(
+        "image_topic",
+        type=str,
+        default=IMAGE_TOPIC,
+        nargs="?",
+    )
+    topic_parser.add_argument(
+        "info_topic",
+        type=str,
+        default=INFO_TOPIC,
         nargs="?",
     )
 
