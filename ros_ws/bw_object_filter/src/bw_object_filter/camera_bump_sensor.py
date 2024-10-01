@@ -27,7 +27,7 @@ class CameraBumpSensor:
         self.is_settled = True
         self.imu_sub = rospy.Subscriber("imu", Imu, self.imu_callback, queue_size=10)
         self.field_sub = rospy.Subscriber("/filter/field", EstimatedObject, self.field_callback, queue_size=1)
-        self.settled_pub = rospy.Publisher("is_settled", Bool, queue_size=1, latch=True)
+        self.settled_pub = rospy.Publisher("/filter/field/is_settled", Bool, queue_size=1, latch=True)
 
     def imu_callback(self, imu: Imu) -> None:
         if not self.prev_imu.header.frame_id:

@@ -8,12 +8,14 @@ var connection_status,
     teleop_controller_status,
     teleop_connected_status,
     teleop_is_ready_status,
-    teleop_is_armed_status;
+    teleop_is_armed_status,
+    field_stable_status;
 var connection_icon,
     teleop_controller_icon,
     teleop_connected_icon,
     teleop_is_ready_icon,
-    teleop_is_armed_icon;
+    teleop_is_armed_icon,
+    field_stable_icon;
 var opponent_template_names = [];
 var connection_icons = {
     connected: "resources/check_circle_black_24dp.svg",
@@ -237,6 +239,21 @@ function initCarets() {
     }
 }
 
+function initFieldStableSubscriber() {
+    fieldStableSub = new ROSLIB.Topic({
+        ros: ros,
+        name: "/filter/field/is_settled",
+        messageType: "std_msgs/Bool",
+    });
+
+    fieldStableSub.subscribe(function (message) {
+        setConnectionIconState(field_stable_icon, message.data);
+        field_stable_status.innerHTML = message.data
+            ? "Field ready"
+            : "Field not found";
+    });
+}
+
 function onSetNumOpponents(number_input) {
     if (number_input.value == "" || isNaN(number_input.value)) {
         return;
@@ -416,6 +433,7 @@ function reconnectRosBridge() {
     initOpponentConfigurationPublisher();
     initOpponentTemplateSubscriber();
     initTelemetrySubscriber();
+    initFieldStableSubscriber();
 }
 
 window.onload = function () {
@@ -439,6 +457,10 @@ window.onload = function () {
     teleop_connected_icon = initConnectionIcon("teleop-connected-icon");
     teleop_is_ready_icon = initConnectionIcon("teleop-is-ready-icon");
     teleop_is_armed_icon = initConnectionIcon("teleop-is-armed-icon");
+
+    field_stable_status = document.getElementById("field-stable-status");
+    field_stable_status.innerHTML = "Field not found";
+    field_stable_icon = initConnectionIcon("field-stable-icon");
 
     document.getElementById("num-opponents").value = 1;
     updateOpponentConfigurationGrid();
