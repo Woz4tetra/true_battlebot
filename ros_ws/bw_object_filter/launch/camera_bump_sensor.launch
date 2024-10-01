@@ -1,0 +1,8 @@
+<launch>
+    <group ns="camera_0">
+        <node pkg="bw_object_filter" type="camera_bump_sensor.py" name="camera_bump_sensor" output="screen"
+            respawn="true" clear_params="true">
+            <remap from="imu" to="imu/data" />
+        </node>
+    </group>
+</launch>

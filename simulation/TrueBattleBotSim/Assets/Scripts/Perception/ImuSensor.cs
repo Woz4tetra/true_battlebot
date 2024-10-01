@@ -44,7 +44,7 @@ class ImuSensor : MonoBehaviour
         startOrientation = Quaternion.Inverse(sensorBody.transform.rotation);
     }
 
-    void FixedUpdate()
+    void Update()
     {
         double now = Time.realtimeSinceStartup;
         if (now - _prevPublishTime > publishDelay)
