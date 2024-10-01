@@ -4,9 +4,6 @@ from typing import Literal, Protocol, Union
 class BagCommandLineArgs(Protocol):
     command: Literal["bag"]
     bag_file: str
-    cloud_topic: str
-    image_topic: str
-    info_topic: str
 
 
 class TopicCommandLineArgs(Protocol):

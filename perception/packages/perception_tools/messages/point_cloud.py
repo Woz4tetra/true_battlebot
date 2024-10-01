@@ -48,7 +48,7 @@ FIELD_TYPE_TO_SIZE = {
 
 
 DUMMY_FIELD_PREFIX = "__"
-SUPPORTED_COLOR_FIELDS = ["rgba", "rgb", "bgra", "rgb"]
+SUPPORTED_COLOR_FIELDS = ["rgba", "rgb", "bgra", "bgr"]
 
 
 def to_o3d_intrinsics(camera_info: CameraInfo) -> o3d.camera.PinholeCameraIntrinsic:
@@ -102,22 +102,22 @@ def fields_to_dtype(fields: list[PointField], point_step: int) -> dict[str, list
         "formats": [],
         "offsets": [],
     }
-    for f in fields:
-        while offset < f.offset:
+    for point_field in fields:
+        while offset < point_field.offset:
             # might be extra padding between fields
             type_def["names"].append(f"{DUMMY_FIELD_PREFIX}{offset}")
             type_def["formats"].append(np.uint8)
             type_def["offsets"].append(offset)
             offset += 1
 
-        dtype = FIELD_TYPE_TO_NUMPY[f.datatype]
-        if f.count != 1:
-            dtype = np.dtype((dtype, f.count))  # type: ignore
+        dtype = FIELD_TYPE_TO_NUMPY[point_field.datatype]
+        if point_field.count != 1:
+            dtype = np.dtype((dtype, point_field.count))  # type: ignore
 
-        type_def["names"].append(f.name)
+        type_def["names"].append(point_field.name)
         type_def["formats"].append(dtype)
-        type_def["offsets"].append(f.offset)
-        offset += FIELD_TYPE_TO_SIZE[f.datatype] * f.count
+        type_def["offsets"].append(point_field.offset)
+        offset += FIELD_TYPE_TO_SIZE[point_field.datatype] * point_field.count
 
     # might be extra padding between points
     while offset < point_step:
@@ -179,8 +179,9 @@ class PointCloud:
     ) -> PointCloud:
         color_data = o3d.geometry.Image(color.data)
         depth_data = o3d.geometry.Image(depth.data)
+        print(np.min(depth.data), np.max(depth.data))
         rgbd = o3d.geometry.RGBDImage.create_from_color_and_depth(
-            color_data, depth_data, convert_rgb_to_intensity=False, depth_scale=depth_scale
+            color_data, depth_data, convert_rgb_to_intensity=False, depth_scale=depth_scale, depth_trunc=1000.0
         )
         pcd = o3d.geometry.PointCloud.create_from_rgbd_image(
             rgbd, to_o3d_intrinsics(camera_info), project_valid_depth_only=False
@@ -189,7 +190,10 @@ class PointCloud:
         colors = to_uint32_color(np.asarray(pcd.colors).astype(np.float32)).reshape(
             (camera_info.height, camera_info.width)
         )
-        return PointCloud(header=Header.from_msg(camera_info.header), points=points, colors=colors)
+        print(np.nanmin(points), np.nanmax(points))
+        return PointCloud(
+            header=Header.from_msg(camera_info.header), points=points, colors=colors, color_encoding=CloudFieldName.RGB
+        )
 
     def to_msg(self) -> RosPointCloud:
         if len(self.points) == 0:

@@ -7,9 +7,6 @@ import argcomplete
 from app.field_label.command_line_args import CommandLineArgs
 
 BAGS_DIR = "/media/storage/bags"
-CLOUD_TOPIC = "/camera_0/point_cloud/cloud_registered"
-IMAGE_TOPIC = "/camera_0/rgb/image_raw"
-INFO_TOPIC = "/camera_0/rgb/camera_info"
 
 
 def parse_args() -> CommandLineArgs:
@@ -28,44 +25,8 @@ def parse_args() -> CommandLineArgs:
         type=str,
         choices=files.keys(),
     )
-    bag_parser.add_argument(
-        "cloud_topic",
-        type=str,
-        default=CLOUD_TOPIC,
-        nargs="?",
-    )
-    bag_parser.add_argument(
-        "image_topic",
-        type=str,
-        default=IMAGE_TOPIC,
-        nargs="?",
-    )
-    bag_parser.add_argument(
-        "info_topic",
-        type=str,
-        default=INFO_TOPIC,
-        nargs="?",
-    )
 
-    topic_parser = subparsers.add_parser("topic")
-    topic_parser.add_argument(
-        "cloud_topic",
-        type=str,
-        default=CLOUD_TOPIC,
-        nargs="?",
-    )
-    topic_parser.add_argument(
-        "image_topic",
-        type=str,
-        default=IMAGE_TOPIC,
-        nargs="?",
-    )
-    topic_parser.add_argument(
-        "info_topic",
-        type=str,
-        default=INFO_TOPIC,
-        nargs="?",
-    )
+    subparsers.add_parser("topic")
 
     argcomplete.autocomplete(parser)
 
@@ -82,8 +43,11 @@ def main() -> None:
     args = parse_args()
 
     from app.field_label.field_label_app import FieldLabelApp
+    from app.field_label.field_label_config import FieldLabelConfig
 
-    FieldLabelApp(args).run()
+    config = FieldLabelConfig()
+
+    FieldLabelApp(config, args).run()
 
 
 if __name__ == "__main__":

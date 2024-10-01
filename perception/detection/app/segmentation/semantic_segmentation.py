@@ -1,6 +1,7 @@
 import logging
 import time
 
+import cv2
 import numpy as np
 import torch
 from app.config.segmentation_config.semantic_segmentation_config import SemanticSegmentationConfig
@@ -36,7 +37,8 @@ class SemanticSegmentation(SegmentationInterface):
         out_mask = self.inference.compute_inference(msg.data)
         self.logger.debug(f"Field detected: {np.sum(out_mask) > 0}")
         if self.config.debug:
-            debug_image = self.inference.draw_debug_image(out_mask, self.metadata)
+            mask_debug_image = self.inference.draw_debug_image(out_mask, self.metadata)
+            debug_image = cv2.addWeighted(msg.data, 0.5, mask_debug_image, 0.5, 0)
             debug_msg = Image(msg.header, data=debug_image)
         else:
             debug_msg = None

@@ -226,8 +226,8 @@ def init_ros_node(container: Container) -> None:
 def make_field_request_handler(container: Container) -> None:
     config = container.resolve(Config)
     request_subscriber = RosPollSubscriber("/perception/field/request", Empty)
-    response_subscriber = RosPublisher("/perception/field/response", EstimatedObject)
-    field_request_handler = FieldRequestHandler(config.field_request, request_subscriber, response_subscriber)
+    response_publisher = RosPublisher("/perception/field/response", EstimatedObject)
+    field_request_handler = FieldRequestHandler(config.field_request, request_subscriber, response_publisher)
     container.register(field_request_handler)
 
 
