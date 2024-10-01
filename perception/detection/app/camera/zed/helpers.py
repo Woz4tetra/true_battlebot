@@ -1,7 +1,10 @@
 from typing import Any
 
 import numpy as np
-from sensor_msgs.msg import CameraInfo
+import pyzed.sl as sl
+from geometry_msgs.msg import Quaternion, Vector3
+from sensor_msgs.msg import CameraInfo, Imu
+from std_msgs.msg import Header
 
 
 def zed_to_ros_camera_info(camera_information: Any) -> CameraInfo:
@@ -28,3 +31,19 @@ def zed_to_ros_camera_info(camera_information: Any) -> CameraInfo:
         R=np.eye(3).flatten().tolist(),
         P=projection.flatten().tolist(),
     )
+
+
+def zed_to_ros_imu(header: Header, imu_data: sl.IMUData) -> Imu:
+    quaternion = imu_data.get_pose().get_orientation().get()
+    linear_acceleration = imu_data.get_linear_acceleration()
+    angular_velocity = np.deg2rad(np.array(imu_data.get_angular_velocity()))
+    return Imu(
+        header=header,
+        orientation=Quaternion(x=quaternion[0], y=quaternion[1], z=quaternion[2], w=quaternion[3]),
+        linear_acceleration=Vector3(x=linear_acceleration[0], y=linear_acceleration[1], z=linear_acceleration[2]),
+        angular_velocity=Vector3(x=angular_velocity[0], y=angular_velocity[1], z=angular_velocity[2]),
+    )
+
+
+def zed_status_to_str(status: sl.ERROR_CODE) -> str:
+    return f"<{status.name} ({status.value})>: {status}"

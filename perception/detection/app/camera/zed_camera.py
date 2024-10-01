@@ -5,7 +5,7 @@ import numpy as np
 import pyzed.sl as sl
 import rospy
 from app.camera.camera_interface import CameraInterface, CameraMode
-from app.camera.zed.helpers import zed_to_ros_camera_info
+from app.camera.zed.helpers import zed_status_to_str, zed_to_ros_camera_info, zed_to_ros_imu
 from app.camera.zed.video_settings import Zed2iVideoSettings, ZedParameterError
 from app.config.camera_config.zed_camera_config import ZedCameraConfig
 from app.config.camera_topic_config import CameraTopicConfig
@@ -16,7 +16,7 @@ from perception_tools.messages.image import Image
 from perception_tools.messages.point_cloud import CloudFieldName, PointCloud
 from perception_tools.rosbridge.ros_poll_subscriber import RosPollSubscriber
 from perception_tools.rosbridge.ros_publisher import RosPublisher
-from sensor_msgs.msg import CameraInfo
+from sensor_msgs.msg import CameraInfo, Imu
 from sensor_msgs.msg import Image as RosImage
 
 
@@ -27,6 +27,7 @@ class ZedCamera(CameraInterface):
         camera_topic_config: CameraTopicConfig,
         color_image_pub: RosPublisher[RosImage] | None,
         camera_info_pub: RosPublisher[CameraInfo] | None,
+        imu_pub: RosPublisher[Imu],
         record_svo_sub: RosPollSubscriber[ControlRecording],
     ) -> None:
         self.logger = logging.getLogger("perception")
@@ -35,6 +36,7 @@ class ZedCamera(CameraInterface):
         self.camera_topic_config = camera_topic_config
         self.color_image_pub = color_image_pub
         self.camera_info_pub = camera_info_pub
+        self.imu_pub = imu_pub
         self.record_svo_sub = record_svo_sub
 
         self.camera = sl.Camera()
@@ -88,7 +90,8 @@ class ZedCamera(CameraInterface):
             if status == sl.ERROR_CODE.SUCCESS:
                 self.logger.info("ZED Camera opened successfully")
                 break
-            self.logger.error("ZED Camera failed to open. Retrying...")
+            self.logger.error(f"ZED Camera failed to open: {zed_status_to_str(status)}")
+            self.logger.error("Retrying...")
             self.camera.close()
 
         try:
@@ -145,7 +148,7 @@ class ZedCamera(CameraInterface):
         self._poll_recording()
         status = self.camera.grab(self.runtime_parameters)
         if status != sl.ERROR_CODE.SUCCESS:
-            self.logger.error(f"ZED Camera failed to grab frame: {status.name} ({status.value}): {str(status)}")
+            self.logger.error(f"ZED Camera failed to grab frame: {zed_status_to_str(status)}")
             return None
         self.camera.retrieve_image(self.color_image, sl.VIEW.LEFT)
         color_image_data = self.color_image.get_data()[..., 0:3]
@@ -170,6 +173,13 @@ class ZedCamera(CameraInterface):
             camera_info=self.camera_info,
         )
 
+        sensors_data = sl.SensorsData()
+        imu_status = self.camera.get_sensors_data(sensors_data, sl.TIME_REFERENCE.CURRENT)
+        if imu_status == sl.ERROR_CODE.SUCCESS:
+            imu_data = sensors_data.get_imu_data()
+            self.imu_pub.publish(zed_to_ros_imu(self.camera_info.header, imu_data))
+        else:
+            self.logger.warning(f"Failed to get IMU data: {zed_status_to_str(imu_status)}")
         if self.color_image_pub:
             self.color_image_pub.publish(image.to_msg())
         if self.camera_info_pub:

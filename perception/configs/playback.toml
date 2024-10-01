@@ -39,8 +39,9 @@ exclude_filters = [
 [robot_keypoint]
 type = "YoloKeypoint"
 debug_image = true
-model_path = "yolov8m-pose_2024-09-03.pt"
-metadata_path = "yolov8m-pose_2024-09-03.json"
+threshold = 0.65
+model_path = "yolov8x-pose_2024-09-19.pt"
+metadata_path = "yolov8x-pose_2024-09-19.json"
 
 [robot_keypoint.model_to_system_labels.mapping]
 "mr_stabs_mk1" = "controlled_robot"

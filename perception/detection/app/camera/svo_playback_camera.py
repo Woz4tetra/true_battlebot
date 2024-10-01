@@ -4,7 +4,7 @@ import time
 import numpy as np
 import pyzed.sl as sl
 from app.camera.camera_interface import CameraInterface, CameraMode
-from app.camera.zed.helpers import zed_to_ros_camera_info
+from app.camera.zed.helpers import zed_status_to_str, zed_to_ros_camera_info, zed_to_ros_imu
 from app.config.camera_config.svo_playback_camera_config import SvoPlaybackCameraConfig
 from app.config.camera_topic_config import CameraTopicConfig
 from bw_shared.messages.header import Header
@@ -12,7 +12,7 @@ from perception_tools.messages.camera_data import CameraData
 from perception_tools.messages.image import Image
 from perception_tools.messages.point_cloud import CloudFieldName, PointCloud
 from perception_tools.rosbridge.ros_publisher import RosPublisher
-from sensor_msgs.msg import CameraInfo
+from sensor_msgs.msg import CameraInfo, Imu
 from sensor_msgs.msg import Image as RosImage
 
 
@@ -23,6 +23,7 @@ class SvoPlaybackCamera(CameraInterface):
         camera_topic_config: CameraTopicConfig,
         color_image_pub: RosPublisher[RosImage],
         camera_info_pub: RosPublisher[CameraInfo],
+        imu_pub: RosPublisher[Imu],
     ) -> None:
         self.logger = logging.getLogger("perception")
 
@@ -30,12 +31,15 @@ class SvoPlaybackCamera(CameraInterface):
         self.camera_topic_config = camera_topic_config
         self.color_image_pub = color_image_pub
         self.camera_info_pub = camera_info_pub
+        self.imu_pub = imu_pub
 
         input_type = sl.InputType()
         input_type.set_from_svo_file(self.config.path)  # Set init parameter to run from the .svo
 
         self.camera = sl.Camera()
         self.init_params = sl.InitParameters(input_t=input_type, svo_real_time_mode=False)
+        self.init_params.depth_mode = sl.DEPTH_MODE.NEURAL_PLUS
+        self.init_params.coordinate_units = sl.UNIT.METER
 
         self.runtime_parameters = sl.RuntimeParameters()
 
@@ -43,6 +47,7 @@ class SvoPlaybackCamera(CameraInterface):
         self.camera_fps = 0.0
         self.real_time_start = 0.0
         self.camera_start_time = 0.0
+        self.is_open = False
 
         self.color_image = sl.Mat()
         self.point_cloud = sl.Mat()
@@ -73,7 +78,7 @@ class SvoPlaybackCamera(CameraInterface):
         status = self.camera.grab(self.runtime_parameters)
         t1 = time.perf_counter()
         if status != sl.ERROR_CODE.SUCCESS:
-            self.logger.error(f"ZED Camera failed to grab frame: {status.name} ({status.value}): {str(status)}")
+            self.logger.error(f"ZED Camera failed to grab frame: {zed_status_to_str(status)}")
             return None
         if self.mode == CameraMode.FIELD_FINDER:
             self.logger.info("Using cached field frame data")
@@ -96,6 +101,14 @@ class SvoPlaybackCamera(CameraInterface):
             point_cloud=point_cloud,
             camera_info=self.field_data.camera_info,
         )
+
+        sensors_data = sl.SensorsData()
+        imu_status = self.camera.get_sensors_data(sensors_data, sl.TIME_REFERENCE.IMAGE)
+        if imu_status == sl.ERROR_CODE.SUCCESS:
+            imu_data = sensors_data.get_imu_data()
+            self.imu_pub.publish(zed_to_ros_imu(self.field_data.camera_info.header, imu_data))
+        else:
+            self.logger.warning(f"Failed to get IMU data: {zed_status_to_str(imu_status)}")
 
         self.color_image_pub.publish(image.to_msg())
         self.camera_info_pub.publish(self.field_data.camera_info)
@@ -125,16 +138,19 @@ class SvoPlaybackCamera(CameraInterface):
         return self.header
 
     def open(self) -> bool:
+        if self.is_open:
+            return True
         status = self.camera.open(self.init_params)
         success = status == sl.ERROR_CODE.SUCCESS
         if not success:
-            self.logger.error(f"Failed to open camera: {status}")
+            self.logger.error(f"Failed to open camera: {zed_status_to_str(status)}")
+        self.is_open = success
         return success
 
     def grab(self) -> None:
         status = self.camera.grab(self.runtime_parameters)
         if status != sl.ERROR_CODE.SUCCESS:
-            raise Exception(f"Error grabbing initial frame: {status}")
+            raise Exception(f"Error grabbing initial frame: {zed_status_to_str(status)}")
 
     def get_number_of_frames(self) -> int:
         return self.camera.get_svo_number_of_frames()
@@ -143,12 +159,15 @@ class SvoPlaybackCamera(CameraInterface):
         self.set_svo_position(frame_num)
         status = self.camera.grab(self.runtime_parameters)
         if status != sl.ERROR_CODE.SUCCESS:
-            raise Exception(f"Error grabbing last frame: {status}")
+            raise Exception(f"Error grabbing last frame: {zed_status_to_str(status)}")
 
     def cache_field_frame(self, zed_info: sl.CameraInformation) -> None:
         status = self.camera.grab(self.runtime_parameters)
         if status != sl.ERROR_CODE.SUCCESS:
-            raise Exception(f"Error grabbing field frame: {status}. Attempted to get: {self.config.field_grab_time}")
+            raise Exception(
+                f"Error grabbing field frame: {zed_status_to_str(status)}. "
+                f"Attempted to get: {self.config.field_grab_time}"
+            )
         self.logger.debug("Grabbed field frame")
 
         self.camera.retrieve_image(self.color_image, sl.VIEW.LEFT)
@@ -169,6 +188,7 @@ class SvoPlaybackCamera(CameraInterface):
 
     def load_field_frame(self) -> None:
         self.logger.debug("Loading field frame data")
+        self.open()
         self._set_field_finder_settings()
         self.grab()
 
@@ -189,11 +209,9 @@ class SvoPlaybackCamera(CameraInterface):
 
         self.set_svo_time(self.config.field_grab_time)
         self.cache_field_frame(zed_info)
-        self.logger.debug("Closing camera")
-        self.camera.close()
 
         self._set_robot_finder_settings()
-        self.logger.debug("Reopening camera in Robot Finder mode")
+        self.logger.debug("Setting camera to Robot Finder mode")
         self.grab()
 
         self.set_svo_time(self.config.start_time)
