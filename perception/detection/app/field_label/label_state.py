@@ -68,8 +68,8 @@ class LabelState:
         self.cloud_extent_points = np.zeros((0, 3), dtype=np.float32)
         self.is_clicked = False
         self.camera_model = PinholeCameraModel()
-        self.plane_point_markers = []
-        self.extent_point_markers = []
+        self.plane_point_markers: list[open3d.geometry.TriangleMesh] = []
+        self.extent_point_markers: list[open3d.geometry.TriangleMesh] = []
         self.plane_marker = open3d.geometry.TriangleMesh.create_box(1, 1, 0.001)
         self.plane_marker.translate([-0.5, -0.5, 0.0])
         self.prev_plane_tf = np.eye(4)

@@ -1,5 +1,5 @@
 import sys
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 import cv2
 import numpy as np
