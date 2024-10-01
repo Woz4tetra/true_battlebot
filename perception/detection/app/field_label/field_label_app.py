@@ -1,3 +1,4 @@
+import os
 import sys
 from typing import Any, cast
 
@@ -115,6 +116,7 @@ class FieldLabelApp:
             if self.labels.is_clicked:
                 self.labels.is_clicked = False
                 self.labels.update_cloud_points(self.cloud)
+                self.labels.save_label_state(self.config.label_state_path)
 
     def run_topic(self, args: TopicCommandLineArgs) -> None:
         cloud_subscriber = RosPollSubscriber(self.config.cloud_topic, RosPointCloud)
@@ -129,29 +131,7 @@ class FieldLabelApp:
         camera_data = load_from_topics(cloud_subscriber, image_subscriber, info_subscriber)
         self.label_camera_data(camera_data)
 
-    def label_camera_data(self, camera_data: CameraData) -> None:
-        response_publisher = RosPublisher(self.config.field_response_topic, EstimatedObject)
-
-        point_cloud = cloud_to_open3d(camera_data.point_cloud, max_value=self.config.max_cloud_distance)
-        o3d_downsample_cloud = point_cloud.voxel_down_sample(voxel_size=0.02)
-
-        min_bound = np.array([-5, -5, -5])
-        max_bound = np.array([5, 5, 5])
-        o3d_downsample_cloud = o3d_downsample_cloud.crop(
-            open3d.geometry.AxisAlignedBoundingBox(min_bound=min_bound, max_bound=max_bound)
-        )
-        self.cloud = PointCloud(
-            camera_data.point_cloud.header, o3d_downsample_cloud.points, o3d_downsample_cloud.colors
-        )
-
-        cv_window_name = "Image"
-        window_height = 800
-        ratio = window_height / camera_data.color_image.data.shape[1]
-        new_image_width = int(camera_data.color_image.data.shape[1] * ratio)
-        new_image_height = int(camera_data.color_image.data.shape[0] * ratio)
-        self.image_size = (new_image_width, new_image_height)
-        rectifier = ImageRectifier(camera_data.camera_info, new_size=self.image_size)
-
+    def initialize_default_image_points(self, new_image_width: int, new_image_height: int) -> None:
         border = 0.3
         anchor_points = np.array(
             [
@@ -178,6 +158,34 @@ class FieldLabelApp:
         anchor_points[:] *= 0.5
         image_extent_points = anchor_points * np.array([new_image_width, new_image_height])
         self.labels.image_extent_points = image_extent_points.astype(np.int32)
+
+    def label_camera_data(self, camera_data: CameraData) -> None:
+        response_publisher = RosPublisher(self.config.field_response_topic, EstimatedObject)
+
+        point_cloud = cloud_to_open3d(camera_data.point_cloud, max_value=self.config.max_cloud_distance)
+        o3d_downsample_cloud = point_cloud.voxel_down_sample(voxel_size=0.02)
+
+        min_bound = np.array([-5, -5, -5])
+        max_bound = np.array([5, 5, 5])
+        o3d_downsample_cloud = o3d_downsample_cloud.crop(
+            open3d.geometry.AxisAlignedBoundingBox(min_bound=min_bound, max_bound=max_bound)
+        )
+        self.cloud = PointCloud(
+            camera_data.point_cloud.header, o3d_downsample_cloud.points, o3d_downsample_cloud.colors
+        )
+
+        cv_window_name = "Image"
+        window_height = 800
+        ratio = window_height / camera_data.color_image.data.shape[1]
+        new_image_width = int(camera_data.color_image.data.shape[1] * ratio)
+        new_image_height = int(camera_data.color_image.data.shape[0] * ratio)
+        self.image_size = (new_image_width, new_image_height)
+        rectifier = ImageRectifier(camera_data.camera_info, new_size=self.image_size)
+
+        if os.path.isfile(self.config.label_state_path):
+            self.labels.load_label_state(self.config.label_state_path)
+        else:
+            self.initialize_default_image_points(new_image_width, new_image_height)
 
         self.labels.camera_model.fromCameraInfo(rectifier.get_rectified_info())
         rectified_image = rectifier.rectify(camera_data.color_image.data)

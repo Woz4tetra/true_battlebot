@@ -20,6 +20,10 @@ public class StaticGroundTruthPublisher : MonoBehaviour
         {
             ros.RegisterPublisher<PoseStampedMsg>(topic);
         }
+        if (referenceObject == null)
+        {
+            referenceObject = GameObject.Find("Coordinate Frame");
+        }
     }
 
     void Update()
@@ -29,6 +33,7 @@ public class StaticGroundTruthPublisher : MonoBehaviour
         {
             pose = referenceObject.transform.worldToLocalMatrix * pose;
         }
+        pose = Matrix4x4.TRS(Vector3.zero, Quaternion.Euler(0, -90, 0), Vector3.one) * pose * Matrix4x4.TRS(Vector3.zero, Quaternion.Euler(0, 90, 0), Vector3.one);
         PoseStampedMsg msg = new PoseStampedMsg
         {
             header = new HeaderMsg

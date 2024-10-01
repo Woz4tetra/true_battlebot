@@ -1,3 +1,4 @@
+import json
 from enum import Enum
 
 import numpy as np
@@ -31,7 +32,7 @@ def nearest_point_in_cloud(cloud: o3d.geometry.PointCloud, point: np.ndarray) ->
 def compute_plane(plane_points: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     point1, point2, point3 = plane_points
     plane_tri_points = np.array([point1, point2, point3])
-    plane_normal = plane_from_3_points(point1, point2, point3)
+    plane_normal = -1 * plane_from_3_points(point1, point2, point3)
     plane_center = np.mean(plane_tri_points, axis=0)
     return plane_center, plane_normal
 
@@ -46,6 +47,7 @@ def compute_field_estimate(
     flat_point1 = flattened_points[0]
     flat_point2 = flattened_points[1]
     angle_1_2 = np.arctan2(flat_point2[1] - flat_point1[1], flat_point2[0] - flat_point1[0])
+    angle_1_2 += np.pi
     flat_transform = Transform3D.from_position_and_rpy(Vector3(centeroid[0], centeroid[1], 0.0), RPY((0, 0, angle_1_2)))
     field_centered_plane = flat_transform.forward_by(plane_transform)
 
@@ -75,6 +77,20 @@ class LabelState:
         self.prev_plane_tf = np.eye(4)
         self.origin_vis = open3d.geometry.TriangleMesh.create_coordinate_frame()
         self.field_estimate = EstimatedObject()
+
+    def save_label_state(self, save_path: str) -> None:
+        state = {
+            "image_plane_points": self.image_plane_points.tolist(),
+            "image_extent_points": self.image_extent_points.tolist(),
+        }
+        with open(save_path, "w") as file:
+            json.dump(state, file)
+
+    def load_label_state(self, load_path: str) -> None:
+        with open(load_path, "r") as file:
+            state = json.load(file)
+            self.image_plane_points = np.array(state["image_plane_points"], dtype=np.int32)
+            self.image_extent_points = np.array(state["image_extent_points"], dtype=np.int32)
 
     def create_markers(self) -> None:
         for point in self.cloud_plane_points:
