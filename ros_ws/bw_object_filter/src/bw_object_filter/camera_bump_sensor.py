@@ -20,7 +20,7 @@ def compute_delta_rpy(new_quat: Quaternion, old_quat: Quaternion) -> RPY:
 
 class CameraBumpSensor:
     def __init__(self) -> None:
-        self.acceleration_threshold = get_param("~acceleration_threshold", 0.1)  # m/s^2
+        self.acceleration_threshold = get_param("~acceleration_threshold", 0.5)  # m/s^2
         self.angular_velocity_threshold = np.deg2rad(get_param("~angular_velocity_threshold", 2.0))  # degrees/s
         self.angle_delta_threshold = np.deg2rad(get_param("~angle_delta_threshold", 1.0))  # degrees
         self.prev_imu = Imu()
