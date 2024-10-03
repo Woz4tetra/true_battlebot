@@ -437,9 +437,21 @@ PrefabInstance:
       propertyPath: m_ParentAnchorPosition.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 6463121091571333781, guid: f677fa178e96533d89b4d813f1e8dccd, type: 3}
+      propertyPath: m_ParentAnchorPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6566867761723545632, guid: f677fa178e96533d89b4d813f1e8dccd, type: 3}
+      propertyPath: m_ParentAnchorPosition.z
+      value: 0.14999998
+      objectReference: {fileID: 0}
     - target: {fileID: 6719940989042586952, guid: f677fa178e96533d89b4d813f1e8dccd, type: 3}
       propertyPath: m_RootOrder
       value: 9
+      objectReference: {fileID: 0}
+    - target: {fileID: 7381318212977013493, guid: f677fa178e96533d89b4d813f1e8dccd, type: 3}
+      propertyPath: m_ParentAnchorPosition.z
+      value: -0.14999998
       objectReference: {fileID: 0}
     - target: {fileID: 7435319379074087901, guid: f677fa178e96533d89b4d813f1e8dccd, type: 3}
       propertyPath: m_ParentAnchorPosition.x

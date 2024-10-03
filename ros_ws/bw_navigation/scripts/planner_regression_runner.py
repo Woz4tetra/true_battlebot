@@ -36,8 +36,8 @@ class AppData:
 class RunConfig:
     initial_pose: Pose2D
     goal_pose: Pose2D
-    linear_pid: PidConfig = PidConfig(kp=10.0, ki=0.1, kd=0.005, kf=1.0)
-    angular_pid: PidConfig = PidConfig(kp=30.0, ki=0.01, kd=0.0001, kf=1.0)
+    linear_pid: PidConfig = PidConfig(kp=0.0, ki=0.0, kd=0.0, kf=1.0)
+    angular_pid: PidConfig = PidConfig(kp=0.0, ki=0.0, kd=0.0, kf=1.0)
 
 
 def feedback_cb(app: AppData, feedback: GoToGoalFeedback) -> None:
@@ -233,8 +233,8 @@ def main() -> None:
     rospy.loginfo("Go to goal action server is ready")
 
     run_config = RunConfig(
-        initial_pose=Pose2D(x=-0.5, y=0.0, theta=0.0),
-        goal_pose=Pose2D(x=0.5, y=0.0, theta=0.0),
+        initial_pose=Pose2D(x=-1.0, y=1.0, theta=0.0),
+        goal_pose=Pose2D(x=1.0, y=-1.0, theta=0.0),
     )
     try:
         configure_simulation(simulation_controller, cage_corner_pub, run_config)

@@ -6261,6 +6261,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   linearScale: 4
   angularScale: 20
+  useJoystick: 0
 --- !u!114 &1939728092720651210
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6299,6 +6300,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   baseTopic: main_bot
+  commandTimeout: 0.1
 --- !u!114 &7605549948360396547
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -21170,6 +21172,10 @@ PrefabInstance:
       propertyPath: maxWheelSpeed
       value: 6
       objectReference: {fileID: 0}
+    - target: {fileID: 3265985549162480872, guid: f981367d517eae126b9f354839beafa9, type: 3}
+      propertyPath: maxWheelSpeedRpm
+      value: 4000
+      objectReference: {fileID: 0}
     - target: {fileID: 3591701462781367809, guid: f981367d517eae126b9f354839beafa9, type: 3}
       propertyPath: m_ParentAnchorPosition.x
       value: 0
@@ -21343,6 +21349,10 @@ PrefabInstance:
       propertyPath: maxWheelSpeed
       value: 6
       objectReference: {fileID: 0}
+    - target: {fileID: 3265985549162480872, guid: f981367d517eae126b9f354839beafa9, type: 3}
+      propertyPath: maxWheelSpeedRpm
+      value: 4000
+      objectReference: {fileID: 0}
     - target: {fileID: 3591701462781367809, guid: f981367d517eae126b9f354839beafa9, type: 3}
       propertyPath: m_ParentAnchorPosition.x
       value: 0.15400001
@@ -21515,6 +21525,10 @@ PrefabInstance:
     - target: {fileID: 3112711424064963088, guid: f981367d517eae126b9f354839beafa9, type: 3}
       propertyPath: m_Layer
       value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 3265985549162480872, guid: f981367d517eae126b9f354839beafa9, type: 3}
+      propertyPath: maxWheelSpeedRpm
+      value: 4000
       objectReference: {fileID: 0}
     - target: {fileID: 3591701462781367809, guid: f981367d517eae126b9f354839beafa9, type: 3}
       propertyPath: m_ParentAnchorPosition.x
@@ -21692,6 +21706,10 @@ PrefabInstance:
     - target: {fileID: 3265985549162480872, guid: f981367d517eae126b9f354839beafa9, type: 3}
       propertyPath: maxWheelSpeed
       value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 3265985549162480872, guid: f981367d517eae126b9f354839beafa9, type: 3}
+      propertyPath: maxWheelSpeedRpm
+      value: 4000
       objectReference: {fileID: 0}
     - target: {fileID: 3591701462781367809, guid: f981367d517eae126b9f354839beafa9, type: 3}
       propertyPath: m_ParentAnchorPosition.x

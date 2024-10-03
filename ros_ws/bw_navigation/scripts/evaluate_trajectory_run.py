@@ -157,8 +157,8 @@ def main() -> None:
         plot_x_velocity(x_vel_ax, commands, start_time, "Commanded")
         plot_ang_velocity(ang_vel_ax, commands, start_time, "Commanded")
 
-    x_vel_ax.set_ylim(-2, 2)
-    ang_vel_ax.set_ylim(-4, 4)
+    x_vel_ax.set_ylim(-4, 4)
+    ang_vel_ax.set_ylim(-20, 20)
 
     plt.legend()
     plt.show()

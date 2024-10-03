@@ -179,7 +179,6 @@ class PointCloud:
     ) -> PointCloud:
         color_data = o3d.geometry.Image(color.data)
         depth_data = o3d.geometry.Image(depth.data)
-        print(np.min(depth.data), np.max(depth.data))
         rgbd = o3d.geometry.RGBDImage.create_from_color_and_depth(
             color_data, depth_data, convert_rgb_to_intensity=False, depth_scale=depth_scale, depth_trunc=1000.0
         )
@@ -190,7 +189,6 @@ class PointCloud:
         colors = to_uint32_color(np.asarray(pcd.colors).astype(np.float32)).reshape(
             (camera_info.height, camera_info.width)
         )
-        print(np.nanmin(points), np.nanmax(points))
         return PointCloud(
             header=Header.from_msg(camera_info.header), points=points, colors=colors, color_encoding=CloudFieldName.RGB
         )

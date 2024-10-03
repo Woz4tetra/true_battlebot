@@ -2,29 +2,32 @@ using UnityEngine;
 
 class Wheel : MonoBehaviour
 {
-    [SerializeField] private float maxWheelSpeed = 1.0f;
+    [SerializeField] private float maxWheelSpeedRpm = 1000.0f;
     [SerializeField] private float wheelRadius = 1.0f;
     private ArticulationBody body;
-    private float angularVelocity = 0.0f;
+    private float angularVelocityDegPerSec = 0.0f;
+    private float maxWheelSpeedRadPerSec;
 
     void Start()
     {
+        maxWheelSpeedRadPerSec = maxWheelSpeedRpm * 2.0f * Mathf.PI / 60.0f;
         body = GetComponent<ArticulationBody>();
     }
 
     public void setVelocity(float groundVelocity)
     {
-        if (Mathf.Abs(groundVelocity) > maxWheelSpeed)
+        float angularVelocityRadPerSec = groundVelocity / wheelRadius;
+        if (Mathf.Abs(angularVelocityRadPerSec) > maxWheelSpeedRadPerSec)
         {
-            groundVelocity = Mathf.Sign(groundVelocity) * maxWheelSpeed;
+            angularVelocityRadPerSec = Mathf.Sign(angularVelocityRadPerSec) * maxWheelSpeedRadPerSec;
         }
-        angularVelocity = Mathf.Rad2Deg * groundVelocity / wheelRadius;
+        angularVelocityDegPerSec = Mathf.Rad2Deg * angularVelocityRadPerSec;
     }
 
     void FixedUpdate()
     {
         ArticulationDrive drive = body.xDrive;
-        drive.targetVelocity = angularVelocity;
+        drive.targetVelocity = angularVelocityDegPerSec;
         body.xDrive = drive;
     }
 }

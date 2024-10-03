@@ -167,7 +167,7 @@ class RobotFilter:
         for robot_config in robot_fleet:
             if robot_config.is_controlled:
                 self.filters.append(
-                    DriveKalmanModel(
+                    TrackingModel(
                         robot_config,
                         self.update_delay,
                         self.process_noise,

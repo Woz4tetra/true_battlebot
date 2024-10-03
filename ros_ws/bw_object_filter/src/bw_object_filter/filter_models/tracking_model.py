@@ -83,7 +83,7 @@ class TrackingModel(ModelBase):
         state = self.state[0:NUM_STATES]
         covariance = self.covariance[0:NUM_STATES, 0:NUM_STATES]
         next_state, next_covariance = kf_update(state, covariance, self.position_H, measurement, noise, tuple())
-        next_twist = self._compute_twist_xy(state, next_state)
+        next_twist = self._compute_twist_xy(state, next_state, self.state[STATE_vt])
         self.state[0:NUM_STATES] = next_state
         self.state[NUM_STATES:] = next_twist
         self.covariance[0:NUM_STATES, 0:NUM_STATES] = next_covariance
@@ -116,7 +116,7 @@ class TrackingModel(ModelBase):
             velocities.append(filter.update(delta_state / self.dt))
         return self._rotate_velocity_to_base(np.array(velocities), state_theta)
 
-    def _compute_twist_xy(self, state: np.ndarray, next_state: np.ndarray) -> np.ndarray:
+    def _compute_twist_xy(self, state: np.ndarray, next_state: np.ndarray, prev_angular_velocity: float) -> np.ndarray:
         state_theta = state[STATE_t]
         delta_state = next_state - state
         dx = delta_state[STATE_x]
@@ -124,5 +124,5 @@ class TrackingModel(ModelBase):
         velocities = []
         for delta_state, filter in zip([dx, dy], self.velocity_filters[0:2]):
             velocities.append(filter.update(delta_state / self.dt))
-        velocities.append(state[STATE_vt])
+        velocities.append(prev_angular_velocity)
         return self._rotate_velocity_to_base(np.array(velocities), state_theta)

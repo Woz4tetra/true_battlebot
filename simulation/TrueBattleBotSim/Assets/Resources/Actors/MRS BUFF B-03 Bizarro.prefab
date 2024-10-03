@@ -12649,6 +12649,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   linearScale: 4
   angularScale: 20
+  useJoystick: 0
 --- !u!114 &60834847699659685
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -12687,6 +12688,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   baseTopic: opponent_1
+  commandTimeout: 0.1
 --- !u!114 &9188538962328639601
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -20630,6 +20632,10 @@ PrefabInstance:
       propertyPath: maxWheelSpeed
       value: 6
       objectReference: {fileID: 0}
+    - target: {fileID: 3265985549162480872, guid: f981367d517eae126b9f354839beafa9, type: 3}
+      propertyPath: maxWheelSpeedRpm
+      value: 4000
+      objectReference: {fileID: 0}
     - target: {fileID: 3591701462781367809, guid: f981367d517eae126b9f354839beafa9, type: 3}
       propertyPath: m_ParentAnchorPosition.x
       value: 0
@@ -20802,6 +20808,10 @@ PrefabInstance:
     - target: {fileID: 3265985549162480872, guid: f981367d517eae126b9f354839beafa9, type: 3}
       propertyPath: maxWheelSpeed
       value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 3265985549162480872, guid: f981367d517eae126b9f354839beafa9, type: 3}
+      propertyPath: maxWheelSpeedRpm
+      value: 4000
       objectReference: {fileID: 0}
     - target: {fileID: 3591701462781367809, guid: f981367d517eae126b9f354839beafa9, type: 3}
       propertyPath: m_ParentAnchorPosition.x
@@ -20980,6 +20990,10 @@ PrefabInstance:
       propertyPath: maxWheelSpeed
       value: 6
       objectReference: {fileID: 0}
+    - target: {fileID: 3265985549162480872, guid: f981367d517eae126b9f354839beafa9, type: 3}
+      propertyPath: maxWheelSpeedRpm
+      value: 4000
+      objectReference: {fileID: 0}
     - target: {fileID: 3591701462781367809, guid: f981367d517eae126b9f354839beafa9, type: 3}
       propertyPath: m_ParentAnchorPosition.x
       value: 0.15400001
@@ -21156,6 +21170,10 @@ PrefabInstance:
     - target: {fileID: 3265985549162480872, guid: f981367d517eae126b9f354839beafa9, type: 3}
       propertyPath: maxWheelSpeed
       value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 3265985549162480872, guid: f981367d517eae126b9f354839beafa9, type: 3}
+      propertyPath: maxWheelSpeedRpm
+      value: 4000
       objectReference: {fileID: 0}
     - target: {fileID: 3591701462781367809, guid: f981367d517eae126b9f354839beafa9, type: 3}
       propertyPath: m_ParentAnchorPosition.x

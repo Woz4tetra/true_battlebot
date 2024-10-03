@@ -3012,7 +3012,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8ded925f1af29c171ab41237d10cdbe4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxWheelSpeed: 6
+  maxWheelSpeedRpm: 4000
   wheelRadius: 0.0262529
 --- !u!1 &929102989511442352
 GameObject:
@@ -7202,7 +7202,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8ded925f1af29c171ab41237d10cdbe4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxWheelSpeed: 6
+  maxWheelSpeedRpm: 4000
   wheelRadius: 0.0262529
 --- !u!1 &1848000402293622149
 GameObject:
@@ -11738,7 +11738,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8ded925f1af29c171ab41237d10cdbe4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxWheelSpeed: 6
+  maxWheelSpeedRpm: 4000
   wheelRadius: 0.0262529
 --- !u!1 &2843270855206659090
 GameObject:
@@ -19380,8 +19380,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1cfaef01096bc8508a46259d2d63ff08, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  linearScale: 4
-  angularScale: 20
+  linearScale: 8
+  angularScale: 50
+  useJoystick: 0
 --- !u!114 &8431490954655205155
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -19420,6 +19421,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   baseTopic: main_bot
+  commandTimeout: 0.1
 --- !u!114 &354702561140582946
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -28438,7 +28440,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8ded925f1af29c171ab41237d10cdbe4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxWheelSpeed: 6
+  maxWheelSpeedRpm: 4000
   wheelRadius: 0.0262529
 --- !u!1 &7231868938806444860
 GameObject:
