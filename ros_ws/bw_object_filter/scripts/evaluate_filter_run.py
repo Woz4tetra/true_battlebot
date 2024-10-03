@@ -9,10 +9,6 @@ from matplotlib.axes import Axes
 from rosbag.bag import Bag
 
 
-def expand_list(lst: list, size: int, fill: Any = None) -> list:
-    return lst + [fill] * (size - len(lst))
-
-
 def plot_x_position(
     axis: Axes,
     poses: Union[list[Optional[PoseStamped]], list[PoseStamped]],
@@ -79,28 +75,29 @@ def plot_ang_velocity(
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Evaluate trajectories")
+    parser = argparse.ArgumentParser(description="Evaluate filter")
     parser.add_argument("bag", type=str, help="Path to bag")
     args = parser.parse_args()
 
-    expected_trajectories: list[list[Trajectory]] = []
-    recorded_trajectories: list[Trajectory] = []
-    measured_trajectories: list[Trajectory] = []
+    recorded_trajectory = Trajectory()
+    measured_trajectory = Trajectory()
     commands: list[TwistStamped] = []
 
     with Bag(args.bag, "r") as bag:
         for topic, msg, timestamp in bag.read_messages():  # type: ignore
-            if topic == "expected_trajectory":
-                expected_trajectories = expand_list(expected_trajectories, msg.header.seq + 1, [])
-                expected_trajectories[msg.header.seq].append(msg)
-            elif topic == "recorded_trajectory":
-                recorded_trajectories = expand_list(recorded_trajectories, msg.header.seq + 1)
-                recorded_trajectories[msg.header.seq] = msg
+            if topic == "recorded_trajectory":
+                recorded_trajectory.poses.extend(msg.poses)
+                recorded_trajectory.twists.extend(msg.twists)
             elif topic == "measured_trajectory":
-                measured_trajectories = expand_list(measured_trajectories, msg.header.seq + 1)
-                measured_trajectories[msg.header.seq] = msg
+                measured_trajectory.poses.extend(msg.poses)
+                measured_trajectory.twists.extend(msg.twists)
             elif topic == "commands":
                 commands.extend(msg.twists)
+
+    recorded_trajectory.poses.sort(key=lambda pose: pose.header.stamp)
+    recorded_trajectory.twists.sort(key=lambda twist: twist.header.stamp)
+    measured_trajectory.poses.sort(key=lambda pose: pose.header.stamp)
+    measured_trajectory.twists.sort(key=lambda twist: twist.header.stamp)
 
     fig, axes = plt.subplots(5, 1, sharex=True)
     x_pos_ax, y_pos_ax, yaw_angle_ax, x_vel_ax, ang_vel_ax = axes
@@ -113,49 +110,28 @@ def main() -> None:
 
     ang_vel_ax.set_xlabel("Time (s)")
 
-    for index, (expected, recorded, measured) in enumerate(
-        zip(expected_trajectories, recorded_trajectories, measured_trajectories)
-    ):
-        if expected is None or recorded is None or measured is None:
-            print(f"Missing trajectory for sequence {index}")
-            continue
+    start_time = recorded_trajectory.poses[0].header.stamp.to_sec()
 
-        start_time = recorded.header.stamp.to_sec()
-        expected_poses = []
-        expected_twists = []
-        for trajectory in expected:
-            if trajectory.header.stamp.to_sec() < start_time:
-                continue
-            expected_poses.extend(trajectory.poses)
-            expected_twists.extend(trajectory.twists)
-            expected_poses.append(None)
-            expected_twists.append(None)
-        plot_x_position(x_pos_ax, expected_poses, start_time, "Expected", line="--", marker=".")
-        plot_y_position(y_pos_ax, expected_poses, start_time, "Expected", line="--", marker=".")
-        plot_yaw_angle(yaw_angle_ax, expected_poses, start_time, "Expected", line="--", marker=".")
-        plot_x_velocity(x_vel_ax, expected_twists, start_time, "Expected", line="--", marker=".")
-        plot_ang_velocity(ang_vel_ax, expected_twists, start_time, "Expected", line="--", marker=".")
+    recorded_poses = recorded_trajectory.poses
+    measured_poses = measured_trajectory.poses
 
-        recorded_poses = recorded.poses
-        measured_poses = measured.poses
+    plot_x_position(x_pos_ax, recorded_poses, start_time, "Recorded")
+    plot_x_position(x_pos_ax, measured_poses, start_time, "Measured")
+    plot_y_position(y_pos_ax, recorded_poses, start_time, "Recorded")
+    plot_y_position(y_pos_ax, measured_poses, start_time, "Measured")
+    plot_yaw_angle(yaw_angle_ax, recorded_poses, start_time, "Recorded")
+    plot_yaw_angle(yaw_angle_ax, measured_poses, start_time, "Measured")
 
-        plot_x_position(x_pos_ax, recorded_poses, start_time, "Ground truth")
-        plot_x_position(x_pos_ax, measured_poses, start_time, "Measured")
-        plot_y_position(y_pos_ax, recorded_poses, start_time, "Ground truth")
-        plot_y_position(y_pos_ax, measured_poses, start_time, "Measured")
-        plot_yaw_angle(yaw_angle_ax, recorded_poses, start_time, "Ground truth")
-        plot_yaw_angle(yaw_angle_ax, measured_poses, start_time, "Measured")
+    recorded_twists = recorded_trajectory.twists
+    measured_twists = measured_trajectory.twists
 
-        recorded_twists = recorded.twists
-        measured_twists = recorded.twists
+    plot_x_velocity(x_vel_ax, recorded_twists, start_time, "Recorded")
+    plot_x_velocity(x_vel_ax, measured_twists, start_time, "Measured")
+    plot_ang_velocity(ang_vel_ax, recorded_twists, start_time, "Recorded")
+    plot_ang_velocity(ang_vel_ax, measured_twists, start_time, "Measured")
 
-        plot_x_velocity(x_vel_ax, recorded_twists, start_time, "Ground truth")
-        plot_x_velocity(x_vel_ax, measured_twists, start_time, "Measured")
-        plot_ang_velocity(ang_vel_ax, recorded_twists, start_time, "Ground truth")
-        plot_ang_velocity(ang_vel_ax, measured_twists, start_time, "Measured")
-
-        plot_x_velocity(x_vel_ax, commands, start_time, "Commanded")
-        plot_ang_velocity(ang_vel_ax, commands, start_time, "Commanded")
+    plot_x_velocity(x_vel_ax, commands, start_time, "Commanded")
+    plot_ang_velocity(ang_vel_ax, commands, start_time, "Commanded")
 
     x_vel_ax.set_ylim(-4, 4)
     ang_vel_ax.set_ylim(-20, 20)

@@ -32,6 +32,7 @@ public class MainSceneManager : MonoBehaviour
     BackgroundConfig loadedBackgroundConfig = new BackgroundConfig { name = "" };
     ROSConnection ros;
     FixturesManager fixturesManager;
+    PhysicsMaterialConfigurator physicsMaterialConfigurator;
 
     void Start()
     {
@@ -78,6 +79,8 @@ public class MainSceneManager : MonoBehaviour
 
         ros = ROSConnection.GetOrCreateInstance();
         ros.RegisterPublisher<SimulationScenarioLoadedEventMsg>(scenarioLoadedTopic);
+
+        physicsMaterialConfigurator = GetComponent<PhysicsMaterialConfigurator>();
     }
 
     public void LoadBackground(BackgroundConfig backgroundConfig)
@@ -255,6 +258,12 @@ public class MainSceneManager : MonoBehaviour
         }
 
         fixturesManager.UpdateFromConfig(scenario.fixtures);
+
+        physicsMaterialConfigurator.ResetMaterials();
+        for (int i = 0; i < scenario.physics_materials.Count; i++)
+        {
+            physicsMaterialConfigurator.ConfigureMaterial(scenario.physics_materials[i]);
+        }
 
         ros.Publish(scenarioLoadedTopic, new SimulationScenarioLoadedEventMsg
         {

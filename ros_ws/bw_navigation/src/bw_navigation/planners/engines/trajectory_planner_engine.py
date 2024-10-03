@@ -33,6 +33,13 @@ class PlanningTicket:
     field: FieldBounds2D
 
 
+@dataclass
+class PlanningResult:
+    trajectory: Trajectory
+    planning_start_time: rospy.Time
+    planning_finish_time: rospy.Time
+
+
 def get_theta(rotation: geometry.Rotation2d) -> float:
     return float(rotation.radians())  # type: ignore
 
@@ -81,7 +88,7 @@ class TrajectoryPlannerEngine:
 
         self.planning_thread = Thread(daemon=True, target=self.planning_task)
         self.goal_in_queue: Queue[PlanningTicket] = Queue()
-        self.plan_out_queue: Queue[Trajectory] = Queue()
+        self.plan_out_queue: Queue[PlanningResult] = Queue()
         self.is_planning = False
         self.active_trajectory: Optional[Trajectory] = None
         self.active_trajectory_msg = TrajectoryMsg()
@@ -149,11 +156,13 @@ class TrajectoryPlannerEngine:
                     robot_velocity = ticket.robot_velocity
                     self.traj_config.setStartVelocity(robot_velocity.x)
                 self.is_planning = True
+                planning_start_time = rospy.Time.now()
                 if self.engine_config.forward_project_goal_velocity:
                     trajectory = self._plan_with_goal_velocity(ticket)
                 else:
                     trajectory = self._plan_once(ticket.robot_pose, ticket.goal_pose)
-                self.plan_out_queue.put(trajectory)
+                planning_finish_time = rospy.Time.now()
+                self.plan_out_queue.put(PlanningResult(trajectory, planning_start_time, planning_finish_time))
                 self.is_planning = False
             except Exception as e:
                 rospy.logerr(f"Trajectory planning failed: {e}", exc_info=True)
@@ -208,7 +217,12 @@ class TrajectoryPlannerEngine:
     def compute(self, robot_pose: Pose2D) -> tuple[Twist, GoalProgress]:
         if not self.plan_out_queue.empty():
             while not self.plan_out_queue.empty():
-                self.active_trajectory = self.plan_out_queue.get()
+                result = self.plan_out_queue.get()
+                self.active_trajectory = result.trajectory
+                planning_time = (result.planning_finish_time - result.planning_start_time).to_sec()
+                plan_age = (rospy.Time.now() - result.planning_start_time).to_sec()
+                rospy.loginfo(f"Trajectory planning took {planning_time:0.6f} seconds")
+                rospy.loginfo(f"Trajectory is {plan_age:0.6f} seconds old")
             if self.active_trajectory is not None:
                 self.active_trajectory_msg = trajectory_to_msg(self.start_time, self.active_trajectory)
             self.start_time = rospy.Time.now() - rospy.Duration.from_sec(self.engine_config.trajectory_lookahead)

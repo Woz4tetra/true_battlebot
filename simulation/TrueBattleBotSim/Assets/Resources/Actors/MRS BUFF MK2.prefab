@@ -19380,7 +19380,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1cfaef01096bc8508a46259d2d63ff08, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  linearScale: 8
+  linearScale: 4
   angularScale: 50
   useJoystick: 0
 --- !u!114 &8431490954655205155

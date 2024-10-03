@@ -29,6 +29,7 @@ from geometry_msgs.msg import (
 )
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import Imu
+from std_msgs.msg import Empty
 from std_msgs.msg import Header as RosHeader
 
 from bw_object_filter.absolute_imu_tracker import AbsoluteImuTracker
@@ -151,6 +152,7 @@ class RobotFilter:
         self.opponent_fleet_sub = rospy.Subscriber(
             "opponent_fleet", RobotFleetConfigMsg, self.opponent_fleet_callback, queue_size=1
         )
+        self.reset_filters_sub = rospy.Subscriber("reset_filters", Empty, self.reset_filters_callback, queue_size=1)
         rospy.loginfo("Robot filter initialized.")
 
     def initialize(self, robot_fleet: list[RobotConfig]) -> None:
@@ -167,7 +169,7 @@ class RobotFilter:
         for robot_config in robot_fleet:
             if robot_config.is_controlled:
                 self.filters.append(
-                    TrackingModel(
+                    DriveKalmanModel(
                         robot_config,
                         self.update_delay,
                         self.process_noise,
@@ -448,6 +450,10 @@ class RobotFilter:
         )
         robot_fleet = self.non_opponent_robot_configs + opponent_fleet.robots
         self.initialize(robot_fleet)
+
+    def reset_filters_callback(self, msg: Empty) -> None:
+        rospy.loginfo("Resetting filters.")
+        self.reset_filters()
 
     def is_in_field_bounds(self, position: Point) -> bool:
         if not self.field_received():

@@ -18,20 +18,13 @@ from bw_navigation.planners.planner_interface import PlannerInterface
 
 
 class CrashTrajectoryPlanner(PlannerInterface):
-    def __init__(
-        self,
-        controlled_robot: str,
-        config: PathPlannerConfig,
-        replan_interval: float = 0.2,
-        rotate_180_buffer: float = 0.05,
-        angle_tolerance: float = 1.0,
-    ) -> None:
+    def __init__(self, controlled_robot: str, config: PathPlannerConfig) -> None:
         self.config = config
         self.controlled_robot = controlled_robot
-        self.replan_interval = rospy.Duration.from_sec(replan_interval)
-        self.rotate_180_buffer = rotate_180_buffer
-        self.buffer_xy = XY(rotate_180_buffer, rotate_180_buffer)
-        self.angle_tolerance = angle_tolerance
+        self.replan_interval = rospy.Duration.from_sec(self.config.replan_interval)
+        self.rotate_180_buffer = self.config.rotate_180_buffer
+        self.buffer_xy = XY(self.config.rotate_180_buffer, self.config.rotate_180_buffer)
+        self.angle_tolerance = self.config.angle_tolerance
         self.planner = TrajectoryPlannerEngine(self.config)
         self.thrash_recover_engine = ThrashEngine(self.config.thrash_recovery)
         self.visualization_publisher = rospy.Publisher(
