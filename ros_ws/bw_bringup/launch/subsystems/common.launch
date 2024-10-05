@@ -26,5 +26,4 @@
     </include>
     <include file="$(find bw_object_filter)/launch/camera_bump_sensor.launch" />
     <include file="$(find bw_system_health)/launch/system_health.launch" />
-    <include file="$(find bw_bringup)/launch/subsystems/static_transforms.launch" />
 </launch>

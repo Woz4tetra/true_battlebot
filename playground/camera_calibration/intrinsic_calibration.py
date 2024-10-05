@@ -6,7 +6,7 @@ import cv2
 import numpy as np
 import toml
 from apriltag_ros.msg import AprilTagDetectionArray
-from board_config import BoardConfig
+from bw_shared.camera_calibration.board_config import BoardConfig
 from bw_shared.geometry.camera.camera_info_loader import CameraInfoData
 from bw_shared.geometry.camera.image_rectifier import ImageRectifier
 from bw_shared.geometry.projection_math.points_transform import points_transform_by
@@ -19,6 +19,7 @@ from sensor_msgs.msg import CameraInfo, Image
 from tqdm import tqdm
 
 BRIDGE = CvBridge()
+SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 
 
 def load_images(bag: Bag) -> list[tuple[np.ndarray, Optional[AprilTagDetectionArray]]]:
@@ -136,18 +137,30 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("image_bag", type=str, help="path to bag")
     parser.add_argument(
-        "-p", "--parameters", type=str, default="calibration_parameters.json", help="calibration parameter file"
+        "board_config",
+        type=str,
+        nargs="?",
+        default=os.path.join(SCRIPT_DIR, "simulation_board.toml"),
+        help="path to board config",
+    )
+    parser.add_argument(
+        "-p",
+        "--parameters",
+        type=str,
+        default=os.path.join(SCRIPT_DIR, "calibration_parameters.json"),
+        help="calibration parameter file",
     )
     parser.add_argument("-c", "--calibration-path", type=str, default="", help="output directory")
     args = parser.parse_args()
     image_bag = args.image_bag
     parameter_path = args.parameters
     calibration_path = args.calibration_path
+    board_config_path = args.board_config
 
     if len(calibration_path) == 0:
         calibration_path = os.path.splitext(image_bag)[0] + ".toml"
 
-    config = BoardConfig()
+    config = BoardConfig.from_file(board_config_path)
 
     bag = Bag(image_bag)
     bag_data = load_images(bag)
@@ -161,15 +174,6 @@ def main() -> None:
         write_calibration(info, calibration_path)
     print(info)
 
-    grid_size = config.num_rows + 1
-    length_half = config.all_tag_width / 2
-    mesh_x, mesh_y = np.meshgrid(
-        np.linspace(-length_half, length_half, grid_size), np.linspace(-length_half, length_half, grid_size)
-    )
-    grid_in_tag = np.vstack([mesh_x.ravel(), mesh_y.ravel()]).reshape(2, -1).T
-    zeros = np.zeros((grid_size * grid_size, 1))
-    grid_in_tag = np.concatenate((grid_in_tag, zeros), axis=1)
-
     show_rectified = False
     rectifier = ImageRectifier(info)
     rectified_info = rectifier.get_rectified_info()
@@ -178,6 +182,8 @@ def main() -> None:
         show_info = rectified_info
     else:
         show_info = info
+
+    grid_in_tag = config.grid_points
 
     for image, ground_truth in bag_data:
         if ground_truth is None:

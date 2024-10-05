@@ -617,7 +617,7 @@ MonoBehaviour:
   maxDistance: 1.8
   layerMask:
     serializedVersion: 2
-    m_Bits: 1224
+    m_Bits: 263368
   debugRayCast: 0
   publishRate: 4
   viewAngleThreshold: 50

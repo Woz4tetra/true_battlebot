@@ -3,4 +3,5 @@
         <arg name="auto_initialize" value="true" />
     </include>
     <include file="$(find ros_tcp_endpoint)/launch/endpoint.launch" />
+    <include file="$(find bw_bringup)/launch/subsystems/mini_bot_static_transforms.launch" />
 </launch>

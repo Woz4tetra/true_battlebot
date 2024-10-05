@@ -1,6 +1,6 @@
 {
     "cage": {
-        "cage_type": "Invisible Cage",
+        "cage_type": "invisible_cage",
         "display_readout": false,
         "dims": {
             "x": 2.5,
@@ -19,12 +19,17 @@
         {
             "name": "slow_camera",
             "model": "ZED 2i",
-            "objective": "follow_mouse_slow_camera"
+            "objective": "blue_slow_camera"
+        },
+        {
+            "name": "tracking_camera",
+            "model": "OAK-1",
+            "objective": "blue_tracking_camera"
         },
         {
             "name": "calibration_target",
             "model": "CalibrationTarget8x8",
-            "objective": "calibration_vertical"
+            "objective": "calibration_point_blue"
         }
     ]
 }

@@ -11,6 +11,52 @@ from sensor_msgs.msg import CameraInfo
 from bw_tools.tag_detection.tag_detection import TagDetection
 
 
+def compute_pose_ransac(
+    camera_info: CameraInfo, microsac_params: cv2.UsacParams, image_points: np.ndarray, object_points: np.ndarray
+) -> Optional[Transform3D]:
+    camera_matrix = np.array(camera_info.K).reshape(3, 3)
+    dist_coeffs = np.array(camera_info.D)
+    (
+        success,
+        _,
+        rot_camera_to_bundle,
+        tl_camera_to_bundle,
+        inliers,
+    ) = cv2.solvePnPRansac(
+        object_points,
+        image_points,
+        camera_matrix,
+        dist_coeffs,
+        params=microsac_params,
+    )
+    if not success:
+        return None
+    orientation, _ = cv2.Rodrigues(rot_camera_to_bundle)
+
+    pose = np.eye(4)
+    pose[:3, :3] = orientation
+    pose[:3, 3] = tl_camera_to_bundle.flatten()
+    return Transform3D(pose)
+
+
+def compute_pose_pnp(
+    camera_info: CameraInfo, image_points: np.ndarray, object_points: np.ndarray
+) -> Optional[Transform3D]:
+    camera_matrix = np.array(camera_info.K).reshape(3, 3)
+    dist_coeffs = np.array(camera_info.D)
+    success, rot_camera_to_bundle, tl_camera_to_bundle = cv2.solvePnP(
+        object_points, image_points, camera_matrix, dist_coeffs
+    )
+    if not success:
+        return None
+    orientation, _ = cv2.Rodrigues(rot_camera_to_bundle)
+
+    pose = np.eye(4)
+    pose[:3, :3] = orientation
+    pose[:3, 3] = tl_camera_to_bundle.flatten()
+    return Transform3D(pose)
+
+
 @dataclass
 class BundleResult:
     config: BundleConfig
@@ -64,19 +110,7 @@ class PnpBundleDetector(BundleDetectorInterface):
         super().__init__(config)
 
     def compute_pose(self, image_points: np.ndarray, object_points: np.ndarray) -> Optional[Transform3D]:
-        camera_matrix = np.array(self.camera_info.K).reshape(3, 3)
-        dist_coeffs = np.array(self.camera_info.D)
-        success, rot_camera_to_bundle, tl_camera_to_bundle = cv2.solvePnP(
-            object_points, image_points, camera_matrix, dist_coeffs
-        )
-        if not success:
-            return None
-        orientation, _ = cv2.Rodrigues(rot_camera_to_bundle)
-
-        pose = np.eye(4)
-        pose[:3, :3] = orientation
-        pose[:3, 3] = tl_camera_to_bundle.flatten()
-        return Transform3D(pose)
+        return compute_pose_pnp(self.camera_info, image_points, object_points)
 
 
 class RansacBundleDetector(BundleDetectorInterface):
@@ -87,26 +121,4 @@ class RansacBundleDetector(BundleDetectorInterface):
         super().__init__(config)
 
     def compute_pose(self, image_points: np.ndarray, object_points: np.ndarray) -> Optional[Transform3D]:
-        camera_matrix = np.array(self.camera_info.K).reshape(3, 3)
-        dist_coeffs = np.array(self.camera_info.D)
-        (
-            success,
-            _,
-            rot_camera_to_bundle,
-            tl_camera_to_bundle,
-            inliers,
-        ) = cv2.solvePnPRansac(
-            object_points,
-            image_points,
-            camera_matrix,
-            dist_coeffs,
-            params=self.microsac_params,
-        )
-        if not success:
-            return None
-        orientation, _ = cv2.Rodrigues(rot_camera_to_bundle)
-
-        pose = np.eye(4)
-        pose[:3, :3] = orientation
-        pose[:3, 3] = tl_camera_to_bundle.flatten()
-        return Transform3D(pose)
+        return compute_pose_ransac(self.camera_info, self.microsac_params, image_points, object_points)
