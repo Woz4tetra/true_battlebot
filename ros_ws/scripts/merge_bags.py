@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import argparse
 import os
 
@@ -13,7 +14,7 @@ def main() -> None:
     with Bag(merged_name, "w") as merged_bag:
         for bag in args.bags:
             with Bag(bag, "r", allow_unindexed=True) as current_bag:
-                for topic, msg, timestamp in current_bag.read_messages():
+                for topic, msg, timestamp in current_bag.read_messages():  # type: ignore
                     merged_bag.write(topic, msg, timestamp)
     print(f"Wrote to {merged_name}")
 

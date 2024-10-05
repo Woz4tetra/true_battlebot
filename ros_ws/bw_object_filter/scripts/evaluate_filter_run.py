@@ -1,5 +1,5 @@
 import argparse
-from typing import Any, Optional, Union
+from typing import Optional, Union
 
 from bw_interfaces.msg import Trajectory
 from bw_shared.geometry.pose2d import Pose2D

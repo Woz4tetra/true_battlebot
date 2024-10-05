@@ -13,7 +13,6 @@ from apriltag_ros.msg import AprilTagDetectionArray
 from bw_shared.camera_calibration.board_config import BoardConfig
 from bw_shared.geometry.camera.image_rectifier import ImageRectifier
 from bw_shared.geometry.projection_math.points_transform import points_transform_by
-from bw_shared.geometry.rpy import RPY
 from bw_shared.geometry.transform3d import Transform3D
 from bw_tools.tag_detection.bundle_detector import compute_pose_ransac
 from bw_tools.tag_detection.draw_helpers import project_point_array_to_pixel

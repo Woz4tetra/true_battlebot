@@ -25,7 +25,7 @@ SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 def load_images(bag: Bag) -> list[tuple[np.ndarray, Optional[AprilTagDetectionArray]]]:
     image_msgs: list[Image] = []
     ground_truth: list[AprilTagDetectionArray] = []
-    for topic, msg, timestamp in bag.read_messages():
+    for topic, msg, timestamp in bag.read_messages():  # type: ignore
         type_str = str(type(msg))
         if "sensor_msgs__Image" in type_str:
             image_msgs.append(msg)
@@ -90,7 +90,7 @@ def compute_camera_info(
             if charuco_corners is None or charuco_ids is None:
                 print("No charuco corners found. Skipping image.")
                 continue
-            object_points, image_points = config.board.matchImagePoints(charuco_corners, charuco_ids)
+            object_points, image_points = config.board.matchImagePoints(charuco_corners, charuco_ids)  # type: ignore
             all_image_points.append(image_points)
             all_object_points.append(object_points)
             debug_image = aruco.drawDetectedCornersCharuco(np.copy(image), charuco_corners, charuco_ids, (0, 255, 0))
@@ -103,8 +103,8 @@ def compute_camera_info(
             pbar.update(1)
 
     assert image_size is not None, "No images found."
-    ret, camera_matrix, distortion, rvecs, tvecs = cv2.calibrateCamera(
-        all_object_points, all_image_points, image_size, None, None
+    ret, camera_matrix, distortion, rvecs, tvecs = cv2.calibrateCamera(  # type: ignore
+        all_object_points, all_image_points, image_size
     )
 
     mean_error = 0

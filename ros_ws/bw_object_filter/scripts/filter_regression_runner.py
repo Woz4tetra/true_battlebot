@@ -1,7 +1,7 @@
 import argparse
 from dataclasses import dataclass, field
 from datetime import datetime
-from threading import Event, Lock
+from threading import Lock
 
 import numpy as np
 import rospy
