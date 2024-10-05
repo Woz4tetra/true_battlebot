@@ -107,7 +107,7 @@ def compute_camera_info(
         all_object_points, all_image_points, image_size
     )
 
-    mean_error = 0
+    mean_error = 0.0
     for index in range(len(all_object_points)):
         imgpoints2, _ = cv2.projectPoints(
             all_object_points[index], rvecs[index], tvecs[index], camera_matrix, distortion

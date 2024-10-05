@@ -4,7 +4,7 @@ import argparse
 import os
 import sys
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Optional, Union
 
 import cv2
 import numpy as np
@@ -75,7 +75,7 @@ class AppData:
 
 
 def load_images(topics: list[CameraTopic], bag: Bag) -> CameraCalibrationData:
-    all_data = {}
+    all_data: dict[Optional[str], Optional[Union[Image, CameraInfo, AprilTagDetectionArray]]] = {}
     all_data.update({topic.image_topic: None for topic in topics})
     all_data.update({topic.camera_info_topic: None for topic in topics})
     all_data.update({topic.ground_truth_topic: None for topic in topics if topic.ground_truth_topic is not None})
@@ -90,8 +90,10 @@ def load_images(topics: list[CameraTopic], bag: Bag) -> CameraCalibrationData:
         image_msg = all_data[topic.image_topic]
         camera_info = all_data[topic.camera_info_topic]
         ground_truth = all_data.get(topic.ground_truth_topic, None)
-        if image_msg is None or camera_info is None:
+        if not isinstance(image_msg, Image) or not isinstance(camera_info, CameraInfo):
             raise ValueError(f"Missing data for topic {topic}")
+        if ground_truth is not None and not isinstance(ground_truth, AprilTagDetectionArray):
+            raise ValueError(f"Invalid ground truth data for topic {topic}")
         image = CV_BRIDGE.imgmsg_to_cv2(image_msg, desired_encoding="bgr8")
 
         data[topic] = CameraData(topic, image, camera_info, ground_truth)
