@@ -1,11 +1,15 @@
+#!/usr/bin/env python
+# PYTHON_ARGCOMPLETE_OK
 from __future__ import annotations
 
 import argparse
 import os
 import sys
 from dataclasses import dataclass, field
+from glob import glob
 from typing import Optional, Union
 
+import argcomplete
 import cv2
 import numpy as np
 import rospy
@@ -161,9 +165,22 @@ def compute_extrinsic_calibration(app: AppData, camera_data: CameraCalibrationDa
 
     tf_camera0_from_camera1 = tf_board_from_camera0.inverse().forward_by(tf_board_from_camera1)
 
+    tf_camera1_from_camera0 = tf_camera0_from_camera1.inverse()
+    transform_properties = (
+        tf_camera1_from_camera0.position.x,
+        tf_camera1_from_camera0.position.y,
+        tf_camera1_from_camera0.position.z,
+        tf_camera1_from_camera0.quaternion.x,
+        tf_camera1_from_camera0.quaternion.y,
+        tf_camera1_from_camera0.quaternion.z,
+        tf_camera1_from_camera0.quaternion.w,
+    )
+    properties_str = " ".join([f"{p:.6f}" for p in transform_properties])
+
     print(f"camera_0 pose: {tf_boardcenter_from_camera0}")
     print(f"camera_1 pose: {tf_boardcenter_from_camera1}")
-    print(f"camera_0 pose from camera_1 camera: {tf_camera0_from_camera1}")
+    print(f"camera_1 pose from camera_0 camera: {tf_camera1_from_camera0}")
+    print(f"static transform: {properties_str}")
 
     show_image = np.copy(camera_data[camera_1].image)
     show_info = camera_data[camera_1].camera_info
@@ -184,7 +201,8 @@ def compute_extrinsic_calibration(app: AppData, camera_data: CameraCalibrationDa
         ground_truth_camera1_detection = ground_truth_camera1.detections[0]
         ground_tf_camera0_from_board = Transform3D.from_pose_msg(ground_truth_camera0_detection.pose.pose.pose)
         ground_tf_camera1_from_board = Transform3D.from_pose_msg(ground_truth_camera1_detection.pose.pose.pose)
-        ground_tf_camera1_from_camera0 = ground_tf_camera0_from_board.inverse().forward_by(ground_tf_camera1_from_board)
+        ground_tf_camera0_from_camera1 = ground_tf_camera0_from_board.inverse().forward_by(ground_tf_camera1_from_board)
+        ground_tf_camera1_from_camera0 = ground_tf_camera0_from_camera1.inverse()
 
         print(f"Ground truth camera_0 pose: {ground_tf_camera0_from_board}")
         print(f"Ground truth camera_1 pose: {ground_tf_camera1_from_board}")
@@ -203,7 +221,7 @@ def compute_extrinsic_calibration(app: AppData, camera_data: CameraCalibrationDa
     draw_points_in_image(show_image, show_info, grid_points_in_camera1_original, (0, 0, 255))
 
     cv2.imshow(window_name, show_image)
-    key = chr(cv2.waitKey(-1) & 0xFF)
+    key = chr(cv2.waitKey(1) & 0xFF)
     if key == "q":
         cv2.destroyAllWindows()
         sys.exit(0)
@@ -277,18 +295,24 @@ def compute_calibration_live(app: AppData):
             print(f"Failed to compute calibration. {e.__class__.__name__}: {e}")
             rospy.sleep(1.0)
             continue
+        rospy.sleep(1.0)
+
+
+def list_files(root_dir: str, extension: str) -> dict[str, str]:
+    search_dir = os.path.abspath(root_dir)
+    paths = [f for f in glob(os.path.join(search_dir, "**", f"*.{extension}"), recursive=True)]
+    files = {f.replace(search_dir + "/", ""): f for f in paths}
+    files[""] = ""
+    return files
 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("bag", type=str, nargs="?", help="path to bag")
-    parser.add_argument(
-        "board_config",
-        type=str,
-        nargs="?",
-        default=os.path.join(SCRIPT_DIR, "simulation_board.toml"),
-        help="path to board config",
-    )
+
+    board_options = list_files(SCRIPT_DIR, "toml")
+    bag_options = list_files("/media/storage/bags", "bag")
+
+    parser.add_argument("board_config", type=str, choices=board_options.keys(), help="path to board config")
     parser.add_argument(
         "-p",
         "--parameters",
@@ -296,17 +320,25 @@ def main() -> None:
         default=os.path.join(SCRIPT_DIR, "calibration_parameters.json"),
         help="calibration parameter file",
     )
-    parser.add_argument(
-        "-l",
-        "--live",
-        action="store_true",
-        help="run on ROS topics instead of a bag",
-    )
+
+    subparsers = parser.add_subparsers(dest="command")
+    subparsers.add_parser("topic")
+
+    bag_parser = subparsers.add_parser("bag")
+    bag_parser.add_argument("bag_path", type=str, choices=bag_options.keys(), help="path to bag")
+
+    argcomplete.autocomplete(parser)
+
     args = parser.parse_args()
-    bag_path = args.bag
+
+    if args.command == "topic":
+        is_live = True
+        bag_path = ""
+    else:
+        is_live = False
+        bag_path = bag_options[args.bag_path]
     parameter_path = args.parameters
-    board_config_path = args.board_config
-    is_live = args.live
+    board_config_path = board_options[args.board_config]
 
     fs = cv2.FileStorage(parameter_path, cv2.FILE_STORAGE_READ | cv2.FILE_STORAGE_FORMAT_JSON)
     fnode: cv2.FileNode = fs.root()

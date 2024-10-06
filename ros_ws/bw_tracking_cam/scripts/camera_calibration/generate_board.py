@@ -24,5 +24,5 @@ if __name__ == "__main__":
 
     dpi = config.px_per_meter * 0.0254
 
-    pil_image.save(pdf_path, "PDF", resolution=300, save_all=True)
+    pil_image.save(pdf_path, "PDF", resolution=dpi, save_all=True)
     print(f"Generated board pdf at {pdf_path}. (DPI: {dpi})")
