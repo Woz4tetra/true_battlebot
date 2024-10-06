@@ -1,5 +1,5 @@
 open3d
-ultralytics==8.2.84
+ultralytics==8.3.5
 
 --find-links https://download.pytorch.org/whl/cu121/torch_stable.html
 torch==2.2.2+cu121

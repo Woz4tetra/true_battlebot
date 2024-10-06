@@ -52,27 +52,12 @@ def get_best_model(run_path: str) -> str:
 
 def main() -> None:
     configs = {
-        "yolov8n-pose": {
+        "yolov11n-pose": {
             "batch": 24,
             "epochs": 200,
             "imgsz": 1280,
         },
-        "yolov8s-pose": {
-            "batch": 12,
-            "epochs": 200,
-            "imgsz": 1280,
-        },
-        "yolov8m-pose": {
-            "batch": 8,
-            "epochs": 150,
-            "imgsz": 1280,
-        },
-        "yolov8l-pose": {
-            "batch": 4,
-            "epochs": 150,
-            "imgsz": 1280,
-        },
-        "yolov8x-pose": {
+        "yolov11x-pose": {
             "batch": 6,
             "epochs": 150,
             "imgsz": 960,
