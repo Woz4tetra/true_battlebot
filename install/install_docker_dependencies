@@ -30,11 +30,17 @@ echo \
   $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
 
 apt-get update
-apt-get install -y docker-ce docker-ce-cli containerd.io
+apt-get install -y \
+  docker-buildx-plugin=0.16.2-1~ubuntu.22.04~jammy \
+  docker-ce-rootless-extras/5:27.1.2-1~ubuntu.22.04~jammy \
+  docker-ce=5:27.1.2-1~ubuntu.22.04~jammy \
+  docker-ce-cli=5:27.1.2-1~ubuntu.22.04~jammy \
+  docker-ce/upgradable 5:27.1.2-1~ubuntu.22.04~jammy \
+  containerd.io
 
 #Install Docker Compose
 export DOCKER_COMPOSE_INSTALL_PATH=/usr/local/lib/docker/cli-plugins
-export DOCKER_COMPOSE_URL=https://github.com/docker/compose/releases/download/v2.11.2/docker-compose-linux-x86_64
+export DOCKER_COMPOSE_URL=https://github.com/docker/compose/releases/download/v2.29.7/docker-compose-linux-x86_64
 
 sudo mkdir -p ${DOCKER_COMPOSE_INSTALL_PATH}
 sudo curl -SL ${DOCKER_COMPOSE_URL} -o ${DOCKER_COMPOSE_INSTALL_PATH}/docker-compose
