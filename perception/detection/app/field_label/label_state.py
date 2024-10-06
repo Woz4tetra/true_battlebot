@@ -23,6 +23,12 @@ class HighlightedPointType(Enum):
     EXTENT = 1
 
 
+class ClickState(Enum):
+    UP = 0
+    MOVE = 1
+    DOWN = 2
+
+
 def nearest_point_in_cloud(cloud: o3d.geometry.PointCloud, point: np.ndarray) -> np.ndarray:
     points = np.asarray(cloud.points)
     distances = np.linalg.norm(points - point, axis=1)
@@ -68,7 +74,8 @@ class LabelState:
         self.image_extent_points = np.zeros((0, 2), dtype=np.int32)
         self.cloud_plane_points = np.zeros((0, 3), dtype=np.float32)
         self.cloud_extent_points = np.zeros((0, 3), dtype=np.float32)
-        self.is_clicked = False
+        self.did_click = False
+        self.click_state = ClickState.UP
         self.camera_model = PinholeCameraModel()
         self.plane_point_markers: list[open3d.geometry.TriangleMesh] = []
         self.extent_point_markers: list[open3d.geometry.TriangleMesh] = []

@@ -9,7 +9,7 @@ import open3d.visualization
 import rospy
 from app.field_label.command_line_args import BagCommandLineArgs, CommandLineArgs, TopicCommandLineArgs
 from app.field_label.field_label_config import FieldLabelConfig
-from app.field_label.label_state import HighlightedPointType, LabelState
+from app.field_label.label_state import ClickState, HighlightedPointType, LabelState
 from bw_interfaces.msg import EstimatedObject
 from bw_shared.geometry.camera.image_rectifier import ImageRectifier
 from perception_tools.messages.camera_data import CameraData
@@ -100,7 +100,8 @@ class FieldLabelApp:
         clipped_y = np.clip(y, 0, self.image_size[1] - 1)
         clipped = clipped_x, clipped_y
         if event == cv2.EVENT_MOUSEMOVE:
-            if self.labels.is_clicked:
+            if self.labels.did_click:
+                self.labels.click_state = ClickState.MOVE
                 point_array = (
                     self.labels.image_plane_points
                     if self.labels.highlighted_point_type == HighlightedPointType.PLANE
@@ -110,11 +111,13 @@ class FieldLabelApp:
             else:
                 self.labels.update_highlighted_index(clipped)
         elif event == cv2.EVENT_LBUTTONDOWN:
+            self.labels.click_state = ClickState.DOWN
             if self.labels.highlighted_index != -1:
-                self.labels.is_clicked = True
+                self.labels.did_click = True
         elif event == cv2.EVENT_LBUTTONUP:
-            if self.labels.is_clicked:
-                self.labels.is_clicked = False
+            self.labels.click_state = ClickState.UP
+            if self.labels.did_click:
+                self.labels.did_click = False
                 self.labels.update_cloud_points(self.cloud)
                 self.labels.save_label_state(self.config.label_state_path)
 
@@ -126,6 +129,7 @@ class FieldLabelApp:
 
         rospy.sleep(2.0)  # Wait for subscribers to connect
 
+        print("Requesting camera data")
         request_publisher.publish(Empty())
 
         camera_data = load_from_topics(cloud_subscriber, image_subscriber, info_subscriber)
@@ -229,12 +233,16 @@ class FieldLabelApp:
                     index == self.labels.highlighted_index
                     and self.labels.highlighted_point_type == HighlightedPointType.PLANE
                 ):
-                    radius = self.labels.highlighted_radius
                     color = (0, 0, 255)
+                    if self.labels.click_state == ClickState.MOVE:
+                        radius = 0
+                    else:
+                        radius = self.labels.highlighted_radius
                 else:
                     radius = self.labels.unhighlighted_radius
                     color = (0, 255, 0)
-                cv2.circle(show_image, tuple(point), radius, color, -1)
+                if radius > 0:
+                    cv2.circle(show_image, tuple(point), radius, color, -1)
 
             cv2.polylines(
                 show_image, [self.labels.image_extent_points], isClosed=True, color=(0, 255, 128), thickness=1
@@ -244,12 +252,16 @@ class FieldLabelApp:
                     index == self.labels.highlighted_index
                     and self.labels.highlighted_point_type == HighlightedPointType.EXTENT
                 ):
-                    radius = self.labels.highlighted_radius
                     color = (0, 0, 255)
+                    if self.labels.click_state == ClickState.MOVE:
+                        radius = 0
+                    else:
+                        radius = self.labels.highlighted_radius
                 else:
                     radius = self.labels.unhighlighted_radius
                     color = (0, 255, 128)
-                cv2.circle(show_image, tuple(point), radius, color, -1)
+                if radius > 0:
+                    cv2.circle(show_image, tuple(point), radius, color, -1)
 
             cv2.imshow("Image", show_image)
             keycode = cv2.waitKeyEx(1)
