@@ -175,10 +175,12 @@ def make_field_segmentation(container: Container) -> None:
     config = container.resolve(Config)
     namespace = config.camera_topic.namespace
     field_segmentation = load_segmentation(container, config.field_segmentation)
-    field_debug_image_publisher = RosPublisher(namespace + "/field/debug_image", Image)
-    field_segmentation_publisher = RosPublisher(namespace + "/field/segmentation", SegmentationInstanceArray)
-    field_cloud_publisher = RosPublisher(namespace + "/field/point_cloud", PointCloud2)
-    point_cloud_publisher = RosPublisher(namespace + "/point_cloud/cloud_registered", PointCloud2)
+    field_debug_image_publisher = RosPublisher(namespace + "/field/debug_image", Image, latch=True)
+    field_segmentation_publisher = RosPublisher(
+        namespace + "/field/segmentation", SegmentationInstanceArray, latch=True
+    )
+    field_cloud_publisher = RosPublisher(namespace + "/field/point_cloud", PointCloud2, latch=True)
+    point_cloud_publisher = RosPublisher(namespace + "/point_cloud/cloud_registered", PointCloud2, latch=True)
     field_label_map_publisher = RosPublisher(namespace + "/field/label_map", LabelMap, latch=True)
 
     container.register(field_segmentation, "field_segmentation")

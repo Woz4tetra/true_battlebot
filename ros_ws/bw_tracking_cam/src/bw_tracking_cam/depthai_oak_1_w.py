@@ -15,7 +15,7 @@ from bw_tools.tag_detection.bundle_detector import BundleDetectorInterface, Rans
 from bw_tools.tag_detection.draw_helpers import draw_bundle
 from bw_tools.tag_detection.tag_family import TagFamily
 from cv_bridge import CvBridge, CvBridgeError
-from sensor_msgs.msg import CameraInfo, Image
+from sensor_msgs.msg import CameraInfo, CompressedImage, Image
 from std_msgs.msg import Header
 
 from bw_tracking_cam.bundle_result_helpers import bundle_result_to_apriltag_ros, bundle_result_to_object
@@ -33,6 +33,7 @@ class DepthAiOak1W:
         self.width = get_param("~width", 1920)
         self.height = get_param("~height", 1080)
         self.fps = get_param("~fps", 60.0)
+        self.compressed_fps = get_param("~compressed_fps", 10.0)
         self.exposure_time = get_param("~exposure_time", 8000)  # microseconds
         self.iso = get_param("~iso", 800)
         self.resolution_mode = Oak1ResolutionMode("mode_" + get_param("~resolution_mode", "1080_p"))
@@ -47,11 +48,16 @@ class DepthAiOak1W:
         self.ros_base_time = rospy.Time(0)
         self.steady_base_time = time.perf_counter_ns()
         self.frame_num = 0
+        self.prev_compressed_pub_time = rospy.Time(0)
+        self.compressed_pub_interval = rospy.Duration.from_sec(1.0 / self.compressed_fps)
 
         self.bridge = CvBridge()
 
         self.camera_info_pub = rospy.Publisher(f"{self.camera_name}/camera_info", CameraInfo, queue_size=1)
         self.camera_image_pub = rospy.Publisher(f"{self.camera_name}/image_rect", Image, queue_size=1)
+        self.compressed_image_pub = rospy.Publisher(
+            f"{self.camera_name}/image_rect/compressed", CompressedImage, queue_size=1
+        )
         self.debug_image_pub = rospy.Publisher(f"{self.camera_name}/debug_image", Image, queue_size=1)
         self.robot_tag_pub = rospy.Publisher(f"{self.camera_name}/robot_tags", EstimatedObjectArray, queue_size=1)
         self.april_tag_pub = rospy.Publisher(f"{self.camera_name}/tag_detections", AprilTagDetectionArray, queue_size=1)
@@ -173,6 +179,16 @@ class DepthAiOak1W:
             self.camera_image_pub.publish(self.bridge.cv2_to_imgmsg(rectified, "bgr8", header=header))
         except CvBridgeError as e:
             rospy.logerr(e)
+
+        if timestamp - self.prev_compressed_pub_time > self.compressed_pub_interval:
+            self.prev_compressed_pub_time = timestamp
+            try:
+                compressed_msg = self.bridge.cv2_to_compressed_imgmsg(rectified, "png")
+                compressed_msg.header = header
+                self.compressed_image_pub.publish(compressed_msg)
+            except CvBridgeError as e:
+                rospy.logerr(e)
+
         if draw_image is not None:
             try:
                 self.debug_image_pub.publish(self.bridge.cv2_to_imgmsg(draw_image, "bgr8", header=header))

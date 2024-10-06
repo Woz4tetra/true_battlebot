@@ -16,7 +16,7 @@ from perception_tools.messages.image import Image
 from perception_tools.messages.point_cloud import CloudFieldName, PointCloud
 from perception_tools.rosbridge.ros_poll_subscriber import RosPollSubscriber
 from perception_tools.rosbridge.ros_publisher import RosPublisher
-from sensor_msgs.msg import CameraInfo, Imu
+from sensor_msgs.msg import CameraInfo, CompressedImage, Imu
 from sensor_msgs.msg import Image as RosImage
 
 
@@ -27,6 +27,7 @@ class ZedCamera(CameraInterface):
         camera_topic_config: CameraTopicConfig,
         color_image_pub: RosPublisher[RosImage] | None,
         camera_info_pub: RosPublisher[CameraInfo] | None,
+        compressed_image_pub: RosPublisher[CompressedImage] | None,
         imu_pub: RosPublisher[Imu],
         record_svo_sub: RosPollSubscriber[ControlRecording],
     ) -> None:
@@ -36,6 +37,7 @@ class ZedCamera(CameraInterface):
         self.camera_topic_config = camera_topic_config
         self.color_image_pub = color_image_pub
         self.camera_info_pub = camera_info_pub
+        self.compressed_image_pub = compressed_image_pub
         self.imu_pub = imu_pub
         self.record_svo_sub = record_svo_sub
 
@@ -184,6 +186,8 @@ class ZedCamera(CameraInterface):
             self.color_image_pub.publish(image.to_msg())
         if self.camera_info_pub:
             self.camera_info_pub.publish(self.camera_info)
+        if self.compressed_image_pub:
+            self.compressed_image_pub.publish(image.to_compressed_msg())
 
         return camera_data
 

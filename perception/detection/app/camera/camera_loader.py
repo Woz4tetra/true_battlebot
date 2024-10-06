@@ -10,7 +10,7 @@ from app.container import Container
 from bw_interfaces.msg import ControlRecording
 from perception_tools.rosbridge.ros_poll_subscriber import RosPollSubscriber
 from perception_tools.rosbridge.ros_publisher import RosPublisher
-from sensor_msgs.msg import CameraInfo, Image, Imu
+from sensor_msgs.msg import CameraInfo, CompressedImage, Image, Imu
 from std_msgs.msg import Empty
 
 from .noop_camera import NoopCamera
@@ -47,10 +47,19 @@ def make_zed_camera(camera_config: ZedCameraConfig, container: Container) -> Cam
     color_image_pub = RosPublisher(ns + "/rgb/image_raw", Image)
     camera_info_pub = RosPublisher(ns + "/rgb/camera_info", CameraInfo)
     imu_pub = RosPublisher(ns + "/imu/data", Imu)
+    compressed_image_pub = RosPublisher(ns + "/rgb/image_raw/compressed", CompressedImage)
 
     svo_record_sub = RosPollSubscriber(ns + "/record_svo", ControlRecording)
 
-    return ZedCamera(camera_config, config.camera_topic, color_image_pub, camera_info_pub, imu_pub, svo_record_sub)
+    return ZedCamera(
+        camera_config,
+        config.camera_topic,
+        color_image_pub,
+        camera_info_pub,
+        compressed_image_pub,
+        imu_pub,
+        svo_record_sub,
+    )
 
 
 def make_svo_camera(camera_config: SvoPlaybackCameraConfig, container: Container) -> CameraImplementation:

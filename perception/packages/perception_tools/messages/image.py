@@ -127,7 +127,7 @@ class Image:
         return msg
 
     def to_compressed_msg(self) -> CompressedImage:
-        msg = CV_BRIDGE.cv2_to_compressed_imgmsg(self.data)
+        msg = CV_BRIDGE.cv2_to_compressed_imgmsg(self.data, dst_format="png")
         msg.header = self.header.to_msg()
         return msg
 
