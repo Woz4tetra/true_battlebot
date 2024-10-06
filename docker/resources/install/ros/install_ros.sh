@@ -10,7 +10,7 @@ rosdep update
 mkdir -p ${BASE_ROS_WS_ROOT}/src
 cd ${BASE_ROS_WS_ROOT}
 
-vcs import --input ${BASE_DIR}/${ROS_DISTRO}.rosinstall ./src
+vcs import --retry 100 --input ${BASE_DIR}/${ROS_DISTRO}.rosinstall ./src
 
 cd ${BASE_ROS_WS_ROOT}
 git clone https://github.com/ros-infrastructure/catkin_pkg.git -b 0.5.2

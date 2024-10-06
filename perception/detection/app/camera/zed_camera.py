@@ -133,7 +133,7 @@ class ZedCamera(CameraInterface):
             case ControlRecording.START:
                 self.logger.info("Starting ZED Camera recording")
                 file_path = Path(control_msg.name)
-                file_path = file_path.with_suffix(".svo")
+                file_path = file_path.with_suffix(".svo2")
                 file_path = self.config.svo_directory / file_path
                 self.logger.info(f"Recording to {file_path}")
                 self.recording_parameters.video_filename = str(file_path)
