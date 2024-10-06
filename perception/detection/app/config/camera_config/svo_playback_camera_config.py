@@ -5,7 +5,8 @@ from typing import Literal
 @dataclass
 class SvoPlaybackCameraConfig:
     type: Literal["SvoPlaybackCamera"] = "SvoPlaybackCamera"
-    path: str = "/media/storage/svo/playback.svo"
+    filename: str = "playback.svo"
+    svo_directory: str = "/media/storage/svo"
     field_grab_time: float = 0.0
     start_time: float = 0.0
     time_sync_threshold: float = 0.1  # seconds

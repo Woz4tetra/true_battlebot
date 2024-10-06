@@ -1,5 +1,6 @@
 import logging
 import time
+from pathlib import Path
 
 import numpy as np
 import pyzed.sl as sl
@@ -7,10 +8,12 @@ from app.camera.camera_interface import CameraInterface, CameraMode
 from app.camera.zed.helpers import zed_status_to_str, zed_to_ros_camera_info, zed_to_ros_imu
 from app.config.camera_config.svo_playback_camera_config import SvoPlaybackCameraConfig
 from app.config.camera_topic_config import CameraTopicConfig
+from bw_interfaces.msg import ControlRecording
 from bw_shared.messages.header import Header
 from perception_tools.messages.camera_data import CameraData
 from perception_tools.messages.image import Image
 from perception_tools.messages.point_cloud import CloudFieldName, PointCloud
+from perception_tools.rosbridge.ros_poll_subscriber import RosPollSubscriber
 from perception_tools.rosbridge.ros_publisher import RosPublisher
 from sensor_msgs.msg import CameraInfo, Imu
 from sensor_msgs.msg import Image as RosImage
@@ -24,6 +27,7 @@ class SvoPlaybackCamera(CameraInterface):
         color_image_pub: RosPublisher[RosImage],
         camera_info_pub: RosPublisher[CameraInfo],
         imu_pub: RosPublisher[Imu],
+        record_svo_sub: RosPollSubscriber[ControlRecording],
     ) -> None:
         self.logger = logging.getLogger("perception")
 
@@ -32,9 +36,13 @@ class SvoPlaybackCamera(CameraInterface):
         self.color_image_pub = color_image_pub
         self.camera_info_pub = camera_info_pub
         self.imu_pub = imu_pub
+        self.record_svo_sub = record_svo_sub
+
+        self.svo_directory = Path(self.config.svo_directory)
 
         input_type = sl.InputType()
-        input_type.set_from_svo_file(self.config.path)  # Set init parameter to run from the .svo
+        # Set init parameter to run from the .svo
+        input_type.set_from_svo_file(str(self.svo_directory / self.config.filename))
 
         self.camera = sl.Camera()
         self.init_params = sl.InitParameters(input_t=input_type, svo_real_time_mode=False)
@@ -42,6 +50,9 @@ class SvoPlaybackCamera(CameraInterface):
         self.init_params.coordinate_units = sl.UNIT.METER
 
         self.runtime_parameters = sl.RuntimeParameters()
+
+        self.recording_parameters = sl.RecordingParameters()
+        self.recording_parameters.compression_mode = sl.SVO_COMPRESSION_MODE.H264
 
         self.mode = CameraMode.ROBOT_FINDER
         self.camera_fps = 0.0
@@ -63,6 +74,7 @@ class SvoPlaybackCamera(CameraInterface):
         return True
 
     def poll(self) -> CameraData | None:
+        self._poll_recording()
         real_time = self.get_relative_real_time()
         camera_time = self.get_relative_camera_time()
         self.logger.debug(f"Capture time: {camera_time}. Real time: {real_time}")
@@ -136,6 +148,25 @@ class SvoPlaybackCamera(CameraInterface):
         self.header.stamp = self.get_relative_camera_time()
         self.header.seq += 1
         return self.header
+
+    def _poll_recording(self) -> None:
+        if not (control_msg := self.record_svo_sub.receive()):
+            return
+        command = control_msg.command
+        match command:
+            case ControlRecording.START:
+                self.logger.info("Starting ZED Camera recording")
+                file_path = Path(control_msg.name)
+                file_path = file_path.with_suffix(".svo")
+                file_path = self.config.svo_directory / file_path
+                self.logger.info(f"Recording to {file_path}")
+                self.recording_parameters.video_filename = str(file_path)
+                self.camera.enable_recording(self.recording_parameters)
+            case ControlRecording.STOP:
+                self.logger.info("Stopping ZED Camera recording")
+                self.camera.disable_recording()
+            case _:
+                self.logger.error(f"Invalid ZED Camera recording command: {command}")
 
     def open(self) -> bool:
         if self.is_open:

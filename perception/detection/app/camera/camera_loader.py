@@ -61,7 +61,11 @@ def make_svo_camera(camera_config: SvoPlaybackCameraConfig, container: Container
     camera_info_pub = RosPublisher(ns + "/rgb/camera_info", CameraInfo)
     imu_pub = RosPublisher(ns + "/imu/data", Imu)
 
-    return SvoPlaybackCamera(camera_config, config.camera_topic, color_image_pub, camera_info_pub, imu_pub)
+    svo_record_sub = RosPollSubscriber(ns + "/record_svo", ControlRecording)
+
+    return SvoPlaybackCamera(
+        camera_config, config.camera_topic, color_image_pub, camera_info_pub, imu_pub, svo_record_sub
+    )
 
 
 def load_camera(config: CameraConfig, container: Container) -> CameraImplementation:

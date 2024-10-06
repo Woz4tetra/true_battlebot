@@ -4,7 +4,6 @@ set -e
 
 sudo apt-get update || true
 sudo apt-get install -y --no-install-recommends apt-utils dialog
-sudo apt-get install -y nvidia-settings nvidia-utils-550-server libnvidia-decode-550-server libnvidia-encode-550-server
 
 sudo ln -snf /usr/share/zoneinfo/$TZ /etc/localtime
 echo $TZ | sudo tee /etc/timezone 
