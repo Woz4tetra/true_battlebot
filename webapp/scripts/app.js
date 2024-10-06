@@ -21,6 +21,7 @@ var connection_icons = {
     connected: "resources/check_circle_black_24dp.svg",
     disconnected: "resources/error_black_24dp.svg",
 };
+var lastPublishedCorner = 0;
 
 function initSummarySubscriber() {
     var listener = new ROSLIB.Topic({
@@ -37,8 +38,13 @@ function initSummarySubscriber() {
 }
 
 function publishCageCorner(type) {
+    lastPublishedCorner = type;
     console.log(`Publishing corner ${type}`);
     cageCornerPub.publish({ type: type });
+}
+
+function republishCageCorner() {
+    publishCageCorner(lastPublishedCorner);
 }
 
 function initCageCornerPublisher() {

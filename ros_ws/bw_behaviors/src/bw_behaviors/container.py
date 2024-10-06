@@ -7,7 +7,7 @@ from bw_behaviors.managers.mode_manager import ModeManager
 
 @dataclass
 class ContainerConfig:
-    corner_offset: float = 0.4
+    corner_offset: float = 0.25
 
 
 class Container:

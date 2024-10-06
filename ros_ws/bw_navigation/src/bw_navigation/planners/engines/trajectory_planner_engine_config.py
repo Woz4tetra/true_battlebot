@@ -45,7 +45,7 @@ class RamseteConfig:
 class PathPlannerConfig:
     max_velocity: float = 6.0  # m/s
     max_acceleration: float = 3.0  # m/s^2
-    max_centripetal_acceleration: Optional[float] = 2.0  # m/s^2
+    max_centripetal_acceleration: Optional[float] = 0.75  # m/s^2
     track_width: float = 0.128  # meters
 
     move_threshold: float = 0.1  # meters
