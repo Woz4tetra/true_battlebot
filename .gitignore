@@ -11,6 +11,13 @@ playground/**/*.jpg*
 playground/**/*.png*
 *.bag
 *.blob
+*.jpg
+*.png
+*.pdf
+*.jpeg
+*.zip
+*.gif
+*.tar
 
 lightning_logs/
 runs/
