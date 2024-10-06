@@ -1,3 +1,4 @@
 #!/bin/bash
 
 rosparam set /bw_navigation/friendly_fire true
+rosparam get /bw_navigation/friendly_fire

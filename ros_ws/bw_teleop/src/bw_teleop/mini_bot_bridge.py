@@ -87,9 +87,9 @@ class MiniBotBridge:
         self.command_timeout = rospy.Duration.from_sec(get_param("~command_timeout", 0.5))
         wheel_base_width = get_param("~wheel_base_width", 0.128)
         wheel_radius = get_param("~wheel_radius", 0.025)
-        self.linear_deadband_percent = get_param("~linear_deadband_percent", 0.02)
-        self.angular_deadband_percent = get_param("~angular_deadband_percent", 0.15)
-        self.epsilon_percent = get_param("~epsilon_percent", 0.01)
+        self.linear_deadband = get_param("~linear_deadband", 0.02)
+        self.angular_deadband = get_param("~angular_deadband", 0.15)
+        self.epsilon = get_param("~epsilon", 0.01)
         self.neutral_command = 500
         self.max_command = 1000
         self.min_command = -1000
@@ -139,10 +139,17 @@ class MiniBotBridge:
     def twist_callback(self, msg: Twist) -> None:
         linear_x = msg.linear.x
         angular_z = msg.angular.z
-        if abs(linear_x) > 1.0:
-            angular_z *= abs(linear_x) * 0.7
-        linear_x = self.apply_deadband(linear_x, self.linear_deadband_percent, self.epsilon_percent)
-        angular_z = self.apply_deadband(angular_z, self.angular_deadband_percent, self.epsilon_percent)
+
+        # abs_angular_z = abs(angular_z)
+        # if abs_angular_z > 1.0:
+        #     angular_z = math.copysign(abs_angular_z * math.log(abs_angular_z) + 1.0, angular_z)
+        # if abs(linear_x) > 1.0:
+        #     angular_z *= abs(linear_x)
+        # linear_x *= 0.75
+        angular_z *= 1.5
+
+        linear_x = self.apply_deadband(linear_x, self.linear_deadband, self.epsilon)
+        angular_z = self.apply_deadband(angular_z, self.angular_deadband, self.epsilon)
         linear_x, angular_z = self.lookup_table.lookup(linear_x, -1 * angular_z)
         linear_value = int(self.neutral_command * linear_x)
         angular_value = int(self.neutral_command * angular_z)
@@ -152,12 +159,12 @@ class MiniBotBridge:
         rotate_command = f"trainer 0 {angular_value}\r\n"
         self.command = [linear_command.encode(), rotate_command.encode()]
 
-    def apply_deadband(self, velocity: float, deadband_percent: float, epsilon_percent: float) -> float:
+    def apply_deadband(self, velocity: float, deadband: float, epsilon: float) -> float:
         abs_velocity = abs(velocity)
-        if abs_velocity < epsilon_percent:
+        if abs_velocity < epsilon:
             return 0.0
-        if abs_velocity < deadband_percent:
-            return math.copysign(deadband_percent, velocity)
+        if abs_velocity < deadband:
+            return math.copysign(deadband, velocity)
         return velocity
 
     def get_telemetry(self) -> None:
