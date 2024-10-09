@@ -20,7 +20,7 @@ class WebappRelay:
 
         self.system_summary_pub = rospy.Publisher("system_summary", SystemSummary, queue_size=1, latch=True)
         self.bag_manager = RecordBagManager(
-            "/media/storage/bags", self.start_callback, self.stop_callback, exclude_regex=exclude_regex
+            "/data/bags", self.start_callback, self.stop_callback, exclude_regex=exclude_regex
         )
         self.record_svo_pub = rospy.Publisher("record_svo", ControlRecording, queue_size=1)
         self.set_record_srv = rospy.Service("set_record", SetBool, self.set_record_callback)

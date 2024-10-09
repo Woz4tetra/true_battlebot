@@ -109,7 +109,7 @@ def format_log_line:
 "
 
 if [ -z "${LOGPATH}" ]; then
-    LOGS_DIR=/media/storage/logs
+    LOGS_DIR=/data/logs
     LOGPATH=$(find ${LOGS_DIR} -type f -printf '%T@ %p\n' | sort -n | tail -1 | cut -f2- -d" ")
 fi
 

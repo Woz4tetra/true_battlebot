@@ -9,7 +9,7 @@ import argcomplete
 import toml
 
 PROJECT_NAME = os.environ["PROJECT_NAME"]
-ROBOT_FILE = "/media/storage/robot"
+ROBOT_FILE = "/data/robot"
 PROJECT_DIR = os.path.abspath(os.path.join(__file__, os.pardir, os.pardir))
 
 
@@ -67,6 +67,8 @@ def load_file() -> Environment:
 
 def main() -> None:
     env = load_file()
+    print(f"Robot: {env.ROBOT}")
+    print(f"Map: {env.MAP_NAME}")
     parser = argparse.ArgumentParser(description="set_robot")
     parser.add_argument("robot", type=str, choices=ALL_ROBOTS, help="robot name")
     parser.add_argument("map_name", type=str, default="", choices=ALL_MAPS, help="map name")

@@ -6,7 +6,7 @@ from typing import cast
 import argcomplete
 from app.field_label.command_line_args import CommandLineArgs
 
-BAGS_DIR = "/media/storage/bags"
+BAGS_DIR = "/data/bags"
 
 
 def parse_args() -> CommandLineArgs:

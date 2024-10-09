@@ -310,7 +310,7 @@ def main() -> None:
     parser = argparse.ArgumentParser()
 
     board_options = list_files(SCRIPT_DIR, "toml")
-    bag_options = list_files("/media/storage/bags", "bag")
+    bag_options = list_files("/data/bags", "bag")
 
     parser.add_argument("board_config", type=str, choices=board_options.keys(), help="path to board config")
     parser.add_argument(

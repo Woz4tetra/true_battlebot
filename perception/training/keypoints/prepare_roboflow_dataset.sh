@@ -25,4 +25,4 @@ cp ${SYNTHETIC_DATASET}/* ${REORDERED_ROBOFLOW_DATASET}
 # Split dataset into train, val, and test
 python ${BASE_DIR}/split_yolo_dataset.py ${REORDERED_ROBOFLOW_DATASET} ${PREPARED_DATASET} ${KEYPOINT_NAMES_CONFIG} -t 0.9
 
-echo Dataset: ${REORDERED_ROBOFLOW_DATASET}
+echo Dataset: ${PREPARED_DATASET}

@@ -218,7 +218,7 @@ FILTER_PATTERNS = ("message", "node", "logger", "file", "line", "function", "thr
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("filename", default=None, nargs="?", help="File to watch")
-    parser.add_argument("-d", "--dir", default="/media/storage/logs", nargs="?", help="Log directory")
+    parser.add_argument("-d", "--dir", default="/data/logs", nargs="?", help="Log directory")
     parser.add_argument("-l", "--level", default="INFO", help="Levels at or above this level will be shown")
     parser.add_argument(
         "-n",

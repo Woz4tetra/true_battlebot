@@ -206,7 +206,7 @@ def main() -> None:
 
     rospy.init_node("planner_regression_runner")
 
-    bag_dir = args.bag if args.bag else "/media/storage/bags"
+    bag_dir = args.bag if args.bag else "/data/bags"
     bag_path = f"{bag_dir}/planner_regression_{datetime.now().strftime('%Y-%m-%dT%H-%M-%S')}.bag"
     rospy.loginfo(f"Recording to {bag_path}")
     app = AppData(total_time_set=Event())

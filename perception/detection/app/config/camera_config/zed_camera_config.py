@@ -10,6 +10,6 @@ class ZedCameraConfig:
     type: Literal["ZedCamera"] = "ZedCamera"
     serial_number: int = -1
     video_settings: Zed2iVideoSettings = field(default_factory=Zed2iVideoSettings)
-    svo_directory: str = "/media/storage/svo"
+    svo_directory: str = "/data/svo"
     resolution: Zed2iResolutions = Zed2iResolutions.MODE_HD1080
     fps: int = 30

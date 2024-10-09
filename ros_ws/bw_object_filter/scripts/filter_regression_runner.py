@@ -161,7 +161,7 @@ def main() -> None:
 
     rospy.init_node("filter_regression_runner")
 
-    bag_dir = args.bag if args.bag else "/media/storage/bags"
+    bag_dir = args.bag if args.bag else "/data/bags"
     bag_path = f"{bag_dir}/filter_regression_{datetime.now().strftime('%Y-%m-%dT%H-%M-%S')}.bag"
     rospy.loginfo(f"Recording to {bag_path}")
     bag = Bag(bag_path, "w")
