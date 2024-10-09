@@ -1,5 +1,4 @@
 import argparse
-import os
 import time
 from pathlib import Path
 
@@ -45,110 +44,108 @@ def draw_keypoints(result, metadata: ModelMetadata) -> np.ndarray:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "model",
-        type=str,
-        help="Path to the model (*.pth or *.torchscript)",
-    )
     parser.add_argument("video", help="Path to video")
-    parser.add_argument("-o", "--output", type=str, default="", help="Path to the output directory")
     parser.add_argument(
-        "-m",
-        "--metadata",
+        "models",
         type=str,
-        default="",
-        help="Path to the metadata file (*.json)",
+        nargs="+",
+        help="Path to the model(s) (*.pth or *.torchscript)",
     )
-    parser.add_argument(
-        "-t",
-        "--threshold",
-        type=float,
-        default=0.4,
-        help="Confidence threshold for predictions",
-    )
-    parser.add_argument(
-        "-i",
-        "--start-index",
-        type=int,
-        default=0,
-        help="Start video at index",
-    )
+    parser.add_argument("-o", "--output", type=str, default="", help="Path to the output directory")
+    parser.add_argument("-m", "--metadata", type=str, default="", help="Path to the metadata file (*.json)")
+    parser.add_argument("-t", "--threshold", type=float, default=0.4, help="Confidence threshold for predictions")
+    parser.add_argument("-i", "--start-index", type=int, default=0, help="Start video at index")
     parser.add_argument("-s", "--skip-frames", type=int, default=0, help="Frame skip interval")
+    parser.add_argument("-n", "--no-show", action="store_true", help="Do not display the video")
     args = parser.parse_args()
 
+    model_paths = [Path(path) for path in args.models]
     video_path = Path(args.video)
-    output_path = Path(args.output) if args.output else video_path.with_suffix(".avi")
-    model_path = args.model
     metadata_path = args.metadata
     threshold = args.threshold
     start_index = args.start_index
     skip_frames = args.skip_frames
+    show = not args.no_show
 
-    print("Loading YOLO model")
-    model = YOLO(model_path)
+    window_name = str(video_path.stem)
+    cv2.namedWindow(window_name)
 
-    if not metadata_path:
-        metadata_path = os.path.splitext(model_path)[0] + ".json"
-    print(f"Loading metadata from {metadata_path}")
-    metadata = load_metadata(metadata_path)
+    should_quit = False
 
-    if not video_path.is_file():
-        raise FileNotFoundError(f"Video not found: {video_path}")
+    for model_path in model_paths:
+        default_path = video_path.parent / Path(f"{video_path.stem}_{model_path.stem}.avi")
+        output_path = Path(args.output) if args.output else default_path
 
-    assert skip_frames >= 0, "Skip frames must be greater than or equal to 0"
+        print(f"Loading YOLO model: {model_path}")
+        model = YOLO(model_path)
 
-    in_video = cv2.VideoCapture(video_path)  # type: ignore
-    out_video: cv2.VideoWriter | None = None
-    video_fps = in_video.get(cv2.CAP_PROP_FPS) / (1 + skip_frames)
-    num_frames = int(in_video.get(cv2.CAP_PROP_FRAME_COUNT))
+        if not metadata_path:
+            metadata_path = model_path.with_suffix(".json")
+        print(f"Loading metadata from {metadata_path}")
+        metadata = load_metadata(metadata_path)
 
-    in_video.set(cv2.CAP_PROP_POS_FRAMES, start_index)
-    frame_num = start_index
-    diffs = []
+        if not video_path.is_file():
+            raise FileNotFoundError(f"Video not found: {video_path}")
 
-    try:
-        with tqdm(total=num_frames) as pbar:
-            pbar.update(start_index)
-            while True:
-                success, frame = in_video.read()
-                pbar.update(1)
-                if not success:
-                    print("Video ended")
-                    break
-                frame_num += 1
-                if skip_frames > 0 and frame_num % skip_frames != 0:
-                    continue
-                if out_video is None:
-                    print(f"Saving output to {output_path}")
-                    height, width = frame.shape[:2]
-                    out_video = cv2.VideoWriter(
-                        str(output_path),
-                        cv2.VideoWriter_fourcc(*"XVID"),  # type: ignore
-                        video_fps,
-                        (width, height),
-                    )
+        assert skip_frames >= 0, "Skip frames must be greater than or equal to 0"
 
-                t0 = time.perf_counter()
-                results = model(frame, verbose=False, conf=threshold)[0]
-                t1 = time.perf_counter()
-                delta = t1 - t0
-                diffs.append(delta)
-                debug_image = draw_keypoints(results, metadata)
+        in_video = cv2.VideoCapture(video_path)  # type: ignore
+        out_video: cv2.VideoWriter | None = None
+        video_fps = in_video.get(cv2.CAP_PROP_FPS) / (1 + skip_frames)
+        num_frames = int(in_video.get(cv2.CAP_PROP_FRAME_COUNT))
 
-                cv2.imshow("video", debug_image)
-                key = chr(cv2.waitKey(1) & 0xFF)
-                if key == "q":
-                    break
-                if out_video is not None:
-                    out_video.write(debug_image)
-    finally:
-        in_video.release()
-        if out_video is not None:
-            out_video.release()
+        in_video.set(cv2.CAP_PROP_POS_FRAMES, start_index)
+        frame_num = start_index
+        diffs = []
 
-        print(f"Warmup time: {diffs.pop(0):0.6f} s")
-        if len(diffs) > 0:
-            print(f"Average inference rate: {len(diffs) / sum(diffs):0.6f} fps")
+        try:
+            with tqdm(total=num_frames) as pbar:
+                pbar.update(start_index)
+                while True:
+                    success, frame = in_video.read()
+                    pbar.update(1)
+                    if not success:
+                        print("Video ended")
+                        break
+                    frame_num += 1
+                    if skip_frames > 0 and frame_num % skip_frames != 0:
+                        continue
+                    if out_video is None:
+                        print(f"Saving output to {output_path}")
+                        height, width = frame.shape[:2]
+                        out_video = cv2.VideoWriter(
+                            str(output_path),
+                            cv2.VideoWriter_fourcc(*"XVID"),  # type: ignore
+                            video_fps,
+                            (width, height),
+                        )
+
+                    t0 = time.perf_counter()
+                    results = model(frame, verbose=False, conf=threshold)[0]
+                    t1 = time.perf_counter()
+                    delta = t1 - t0
+                    diffs.append(delta)
+                    debug_image = draw_keypoints(results, metadata)
+
+                    if show:
+                        cv2.imshow(window_name, debug_image)
+                        key = chr(cv2.waitKey(1) & 0xFF)
+                        if key == "q":
+                            should_quit = True
+                            break
+                    if out_video is not None:
+                        out_video.write(debug_image)
+        finally:
+            in_video.release()
+            if out_video is not None:
+                out_video.release()
+
+            if len(diffs) > 0:
+                print(f"{model_path.stem} Warmup time: {diffs.pop(0):0.6f} s")
+            if len(diffs) > 0:
+                print(f"{model_path.stem} Average inference rate: {len(diffs) / sum(diffs):0.6f} fps")
+            if should_quit:
+                break
 
 
 if __name__ == "__main__":
