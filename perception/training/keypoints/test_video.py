@@ -66,6 +66,7 @@ def main() -> None:
     start_index = args.start_index
     skip_frames = args.skip_frames
     show = not args.no_show
+    is_metadata_set = bool(metadata_path)
 
     window_name = str(video_path.stem)
     cv2.namedWindow(window_name)
@@ -77,9 +78,9 @@ def main() -> None:
         output_path = Path(args.output) if args.output else default_path
 
         print(f"Loading YOLO model: {model_path}")
-        model = YOLO(model_path)
+        model = YOLO(model_path, task="pose")
 
-        if not metadata_path:
+        if not is_metadata_set:
             metadata_path = model_path.with_suffix(".json")
         print(f"Loading metadata from {metadata_path}")
         metadata = load_metadata(metadata_path)
@@ -89,7 +90,7 @@ def main() -> None:
 
         assert skip_frames >= 0, "Skip frames must be greater than or equal to 0"
 
-        in_video = cv2.VideoCapture(video_path)  # type: ignore
+        in_video = cv2.VideoCapture(str(video_path))  # type: ignore
         out_video: cv2.VideoWriter | None = None
         video_fps = in_video.get(cv2.CAP_PROP_FPS) / (1 + skip_frames)
         num_frames = int(in_video.get(cv2.CAP_PROP_FRAME_COUNT))

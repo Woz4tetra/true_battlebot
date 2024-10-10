@@ -139,6 +139,7 @@ class YoloKeypointImage:
 @dataclass
 class YoloKeypointDataset:
     kpt_shape: tuple[int, int] = (2, 3)
+    flip_idx: tuple[int, int] = (0, 1)
     names: tuple[ModelLabel, ...] = field(default_factory=tuple)
 
     def to_dict(self) -> dict:
