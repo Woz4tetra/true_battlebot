@@ -113,7 +113,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8ded925f1af29c171ab41237d10cdbe4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxWheelSpeed: 10
+  maxWheelSpeedRpm: 1000
   wheelRadius: 0.075
 --- !u!1 &175705276505780461
 GameObject:
@@ -1269,7 +1269,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8ded925f1af29c171ab41237d10cdbe4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxWheelSpeed: 10
+  maxWheelSpeedRpm: 1000
   wheelRadius: 0.075
 --- !u!1 &8583065028227570617
 GameObject:
@@ -1464,7 +1464,7 @@ ArticulationBody:
   m_GameObject: {fileID: 8795958732949359491}
   m_Enabled: 1
   serializedVersion: 5
-  m_Mass: 0.8
+  m_Mass: 20
   m_ParentAnchorPosition: {x: 0, y: 0, z: 0}
   m_ParentAnchorRotation: {x: 0, y: 0, z: 0.7071068, w: 0.7071068}
   m_AnchorPosition: {x: 0, y: 0, z: 0}
@@ -1539,25 +1539,25 @@ MonoBehaviour:
   rightWheel: {fileID: 6681855749894309452}
   followLeftWheels: []
   followRightWheels: []
-  linearPid:
+  linearPIDConfig:
     kp: 0.01
     ki: 0
     kd: 0
     kf: 1
     i_zone: 0
     i_max: 0
-    epsilon: 0.000000001
+    epsilon: 0
     tolerance: 0
-  angularPid:
-    kp: 1
-    ki: 0
-    kd: 0
+  angularPIDConfig:
+    kp: 2
+    ki: 0.1
+    kd: 0.001
     kf: 1
     i_zone: 0
     i_max: 0
-    epsilon: 0.000000001
+    epsilon: 0
     tolerance: 0
-  enablePid: 0
+  enablePid: 1
   reverseLeft: 0
   reverseRight: 0
   referenceObject: {fileID: 0}
@@ -1576,6 +1576,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   linearScale: 1
   angularScale: 3
+  useJoystick: 0
 --- !u!114 &2251945223388779216
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1602,6 +1603,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   baseTopic: referee
+  commandTimeout: 0.1
 --- !u!114 &1341011057076256708
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1639,8 +1641,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3695846776a4ee2739ba112c8c2d4777, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  zeta: 4
-  b: 8
+  ramseteConfig:
+    zeta: 2
+    b: 0.7
 --- !u!114 &2967590793178401666
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1653,23 +1656,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7e4961b0a573f1cd0a9ef87897ff0a5f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  linearPID:
-    kp: 2
-    ki: 0
-    kd: 0
+  linearPIDConfig:
+    kp: 10
+    ki: 0.05
+    kd: 0.001
     kf: 1
     i_zone: 0
     i_max: 0
-    epsilon: 0.000000001
+    epsilon: 0
     tolerance: 0
-  angularPID:
-    kp: 10
+  angularPIDConfig:
+    kp: 50
     ki: 0.1
     kd: 1
     kf: 1
     i_zone: 0
     i_max: 0
-    epsilon: 0.000000001
+    epsilon: 0
     tolerance: 0
 --- !u!114 &7814467068633680599
 MonoBehaviour:

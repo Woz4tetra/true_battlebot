@@ -24,6 +24,14 @@ abstract class BaseVelocityFollower : BaseFollower
         followerEngine = engine;
     }
 
+    override protected void OnResetSequence()
+    {
+        if (followerEngine != null)
+        {
+            followerEngine.Reset();
+        }
+    }
+
     TwistMsg ComputeVelocity(SequenceElementConfig currentElement)
     {
         OdometryMsg odom = controller.GetGroundTruth();

@@ -1,7 +1,7 @@
 using System;
 
 [Serializable]
-public class SequenceElementConfig
+public class SequenceElementConfig : ICloneable
 {
     public float timestamp = 0.0f;
 
@@ -21,4 +21,12 @@ public class SequenceElementConfig
 
     // Target follower fields
     public string target_name = "";
+
+    // Loop back to the top
+    public bool reset = false;
+
+    public object Clone()
+    {
+        return MemberwiseClone();
+    }
 }

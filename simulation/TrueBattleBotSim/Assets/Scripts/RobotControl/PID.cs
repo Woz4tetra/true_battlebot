@@ -7,14 +7,21 @@ public class PID
     private float epsilon = 1e-9f, tolerance = 0.0f;
     private float i_accum = 0.0f;
     private float prev_error = float.NaN;
+    private PidConfig config = new PidConfig(1.0f, 0.0f, 0.0f, 0.0f);
 
     public PID(PidConfig config)
     {
         SetConfig(config);
     }
 
+    public PidConfig GetConfig()
+    {
+        return config;
+    }
+
     public void SetConfig(PidConfig config)
     {
+        this.config = config;
         kp = config.kp;
         ki = config.ki;
         kd = config.kd;

@@ -408,7 +408,10 @@ public class MainSceneManager : MonoBehaviour
                     break;
                 }
                 ramsete_follower_engine.enabled = true;
-                ramsete_follower_engine.SetRamseteConfig(objective_config.ramsete);
+                if (objective_config.overwrite_controller_config)
+                {
+                    ramsete_follower_engine.SetRamseteConfig(objective_config.ramsete);
+                }
                 followerEngine = ramsete_follower_engine;
                 break;
             case "PID":
@@ -418,8 +421,11 @@ public class MainSceneManager : MonoBehaviour
                     break;
                 }
                 pid_follower_engine.enabled = true;
-                pid_follower_engine.SetLinearPIDConfig(objective_config.linear_pid);
-                pid_follower_engine.SetAngularPIDConfig(objective_config.angular_pid);
+                if (objective_config.overwrite_controller_config)
+                {
+                    pid_follower_engine.SetLinearPIDConfig(objective_config.linear_pid);
+                    pid_follower_engine.SetAngularPIDConfig(objective_config.angular_pid);
+                }
                 followerEngine = pid_follower_engine;
                 break;
             default:
@@ -436,16 +442,13 @@ public class MainSceneManager : MonoBehaviour
         float y_scale = scenario.cage.dims.y / 2 * (1.0f - init_config.y_buffer);
         foreach (SequenceElementConfig element in sequence)
         {
-            scaled_sequence.Add(new SequenceElementConfig
-            {
-                timestamp = element.timestamp,
-                x = element.x * x_scale,
-                y = element.y * y_scale,
-                yaw = element.yaw,
-                vx = element.vx * x_scale,
-                vy = element.vy * y_scale,
-                vyaw = element.vyaw
-            });
+            SequenceElementConfig scaled_element = (SequenceElementConfig)element.Clone();
+            scaled_element.timestamp = element.timestamp;
+            scaled_element.x = element.x * x_scale;
+            scaled_element.y = element.y * y_scale;
+            scaled_element.vx = element.vx * x_scale;
+            scaled_element.vy = element.vy * y_scale;
+            scaled_sequence.Add(scaled_element);
         }
         return scaled_sequence;
     }

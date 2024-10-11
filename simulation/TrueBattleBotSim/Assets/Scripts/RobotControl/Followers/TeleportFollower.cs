@@ -12,6 +12,10 @@ class TeleportFollower : BaseFollower
         SetShowArrow(false);
     }
 
+    override protected void OnResetSequence()
+    {
+
+    }
 
     protected override bool ComputeNextGoal(float current_time, int index, out SequenceElementConfig next)
     {

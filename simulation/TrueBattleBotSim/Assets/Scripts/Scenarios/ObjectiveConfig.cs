@@ -11,6 +11,7 @@ public class ObjectiveConfig
     public ScenarioInitConfig init = new ScenarioInitConfig();
     public List<SequenceElementConfig> sequence = new List<SequenceElementConfig>();
 
+    public bool overwrite_controller_config = false;
     public PidConfig linear_pid = new PidConfig(2.0f, 0.0f, 0.0f, 1.0f);
     public PidConfig angular_pid = new PidConfig(10.0f, 0.1f, 1.0f, 1.0f);
     public RamseteConfig ramsete = new RamseteConfig(2.0f, 0.7f);

@@ -17,6 +17,11 @@ class RelativeToFollower : BaseFollower
         this.active_actors = active_actors;
     }
 
+    override protected void OnResetSequence()
+    {
+
+    }
+
     protected override bool ComputeNextGoal(float current_time, int index, out SequenceElementConfig next)
     {
         SequenceElementConfig current = GetElement(index);

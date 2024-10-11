@@ -5,7 +5,6 @@ using RosMessageTypes.Nav;
 using RosMessageTypes.Std;
 using Unity.Robotics.ROSTCPConnector;
 using UnityEngine;
-using RosMessageTypes.BuiltinInterfaces;
 
 public abstract class BaseFollower : MonoBehaviour
 {
@@ -75,12 +74,22 @@ public abstract class BaseFollower : MonoBehaviour
             return Optional<SequenceElementConfig>.CreateEmpty();
         }
 
-        if (objectiveIndex + 1 < objectiveSequence.Count - 1)
+        int nextIndex = objectiveIndex + 1;
+        while (nextIndex < objectiveSequence.Count && objectiveSequence[nextIndex].timestamp < current_time)
         {
-            while (objectiveSequence[objectiveIndex + 1].timestamp < current_time)
-            {
-                objectiveIndex++;
-            }
+            objectiveIndex++;
+            nextIndex++;
+        }
+        if (objectiveIndex >= objectiveSequence.Count)
+        {
+            objectiveIndex = objectiveSequence.Count - 1;
+        }
+
+        if (objectiveSequence[objectiveIndex].reset)
+        {
+            ResetSequenceTime();
+            Debug.Log($"Looping sequence for {actorName}");
+            return Optional<SequenceElementConfig>.CreateEmpty();
         }
 
         sequenceProgressTopic.Publish(new SimulationObjectiveProgressMsg
@@ -117,13 +126,21 @@ public abstract class BaseFollower : MonoBehaviour
         isArrowEnabled = show;
     }
 
+    abstract protected void OnResetSequence();
+
+    private void ResetSequenceTime()
+    {
+        sequenceTime = Time.time;
+        objectiveIndex = 0;
+        OnResetSequence();
+    }
+
     public void SetSequence(string actorName, string objectiveName, List<SequenceElementConfig> objectiveSequence)
     {
         this.objectiveSequence = objectiveSequence;
         this.actorName = actorName;
         this.objectiveName = objectiveName;
-        sequenceTime = Time.time;
-        objectiveIndex = 0;
+        ResetSequenceTime();
         if (controller != null)
         {
             controller.Reset();

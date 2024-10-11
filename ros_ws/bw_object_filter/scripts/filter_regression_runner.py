@@ -59,6 +59,7 @@ def configure_simulation(
                 "kd": run_config.angular_pid.kd,
                 "kf": run_config.angular_pid.kf,
             },
+            "overwrite_controller_config": True,
             "sequence": [],
         },
     )

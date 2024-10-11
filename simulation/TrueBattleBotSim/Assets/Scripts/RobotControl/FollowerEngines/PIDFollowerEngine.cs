@@ -43,6 +43,11 @@ public class PIDFollowerEngine : BaseFollowerEngine
             relativeAngle -= 2 * Mathf.PI;
         }
 
+        if (Time.deltaTime <= 0.0f)
+        {
+            return new TwistMsg();
+        }
+
         float linearVelocity = linearPID.Update(relativePosition.x, 0.0f, Time.deltaTime);
         float angularVelocity = angularPID.Update(relativeAngle, 0.0f, Time.deltaTime);
 
