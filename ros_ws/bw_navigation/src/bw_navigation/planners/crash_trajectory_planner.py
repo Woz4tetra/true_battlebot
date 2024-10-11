@@ -18,9 +18,10 @@ from bw_navigation.planners.planner_interface import PlannerInterface
 
 
 class CrashTrajectoryPlanner(PlannerInterface):
-    def __init__(self, controlled_robot: str, config: PathPlannerConfig) -> None:
+    def __init__(self, controlled_robot: str, opponent_names: list[str], config: PathPlannerConfig) -> None:
         self.config = config
         self.controlled_robot = controlled_robot
+        self.opponent_names = opponent_names
         self.replan_interval = rospy.Duration.from_sec(self.config.replan_interval)
         self.rotate_180_buffer = self.config.rotate_180_buffer
         self.buffer_xy = XY(self.config.rotate_180_buffer, self.config.rotate_180_buffer)
@@ -44,8 +45,15 @@ class CrashTrajectoryPlanner(PlannerInterface):
         controlled_robot_state = robot_states[self.controlled_robot]
         controlled_robot_pose = Pose2D.from_msg(controlled_robot_state.pose.pose)
         controlled_robot_point = XY(controlled_robot_pose.x, controlled_robot_pose.y)
+
         goal_pose = Pose2D.from_msg(goal_target.pose.pose)
         goal_point = XY(goal_pose.x, goal_pose.y)
+
+        friendly_robot_states = {
+            name: state
+            for name, state in robot_states.items()
+            if (name not in self.opponent_names and name != self.controlled_robot)
+        }
 
         if controlled_robot_pose.relative_to(self.prev_move_pose).magnitude() > self.config.move_threshold:
             self.prev_move_time = now
@@ -74,7 +82,7 @@ class CrashTrajectoryPlanner(PlannerInterface):
                 rospy.logdebug(f"Replanning trajectory. {controlled_robot_pose} -> {goal_pose}")
                 self.planner.generate_trajectory(controlled_robot_state, goal_target, field)
                 self.visualization_publisher.publish(self.planner.visualize_trajectory())
-            twist, goal_progress = self.planner.compute(controlled_robot_pose)
+            twist, goal_progress = self.planner.compute(controlled_robot_state, friendly_robot_states)
         else:
             rospy.logdebug(f"Backing away from wall. {controlled_robot_pose} -> {goal_pose}")
             goal_heading = (goal_point - controlled_robot_point).heading()

@@ -69,7 +69,9 @@ class BwNavigationNode:
         }
         self.planners: Dict[GoalStrategy, PlannerInterface] = {
             GoalStrategy.CRASH_OPPONENT: CrashOpponent(self.controlled_robot),
-            GoalStrategy.CRASH_TRAJECTORY_PLANNER: CrashTrajectoryPlanner(self.controlled_robot, PathPlannerConfig()),
+            GoalStrategy.CRASH_TRAJECTORY_PLANNER: CrashTrajectoryPlanner(
+                self.controlled_robot, opponent_names, PathPlannerConfig()
+            ),
         }
 
         self.twist_pub = rospy.Publisher(f"{self.controlled_robot}/cmd_vel/navigation", Twist, queue_size=1)

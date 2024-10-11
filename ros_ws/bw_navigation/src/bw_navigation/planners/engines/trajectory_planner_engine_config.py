@@ -55,6 +55,8 @@ class PathPlannerConfig:
     rotate_180_buffer: float = 0.05
     angle_tolerance: float = 1.0
 
+    prediction_magnification: float = 10.0
+
     backaway_recover: BackawayRecoverConfig = field(default_factory=BackawayRecoverConfig)
     trajectory_planner_engine: TrajectoryPlannerEngineConfig = field(default_factory=TrajectoryPlannerEngineConfig)
     ramsete: RamseteConfig = field(default_factory=RamseteConfig)

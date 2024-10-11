@@ -116,7 +116,7 @@ class TrajectoryPlannerEngine:
     def _plan_with_goal_velocity(self, ticket: PlanningTicket) -> Trajectory:
         robot_pose = ticket.robot_pose
         goal_pose = ticket.goal_pose
-        distance_to_goal = goal_pose.relative_to(robot_pose).magnitude()
+        distance_to_goal = goal_pose.relative_to(robot_pose).magnitude() * self.plan_config.prediction_magnification
         total_time = distance_to_goal / self.plan_config.max_velocity
         travel_distance = ticket.goal_velocity.x * total_time
         projected_goal = Pose2D(travel_distance, 0.0, 0.0).transform_by(goal_pose)
@@ -214,7 +214,17 @@ class TrajectoryPlannerEngine:
         trajectory_duration = rospy.Time.now() - self.start_time
         return trajectory_duration.to_sec() > self.active_trajectory.totalTime()
 
-    def compute(self, robot_pose: Pose2D) -> tuple[Twist, GoalProgress]:
+    def route_around_obstacles(
+        self,
+        controlled_robot_state: EstimatedObject,
+        desired_pose: Pose2D,
+        friendly_robot_states: dict[str, EstimatedObject],
+    ) -> Pose2D:
+        return desired_pose
+
+    def compute(
+        self, controlled_robot_state: EstimatedObject, friendly_robot_states: dict[str, EstimatedObject]
+    ) -> tuple[Twist, GoalProgress]:
         if not self.plan_out_queue.empty():
             while not self.plan_out_queue.empty():
                 result = self.plan_out_queue.get()
@@ -232,6 +242,11 @@ class TrajectoryPlannerEngine:
         current_time = rospy.Time.now()
         time_from_start = (current_time - self.start_time).to_sec()
         desired_state = self.active_trajectory.sample(time_from_start)
+        desired_pose = Pose2D(desired_state.pose.X(), desired_state.pose.Y(), get_theta(desired_state.pose.rotation()))
+        rerouted_pose = self.route_around_obstacles(controlled_robot_state, desired_pose, friendly_robot_states)
+
+        desired_state.pose = geometry.Pose2d(rerouted_pose.x, rerouted_pose.y, rerouted_pose.theta)
+        robot_pose = Pose2D.from_msg(controlled_robot_state.pose.pose)
         current_pose = geometry.Pose2d(robot_pose.x, robot_pose.y, robot_pose.theta)
         chassis_speeds = self.controller.calculate(current_pose, desired_state)
 
