@@ -2,6 +2,6 @@
 BASE_DIR=$(realpath "$(dirname $0)")
 
 PROJECT_NAME=$(${BASE_DIR}/../get_project_name)
-${BASE_DIR}/stop_all_containers
+${BASE_DIR}/stop_project_containers
 docker volume rm ${PROJECT_NAME}_ros_build
 ${BASE_DIR}/build_ros_ws

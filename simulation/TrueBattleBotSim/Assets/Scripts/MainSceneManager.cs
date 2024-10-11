@@ -164,7 +164,7 @@ public class MainSceneManager : MonoBehaviour
 
         if (resetMainCamera)
         {
-            Matrix4x4 cam_pose = GetPoseFromConfig(
+            Matrix4x4 cam_pose = GetActorPoseFromConfig(
                 scenario.main_cam.init,
                 scenario.cage.dims,
                 Matrix4x4.identity
@@ -211,7 +211,7 @@ public class MainSceneManager : MonoBehaviour
             Debug.Log($"Loading actor: {actor_config.name}");
             GameObject actorPrefab = actorPrefabs[actor_config.model];
             Transform spawnHere = actorPrefab.transform.Find("SpawnHere");
-            Matrix4x4 actor_pose = GetPoseFromConfig(
+            Matrix4x4 actor_pose = GetActorPoseFromConfig(
                 objective_config.init,
                 scenario.cage.dims,
                 Matrix4x4.TRS(
@@ -241,7 +241,7 @@ public class MainSceneManager : MonoBehaviour
         {
             GameObject actor = activeActors[actor_config.name];
             ObjectiveConfig objective_config = objectives[actor_config.name];
-            ActivateActorType(actor_config, actor, objective_config, combinedActors);
+            ActivateActorType(scenario, actor_config, actor, objective_config, combinedActors);
             objectiveMsgs.Add(
                 new SimulationObjectiveProgressMsg
                 {
@@ -283,7 +283,7 @@ public class MainSceneManager : MonoBehaviour
         return pauseManager;
     }
 
-    void ActivateActorType(ActorConfig actor_config, GameObject actor, ObjectiveConfig objective_config, Dictionary<string, GameObject> actors)
+    void ActivateActorType(ScenarioConfig scenario, ActorConfig actor_config, GameObject actor, ObjectiveConfig objective_config, Dictionary<string, GameObject> actors)
     {
         KeyboardInput keyboard_input = actor.GetComponent<KeyboardInput>();
         RosControllerConnector controller = actor.GetComponent<RosControllerConnector>();
@@ -311,6 +311,7 @@ public class MainSceneManager : MonoBehaviour
         catch (NullReferenceException e) { Debug.Log($"Actor {actor.name} prefab missing relative_to input: {e.Message}"); }
 
         BaseFollowerEngine followerEngine;
+        List<SequenceElementConfig> scaled_sequence = GetScaledSequence(objective_config.init, scenario.cage.dims, objective_config.sequence);
 
         switch (objective_config.type)
         {
@@ -345,7 +346,7 @@ public class MainSceneManager : MonoBehaviour
                 }
                 followerEngine = GetFollowerEngine(objective_config.follower_engine, actor, objective_config);
                 waypoint_follower.enabled = true;
-                waypoint_follower.SetSequence(actor_config.name, actor_config.objective, GetScaledSequence(objective_config.init, objective_config.sequence));
+                waypoint_follower.SetSequence(actor_config.name, actor_config.objective, scaled_sequence);
                 waypoint_follower.SetFollowerEngine(followerEngine);
                 break;
             case "target":
@@ -356,7 +357,7 @@ public class MainSceneManager : MonoBehaviour
                 }
                 followerEngine = GetFollowerEngine(objective_config.follower_engine, actor, objective_config);
                 target_follower.enabled = true;
-                target_follower.SetSequence(actor_config.name, actor_config.objective, objective_config.sequence);
+                target_follower.SetSequence(actor_config.name, actor_config.objective, scaled_sequence);
                 target_follower.SetActiveActors(actors);
                 target_follower.SetFollowerEngine(followerEngine);
                 break;
@@ -367,7 +368,7 @@ public class MainSceneManager : MonoBehaviour
                     break;
                 }
                 teleport_follower.enabled = true;
-                teleport_follower.SetSequence(actor_config.name, actor_config.objective, objective_config.sequence);
+                teleport_follower.SetSequence(actor_config.name, actor_config.objective, scaled_sequence);
                 teleport_follower.SetComputeMethod(objective_config.smooth_teleports);
                 break;
             case "relative_to":
@@ -377,7 +378,7 @@ public class MainSceneManager : MonoBehaviour
                     break;
                 }
                 relative_to_follower.enabled = true;
-                relative_to_follower.SetSequence(actor_config.name, actor_config.objective, objective_config.sequence);
+                relative_to_follower.SetSequence(actor_config.name, actor_config.objective, scaled_sequence);
                 relative_to_follower.SetActiveActors(actors);
                 break;
             default:
@@ -435,19 +436,26 @@ public class MainSceneManager : MonoBehaviour
         return followerEngine;
     }
 
-    List<SequenceElementConfig> GetScaledSequence(ScenarioInitConfig init_config, List<SequenceElementConfig> sequence)
+    List<SequenceElementConfig> GetScaledSequence(ScenarioInitConfig init_config, DimsConfig dims, List<SequenceElementConfig> sequence)
     {
         List<SequenceElementConfig> scaled_sequence = new List<SequenceElementConfig>();
-        float x_scale = scenario.cage.dims.x / 2 * (1.0f - init_config.x_buffer);
-        float y_scale = scenario.cage.dims.y / 2 * (1.0f - init_config.y_buffer);
         foreach (SequenceElementConfig element in sequence)
         {
+            Tuple<Vector3, Quaternion> element_pose = GetPoseInUnity(
+                init_config.type,
+                new Vector3(element.x, element.y, element.z),
+                new Vector3(element.roll, element.pitch, element.yaw),
+                dims);
+            Vector3 position_flu = new Vector3(element_pose.Item1.x, element_pose.Item1.z, element_pose.Item1.y);
+            Vector3 orientation_flu = element_pose.Item2.ToFLUEulerAngles();
+
             SequenceElementConfig scaled_element = (SequenceElementConfig)element.Clone();
-            scaled_element.timestamp = element.timestamp;
-            scaled_element.x = element.x * x_scale;
-            scaled_element.y = element.y * y_scale;
-            scaled_element.vx = element.vx * x_scale;
-            scaled_element.vy = element.vy * y_scale;
+            scaled_element.x = position_flu.x;
+            scaled_element.y = position_flu.y;
+            scaled_element.z = position_flu.z;
+            scaled_element.roll = orientation_flu.x;
+            scaled_element.pitch = orientation_flu.y;
+            scaled_element.yaw = orientation_flu.z;
             scaled_sequence.Add(scaled_element);
         }
         return scaled_sequence;
@@ -463,28 +471,30 @@ public class MainSceneManager : MonoBehaviour
         return bounds;
     }
 
-    Matrix4x4 GetPoseFromConfig(ScenarioInitConfig init_config, DimsConfig dims_config, Matrix4x4 tf_objectorigin_from_spawn)
+    Tuple<Vector3, Quaternion> GetPoseInUnity(string sourceType, Vector3 sourcePosition, Vector3 sourceEulerAngles, DimsConfig dims_config)
     {
         Vector2 scale;
         Vector3 position;
         Quaternion rotation;
-        Matrix4x4 objectPose = ComputeConfigPoseFromReference(init_config);
-        switch (init_config.type)
+        Matrix4x4 objectPose = ComputeConfigPoseFromReference(sourcePosition, sourceEulerAngles);
+        float x = sourcePosition.x, y = sourcePosition.y, z = sourcePosition.z;
+        float roll = sourceEulerAngles.x, pitch = sourceEulerAngles.y, yaw = sourceEulerAngles.z;
+        switch (sourceType)
         {
             case "absolute":
                 scale = Vector2.one;
-                position = new Vector3(init_config.x, init_config.z, init_config.y);
-                rotation = Quaternion.Euler(-1 * init_config.roll, -1 * init_config.yaw, init_config.pitch);
+                position = new Vector3(x, z, y);
+                rotation = Quaternion.Euler(-1 * roll, -1 * yaw, pitch);
                 break;
             case "relative":
                 scale = new Vector2(dims_config.x / 2, dims_config.y / 2);
-                position = new Vector3(init_config.x, init_config.z, init_config.y);
-                rotation = Quaternion.Euler(-1 * init_config.roll, -1 * init_config.yaw, init_config.pitch);
+                position = new Vector3(x, z, y);
+                rotation = Quaternion.Euler(-1 * roll, -1 * yaw, pitch);
                 break;
             case "world":
                 scale = Vector2.one;
-                position = new Vector3(init_config.x, init_config.y, init_config.z);
-                rotation = Quaternion.Euler(init_config.roll, init_config.pitch, init_config.yaw);
+                position = new Vector3(x, y, z);
+                rotation = Quaternion.Euler(roll, pitch, yaw);
                 break;
             case "flu":
                 scale = Vector2.one;
@@ -495,27 +505,34 @@ public class MainSceneManager : MonoBehaviour
                 scale = Vector2.one;
                 position = objectPose.GetT();
                 rotation = objectPose.GetR();
-                Debug.LogError("Invalid pose type: " + init_config.type);
+                Debug.LogError("Invalid pose type: " + sourceType);
                 break;
         }
-        Matrix4x4 tforigin_from_spawn = Matrix4x4.TRS(
-            new Vector3(
-                position.x * scale.x * (1.0f - init_config.x_buffer),
-                position.y * (1.0f - init_config.z_buffer),
-                position.z * scale.y * (1.0f - init_config.y_buffer)),
-            rotation,
-            Vector3.one
+        Vector3 scaledPosition = new Vector3(position.x * scale.x, position.y, position.z * scale.y);
+        return new Tuple<Vector3, Quaternion>(scaledPosition, rotation);
+    }
+
+    Matrix4x4 GetActorPoseFromConfig(ScenarioInitConfig init_config, DimsConfig dims_config, Matrix4x4 tf_objectorigin_from_spawn)
+    {
+        Tuple<Vector3, Quaternion> initial_pose = GetPoseInUnity(
+            init_config.type,
+            new Vector3(init_config.x, init_config.y, init_config.z),
+            new Vector3(init_config.roll, init_config.pitch, init_config.yaw),
+            dims_config
         );
+        Matrix4x4 tforigin_from_spawn = Matrix4x4.TRS(initial_pose.Item1, initial_pose.Item2, Vector3.one);
         Matrix4x4 tforigin_from_objectorigin = tforigin_from_spawn * tf_objectorigin_from_spawn.inverse;
         return tforigin_from_objectorigin;
     }
 
-    Matrix4x4 ComputeConfigPoseFromReference(ScenarioInitConfig init_config)
+    Matrix4x4 ComputeConfigPoseFromReference(Vector3 sourcePosition, Vector3 sourceEulerAngles)
     {
-        Quaternion tempRotation = new Vector3(init_config.roll, init_config.pitch, init_config.yaw).FromFLUEulerAngles();
+        float x = sourcePosition.x, y = sourcePosition.y, z = sourcePosition.z;
+        float roll = sourceEulerAngles.x, pitch = sourceEulerAngles.y, yaw = sourceEulerAngles.z;
+        Quaternion tempRotation = new Vector3(roll, pitch, yaw).FromFLUEulerAngles();
         PoseMsg rosPose = new PoseMsg
         {
-            position = new PointMsg(init_config.x, init_config.y, init_config.z),
+            position = new PointMsg(x, y, z),
             orientation = new QuaternionMsg(tempRotation.x, tempRotation.y, tempRotation.z, tempRotation.w)
         };
         Matrix4x4 objectPose = Matrix4x4.TRS(rosPose.position.From<FLU>(), rosPose.orientation.From<FLU>(), Vector3.one);

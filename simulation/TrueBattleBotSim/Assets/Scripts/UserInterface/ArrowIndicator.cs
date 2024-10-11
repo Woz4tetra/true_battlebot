@@ -1,12 +1,14 @@
+using MathExtensions;
 using UnityEngine;
 
 public class ArrowIndicator : MonoBehaviour
 {
-    public void Set2D(float x, float y, float z, float yaw, float scale = 1.0f)
+    public void SetPose(Matrix4x4 desiredPose)
     {
-        transform.position = new Vector3(x, y, z);
-        transform.rotation = Quaternion.Euler(0, yaw, 0);
-        transform.localScale = new Vector3(1.0f, 1.0f, scale);
+        Vector3 desiredPosition = desiredPose.GetT();
+        transform.position = new Vector3(desiredPosition.x, desiredPosition.y + 0.05f, desiredPosition.z);
+        transform.rotation = desiredPose.GetR();
+        transform.localScale = desiredPose.GetS();
     }
 
     public void SetColor(Color color)

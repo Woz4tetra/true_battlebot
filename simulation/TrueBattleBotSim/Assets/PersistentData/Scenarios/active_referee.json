@@ -33,12 +33,12 @@
         {
             "name": "opponent_1",
             "model": "MRS BUFF B-03 Bizarro",
-            "objective": "idle_red_corner"
+            "objective": "run_in_a_circle"
         },
         {
             "name": "referee",
             "model": "Referee",
-            "objective": "referee_back_and_forth"
+            "objective": "back_and_forth"
         }
     ]
 }

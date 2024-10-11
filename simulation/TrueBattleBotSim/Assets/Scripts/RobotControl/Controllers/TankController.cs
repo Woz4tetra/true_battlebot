@@ -111,9 +111,10 @@ class TankController : MonoBehaviour, ControllerInterface
         };
     }
 
-    public void Teleport(Vector3 position, Quaternion rotation)
+    public void Teleport(PointMsg position, QuaternionMsg rotation)
     {
-        Matrix4x4 tf_world_from_body = Matrix4x4.TRS(position, rotation, Vector3.one);
+        Matrix4x4 tf_world_from_body = Matrix4x4.TRS(position.From<FLU>(), rotation.From<FLU>(), Vector3.one);
+        tf_world_from_body = Matrix4x4.TRS(Vector3.zero, Quaternion.Euler(0, 90, 0), Vector3.one) * tf_world_from_body * Matrix4x4.TRS(Vector3.zero, Quaternion.Euler(0, -90, 0), Vector3.one);
         Matrix4x4 tf_world_from_spawnhere = tf_world_from_body * tf_spawnhere_from_body.inverse;
         Vector3 spawnPosition = tf_world_from_spawnhere.GetT();
         Quaternion spawnRotation = tf_world_from_spawnhere.GetR();

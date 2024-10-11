@@ -45,6 +45,7 @@ class TeleportFollower : BaseFollower
         SequenceElementConfig next;
         SequenceElementConfig step1 = GetElement(index);
         SequenceElementConfig step2 = GetElement(index + 1);
+
         if (step2.timestamp == step1.timestamp)
         {
             next = step1;
@@ -81,6 +82,6 @@ class TeleportFollower : BaseFollower
         Quaternion rotation_tmp = Quaternion.Euler(next.roll, next.pitch, next.yaw);
         QuaternionMsg rotation = new QuaternionMsg(rotation_tmp.x, rotation_tmp.y, rotation_tmp.z, rotation_tmp.w);
 
-        controller.Teleport(position.From<FLU>(), rotation.From<FLU>());
+        controller.Teleport(position, rotation);
     }
 }

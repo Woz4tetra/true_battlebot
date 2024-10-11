@@ -15,8 +15,8 @@ trap 'int_handler' SIGINT
 
 
 EXTENSION=$(uname -i)
-${BASE_DIR}/TrueBattleBotSim/Build/TrueBattleBotSim.${EXTENSION} &
+${BASE_DIR}/../TrueBattleBotSim/Build/TrueBattleBotSim.${EXTENSION} &
 SIM_PID=$!
 
-python ${BASE_DIR}/TrueBattleBotSim/copy_persistent_data.py
+python ${BASE_DIR}/../TrueBattleBotSim/copy_persistent_data.py
 tail -F -n 1000 ~/.config/unity3d/DefaultCompany/TrueBattleBotSim/Player.log

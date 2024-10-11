@@ -4,7 +4,7 @@ using RosMessageTypes.Geometry;
 public interface ControllerInterface
 {
     void SetCommand(TwistMsg twist);
-    void Teleport(UnityEngine.Vector3 position, UnityEngine.Quaternion rotation);
+    void Teleport(PointMsg position, QuaternionMsg rotation);
     OdometryMsg GetGroundTruth();
     void Reset();
     bool IsUpsideDown();

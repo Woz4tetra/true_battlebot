@@ -59,5 +59,15 @@ namespace MathExtensions
             Quaternion quat = Quaternion.Euler(euler.x, euler.y, euler.z);
             return new Quaternion(-quat.x, quat.y, quat.z, quat.w);
         }
+        public static Quaternion ToRUFAngles(this Vector3 euler)
+        {
+            return Quaternion.Euler(euler.y, -euler.z, euler.x);
+        }
+
+        public static Vector3 ToFLUEulerAngles(this Quaternion quat)
+        {
+            Quaternion q = new Quaternion(quat.z, -quat.x, quat.y, -quat.w);
+            return q.eulerAngles;
+        }
     }
 }

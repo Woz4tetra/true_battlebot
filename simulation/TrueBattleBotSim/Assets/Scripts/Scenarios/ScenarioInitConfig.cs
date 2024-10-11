@@ -14,7 +14,4 @@ public class ScenarioInitConfig
     public float roll = 0.0f;  // degrees
     public float pitch = 0.0f;  // degrees
     public float yaw = 0.0f;  // degrees
-    public float x_buffer = 0.0f;
-    public float y_buffer = 0.0f;
-    public float z_buffer = 0.0f;
 }

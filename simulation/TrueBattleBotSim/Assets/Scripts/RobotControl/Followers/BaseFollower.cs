@@ -5,6 +5,8 @@ using RosMessageTypes.Nav;
 using RosMessageTypes.Std;
 using Unity.Robotics.ROSTCPConnector;
 using UnityEngine;
+using Unity.Robotics.ROSTCPConnector.ROSGeometry;
+using MathExtensions;
 
 public abstract class BaseFollower : MonoBehaviour
 {
@@ -112,7 +114,9 @@ public abstract class BaseFollower : MonoBehaviour
         }
         if (arrow != null)
         {
-            arrow.Set2D(next.x, 0.1f, next.y, -next.yaw);
+            Vector3 arrowPosition = new Vector3(next.x, next.z, next.y);
+            Quaternion arrowAngles = new Vector3(next.roll, next.pitch, next.yaw).ToRUFAngles();
+            arrow.SetPose(Matrix4x4.TRS(arrowPosition, arrowAngles, Vector3.one));
         }
         if (next == null)
         {
@@ -174,8 +178,8 @@ public abstract class BaseFollower : MonoBehaviour
     protected Matrix4x4 GetElementPose(SequenceElementConfig element)
     {
         return Matrix4x4.TRS(
-            new Vector3(element.x, element.y, 0.0f),
-            Quaternion.Euler(0, 0, element.yaw),
+            new Vector3(element.x, element.y, element.z),
+            Quaternion.Euler(element.roll, element.pitch, element.yaw),
             Vector3.one);
     }
 
