@@ -108,9 +108,9 @@ public class CameraController : MonoBehaviour
         return Input.GetButton("Fire2");
     }
 
-    private bool DidLeftMouseUp()
+    private bool DidMiddleMouseUp()
     {
-        return Input.GetMouseButtonUp(0);
+        return Input.GetMouseButtonUp(2);
     }
 
     private bool RaycastToFocusObject(out Matrix4x4 newFocusObject)
@@ -187,7 +187,7 @@ public class CameraController : MonoBehaviour
         Quaternion smoothedRotation = Quaternion.Slerp(transform.rotation, desiredTransform.GetR(), smoothSpeed * Time.fixedDeltaTime);
         transform.SetPositionAndRotation(smoothedPosition, smoothedRotation);
 
-        if (DidLeftMouseUp())
+        if (DidMiddleMouseUp())
         {
             Matrix4x4 newFocusObject;
             if (RaycastToFocusObject(out newFocusObject))
