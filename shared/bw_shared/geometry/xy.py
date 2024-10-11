@@ -74,3 +74,6 @@ class XY(Sequence):
 
     def to_msg(self) -> Vector3:
         return Vector3(x=self.x, y=self.y, z=0.0)
+
+
+LineSegment = tuple[XY, XY]

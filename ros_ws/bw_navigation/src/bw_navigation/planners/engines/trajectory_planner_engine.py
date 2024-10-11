@@ -9,9 +9,10 @@ import rospy
 from bw_interfaces.msg import EstimatedObject
 from bw_interfaces.msg import Trajectory as TrajectoryMsg
 from bw_shared.geometry.field_bounds import FieldBounds2D
-from bw_shared.geometry.in_plane import line_bounds_intersection
+from bw_shared.geometry.in_plane import does_circle_collide_with_path, line_bounds_intersection
 from bw_shared.geometry.pose2d import Pose2D
 from bw_shared.geometry.twist2d import Twist2D
+from bw_shared.geometry.xy import XY
 from geometry_msgs.msg import PoseStamped, Twist, TwistStamped
 from visualization_msgs.msg import Marker, MarkerArray
 from wpimath import geometry
@@ -214,16 +215,40 @@ class TrajectoryPlannerEngine:
         trajectory_duration = rospy.Time.now() - self.start_time
         return trajectory_duration.to_sec() > self.active_trajectory.totalTime()
 
+    def does_robot_collide(
+        self,
+        controlled_robot_state: EstimatedObject,
+        desired_pose: Pose2D,
+        friendly_robot_states: list[EstimatedObject],
+    ) -> bool:
+        controlled_robot_position = XY(
+            controlled_robot_state.pose.pose.position.x, controlled_robot_state.pose.pose.position.y
+        )
+        controlled_robot_size = max(controlled_robot_state.size.x, controlled_robot_state.size.y)
+        desired_position = XY(desired_pose.x, desired_pose.y)
+        for robot_state in friendly_robot_states:
+            friendly_robot_position = XY(robot_state.pose.pose.position.x, robot_state.pose.pose.position.y)
+            friendly_robot_size = max(robot_state.size.x, robot_state.size.y)
+            if does_circle_collide_with_path(
+                friendly_robot_position,
+                friendly_robot_size,
+                controlled_robot_position,
+                desired_position,
+                controlled_robot_size,
+            ):
+                return True
+        return False
+
     def route_around_obstacles(
         self,
         controlled_robot_state: EstimatedObject,
         desired_pose: Pose2D,
-        friendly_robot_states: dict[str, EstimatedObject],
+        friendly_robot_states: list[EstimatedObject],
     ) -> Pose2D:
         return desired_pose
 
     def compute(
-        self, controlled_robot_state: EstimatedObject, friendly_robot_states: dict[str, EstimatedObject]
+        self, controlled_robot_state: EstimatedObject, friendly_robot_states: list[EstimatedObject]
     ) -> tuple[Twist, GoalProgress]:
         if not self.plan_out_queue.empty():
             while not self.plan_out_queue.empty():

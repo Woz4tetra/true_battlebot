@@ -49,11 +49,11 @@ class CrashTrajectoryPlanner(PlannerInterface):
         goal_pose = Pose2D.from_msg(goal_target.pose.pose)
         goal_point = XY(goal_pose.x, goal_pose.y)
 
-        friendly_robot_states = {
-            name: state
+        friendly_robot_states = [
+            state
             for name, state in robot_states.items()
             if (name not in self.opponent_names and name != self.controlled_robot)
-        }
+        ]
 
         if controlled_robot_pose.relative_to(self.prev_move_pose).magnitude() > self.config.move_threshold:
             self.prev_move_time = now

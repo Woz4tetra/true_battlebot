@@ -6,3 +6,4 @@ argcomplete
 ruff
 toml
 python-json-logger
+shapely

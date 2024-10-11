@@ -5,6 +5,7 @@ import pytest
 from bw_shared.geometry.field_bounds import FieldBounds2D
 from bw_shared.geometry.in_plane import (
     dist_from_point_to_line,
+    does_circle_collide_with_path,
     interpolate_on_segment,
     line_bounds_intersection,
     line_line_intersection,
@@ -44,11 +45,11 @@ def test_dist_from_point_to_line(point: np.ndarray, line: np.ndarray, expected_d
         (np.array([0.0, 1.0]), np.array([(-1.0, 0.0), (1.0, 0.0)]), np.array([0.0, 0.0])),
         (np.array([-1.0, 1.0]), np.array([(-1.0, -1.0), (1.0, 1.0)]), np.array([0.0, 0.0])),
         (np.array([10.0, 1.0]), np.array([(-1.0, 0.0), (1.0, 0.0)]), np.array([10.0, 0.0])),
-        (np.array([0.5, -1.0]), np.array([(-2.0, 1.0), (2.0, 2.0)]), np.array([-1.75, 1.25])),
+        (np.array([0.5, -1.0]), np.array([(-2.0, 1.0), (2.0, 2.0)]), np.array([-0.11764706, 1.47058824])),
     ],
 )
 def test_nearest_point_on_line(point: np.ndarray, line: np.ndarray, expected_point: np.ndarray) -> None:
-    assert np.all(nearest_point_on_line(point, line) == expected_point)
+    assert np.allclose(nearest_point_on_line(point, line), expected_point)
 
 
 @pytest.mark.parametrize(
@@ -105,3 +106,25 @@ def test_line_bounds_intersection(
     else:
         assert len(intersections) == 1
         assert np.all(intersections[0] == expected_intersection)
+
+
+@pytest.mark.parametrize(
+    ("circle_center", "circle_diameter", "path_start", "path_end", "path_width", "expected_to_collide"),
+    (
+        (XY(0.0, 0.0), 1.0, XY(0.0, 1.0), XY(0.0, -1.0), 0.5, True),
+        (XY(0.0, 0.0), 1.0, XY(0.0, 1.0), XY(0.0, 2.0), 1.0, True),
+        (XY(0.0, 0.0), 1.0, XY(0.0, 1.00000000001), XY(0.0, 2.0), 1.0, False),
+    ),
+)
+def test_does_circle_collide_with_path(
+    circle_center: XY,
+    circle_diameter: float,
+    path_start: XY,
+    path_end: XY,
+    path_width: float,
+    expected_to_collide: bool,
+) -> None:
+    assert (
+        does_circle_collide_with_path(circle_center, circle_diameter, path_start, path_end, path_width)
+        == expected_to_collide
+    )

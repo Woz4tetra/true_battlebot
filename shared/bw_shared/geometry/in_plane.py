@@ -37,41 +37,53 @@ def dist_from_point_to_line(point: np.ndarray, line: np.ndarray) -> float:
     return 2 * area / seg_len
 
 
-def nearest_point_on_line(point: np.ndarray, line: np.ndarray) -> np.ndarray:
-    """
-    Calculates the point on an infinite line closest to the given point.
-
-    Parameters:
-    point (np.ndarray): The point from which the nearest point on the line is calculated.
-    line (np.ndarray): A 2xN array where the first row is a point on the line and the second row is the direction
-        vector of the line.
-
-    Returns:
-        np.ndarray: The nearest point on the line.
-    """
-    # Extract a point on the line and the direction vector of the line
-    line_point = line[0]
-    line_dir = line[1]
-
-    # Calculate the vector from the line point to the given point
-    point_vector = point - line_point
-
-    # Project the point_vector onto the line direction vector
-    projection_length = np.dot(point_vector, line_dir) / np.dot(line_dir, line_dir)
-    projection_vector = projection_length * line_dir
-
-    # Calculate the nearest point on the line
-    nearest_point = line_point + projection_vector
-
-    return nearest_point
-
-
 def interpolate_on_segment(segment: np.ndarray, t_param: float) -> np.ndarray:
     """
     Interpolates between the start and end of the segment using the parameter t.
     """
     t_compliment = 1 - t_param
     return t_compliment * segment[0] + t_param * segment[1]
+
+
+def nearest_point_on_line_parameterized(point: np.ndarray, line: np.ndarray) -> float:
+    """
+    Calculates the point on an infinite line (defined by a line segment) closest to the given point.
+
+    Args:
+        point (np.ndarray): The point from which the nearest point on the line is calculated.
+        line (np.ndarray): A 2xN array where the first row is the first point on the line segment and the second row
+            is the second point on the line segment.
+
+    Returns:
+        np.ndarray: The nearest point on the line.
+    """
+    # Extract a point on the line and the direction vector of the line
+    line_point0 = line[0]
+    line_point1 = line[1]
+    line_dir = line_point1 - line_point0
+
+    # Calculate the vector from the line point to the given point
+    point_vector = point - line_point0
+
+    # Project the point_vector onto the line direction vector
+    projection_length = np.dot(point_vector, line_dir) / np.dot(line_dir, line_dir)
+    return float(projection_length)
+
+
+def nearest_point_on_line(point: np.ndarray, line: np.ndarray) -> np.ndarray:
+    """
+    Calculates the point on an infinite line (defined by a line segment) closest to the given point.
+
+    Args:
+        point (np.ndarray): The point from which the nearest point on the line is calculated.
+        line (np.ndarray): A 2xN array where the first row is the first point on the line segment and the second row
+            is the second point on the line segment.
+
+    Returns:
+        np.ndarray: The nearest point on the line.
+    """
+    t_param = nearest_point_on_line_parameterized(point, line)
+    return interpolate_on_segment(line, t_param)
 
 
 def line_line_intersection_parameterized(
@@ -182,3 +194,36 @@ def nearest_projected_point(pose: Pose2D, bounds: FieldBounds2D) -> Optional[XY]
             nearest_intersection = intersection
             nearest_t_param = t_param
     return XY(nearest_intersection[0], nearest_intersection[1]) if nearest_intersection is not None else None
+
+
+def does_circle_collide_with_path(
+    circle_center: XY, circle_diameter: float, path_start: XY, path_end: XY, path_width: float
+) -> bool:
+    """
+    Check if path will collide with a circle.
+
+    Args:
+        circle_center: The center of the circle.
+        circle_radius: The radius of the circle.
+        path_start: The start of the path.
+        path_end: The end of the path.
+        path_width: The width of the path.
+
+    Returns:
+        bool: True if the path will collide with the circle, False otherwise.
+    """
+    line = np.array([[path_start.x, path_start.y], [path_end.x, path_end.y]])
+    point = np.array([circle_center.x, circle_center.y])
+    t_param = nearest_point_on_line_parameterized(point, line)
+
+    line_length = np.linalg.norm(line[1] - line[0])
+    circle_radius_t_param = (circle_diameter + path_width) / (2 * line_length)
+    if t_param < -1 * circle_radius_t_param or t_param > 1 + circle_radius_t_param:
+        return False
+
+    nearest_point = interpolate_on_segment(line, t_param)
+    distance_to_nearest = np.linalg.norm(nearest_point - point)
+    if distance_to_nearest > (circle_diameter + path_width) / 2:
+        return False
+
+    return True
