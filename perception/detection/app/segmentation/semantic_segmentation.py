@@ -7,6 +7,7 @@ import torch
 from app.config.segmentation_config.semantic_segmentation_config import SemanticSegmentationConfig
 from app.segmentation.segmentation_interface import SegmentationInterface
 from bw_interfaces.msg import LabelMap, SegmentationInstance, SegmentationInstanceArray
+from bw_shared.enums.label import Label
 from bw_shared.messages.contours import contour_to_msg
 from perception_tools.data_directory import get_data_directory
 from perception_tools.inference.common import get_default_device, load_metadata, mask_to_polygons
@@ -53,6 +54,8 @@ class SemanticSegmentation(SegmentationInterface):
 
         for model_label, (contours, has_holes) in polygon_result.items():
             label = self.model_to_system_labels[model_label]
+            if label == Label.SKIP:
+                continue
             class_idx = self.class_indices[label]
 
             if class_idx not in object_indices:

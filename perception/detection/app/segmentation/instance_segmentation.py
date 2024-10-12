@@ -9,6 +9,7 @@ import torchvision
 from app.config.segmentation_config.instance_segmentation_config import InstanceSegmentationConfig
 from app.segmentation.segmentation_interface import SegmentationInterface
 from bw_interfaces.msg import LabelMap, SegmentationInstance, SegmentationInstanceArray
+from bw_shared.enums.label import Label
 from bw_shared.messages.contours import contour_to_msg
 from bw_shared.messages.header import Header
 from detectron2.layers import paste_masks_in_image
@@ -142,6 +143,8 @@ class InstanceSegmentation(SegmentationInterface):
 
             model_label = self.metadata.labels[class_idx]
             label = self.model_to_system_labels[model_label]
+            if label == Label.SKIP:
+                continue
             system_label_class_idx = self.class_indices[label]
 
             segmentation_instance = SegmentationInstance(

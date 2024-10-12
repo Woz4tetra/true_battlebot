@@ -9,6 +9,7 @@ class Label(str, EnumAutoLowerStr):
     FRIENDLY_ROBOT = auto()
     CONTROLLED_ROBOT = auto()
     BACKGROUND = auto()
+    SKIP = ""
 
 
 class ModelLabel(str, EnumAutoLowerStr):

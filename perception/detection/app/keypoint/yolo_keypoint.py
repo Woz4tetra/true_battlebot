@@ -70,6 +70,8 @@ class YoloKeypoint(KeypointInterface):
             if len(keypoint) != len(keypoint_names):
                 raise ValueError(f"Expected {len(keypoint_names)} keypoints, but got {len(keypoint)}")
             label = self.model_to_system_labels[model_label]
+            if label == Label.SKIP:
+                continue
             system_label_class_idx = self.class_indices[label]
             named_keypoints = {
                 "front": UVKeypoint(x=keypoint[0][0], y=keypoint[0][1]),

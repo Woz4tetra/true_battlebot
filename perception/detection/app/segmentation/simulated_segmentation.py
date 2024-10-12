@@ -201,6 +201,8 @@ class SimulatedSegmentation(SegmentationInterface):
             label = self.model_to_system_labels.get(ModelLabel(instance.label))
             if label is None:
                 continue
+            if label == Label.SKIP:
+                continue
             instance.label = label
             instance.class_index = self.class_indices[label]
             instance.object_index = object_counts.setdefault(label, 0)

@@ -74,6 +74,8 @@ class SimulatedKeypoint(KeypointInterface):
         Fill the keypoint instance with the pixel coordinates.
         """
         label = self.model_to_system_labels[ModelLabel(robot.label)]
+        if label == Label.SKIP:
+            return None
         object_index = object_counts[label]
         object_counts[label] += 1
         try:

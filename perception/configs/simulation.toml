@@ -39,15 +39,15 @@ exclude_filters = [
     "/perception/heartbeat",
 ]
 
-[robot_keypoint]
-type = "SimulatedKeypoint"
-
 # [robot_keypoint]
-# type = "YoloKeypoint"
-# debug_image = true
-# threshold = 0.65
-# model_path = "yolov8n-pose_2024-09-19.pt"
-# metadata_path = "yolov8n-pose_2024-09-19.json"
+# type = "SimulatedKeypoint"
+
+[robot_keypoint]
+type = "YoloKeypoint"
+debug_image = true
+threshold = 0.75
+model_path = "yolo11n-pose_2024-10-09.pt"
+metadata_path = "yolo11n-pose_2024-10-09.json"
 
 [robot_keypoint.model_to_system_labels.mapping]
 "mr_stabs_mk1" = "controlled_robot"
