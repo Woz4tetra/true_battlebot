@@ -25,8 +25,8 @@ def test_route_around_obstacles(planner_config: PathPlannerConfig) -> None:
 
     planner_engine = TrajectoryPlannerEngine(planner_config)
 
-    assert planner_engine.does_robot_collide(controlled_robot, goal_pose, friendly_robots)
+    assert planner_engine.get_robot_collision(controlled_robot, goal_pose, friendly_robots) == friendly_robots
 
     new_goal = planner_engine.route_around_obstacles(controlled_robot, goal_pose, friendly_robots)
 
-    assert not planner_engine.does_robot_collide(controlled_robot, new_goal, friendly_robots)
+    assert not planner_engine.get_robot_collision(controlled_robot, new_goal, friendly_robots)

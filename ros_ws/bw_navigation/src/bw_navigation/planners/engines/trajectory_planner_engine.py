@@ -93,6 +93,7 @@ class TrajectoryPlannerEngine:
         self.is_planning = False
         self.active_trajectory: Optional[Trajectory] = None
         self.active_trajectory_msg = TrajectoryMsg()
+        self.desired_pose = Pose2D(0.0, 0.0, 0.0)
 
         self.planning_thread.start()
 
@@ -181,11 +182,11 @@ class TrajectoryPlannerEngine:
         else:
             rospy.logdebug("Trajectory generation already in progress")
 
-    def visualize_trajectory(self, num_samples: int = 10) -> MarkerArray:
+    def make_trajectory_markers(self, num_samples: int) -> list[Marker]:
+        markers = []
         if self.active_trajectory is None:
             rospy.logwarn("Trajectory not generated")
-            return MarkerArray()
-        markers = MarkerArray()
+            return markers
         for index, time in enumerate(np.linspace(0, self.active_trajectory.totalTime(), num_samples)):
             traj_pose = self.active_trajectory.sample(time)
             marker = Marker()
@@ -206,8 +207,31 @@ class TrajectoryPlannerEngine:
             marker.color.r = 0.0
             marker.color.g = 1.0
             marker.color.b = 0.0
-            markers.markers.append(marker)
+            markers.append(marker)
         return markers
+
+    def make_desired_pose_marker(self) -> Marker:
+        marker = Marker()
+        marker.header.frame_id = "map"
+        marker.ns = "desired_pose"
+        marker.id = 0
+        marker.pose = self.desired_pose.to_msg()
+        marker.type = Marker.ARROW
+        marker.action = Marker.ADD
+        marker.scale.x = 0.1
+        marker.scale.y = 0.02
+        marker.scale.z = 0.02
+        marker.color.a = 1.0
+        marker.color.r = 1.0
+        marker.color.g = 0.2
+        marker.color.b = 0.1
+        return marker
+
+    def visualize_trajectory(self, num_samples: int = 10) -> list[Marker]:
+        return self.make_trajectory_markers(num_samples)
+
+    def visualize_local_plan(self) -> list[Marker]:
+        return [self.make_desired_pose_marker()]
 
     def should_replan(self) -> bool:
         if self.active_trajectory is None:
@@ -215,17 +239,18 @@ class TrajectoryPlannerEngine:
         trajectory_duration = rospy.Time.now() - self.start_time
         return trajectory_duration.to_sec() > self.active_trajectory.totalTime()
 
-    def does_robot_collide(
+    def get_robot_collision(
         self,
         controlled_robot_state: EstimatedObject,
         desired_pose: Pose2D,
         friendly_robot_states: list[EstimatedObject],
-    ) -> bool:
+    ) -> list[EstimatedObject]:
         controlled_robot_position = XY(
             controlled_robot_state.pose.pose.position.x, controlled_robot_state.pose.pose.position.y
         )
         controlled_robot_size = max(controlled_robot_state.size.x, controlled_robot_state.size.y)
         desired_position = XY(desired_pose.x, desired_pose.y)
+        collision_states = []
         for robot_state in friendly_robot_states:
             friendly_robot_position = XY(robot_state.pose.pose.position.x, robot_state.pose.pose.position.y)
             friendly_robot_size = max(robot_state.size.x, robot_state.size.y)
@@ -236,8 +261,8 @@ class TrajectoryPlannerEngine:
                 desired_position,
                 controlled_robot_size,
             ):
-                return True
-        return False
+                collision_states.append(robot_state)
+        return collision_states
 
     def route_around_obstacles(
         self,
@@ -269,6 +294,7 @@ class TrajectoryPlannerEngine:
         desired_state = self.active_trajectory.sample(time_from_start)
         desired_pose = Pose2D(desired_state.pose.X(), desired_state.pose.Y(), get_theta(desired_state.pose.rotation()))
         rerouted_pose = self.route_around_obstacles(controlled_robot_state, desired_pose, friendly_robot_states)
+        self.desired_pose = rerouted_pose
 
         desired_state.pose = geometry.Pose2d(rerouted_pose.x, rerouted_pose.y, rerouted_pose.theta)
         robot_pose = Pose2D.from_msg(controlled_robot_state.pose.pose)

@@ -8,7 +8,7 @@ from bw_shared.geometry.input_modulus import normalize_angle
 from bw_shared.geometry.pose2d import Pose2D
 from bw_shared.geometry.xy import XY
 from geometry_msgs.msg import Twist
-from visualization_msgs.msg import MarkerArray
+from visualization_msgs.msg import Marker, MarkerArray
 
 from bw_navigation.planners.engines.thrash_engine import ThrashEngine
 from bw_navigation.planners.engines.trajectory_planner_engine import TrajectoryPlannerEngine
@@ -41,6 +41,8 @@ class CrashTrajectoryPlanner(PlannerInterface):
         if self.controlled_robot not in robot_states:
             rospy.logwarn_throttle(1, f"Robot {self.controlled_robot} not found in robot states")
             return Twist(), GoalProgress(is_done=False)
+
+        markers: list[Marker] = []
 
         controlled_robot_state = robot_states[self.controlled_robot]
         controlled_robot_pose = Pose2D.from_msg(controlled_robot_state.pose.pose)
@@ -81,7 +83,8 @@ class CrashTrajectoryPlanner(PlannerInterface):
             if self.planner.should_replan() or rospy.Time.now() - self.planner.start_time > (self.replan_interval):
                 rospy.logdebug(f"Replanning trajectory. {controlled_robot_pose} -> {goal_pose}")
                 self.planner.generate_trajectory(controlled_robot_state, goal_target, field)
-                self.visualization_publisher.publish(self.planner.visualize_trajectory())
+                markers.extend(self.planner.visualize_trajectory())
+            markers.extend(self.planner.visualize_local_plan())
             twist, goal_progress = self.planner.compute(controlled_robot_state, friendly_robot_states)
         else:
             rospy.logdebug(f"Backing away from wall. {controlled_robot_pose} -> {goal_pose}")
@@ -103,4 +106,6 @@ class CrashTrajectoryPlanner(PlannerInterface):
         )
 
         goal_progress.distance_to_goal = compute_feedback_distance(controlled_robot_state, goal_target)
+
+        self.visualization_publisher.publish(MarkerArray(markers=markers))
         return twist, goal_progress
