@@ -78,7 +78,7 @@ def main() -> None:
                     if frame_num >= video_count:
                         frame = np.zeros((height, width, 3), dtype=np.uint8)
                     else:
-                        success, frame = in_video.read()
+                        success, frame = in_video.read()  # type: ignore
                         if success:
                             all_finished = False
                         else:
@@ -106,7 +106,7 @@ def main() -> None:
                     y_end = y_start + row_heights[row]
                     x_start = col * output_width // num_columns
                     x_end = (col + 1) * output_width // num_columns
-                    frame = cv2.resize(frame, (x_end - x_start, y_end - y_start))
+                    frame = cv2.resize(frame, (x_end - x_start, y_end - y_start)).astype(np.uint8)
                     combined_frame[y_start:y_end, x_start:x_end] = frame
 
                 if show:

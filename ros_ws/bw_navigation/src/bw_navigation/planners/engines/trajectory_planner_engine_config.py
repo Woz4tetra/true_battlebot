@@ -57,6 +57,8 @@ class PathPlannerConfig:
 
     prediction_magnification: float = 10.0
 
+    obstacle_buffer: float = 0.2  # meters
+
     backaway_recover: BackawayRecoverConfig = field(default_factory=BackawayRecoverConfig)
     trajectory_planner_engine: TrajectoryPlannerEngineConfig = field(default_factory=TrajectoryPlannerEngineConfig)
     ramsete: RamseteConfig = field(default_factory=RamseteConfig)

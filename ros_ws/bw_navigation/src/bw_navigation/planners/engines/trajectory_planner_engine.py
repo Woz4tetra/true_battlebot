@@ -14,7 +14,7 @@ from bw_shared.geometry.pose2d import Pose2D
 from bw_shared.geometry.twist2d import Twist2D
 from bw_shared.geometry.xy import XY
 from geometry_msgs.msg import PoseStamped, Twist, TwistStamped
-from visualization_msgs.msg import Marker, MarkerArray
+from visualization_msgs.msg import Marker
 from wpimath import geometry
 from wpimath.controller import RamseteController
 from wpimath.kinematics import DifferentialDriveKinematics
@@ -94,6 +94,7 @@ class TrajectoryPlannerEngine:
         self.active_trajectory: Optional[Trajectory] = None
         self.active_trajectory_msg = TrajectoryMsg()
         self.desired_pose = Pose2D(0.0, 0.0, 0.0)
+        self.obstacles: list[Optional[EstimatedObject]] = []
 
         self.planning_thread.start()
 
@@ -227,11 +228,38 @@ class TrajectoryPlannerEngine:
         marker.color.b = 0.1
         return marker
 
+    def make_obstacle_markers(self) -> list[Marker]:
+        markers = []
+        for index, obstacle in enumerate(self.obstacles):
+            marker = Marker()
+            marker.header.frame_id = "map"
+            marker.ns = "obstacle"
+            marker.id = index
+            if obstacle is None:
+                marker.action = Marker.DELETE
+                markers.append(marker)
+                continue
+            marker.pose = obstacle.pose.pose
+            marker.type = Marker.CYLINDER
+            marker.action = Marker.ADD
+            friendly_robot_size = max(obstacle.size.x, obstacle.size.y) + self.plan_config.obstacle_buffer
+            marker.scale.x = friendly_robot_size
+            marker.scale.y = friendly_robot_size
+            marker.scale.z = 0.1
+            marker.color.a = 1.0
+            marker.color.r = 1.0
+            marker.color.g = 0.0
+            marker.color.b = 0.0
+            markers.append(marker)
+        return markers
+
     def visualize_trajectory(self, num_samples: int = 10) -> list[Marker]:
         return self.make_trajectory_markers(num_samples)
 
     def visualize_local_plan(self) -> list[Marker]:
-        return [self.make_desired_pose_marker()]
+        markers = [self.make_desired_pose_marker()]
+        markers.extend(self.make_obstacle_markers())
+        return markers
 
     def should_replan(self) -> bool:
         if self.active_trajectory is None:
@@ -239,7 +267,7 @@ class TrajectoryPlannerEngine:
         trajectory_duration = rospy.Time.now() - self.start_time
         return trajectory_duration.to_sec() > self.active_trajectory.totalTime()
 
-    def get_robot_collision(
+    def get_robot_collisions(
         self,
         controlled_robot_state: EstimatedObject,
         desired_pose: Pose2D,
@@ -253,10 +281,10 @@ class TrajectoryPlannerEngine:
         collision_states = []
         for robot_state in friendly_robot_states:
             friendly_robot_position = XY(robot_state.pose.pose.position.x, robot_state.pose.pose.position.y)
-            friendly_robot_size = max(robot_state.size.x, robot_state.size.y)
+            friendly_robot_size = max(robot_state.size.x, robot_state.size.y) + self.plan_config.obstacle_buffer
             if does_circle_collide_with_path(
                 friendly_robot_position,
-                friendly_robot_size,
+                friendly_robot_size + self.plan_config.obstacle_buffer,
                 controlled_robot_position,
                 desired_position,
                 controlled_robot_size,
@@ -264,12 +292,23 @@ class TrajectoryPlannerEngine:
                 collision_states.append(robot_state)
         return collision_states
 
+    def set_obstacles(self, obstacles: list[EstimatedObject]) -> None:
+        if len(obstacles) > len(self.obstacles):
+            self.obstacles.extend([None] * (len(obstacles) - len(self.obstacles)))
+        for index in range(len(self.obstacles)):
+            if index >= len(obstacles):
+                self.obstacles[index] = None
+            else:
+                self.obstacles[index] = obstacles[index]
+
     def route_around_obstacles(
         self,
         controlled_robot_state: EstimatedObject,
         desired_pose: Pose2D,
         friendly_robot_states: list[EstimatedObject],
     ) -> Pose2D:
+        collision_states = self.get_robot_collisions(controlled_robot_state, desired_pose, friendly_robot_states)
+        self.set_obstacles(collision_states)
         return desired_pose
 
     def compute(
