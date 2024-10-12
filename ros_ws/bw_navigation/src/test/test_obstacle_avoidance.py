@@ -18,7 +18,7 @@ def make_robot(pose: Pose2D, size: float, label: str) -> EstimatedObject:
     return robot
 
 
-def test_route_around_obstacles(planner_config: PathPlannerConfig) -> None:
+def test_basic(planner_config: PathPlannerConfig) -> None:
     start_pose = Pose2D(0.0, 0.0, 0.0)
     goal_pose = Pose2D(1.0, 0.0, 0.0)
 

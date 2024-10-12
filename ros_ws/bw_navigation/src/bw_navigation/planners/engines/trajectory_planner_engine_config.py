@@ -29,10 +29,22 @@ class ThrashRecoveryConfig:
 
 @dataclass
 class TrajectoryPlannerEngineConfig:
+    max_velocity: float = 6.0  # m/s
+    max_acceleration: float = 3.0  # m/s^2
+    max_centripetal_acceleration: Optional[float] = 0.75  # m/s^2
+    track_width: float = 0.128  # meters
+
+    prediction_magnification: float = 10.0
+    replan_interval: float = 0.5
+
     planning_failure_random_noise: float = 0.001
     used_measured_velocity: bool = True
     forward_project_goal_velocity: bool = True
     trajectory_lookahead: float = 0.1  # seconds
+
+    @property
+    def max_angular_velocity(self) -> float:
+        return self.max_velocity / self.track_width
 
 
 @dataclass
@@ -42,29 +54,21 @@ class RamseteConfig:
 
 
 @dataclass
-class PathPlannerConfig:
-    max_velocity: float = 6.0  # m/s
-    max_acceleration: float = 3.0  # m/s^2
-    max_centripetal_acceleration: Optional[float] = 0.75  # m/s^2
-    track_width: float = 0.128  # meters
-
-    move_threshold: float = 0.1  # meters
-    move_timeout: float = 1.0  # seconds
-
-    replan_interval: float = 0.5
-    rotate_180_buffer: float = 0.05
-    angle_tolerance: float = 1.0
-
-    prediction_magnification: float = 10.0
-
+class LocalPlannerEngineConfig:
     obstacle_buffer: float = 0.2  # meters
     obstacle_lookahead: float = 0.5  # meters
 
+
+@dataclass
+class PlannerConfig:
+    move_threshold: float = 0.1  # meters
+    move_timeout: float = 1.0  # seconds
+
+    rotate_180_buffer: float = 0.05
+    angle_tolerance: float = 1.0
+
     backaway_recover: BackawayRecoverConfig = field(default_factory=BackawayRecoverConfig)
-    trajectory_planner_engine: TrajectoryPlannerEngineConfig = field(default_factory=TrajectoryPlannerEngineConfig)
+    global_planner: TrajectoryPlannerEngineConfig = field(default_factory=TrajectoryPlannerEngineConfig)
+    local_planner: LocalPlannerEngineConfig = field(default_factory=LocalPlannerEngineConfig)
     ramsete: RamseteConfig = field(default_factory=RamseteConfig)
     thrash_recovery: ThrashRecoveryConfig = field(default_factory=ThrashRecoveryConfig)
-
-    @property
-    def max_angular_velocity(self) -> float:
-        return self.max_velocity / self.track_width

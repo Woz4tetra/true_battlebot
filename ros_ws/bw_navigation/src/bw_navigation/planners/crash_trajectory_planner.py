@@ -10,23 +10,25 @@ from bw_shared.geometry.xy import XY
 from geometry_msgs.msg import Twist
 from visualization_msgs.msg import Marker, MarkerArray
 
+from bw_navigation.planners.engines.local_planner_engine import LocalPlannerEngine
 from bw_navigation.planners.engines.thrash_engine import ThrashEngine
 from bw_navigation.planners.engines.trajectory_planner_engine import TrajectoryPlannerEngine
-from bw_navigation.planners.engines.trajectory_planner_engine_config import PathPlannerConfig
+from bw_navigation.planners.engines.trajectory_planner_engine_config import PlannerConfig
 from bw_navigation.planners.goal_progress import GoalProgress, compute_feedback_distance
 from bw_navigation.planners.planner_interface import PlannerInterface
 
 
 class CrashTrajectoryPlanner(PlannerInterface):
-    def __init__(self, controlled_robot: str, opponent_names: list[str], config: PathPlannerConfig) -> None:
+    def __init__(self, controlled_robot: str, opponent_names: list[str], config: PlannerConfig) -> None:
         self.config = config
+        self.traj_config = config.global_planner
         self.controlled_robot = controlled_robot
         self.opponent_names = opponent_names
-        self.replan_interval = rospy.Duration.from_sec(self.config.replan_interval)
         self.rotate_180_buffer = self.config.rotate_180_buffer
         self.buffer_xy = XY(self.config.rotate_180_buffer, self.config.rotate_180_buffer)
         self.angle_tolerance = self.config.angle_tolerance
-        self.planner = TrajectoryPlannerEngine(self.config)
+        self.global_planner = TrajectoryPlannerEngine(self.traj_config)
+        self.local_planner = LocalPlannerEngine(self.config.local_planner, self.config.ramsete)
         self.thrash_recover_engine = ThrashEngine(self.config.thrash_recovery)
         self.visualization_publisher = rospy.Publisher(
             "trajectory_visualization", MarkerArray, queue_size=1, latch=True
@@ -80,12 +82,15 @@ class CrashTrajectoryPlanner(PlannerInterface):
             rospy.logdebug(f"Thrashing to recover. {controlled_robot_pose} -> {goal_pose}")
             twist = self.thrash_recover_engine.compute(dt)
         elif is_in_bounds:
-            if self.planner.should_replan() or rospy.Time.now() - self.planner.start_time > (self.replan_interval):
-                rospy.logdebug(f"Replanning trajectory. {controlled_robot_pose} -> {goal_pose}")
-                self.planner.generate_trajectory(controlled_robot_state, goal_target, field)
-                markers.extend(self.planner.visualize_trajectory())
-            markers.extend(self.planner.visualize_local_plan())
-            twist, goal_progress = self.planner.compute(controlled_robot_state, friendly_robot_states)
+            markers.extend(self.local_planner.visualize_local_plan())
+            trajectory, did_replan = self.global_planner.compute(controlled_robot_state, goal_target, field)
+            if trajectory is None:
+                rospy.logwarn("No active trajectory")
+                return Twist(), goal_progress
+            if did_replan:
+                rospy.logdebug(f"Replanned trajectory. {controlled_robot_pose} -> {goal_pose}")
+                markers.extend(self.global_planner.visualize_trajectory())
+            twist, goal_progress = self.local_planner.compute(trajectory, controlled_robot_state, friendly_robot_states)
         else:
             rospy.logdebug(f"Backing away from wall. {controlled_robot_pose} -> {goal_pose}")
             goal_heading = (goal_point - controlled_robot_point).heading()
@@ -97,12 +102,12 @@ class CrashTrajectoryPlanner(PlannerInterface):
             twist.angular.z = angle_sign * self.config.backaway_recover.rotate_velocity
 
         twist.linear.x = max(
-            -1 * self.config.max_velocity,
-            min(self.config.max_velocity, twist.linear.x),
+            -1 * self.traj_config.max_velocity,
+            min(self.traj_config.max_velocity, twist.linear.x),
         )
         twist.angular.z = max(
-            -1 * self.config.max_angular_velocity,
-            min(self.config.max_angular_velocity, twist.angular.z),
+            -1 * self.traj_config.max_angular_velocity,
+            min(self.traj_config.max_angular_velocity, twist.angular.z),
         )
 
         goal_progress.distance_to_goal = compute_feedback_distance(controlled_robot_state, goal_target)

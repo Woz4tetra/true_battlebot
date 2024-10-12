@@ -26,7 +26,7 @@ from geometry_msgs.msg import PoseStamped, Twist
 from bw_navigation.exceptions import NavigationError
 from bw_navigation.goal_supplier import FixedPoseSupplier, GoalSupplierInterface, TrackedTargetSupplier
 from bw_navigation.planners import CrashOpponent, CrashTrajectoryPlanner, PlannerInterface
-from bw_navigation.planners.engines.trajectory_planner_engine_config import PathPlannerConfig
+from bw_navigation.planners.engines.trajectory_planner_engine_config import PlannerConfig
 
 
 class BwNavigationNode:
@@ -70,7 +70,7 @@ class BwNavigationNode:
         self.planners: Dict[GoalStrategy, PlannerInterface] = {
             GoalStrategy.CRASH_OPPONENT: CrashOpponent(self.controlled_robot),
             GoalStrategy.CRASH_TRAJECTORY_PLANNER: CrashTrajectoryPlanner(
-                self.controlled_robot, opponent_names, PathPlannerConfig()
+                self.controlled_robot, opponent_names, PlannerConfig()
             ),
         }
 
