@@ -9,7 +9,8 @@ import rospy
 from bw_interfaces.msg import EstimatedObject
 from bw_interfaces.msg import Trajectory as TrajectoryMsg
 from bw_shared.geometry.field_bounds import FieldBounds2D
-from bw_shared.geometry.in_plane import does_circle_collide_with_path, line_bounds_intersection
+from bw_shared.geometry.in_plane import does_circle_collide_with_path, line_bounds_intersection, pose_to_line
+from bw_shared.geometry.polar import Polar
 from bw_shared.geometry.pose2d import Pose2D
 from bw_shared.geometry.twist2d import Twist2D
 from bw_shared.geometry.xy import XY
@@ -301,6 +302,19 @@ class TrajectoryPlannerEngine:
             else:
                 self.obstacles[index] = obstacles[index]
 
+    def rescale_radii(self, min_radius: float, radii: np.ndarray) -> np.ndarray:
+        return 1.0 / (self.plan_config.obstacle_lookahead + min_radius - min_radius) * (radii - min_radius)
+
+    def select_polar_goal(self, polar_values: list[Polar]) -> Polar:
+        angles = np.array([polar.theta for polar in polar_values])
+        radii = np.array([polar.radius for polar in polar_values])
+        min_radius = np.min(radii)
+        weights = self.rescale_radii(min_radius, radii)
+        if np.sum(weights) == 0:
+            weights = np.ones_like(weights)
+        average_angle = float(np.average(angles, weights=weights))
+        return Polar(min_radius, average_angle)
+
     def route_around_obstacles(
         self,
         controlled_robot_state: EstimatedObject,
@@ -309,7 +323,21 @@ class TrajectoryPlannerEngine:
     ) -> Pose2D:
         collision_states = self.get_robot_collisions(controlled_robot_state, desired_pose, friendly_robot_states)
         self.set_obstacles(collision_states)
-        return desired_pose
+        if len(collision_states) == 0:
+            return desired_pose
+        collision_poses = [Pose2D.from_msg(robot.pose.pose) for robot in collision_states]
+        controlled_robot_pose = Pose2D.from_msg(controlled_robot_state.pose.pose)
+        collisions_polar = [
+            Polar.from_xy(collision_pose.relative_to(controlled_robot_pose)) for collision_pose in collision_poses
+        ]
+        if len(collisions_polar) == 1:
+            only_collision = collisions_polar[0]
+            angle_adjustment = np.pi / 2 if only_collision.theta < 0 else np.pi / 2
+            collisions_polar.append(Polar(only_collision.radius, only_collision.theta + angle_adjustment))
+        polar_goal = self.select_polar_goal(collisions_polar)
+        relative_xy_goal = polar_goal.to_xy()
+        rerouted_goal_pose = Pose2D(relative_xy_goal.x, relative_xy_goal.y, 0.0).transform_by(controlled_robot_pose)
+        return rerouted_goal_pose
 
     def compute(
         self, controlled_robot_state: EstimatedObject, friendly_robot_states: list[EstimatedObject]

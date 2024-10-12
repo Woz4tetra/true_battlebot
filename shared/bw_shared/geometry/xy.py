@@ -2,9 +2,14 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
-from typing import Any, Sequence, Tuple, Union, overload
+from typing import Any, Protocol, Sequence, Tuple, Union, overload
 
 from geometry_msgs.msg import Vector3
+
+
+class XYInterface(Protocol):
+    def magnitude(self, other: Any = None) -> float: ...
+    def heading(self, other: Any = None) -> float: ...
 
 
 @dataclass
@@ -74,6 +79,3 @@ class XY(Sequence):
 
     def to_msg(self) -> Vector3:
         return Vector3(x=self.x, y=self.y, z=0.0)
-
-
-LineSegment = tuple[XY, XY]

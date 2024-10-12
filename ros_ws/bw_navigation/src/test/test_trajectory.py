@@ -7,15 +7,6 @@ from bw_navigation.planners.engines.trajectory_planner_engine_config import Path
 from bw_shared.geometry.pose2d import Pose2D
 
 
-@pytest.fixture
-def planner_config() -> PathPlannerConfig:
-    return PathPlannerConfig(
-        max_velocity=1.0,
-        max_acceleration=1.0,
-        track_width=0.2,
-    )
-
-
 @pytest.mark.timeout(10)
 def test_straight_line(planner_config: PathPlannerConfig) -> None:
     goal_distance = 1.0

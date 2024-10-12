@@ -227,3 +227,10 @@ def does_circle_collide_with_path(
         return False
 
     return True
+
+
+def pose_to_line(pose: Pose2D) -> np.ndarray:
+    """
+    Convert a pose to a line segment.
+    """
+    return np.array([[pose.x, pose.y], [pose.x + np.cos(pose.theta), pose.y + np.sin(pose.theta)]])
