@@ -6,7 +6,7 @@ import argparse
 import os
 import sys
 from dataclasses import dataclass, field
-from glob import glob
+from pathlib import Path
 from typing import Optional, Union
 
 import argcomplete
@@ -18,6 +18,8 @@ from bw_shared.camera_calibration.board_config import BoardConfig
 from bw_shared.geometry.camera.image_rectifier import ImageRectifier
 from bw_shared.geometry.projection_math.points_transform import points_transform_by
 from bw_shared.geometry.transform3d import Transform3D
+from bw_shared.script_tools.directories import BAGS_DIR
+from bw_shared.script_tools.list_files import list_files
 from bw_tools.tag_detection.bundle_detector import compute_pose_ransac
 from bw_tools.tag_detection.draw_helpers import project_point_array_to_pixel
 from cv2 import aruco
@@ -26,7 +28,7 @@ from geometry_msgs.msg import Vector3
 from rosbag.bag import Bag
 from sensor_msgs.msg import CameraInfo, Image
 
-SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
+SCRIPT_DIR = Path(os.path.dirname(os.path.realpath(__file__)))
 CV_BRIDGE = CvBridge()
 
 
@@ -298,19 +300,11 @@ def compute_calibration_live(app: AppData):
         rospy.sleep(1.0)
 
 
-def list_files(root_dir: str, extension: str) -> dict[str, str]:
-    search_dir = os.path.abspath(root_dir)
-    paths = [f for f in glob(os.path.join(search_dir, "**", f"*.{extension}"), recursive=True)]
-    files = {f.replace(search_dir + "/", ""): f for f in paths}
-    files[""] = ""
-    return files
-
-
 def main() -> None:
     parser = argparse.ArgumentParser()
 
     board_options = list_files(SCRIPT_DIR, "toml")
-    bag_options = list_files("/data/bags", "bag")
+    bag_options = list_files(BAGS_DIR, "bag")
 
     parser.add_argument("board_config", type=str, choices=board_options.keys(), help="path to board config")
     parser.add_argument(
@@ -350,7 +344,7 @@ def main() -> None:
         "/camera_1/image_rect", "/camera_1/camera_info", "/camera_1/tag_detections", is_rectified=True
     )
 
-    board_config = BoardConfig.from_file(board_config_path)
+    board_config = BoardConfig.from_file(str(board_config_path))
     config = ExstrinsicCalibrationConfig(detector_params=detector_params, board=board_config)
     detector = aruco.CharucoDetector(board_config.board, config.charuco_params, detector_params, config.refine_params)
 
@@ -361,7 +355,7 @@ def main() -> None:
     if is_live:
         compute_calibration_live(app)
     else:
-        compute_calibration_from_bag(bag_path, app)
+        compute_calibration_from_bag(str(bag_path), app)
 
 
 if __name__ == "__main__":

@@ -2,6 +2,10 @@
     <include file="$(find bw_bringup)/launch/subsystems/common.launch">
         <arg name="auto_initialize" value="true" />
     </include>
+    <include file="$(find bw_tracking_cam)/launch/playback_cam.launch">
+        <arg name="camera_name" value="camera_1" />
+    </include>
+    <include file="$(find bw_bringup)/launch/subsystems/playback_camera_conversion.launch" />
     <include file="$(find ros_tcp_endpoint)/launch/endpoint.launch" />
     <include file="$(find bw_bringup)/launch/subsystems/mini_bot_static_transforms.launch" />
 </launch>

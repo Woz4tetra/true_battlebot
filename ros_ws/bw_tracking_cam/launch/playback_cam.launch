@@ -1,0 +1,11 @@
+<launch>
+    <arg name="camera_name" default="camera_1" />
+    <node name="playback_tracking_camera" pkg="bw_tracking_cam" type="playback_tracking_camera.py" output="screen"
+        required="false" respawn="true" clear_params="true">
+        <param name="camera_name" value="$(arg camera_name)" />
+        <param name="debug_image" value="false" />
+        <param name="detect_params_path"
+            value="$(find bw_tracking_cam)/config/tracking_detect_parameters.json" />
+        <param name="refine_params_path" value="" />
+    </node>
+</launch>

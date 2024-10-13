@@ -7,7 +7,7 @@ from app.config.camera_config.svo_playback_camera_config import SvoPlaybackCamer
 from app.config.camera_config.zed_camera_config import ZedCameraConfig
 from app.config.config import Config
 from app.container import Container
-from bw_interfaces.msg import ControlRecording
+from bw_interfaces.msg import CageCorner, ControlRecording
 from perception_tools.rosbridge.ros_poll_subscriber import RosPollSubscriber
 from perception_tools.rosbridge.ros_publisher import RosPublisher
 from sensor_msgs.msg import CameraInfo, CompressedImage, Image, Imu
@@ -72,8 +72,17 @@ def make_svo_camera(camera_config: SvoPlaybackCameraConfig, container: Container
 
     svo_record_sub = RosPollSubscriber(ns + "/record_svo", ControlRecording)
 
+    bag_topics = {
+        "/set_cage_corner": CageCorner,
+        "/manual_plane_request": Empty,
+        "/camera_1/camera_info": CameraInfo,
+        "/camera_1/image_rect": Image,
+        "/camera_1/image_rect/compressed": CompressedImage,
+    }
+    bag_publisher = {topic: RosPublisher(topic, msg_type) for topic, msg_type in bag_topics.items()}
+
     return SvoPlaybackCamera(
-        camera_config, config.camera_topic, color_image_pub, camera_info_pub, imu_pub, svo_record_sub
+        camera_config, config.camera_topic, color_image_pub, camera_info_pub, imu_pub, svo_record_sub, bag_publisher
     )
 
 

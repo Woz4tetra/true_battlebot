@@ -2,9 +2,9 @@ target_tick_rate = 60.0
 
 [camera]
 type = "SvoPlaybackCamera"
-# filename = "mini_bot_2024-03-02T17-59-26.svo"
-filename = "mini_bot_2024-03-02T19-00-40.svo"
-start_time = 30.0
+svo_name = "mini_bot_2024-10-06T18-28-40.svo2"
+bag_name = "mini_bot_2024-10-06T18-28-40.bag"
+start_time = 0.0
 
 [field_filter]
 type = "PointCloudFieldFilter"

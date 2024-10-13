@@ -4,6 +4,7 @@ from pathlib import Path
 
 import numpy as np
 import pyzed.sl as sl
+import rospy
 from app.camera.camera_interface import CameraInterface, CameraMode
 from app.camera.zed.helpers import zed_status_to_str, zed_to_ros_camera_info, zed_to_ros_imu
 from app.config.camera_config.svo_playback_camera_config import SvoPlaybackCameraConfig
@@ -15,6 +16,7 @@ from perception_tools.messages.image import Image
 from perception_tools.messages.point_cloud import CloudFieldName, PointCloud
 from perception_tools.rosbridge.ros_poll_subscriber import RosPollSubscriber
 from perception_tools.rosbridge.ros_publisher import RosPublisher
+from rosbag.bag import Bag
 from sensor_msgs.msg import CameraInfo, Imu
 from sensor_msgs.msg import Image as RosImage
 
@@ -28,6 +30,7 @@ class SvoPlaybackCamera(CameraInterface):
         camera_info_pub: RosPublisher[CameraInfo],
         imu_pub: RosPublisher[Imu],
         record_svo_sub: RosPollSubscriber[ControlRecording],
+        bag_publishers: dict[str, RosPublisher],
     ) -> None:
         self.logger = logging.getLogger("perception")
 
@@ -37,12 +40,14 @@ class SvoPlaybackCamera(CameraInterface):
         self.camera_info_pub = camera_info_pub
         self.imu_pub = imu_pub
         self.record_svo_sub = record_svo_sub
+        self.bag_publishers = bag_publishers
 
         self.svo_directory = Path(self.config.svo_directory)
+        self.bag_directory = Path(self.config.bag_directory)
 
         input_type = sl.InputType()
         # Set init parameter to run from the .svo
-        input_type.set_from_svo_file(str(self.svo_directory / self.config.filename))
+        input_type.set_from_svo_file(str(self.svo_directory / self.config.svo_name))
 
         self.camera = sl.Camera()
         self.init_params = sl.InitParameters(input_t=input_type, svo_real_time_mode=False)
@@ -59,10 +64,20 @@ class SvoPlaybackCamera(CameraInterface):
         self.real_time_start = 0.0
         self.camera_start_time = 0.0
         self.is_open = False
+        self.did_finish = False
+        self.last_log_time = 0.0
+        self.num_frames = 0
 
         self.color_image = sl.Mat()
         self.point_cloud = sl.Mat()
         self.header = Header(0.0, self.camera_topic_config.frame_id, 0)
+
+        self.bag = Bag(str(self.bag_directory / self.config.bag_name), "r")
+        self.bag_time = self.bag.get_start_time()
+        self.bag_iters = self.bag.read_messages(
+            start_time=rospy.Time.from_sec(self.bag_time + self.config.start_time),
+            topics=list(self.bag_publishers.keys()),
+        )
 
         self.load_field_frame()
         self.logger.debug("SvoPlaybackCamera initialized")
@@ -74,21 +89,27 @@ class SvoPlaybackCamera(CameraInterface):
         return True
 
     def poll(self) -> CameraData | None:
+        if self.did_finish:
+            return None
         self._poll_recording()
         real_time = self.get_relative_real_time()
         camera_time = self.get_relative_camera_time()
         self.logger.debug(f"Capture time: {camera_time}. Real time: {real_time}")
         if not (abs(real_time - camera_time) < self.config.time_sync_threshold):
             if real_time > camera_time:
-                self.logger.warning(f"Capture time is behind real time: {camera_time} < {real_time}")
+                self.logger.warning(f"Capture time is behind real time: {camera_time - real_time:0.6f} s")
                 self.set_svo_time(real_time)
             else:
-                self.logger.warning(f"Real time is behind capture time: {real_time} < {camera_time}")
+                self.logger.warning(f"Real time is behind capture time: {real_time - camera_time:0.6f} s")
                 return None
 
         t0 = time.perf_counter()
         status = self.camera.grab(self.runtime_parameters)
         t1 = time.perf_counter()
+        if status == sl.ERROR_CODE.END_OF_SVOFILE_REACHED:
+            self.logger.info("End of SVO file reached")
+            self.did_finish = True
+            return None
         if status != sl.ERROR_CODE.SUCCESS:
             self.logger.error(f"ZED Camera failed to grab frame: {zed_status_to_str(status)}")
             return None
@@ -103,7 +124,16 @@ class SvoPlaybackCamera(CameraInterface):
 
         header = self.next_header()
         now = time.time()
-        self.logger.debug(f"Frame time: {header.stamp}. Delay: {now - header.stamp}. Image grab time: {t1 - t0}")
+        self.logger.debug(
+            f"Frame {header.seq} / {self.num_frames} "
+            f"time: {header.stamp}. "
+            f"Delay: {now - header.stamp}. "
+            f"Image grab time: {t1 - t0}"
+        )
+        if now - self.last_log_time > self.config.progress_log_interval:
+            self.last_log_time = now
+            self.logger.info(f"Frame {header.seq} / {self.num_frames} time: {header.stamp}")
+
         self.field_data.camera_info.header = header.to_msg()
         image = Image(header, color_image_data)
         point_cloud = PointCloud(header, np.array([]), np.array([]), color_encoding=CloudFieldName.BGRA)
@@ -122,6 +152,12 @@ class SvoPlaybackCamera(CameraInterface):
         else:
             self.logger.warning(f"Failed to get IMU data: {zed_status_to_str(imu_status)}")
 
+        while self.bag_time < header.stamp:
+            topic, msg, timestamp = next(self.bag_iters)  # type: ignore
+            self.bag_publishers[topic].publish(msg)
+            self.logger.debug(f"Published message from bag: {topic}")
+            self.bag_time = timestamp.to_sec()
+
         self.color_image_pub.publish(image.to_msg())
         self.camera_info_pub.publish(self.field_data.camera_info)
 
@@ -129,6 +165,7 @@ class SvoPlaybackCamera(CameraInterface):
 
     def close(self) -> None:
         self.camera.close()
+        self.bag.close()
 
     def _set_robot_finder_settings(self) -> bool:
         self.logger.info("Setting ZED Camera to Robot Finder mode")
@@ -145,7 +182,7 @@ class SvoPlaybackCamera(CameraInterface):
         return image_time * 1e-9
 
     def next_header(self) -> Header:
-        self.header.stamp = self.get_relative_camera_time()
+        self.header.stamp = self.get_svo_time()
         self.header.seq += 1
         return self.header
 
@@ -224,17 +261,17 @@ class SvoPlaybackCamera(CameraInterface):
         self.grab()
 
         self.camera_start_time = self.get_svo_time()
-        num_frames = self.get_number_of_frames()
-        self.grab_frame_at(num_frames - 1)
+        self.num_frames = self.get_number_of_frames()
+        self.grab_frame_at(self.num_frames - 2)
         camera_stop_time = self.get_svo_time()
-        self.camera_fps = num_frames / (camera_stop_time - self.camera_start_time)
+        self.camera_fps = self.num_frames / (camera_stop_time - self.camera_start_time)
         if self.camera_fps < 0.0:
             raise Exception(f"Invalid camera FPS: {self.camera_fps}")
         if self.camera_fps < 1.0:
             self.logger.warning(f"Low camera FPS: {self.camera_fps}")
 
         self.logger.info(f"Camera FPS: {self.camera_fps}")
-        self.logger.info(f"SVO has {num_frames} frames")
+        self.logger.info(f"SVO has {self.num_frames} frames")
 
         zed_info = self.camera.get_camera_information()
 

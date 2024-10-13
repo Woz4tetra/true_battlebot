@@ -1,0 +1,4 @@
+<launch>
+    <node pkg="image_transport" type="republish" name="republish_camera_1" output="screen" clear_params="true"
+        args="compressed in:=/camera_1/image_rect out:=/camera_1/image_rect"/>
+</launch>
