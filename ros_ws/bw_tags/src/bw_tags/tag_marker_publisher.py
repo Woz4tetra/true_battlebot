@@ -19,15 +19,13 @@ class TagMarkerPublisher:
         self.name = "tag_marker_publisher"
         rospy.init_node(self.name)
 
-        self.marker_publish_rate = get_param("~marker_publish_rate", 0.0)
+        self.marker_lifetime = get_param("~marker_lifetime", 3.0)
         self.topics = get_param("~topics", [])
         self.debug = get_param("~debug", False)
         self.base_frame = get_param("~base_frame", "")
         self.stale_detection_seconds = rospy.Duration.from_sec(get_param("~stale_detection_seconds", 1.0))
 
-        self.tag_msg = AprilTagDetectionArray()
         self.rotate_quat = (0.5, -0.5, -0.5, -0.5)
-
         self.marker_colors = {None: (1.0, 1.0, 1.0, 1.0)}
 
         self.tag_subs = {}
@@ -46,23 +44,20 @@ class TagMarkerPublisher:
         rospy.loginfo("%s init complete" % self.name)
 
     def tag_callback(self, msg: AprilTagDetectionArray):
-        base_detections = AprilTagDetectionArray()
-        assert msg.detections is not None and base_detections.detections is not None
+        detections = AprilTagDetectionArray()
+        assert msg.detections is not None and detections.detections is not None
         for detection in msg.detections:
             pose: Pose = detection.pose.pose.pose
             detection.pose.pose.pose.orientation = self.rotate_tag_orientation(pose.orientation, self.rotate_quat)
             new_detection = self.transform_tag_to_base(detection)
             if new_detection is None:
                 continue
-            base_detections.header = new_detection.pose.header
-            base_detections.detections.append(new_detection)
+            detections.header = new_detection.pose.header
+            detections.detections.append(new_detection)
 
-        if len(base_detections.detections) != 0:
-            self.tag_msg = base_detections
         if self.debug:
-            self.publish_debug_rotation(self.tag_msg)
-        if self.marker_publish_rate <= 0.0:
-            self.publish_marker(self.tag_msg)
+            self.publish_debug_rotation(detections)
+        self.publish_marker(detections)
 
     def publish_debug_rotation(self, msg: AprilTagDetectionArray):
         if self.rotated_debug_pub is None:
@@ -220,10 +215,7 @@ class TagMarkerPublisher:
         marker.action = Marker.ADD
         marker.pose = copy.deepcopy(pose.pose)
         marker.header = pose.header
-        if self.marker_publish_rate > 0.0:
-            marker.lifetime = rospy.Duration.from_sec(2.0 / self.marker_publish_rate)
-        else:
-            marker.lifetime = rospy.Duration.from_sec(0.0)
+        marker.lifetime = rospy.Duration.from_sec(self.marker_lifetime)
         marker.ns = name
         marker.id = 0  # all waypoint names should be unique
         marker.frame_locked = False
@@ -243,13 +235,7 @@ class TagMarkerPublisher:
         return marker
 
     def run(self):
-        if self.marker_publish_rate > 0.0:
-            rate = rospy.Rate(self.marker_publish_rate)
-            while not rospy.is_shutdown():
-                self.publish_marker(self.tag_msg)
-                rate.sleep()
-        else:
-            rospy.spin()
+        rospy.spin()
 
 
 if __name__ == "__main__":

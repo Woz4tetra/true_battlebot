@@ -159,6 +159,8 @@ class FieldFilter:
             self.estimated_object_to_plane_marker(estimated_field, ColorRGBA(0, 1, 0.5, 0.25), 0),
             self.estimated_object_to_text_marker(estimated_field, "blue", ColorRGBA(0, 0, 1, 1), 1, (-1, 1)),
             self.estimated_object_to_text_marker(estimated_field, "red", ColorRGBA(1, 0, 0, 1), 2, (1, -1)),
+            self.estimated_object_to_text_marker(estimated_field, "door", ColorRGBA(1, 1, 1, 1), 3, (0, 1)),
+            self.estimated_object_to_text_marker(estimated_field, "audience", ColorRGBA(1, 1, 1, 1), 4, (0, -1)),
         ]
         self.estimated_field_marker_pub.publish(MarkerArray(markers=markers))
 
