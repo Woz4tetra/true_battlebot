@@ -1,6 +1,7 @@
 import logging
 import time
 from pathlib import Path
+from threading import Lock, Thread
 
 import numpy as np
 import pyzed.sl as sl
@@ -47,7 +48,9 @@ class SvoPlaybackCamera(CameraInterface):
 
         input_type = sl.InputType()
         # Set init parameter to run from the .svo
-        input_type.set_from_svo_file(str(self.svo_directory / self.config.svo_name))
+        svo_name = self.config.svo_name if self.config.svo_name.endswith("svo2") else self.config.svo_name + ".svo2"
+        svo_path = self.svo_directory / svo_name
+        input_type.set_from_svo_file(str(svo_path))
 
         self.camera = sl.Camera()
         self.init_params = sl.InitParameters(input_t=input_type, svo_real_time_mode=False)
@@ -64,6 +67,7 @@ class SvoPlaybackCamera(CameraInterface):
         self.real_time_start = 0.0
         self.camera_start_time = 0.0
         self.is_open = False
+        self.is_polling = False
         self.did_finish = False
         self.last_log_time = 0.0
         self.num_frames = 0
@@ -72,12 +76,27 @@ class SvoPlaybackCamera(CameraInterface):
         self.point_cloud = sl.Mat()
         self.header = Header(0.0, self.camera_topic_config.frame_id, 0)
 
-        self.bag = Bag(str(self.bag_directory / self.config.bag_name), "r")
-        self.bag_time = self.bag.get_start_time()
-        self.bag_iters = self.bag.read_messages(
-            start_time=rospy.Time.from_sec(self.bag_time + self.config.start_time),
-            topics=list(self.bag_publishers.keys()),
-        )
+        bag_name = self.config.bag_name if self.config.bag_name else svo_path.stem + ".bag"
+        bag_name = bag_name if bag_name.endswith("bag") else bag_name + ".bag"
+        bag_path = self.bag_directory / bag_name
+        if bag_path.exists():
+            self.bag = Bag(str(), "r")
+            self.bag_time = self.bag.get_start_time()
+            self.bag_iters = self.bag.read_messages(
+                start_time=rospy.Time.from_sec(self.bag_time + self.config.start_time),
+                topics=list(self.bag_publishers.keys()),
+            )
+        else:
+            self.logger.warning(f"Bag file not found: {bag_path}. Skipping bag playback.")
+            self.bag = None
+            self.bag_time = 0.0
+            self.bag_iters = iter([])
+
+        self.camera_data: CameraData | None = None
+        self.imu_data: Imu | None = None
+        self.data_lock = Lock()
+
+        self.poll_thread = Thread(target=self.poll_task, daemon=True)
 
         self.load_field_frame()
         self.logger.debug("SvoPlaybackCamera initialized")
@@ -88,84 +107,108 @@ class SvoPlaybackCamera(CameraInterface):
         self.mode = mode
         return True
 
+    def poll_task(self) -> None:
+        try:
+            while True:
+                if self.did_finish:
+                    return
+
+                real_time = self.get_relative_real_time()
+                camera_time = self.get_relative_camera_time()
+                self.logger.debug(f"Capture time: {camera_time}. Real time: {real_time}")
+                if not (abs(real_time - camera_time) < self.config.time_sync_warning):
+                    if real_time > camera_time:
+                        self.logger.warning(f"Capture time is behind real time: {real_time - camera_time:0.6f} s")
+                    else:
+                        time.sleep(camera_time - real_time)
+                        continue
+
+                t0 = time.perf_counter()
+                status = self.camera.grab(self.runtime_parameters)
+                t1 = time.perf_counter()
+                if status == sl.ERROR_CODE.END_OF_SVOFILE_REACHED:
+                    self.logger.info("End of SVO file reached")
+                    self.did_finish = True
+                    break
+                if status != sl.ERROR_CODE.SUCCESS:
+                    self.logger.error(f"ZED Camera failed to grab frame: {zed_status_to_str(status)}")
+                    break
+
+                self.camera.retrieve_image(self.color_image, sl.VIEW.LEFT)
+                color_image_data = self.color_image.get_data()[..., 0:3]
+
+                header = self.next_header()
+                now = time.time()
+                self.logger.debug(
+                    f"Frame {header.seq} / {self.num_frames} "
+                    f"time: {header.stamp}. "
+                    f"Delay: {now - header.stamp}. "
+                    f"Image grab time: {t1 - t0}"
+                )
+                if now - self.last_log_time > self.config.progress_log_interval:
+                    self.last_log_time = now
+                    self.logger.info(f"Frame {header.seq} / {self.num_frames} time: {header.stamp}")
+
+                self.field_data.camera_info.header = header.to_msg()
+                image = Image(header, color_image_data)
+                point_cloud = PointCloud(header, np.array([]), np.array([]), color_encoding=CloudFieldName.BGRA)
+
+                with self.data_lock:
+                    self.camera_data = CameraData(
+                        color_image=image,
+                        point_cloud=point_cloud,
+                        camera_info=self.field_data.camera_info,
+                    )
+
+                sensors_data = sl.SensorsData()
+                imu_status = self.camera.get_sensors_data(sensors_data, sl.TIME_REFERENCE.IMAGE)
+                if imu_status == sl.ERROR_CODE.SUCCESS:
+                    imu_zed_data = sensors_data.get_imu_data()
+                    with self.data_lock:
+                        self.imu_data = zed_to_ros_imu(self.field_data.camera_info.header, imu_zed_data)
+                else:
+                    self.logger.warning(f"Failed to get IMU data: {zed_status_to_str(imu_status)}")
+        except BaseException as e:
+            self.logger.error(f"Error in poll task: {e}", exc_info=True)
+            raise
+        finally:
+            self.logger.info("Poll task finished")
+
     def poll(self) -> CameraData | None:
         if self.did_finish:
             return None
-        self._poll_recording()
-        real_time = self.get_relative_real_time()
-        camera_time = self.get_relative_camera_time()
-        self.logger.debug(f"Capture time: {camera_time}. Real time: {real_time}")
-        if not (abs(real_time - camera_time) < self.config.time_sync_threshold):
-            if real_time > camera_time:
-                self.logger.warning(f"Capture time is behind real time: {camera_time - real_time:0.6f} s")
-                self.set_svo_time(real_time)
-            else:
-                self.logger.warning(f"Real time is behind capture time: {real_time - camera_time:0.6f} s")
-                return None
 
-        t0 = time.perf_counter()
-        status = self.camera.grab(self.runtime_parameters)
-        t1 = time.perf_counter()
-        if status == sl.ERROR_CODE.END_OF_SVOFILE_REACHED:
-            self.logger.info("End of SVO file reached")
-            self.did_finish = True
-            return None
-        if status != sl.ERROR_CODE.SUCCESS:
-            self.logger.error(f"ZED Camera failed to grab frame: {zed_status_to_str(status)}")
-            return None
         if self.mode == CameraMode.FIELD_FINDER:
             self.logger.info("Using cached field frame data")
             header = self.next_header()
             self.field_data.set_header(header)
             return self.field_data
 
-        self.camera.retrieve_image(self.color_image, sl.VIEW.LEFT)
-        color_image_data = self.color_image.get_data()[..., 0:3]
+        camera_data: CameraData | None = None
+        self._poll_recording()
+        with self.data_lock:
+            if self.imu_data:
+                self.imu_pub.publish(self.imu_data)
+                self.imu_data = None
+            if self.camera_data:
+                camera_data = self.camera_data
+                self.camera_data = None
+                self.color_image_pub.publish(camera_data.color_image.to_msg())
+                self.camera_info_pub.publish(self.field_data.camera_info)
 
-        header = self.next_header()
-        now = time.time()
-        self.logger.debug(
-            f"Frame {header.seq} / {self.num_frames} "
-            f"time: {header.stamp}. "
-            f"Delay: {now - header.stamp}. "
-            f"Image grab time: {t1 - t0}"
-        )
-        if now - self.last_log_time > self.config.progress_log_interval:
-            self.last_log_time = now
-            self.logger.info(f"Frame {header.seq} / {self.num_frames} time: {header.stamp}")
-
-        self.field_data.camera_info.header = header.to_msg()
-        image = Image(header, color_image_data)
-        point_cloud = PointCloud(header, np.array([]), np.array([]), color_encoding=CloudFieldName.BGRA)
-
-        camera_data = CameraData(
-            color_image=image,
-            point_cloud=point_cloud,
-            camera_info=self.field_data.camera_info,
-        )
-
-        sensors_data = sl.SensorsData()
-        imu_status = self.camera.get_sensors_data(sensors_data, sl.TIME_REFERENCE.IMAGE)
-        if imu_status == sl.ERROR_CODE.SUCCESS:
-            imu_data = sensors_data.get_imu_data()
-            self.imu_pub.publish(zed_to_ros_imu(self.field_data.camera_info.header, imu_data))
-        else:
-            self.logger.warning(f"Failed to get IMU data: {zed_status_to_str(imu_status)}")
-
-        while self.bag_time < header.stamp:
-            topic, msg, timestamp = next(self.bag_iters)  # type: ignore
-            self.bag_publishers[topic].publish(msg)
-            self.logger.debug(f"Published message from bag: {topic}")
-            self.bag_time = timestamp.to_sec()
-
-        self.color_image_pub.publish(image.to_msg())
-        self.camera_info_pub.publish(self.field_data.camera_info)
+        if self.bag and camera_data:
+            while self.bag_time < camera_data.color_image.header.stamp:
+                topic, msg, timestamp = next(self.bag_iters)  # type: ignore
+                self.bag_publishers[topic].publish(msg)
+                self.logger.debug(f"Published message from bag: {topic}")
+                self.bag_time = timestamp.to_sec()
 
         return camera_data
 
     def close(self) -> None:
         self.camera.close()
-        self.bag.close()
+        if self.bag:
+            self.bag.close()
 
     def _set_robot_finder_settings(self) -> bool:
         self.logger.info("Setting ZED Camera to Robot Finder mode")
@@ -205,15 +248,22 @@ class SvoPlaybackCamera(CameraInterface):
             case _:
                 self.logger.error(f"Invalid ZED Camera recording command: {command}")
 
-    def open(self) -> bool:
-        if self.is_open:
-            return True
+    def _open_camera(self) -> bool:
         status = self.camera.open(self.init_params)
         success = status == sl.ERROR_CODE.SUCCESS
         if not success:
             self.logger.error(f"Failed to open camera: {zed_status_to_str(status)}")
         self.is_open = success
         return success
+
+    def open(self) -> bool:
+        status = True
+        if not self.is_open:
+            status = self._open_camera()
+        if not self.is_polling:
+            self.poll_thread.start()
+            self.is_polling = True
+        return status
 
     def grab(self) -> None:
         status = self.camera.grab(self.runtime_parameters)
@@ -256,7 +306,7 @@ class SvoPlaybackCamera(CameraInterface):
 
     def load_field_frame(self) -> None:
         self.logger.debug("Loading field frame data")
-        self.open()
+        self._open_camera()
         self._set_field_finder_settings()
         self.grab()
 
