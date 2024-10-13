@@ -214,6 +214,8 @@ def does_circle_collide_with_path(
     """
     line = np.array([[path_start.x, path_start.y], [path_end.x, path_end.y]])
     point = np.array([circle_center.x, circle_center.y])
+    if np.linalg.norm(line[0] - line[1]) < 1e-6:
+        return bool(np.linalg.norm(point - line[0]) <= (circle_diameter + path_width) / 2)
     t_param = nearest_point_on_line_parameterized(point, line)
 
     line_length = np.linalg.norm(line[1] - line[0])

@@ -83,14 +83,16 @@ class CrashTrajectoryPlanner(PlannerInterface):
             twist = self.thrash_recover_engine.compute(dt)
         elif is_in_bounds:
             markers.extend(self.local_planner.visualize_local_plan())
-            trajectory, did_replan = self.global_planner.compute(controlled_robot_state, goal_target, field)
+            trajectory, did_replan, start_time = self.global_planner.compute(controlled_robot_state, goal_target, field)
             if trajectory is None:
                 rospy.logwarn("No active trajectory")
                 return Twist(), goal_progress
             if did_replan:
                 rospy.logdebug(f"Replanned trajectory. {controlled_robot_pose} -> {goal_pose}")
                 markers.extend(self.global_planner.visualize_trajectory())
-            twist, goal_progress = self.local_planner.compute(trajectory, controlled_robot_state, friendly_robot_states)
+            twist, goal_progress = self.local_planner.compute(
+                trajectory, start_time, controlled_robot_state, friendly_robot_states
+            )
         else:
             rospy.logdebug(f"Backing away from wall. {controlled_robot_pose} -> {goal_pose}")
             goal_heading = (goal_point - controlled_robot_point).heading()

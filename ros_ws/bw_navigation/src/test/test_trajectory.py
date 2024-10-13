@@ -1,25 +1,30 @@
-import time
-from unittest import mock
-
 import pytest
 from bw_navigation.planners.engines.trajectory_planner_engine import TrajectoryPlannerEngine
-from bw_navigation.planners.engines.trajectory_planner_engine_config import PathPlannerConfig
+from bw_navigation.planners.engines.trajectory_planner_engine_config import TrajectoryPlannerEngineConfig
 from bw_shared.geometry.pose2d import Pose2D
 
 
+@pytest.fixture
+def global_planner_config() -> TrajectoryPlannerEngineConfig:
+    return TrajectoryPlannerEngineConfig(
+        max_velocity=1.0,
+        max_acceleration=1.0,
+        track_width=0.2,
+    )
+
+
 @pytest.mark.timeout(10)
-def test_straight_line(planner_config: PathPlannerConfig) -> None:
+def test_straight_line(global_planner_config: TrajectoryPlannerEngineConfig) -> None:
     goal_distance = 1.0
     start_pose = Pose2D(0.0, 0.0, 0.0)
     goal_pose = Pose2D(goal_distance, 0.0, 0.0)
 
-    with mock.patch("rospy.Time.now", side_effect=lambda: time.time()):
-        planner_engine = TrajectoryPlannerEngine(planner_config)
-        trajectory = planner_engine._plan_once(start_pose, goal_pose)
+    planner_engine = TrajectoryPlannerEngine(global_planner_config)
+    trajectory = planner_engine._plan_once(start_pose, goal_pose)
 
-    ramp_time = planner_config.max_velocity / planner_config.max_acceleration
-    ramp_distance = planner_config.max_velocity**2 / planner_config.max_acceleration
-    linear_time = (goal_distance - 2 * ramp_distance) / planner_config.max_velocity
+    ramp_time = global_planner_config.max_velocity / global_planner_config.max_acceleration
+    ramp_distance = global_planner_config.max_velocity**2 / global_planner_config.max_acceleration
+    linear_time = (goal_distance - 2 * ramp_distance) / global_planner_config.max_velocity
     total_time = 2 * ramp_time + linear_time
 
     assert trajectory.totalTime() == pytest.approx(total_time, rel=0.01)

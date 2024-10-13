@@ -57,6 +57,7 @@ class RamseteConfig:
 class LocalPlannerEngineConfig:
     obstacle_buffer: float = 0.2  # meters
     obstacle_lookahead: float = 0.5  # meters
+    goal_threshold: float = 0.1  # meters
 
 
 @dataclass

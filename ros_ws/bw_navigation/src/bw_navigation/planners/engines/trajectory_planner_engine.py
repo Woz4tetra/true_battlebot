@@ -41,6 +41,7 @@ class TrajectoryPlannerEngine:
         self.traj_config.addConstraint(
             DifferentialDriveKinematicsConstraint(self.kinematics, self.plan_config.max_velocity),
         )
+        self.start_time = rospy.Time()
 
         self.planning_thread = Thread(daemon=True, target=self._planning_task)
         self.goal_in_queue: Queue[PlanningTicket] = Queue(maxsize=1)
@@ -179,8 +180,9 @@ class TrajectoryPlannerEngine:
 
     def compute(
         self, robot_state: EstimatedObject, goal_target: EstimatedObject, field: FieldBounds2D
-    ) -> tuple[Optional[Trajectory], bool]:
+    ) -> tuple[Optional[Trajectory], bool, rospy.Time]:
         did_replan = False
+        now = rospy.Time.now()
         if self.should_replan():
             self.generate_trajectory(robot_state, goal_target, field)
         if not self.plan_out_queue.empty():
@@ -189,10 +191,10 @@ class TrajectoryPlannerEngine:
                 self.active_trajectory = result.trajectory
                 did_replan = True
                 planning_time = (result.planning_finish_time - result.planning_start_time).to_sec()
-                plan_age = (rospy.Time.now() - result.planning_start_time).to_sec()
+                plan_age = (now - result.planning_start_time).to_sec()
                 rospy.loginfo(f"Trajectory planning took {planning_time:0.6f} seconds")
                 rospy.loginfo(f"Trajectory is {plan_age:0.6f} seconds old")
-            self.start_time = rospy.Time.now() - rospy.Duration.from_sec(self.plan_config.trajectory_lookahead)
+            self.start_time = now - rospy.Duration.from_sec(self.plan_config.trajectory_lookahead)
         if self.active_trajectory is None:
             rospy.logwarn("Trajectory not generated")
-        return self.active_trajectory, did_replan
+        return self.active_trajectory, did_replan, self.start_time

@@ -24,8 +24,6 @@ class LocalPlannerEngine:
         self.ramsete_config = ramsete
         self.controller = RamseteController(b=self.ramsete_config.b, zeta=self.ramsete_config.zeta)
 
-        self.start_time = rospy.Time.now()
-
         self.desired_pose = Pose2D(0.0, 0.0, 0.0)
         self.obstacles: list[Optional[EstimatedObject]] = []
 
@@ -110,69 +108,47 @@ class LocalPlannerEngine:
             else:
                 self.obstacles[index] = obstacles[index]
 
-    def _rescale_radii(self, min_radius: float, radii: np.ndarray) -> np.ndarray:
-        return 1.0 / (self.config.obstacle_lookahead + min_radius - min_radius) * (radii - min_radius)
-
-    def _select_polar_goal(self, polar_values: list[Polar]) -> Polar:
-        angles = np.array([polar.theta for polar in polar_values])
-        radii = np.array([polar.radius for polar in polar_values])
-        min_radius = np.min(radii)
-        weights = self._rescale_radii(min_radius, radii)
-        if np.sum(weights) == 0:
-            weights = np.ones_like(weights)
-        average_angle = float(np.average(angles, weights=weights))
-        return Polar(min_radius, average_angle)
-
-    def route_around_obstacles(
+    def respond_to_obstacles(
         self,
         controlled_robot_state: EstimatedObject,
         desired_pose: Pose2D,
         friendly_robot_states: list[EstimatedObject],
-    ) -> Pose2D:
+    ) -> tuple[Pose2D, bool]:
         collision_states = self.get_robot_collisions(controlled_robot_state, desired_pose, friendly_robot_states)
         self._set_obstacles(collision_states)
         if len(collision_states) == 0:
-            return desired_pose
-        collision_poses = [Pose2D.from_msg(robot.pose.pose) for robot in collision_states]
-        controlled_robot_pose = Pose2D.from_msg(controlled_robot_state.pose.pose)
-        collisions_polar = [
-            Polar.from_xy(collision_pose.relative_to(controlled_robot_pose)) for collision_pose in collision_poses
-        ]
-        if len(collisions_polar) == 1:
-            only_collision = collisions_polar[0]
-            angle_adjustment = np.pi / 2 if only_collision.theta < 0 else np.pi / 2
-            collisions_polar.append(Polar(only_collision.radius, only_collision.theta + angle_adjustment))
-        polar_goal = self._select_polar_goal(collisions_polar)
-        relative_xy_goal = polar_goal.to_xy()
-        rerouted_goal_pose = Pose2D(relative_xy_goal.x, relative_xy_goal.y, 0.0).transform_by(controlled_robot_pose)
-        return rerouted_goal_pose
+            return desired_pose, False
+        else:
+            return Pose2D.from_msg(controlled_robot_state.pose.pose), True
 
     def compute(
         self,
         trajectory: Trajectory,
+        start_time: rospy.Time,
         controlled_robot_state: EstimatedObject,
         friendly_robot_states: list[EstimatedObject],
     ) -> tuple[Twist, GoalProgress]:
-        current_time = rospy.Time.now()
-        time_from_start = (current_time - self.start_time).to_sec()
+        time_from_start = (rospy.Time.now() - start_time).to_sec()
         desired_state = trajectory.sample(time_from_start)
         desired_pose = Pose2D(desired_state.pose.X(), desired_state.pose.Y(), get_theta(desired_state.pose.rotation()))
-        rerouted_pose = self.route_around_obstacles(controlled_robot_state, desired_pose, friendly_robot_states)
+        rerouted_pose, was_colliding = self.respond_to_obstacles(
+            controlled_robot_state, desired_pose, friendly_robot_states
+        )
         self.desired_pose = rerouted_pose
 
-        desired_state.pose = geometry.Pose2d(rerouted_pose.x, rerouted_pose.y, rerouted_pose.theta)
-        robot_pose = Pose2D.from_msg(controlled_robot_state.pose.pose)
-        current_pose = geometry.Pose2d(robot_pose.x, robot_pose.y, robot_pose.theta)
-        chassis_speeds = self.controller.calculate(current_pose, desired_state)
-
         twist = Twist()
-        twist.linear.x = chassis_speeds.vx
-        twist.angular.z = chassis_speeds.omega
+        if not was_colliding:
+            desired_state.pose = geometry.Pose2d(rerouted_pose.x, rerouted_pose.y, rerouted_pose.theta)
+            robot_pose = Pose2D.from_msg(controlled_robot_state.pose.pose)
+            current_pose = geometry.Pose2d(robot_pose.x, robot_pose.y, robot_pose.theta)
+            chassis_speeds = self.controller.calculate(current_pose, desired_state)
+            twist.linear.x = chassis_speeds.vx
+            twist.angular.z = chassis_speeds.omega
 
         total_time = trajectory.totalTime()
         is_done = time_from_start > total_time
 
-        trajectory_msg = trajectory_to_msg(self.start_time, trajectory)
+        trajectory_msg = trajectory_to_msg(start_time, trajectory)
         return twist, GoalProgress(
             is_done=is_done,
             total_time=total_time,
