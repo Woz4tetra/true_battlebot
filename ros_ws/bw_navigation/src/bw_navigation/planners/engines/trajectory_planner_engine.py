@@ -126,7 +126,7 @@ class TrajectoryPlannerEngine:
                 self.is_planning = False
 
     def make_trajectory_markers(self, num_samples: int) -> list[Marker]:
-        markers = []
+        markers: list[Marker] = []
         if self.active_trajectory is None:
             rospy.logwarn("Trajectory not generated")
             return markers

@@ -1,10 +1,8 @@
 from typing import Optional
 
-import numpy as np
 import rospy
 from bw_interfaces.msg import EstimatedObject
 from bw_shared.geometry.in_plane import does_circle_collide_with_path
-from bw_shared.geometry.polar import Polar
 from bw_shared.geometry.pose2d import Pose2D
 from bw_shared.geometry.xy import XY
 from geometry_msgs.msg import Twist
