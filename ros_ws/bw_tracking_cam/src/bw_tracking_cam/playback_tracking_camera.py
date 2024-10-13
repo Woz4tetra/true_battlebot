@@ -49,7 +49,8 @@ def run() -> None:
     config = config_from_ros_param()
     image_supplier = PlaybackImageSupplier(config.camera_name)
     image_supplier.wait_for_info()
-    node = TrackingCameraNode(config_from_ros_param(), image_supplier)
+    config.publish_camera = False
+    node = TrackingCameraNode(config, image_supplier)
 
     while not rospy.is_shutdown():
         node.tick()

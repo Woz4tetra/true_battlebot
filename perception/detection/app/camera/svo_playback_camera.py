@@ -18,6 +18,7 @@ from perception_tools.messages.point_cloud import CloudFieldName, PointCloud
 from perception_tools.rosbridge.ros_poll_subscriber import RosPollSubscriber
 from perception_tools.rosbridge.ros_publisher import RosPublisher
 from rosbag.bag import Bag
+from rosgraph_msgs.msg import Clock
 from sensor_msgs.msg import CameraInfo, Imu
 from sensor_msgs.msg import Image as RosImage
 
@@ -32,6 +33,7 @@ class SvoPlaybackCamera(CameraInterface):
         imu_pub: RosPublisher[Imu],
         record_svo_sub: RosPollSubscriber[ControlRecording],
         bag_publishers: dict[str, RosPublisher],
+        clock_pub: RosPublisher[Clock],
     ) -> None:
         self.logger = logging.getLogger("perception")
 
@@ -42,6 +44,7 @@ class SvoPlaybackCamera(CameraInterface):
         self.imu_pub = imu_pub
         self.record_svo_sub = record_svo_sub
         self.bag_publishers = bag_publishers
+        self.clock_pub = clock_pub
 
         self.svo_directory = Path(self.config.svo_directory)
         self.bag_directory = Path(self.config.bag_directory)
@@ -80,7 +83,7 @@ class SvoPlaybackCamera(CameraInterface):
         bag_name = bag_name if bag_name.endswith("bag") else bag_name + ".bag"
         bag_path = self.bag_directory / bag_name
         if bag_path.exists():
-            self.bag = Bag(str(), "r")
+            self.bag = Bag(str(bag_path), "r")
             self.bag_time = self.bag.get_start_time()
             self.bag_iters = self.bag.read_messages(
                 start_time=rospy.Time.from_sec(self.bag_time + self.config.start_time),
@@ -97,6 +100,7 @@ class SvoPlaybackCamera(CameraInterface):
         self.data_lock = Lock()
 
         self.poll_thread = Thread(target=self.poll_task, daemon=True)
+        self.clock_thread = Thread(target=self.clock_task, daemon=True)
 
         self.load_field_frame()
         self.logger.debug("SvoPlaybackCamera initialized")
@@ -173,6 +177,21 @@ class SvoPlaybackCamera(CameraInterface):
             raise
         finally:
             self.logger.info("Poll task finished")
+
+    def clock_task(self) -> None:
+        bag_start_time = self.bag.get_start_time() if self.bag else time.time()
+        start_time = time.perf_counter()
+        publish_rate = 0.01
+        while True:
+            if self.did_finish:
+                return
+            now = time.perf_counter()
+            real_time = now - start_time
+            bag_time = bag_start_time + real_time
+            clock = Clock(clock=rospy.Time.from_sec(bag_time))
+            self.clock_pub.publish(clock)
+            sleep_time = publish_rate - (now - start_time) % publish_rate
+            time.sleep(sleep_time)
 
     def poll(self) -> CameraData | None:
         if self.did_finish:
@@ -262,6 +281,7 @@ class SvoPlaybackCamera(CameraInterface):
             status = self._open_camera()
         if not self.is_polling:
             self.poll_thread.start()
+            self.clock_thread.start()
             self.is_polling = True
         return status
 

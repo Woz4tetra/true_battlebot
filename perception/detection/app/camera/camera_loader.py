@@ -10,6 +10,7 @@ from app.container import Container
 from bw_interfaces.msg import CageCorner, ControlRecording
 from perception_tools.rosbridge.ros_poll_subscriber import RosPollSubscriber
 from perception_tools.rosbridge.ros_publisher import RosPublisher
+from rosgraph_msgs.msg import Clock
 from sensor_msgs.msg import CameraInfo, CompressedImage, Image, Imu
 from std_msgs.msg import Empty
 
@@ -69,6 +70,7 @@ def make_svo_camera(camera_config: SvoPlaybackCameraConfig, container: Container
     color_image_pub = RosPublisher(ns + "/rgb/image_raw", Image)
     camera_info_pub = RosPublisher(ns + "/rgb/camera_info", CameraInfo)
     imu_pub = RosPublisher(ns + "/imu/data", Imu)
+    clock_pub = RosPublisher("/clock", Clock)
 
     svo_record_sub = RosPollSubscriber(ns + "/record_svo", ControlRecording)
 
@@ -82,7 +84,14 @@ def make_svo_camera(camera_config: SvoPlaybackCameraConfig, container: Container
     bag_publisher = {topic: RosPublisher(topic, msg_type) for topic, msg_type in bag_topics.items()}
 
     return SvoPlaybackCamera(
-        camera_config, config.camera_topic, color_image_pub, camera_info_pub, imu_pub, svo_record_sub, bag_publisher
+        camera_config,
+        config.camera_topic,
+        color_image_pub,
+        camera_info_pub,
+        imu_pub,
+        svo_record_sub,
+        bag_publisher,
+        clock_pub,
     )
 
 

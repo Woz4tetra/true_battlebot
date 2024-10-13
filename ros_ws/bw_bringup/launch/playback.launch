@@ -1,4 +1,5 @@
 <launch>
+    <param name="/use_sim_time" value="true" />
     <include file="$(find bw_bringup)/launch/subsystems/common.launch">
         <arg name="auto_initialize" value="true" />
     </include>

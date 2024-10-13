@@ -2,7 +2,8 @@ target_tick_rate = 60.0
 
 [camera]
 type = "SvoPlaybackCamera"
-svo_name = "1721519936.04331"
+# svo_name = "mini_bot_2024-10-06T12-39-26"
+svo_name = "mini_bot_2024-10-06T17-35-31"
 start_time = 0.0
 
 [field_filter]

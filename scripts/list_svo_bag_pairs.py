@@ -12,9 +12,9 @@ def main() -> None:
     bag_names = set(bags.keys())
     svo_names = set(svos.keys())
 
-    intersection_names = bag_names.intersection(svo_names)
-    bag_only_names = bag_names.difference(svo_names)
-    svo_only_names = svo_names.difference(bag_names)
+    intersection_names = sorted(list(bag_names.intersection(svo_names)))
+    bag_only_names = sorted(list(bag_names.difference(svo_names)))
+    svo_only_names = sorted(list(svo_names.difference(bag_names)))
 
     for name in bag_only_names:
         print(f"Bag only: {bags[name]}")

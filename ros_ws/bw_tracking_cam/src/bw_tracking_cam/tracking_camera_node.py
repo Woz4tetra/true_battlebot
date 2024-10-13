@@ -40,6 +40,7 @@ class TrackingCameraConfig:
     camera_matrix_alpha: float
     detect_params_path: str
     refine_params_path: str
+    publish_camera: bool
 
 
 def config_from_ros_param() -> TrackingCameraConfig:
@@ -52,6 +53,7 @@ def config_from_ros_param() -> TrackingCameraConfig:
         camera_matrix_alpha=get_param("~camera_matrix_alpha", 0.0),
         detect_params_path=get_param("~detect_params_path", ""),
         refine_params_path=get_param("~refine_params_path", ""),
+        publish_camera=True,
     )
 
 
@@ -87,11 +89,16 @@ class TrackingCameraNode:
         self.rectified_info = self.rectifier.get_rectified_info()
         self.bundle_detectors = self.make_bundle_detectors(self.rectified_info)
 
-        self.camera_info_pub = rospy.Publisher(f"{self.camera_name}/camera_info", CameraInfo, queue_size=1)
-        self.camera_image_pub = rospy.Publisher(f"{self.camera_name}/image_rect", Image, queue_size=1)
-        self.compressed_image_pub = rospy.Publisher(
-            f"{self.camera_name}/image_rect/compressed", CompressedImage, queue_size=1
-        )
+        if self.config.publish_camera:
+            self.camera_info_pub = rospy.Publisher(f"{self.camera_name}/camera_info", CameraInfo, queue_size=1)
+            self.camera_image_pub = rospy.Publisher(f"{self.camera_name}/image_rect", Image, queue_size=1)
+            self.compressed_image_pub = rospy.Publisher(
+                f"{self.camera_name}/image_rect/compressed", CompressedImage, queue_size=1
+            )
+        else:
+            self.camera_info_pub = None
+            self.camera_image_pub = None
+            self.compressed_image_pub = None
         self.debug_image_pub = rospy.Publisher(f"{self.camera_name}/debug_image", Image, queue_size=1)
         self.robot_tag_pub = rospy.Publisher(f"{self.camera_name}/robot_tags", EstimatedObjectArray, queue_size=1)
         self.april_tag_pub = rospy.Publisher(f"{self.camera_name}/tag_detections", AprilTagDetectionArray, queue_size=1)
@@ -145,11 +152,13 @@ class TrackingCameraNode:
         apriltag_msg = bundle_result_to_apriltag_ros(header, results.values())
         self.april_tag_pub.publish(apriltag_msg)
 
-        self.camera_info_pub.publish(self.rectified_info)
+        if self.camera_info_pub:
+            self.camera_info_pub.publish(self.rectified_info)
         try:
             image_msg = self.bridge.cv2_to_imgmsg(rectified, "bgr8")
             image_msg.header = header
-            self.camera_image_pub.publish(image_msg)
+            if self.camera_image_pub:
+                self.camera_image_pub.publish(image_msg)
         except CvBridgeError as e:
             rospy.logerr(e)
 
@@ -158,7 +167,8 @@ class TrackingCameraNode:
             try:
                 compressed_msg = self.bridge.cv2_to_compressed_imgmsg(rectified, "png")
                 compressed_msg.header = header
-                self.compressed_image_pub.publish(compressed_msg)
+                if self.compressed_image_pub:
+                    self.compressed_image_pub.publish(compressed_msg)
             except CvBridgeError as e:
                 rospy.logerr(e)
 
