@@ -48,43 +48,38 @@ class DriveKalmanModel(ModelBase):
         self.cmd_vel_H[0:NUM_STATES_1ST_ORDER, NUM_STATES_1ST_ORDER:NUM_STATES] = np.eye(NUM_MEASUREMENTS)
 
     def predict(self) -> None:
-        with self.lock:
-            self._clamp_divergent()
-            self.state, self.covariance = kf_predict(self.state, self.covariance, self.process_noise_q, self.dt)
+        self._clamp_divergent()
+        self.state, self.covariance = kf_predict(self.state, self.covariance, self.process_noise_q, self.dt)
 
     def update_pose(self, msg: PoseWithCovariance) -> None:
         if not self._is_initialized:
             self.teleport(msg)
             return
-        with self.lock:
-            measurement, noise = pose_to_measurement(msg)
-            measurement = np.nan_to_num(measurement, copy=False)
-            self.state, self.covariance = kf_update(
-                self.state, self.covariance, self.pose_H, measurement, noise, (STATE_t,)
-            )
-            self.reset_stale_timer()
+        measurement, noise = pose_to_measurement(msg)
+        measurement = np.nan_to_num(measurement, copy=False)
+        self.state, self.covariance = kf_update(
+            self.state, self.covariance, self.pose_H, measurement, noise, (STATE_t,)
+        )
+        self.reset_stale_timer()
 
     def update_position(self, msg: PoseWithCovariance) -> None:
         if not self._is_initialized:
             return
-        with self.lock:
-            measurement, noise = position_to_measurement(msg)
-            measurement = np.nan_to_num(measurement, copy=False)
-            self.state, self.covariance = kf_update(
-                self.state, self.covariance, self.position_H, measurement, noise, tuple()
-            )
-            self.reset_stale_timer()
+        measurement, noise = position_to_measurement(msg)
+        measurement = np.nan_to_num(measurement, copy=False)
+        self.state, self.covariance = kf_update(
+            self.state, self.covariance, self.position_H, measurement, noise, tuple()
+        )
+        self.reset_stale_timer()
 
     def update_orientation(self, yaw: float, covariance: np.ndarray) -> None:
-        with self.lock:
-            measurement, noise = orientation_to_measurement(yaw, covariance[STATE_t, STATE_t])
-            self.state, self.covariance = kf_update(
-                self.state, self.covariance, self.orientation_H, measurement, noise, (0,)
-            )
+        measurement, noise = orientation_to_measurement(yaw, covariance[STATE_t, STATE_t])
+        self.state, self.covariance = kf_update(
+            self.state, self.covariance, self.orientation_H, measurement, noise, (0,)
+        )
 
     def update_cmd_vel(self, msg: TwistWithCovariance) -> None:
-        with self.lock:
-            measurement, noise = twist_to_measurement(msg)
-            self.state, self.covariance = kf_update(
-                self.state, self.covariance, self.cmd_vel_H, measurement, noise, tuple()
-            )
+        measurement, noise = twist_to_measurement(msg)
+        self.state, self.covariance = kf_update(
+            self.state, self.covariance, self.cmd_vel_H, measurement, noise, tuple()
+        )

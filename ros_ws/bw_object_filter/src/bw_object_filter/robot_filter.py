@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from threading import Lock
 from typing import Optional
 
 import numpy as np
@@ -70,6 +71,8 @@ class RobotFilter:
         field_buffer = get_param("~field_buffer", 0.2)
         self.tag_rolling_median_window = get_param("~tag_rolling_median_window", 5)
         self.field_buffer = XYZ(field_buffer, field_buffer, field_buffer)
+
+        self.filter_lock = Lock()
 
         initial_state = np.zeros(NUM_STATES)
         initial_covariance = np.diag(initial_variances)
@@ -156,13 +159,14 @@ class RobotFilter:
         rospy.loginfo("Robot filter initialized.")
 
     def initialize(self, robot_fleet: list[RobotConfig]) -> None:
-        self.robot_filters = self._init_filters(robot_fleet)
-        self._init_label_to_filter(self.robot_filters)
-        self._init_label_to_filter_initialization(self.robot_filters)
-        self._init_name_to_filter(self.robot_filters)
-        self._init_filter_state_pubs(robot_fleet)
-        self._init_tag_filters(robot_fleet)
-        self._init_cmd_vel_trackers(robot_fleet)
+        with self.filter_lock:
+            self.robot_filters = self._init_filters(robot_fleet)
+            self._init_label_to_filter(self.robot_filters)
+            self._init_label_to_filter_initialization(self.robot_filters)
+            self._init_name_to_filter(self.robot_filters)
+            self._init_filter_state_pubs(robot_fleet)
+            self._init_tag_filters(robot_fleet)
+            self._init_cmd_vel_trackers(robot_fleet)
 
     def _init_filters(self, robot_fleet: list[RobotConfig]) -> list[ModelBase]:
         self.filters: list[ModelBase] = []
@@ -257,21 +261,22 @@ class RobotFilter:
             if all([c == 0 for c in robot.pose.covariance]):
                 robot.pose.covariance = self.robot_heuristics[metadata.topic].compute_covariance(robot)  # type: ignore
             measurements[label].append(robot)
-        for label, robot_filters in self.label_to_filter_initialization.items():
-            for robot_filter in robot_filters:
-                if not robot_filter.is_initialized() and len(measurements[label]) > 0:
-                    measurement = measurements[label].pop()
-                    measurement.pose.covariance = self.initial_pose.covariance
-                    robot_filter.teleport(measurement.pose, self.initial_twist)
-                    rospy.loginfo(f"Initialized {robot_filter.config.name} from {label} measurement.")
-        for label in self.measurement_sorters_priority:
-            if len(measurements[label]) == 0:
-                continue
-            self.apply_update_with_sorter(
-                self.label_to_filter[label],
-                measurements[label],
-                metadata.use_orientation,
-            )
+        with self.filter_lock:
+            for label, robot_filters in self.label_to_filter_initialization.items():
+                for robot_filter in robot_filters:
+                    if not robot_filter.is_initialized() and len(measurements[label]) > 0:
+                        measurement = measurements[label].pop()
+                        measurement.pose.covariance = self.initial_pose.covariance
+                        robot_filter.teleport(measurement.pose, self.initial_twist)
+                        rospy.loginfo(f"Initialized {robot_filter.config.name} from {label} measurement.")
+            for label in self.measurement_sorters_priority:
+                if len(measurements[label]) == 0:
+                    continue
+                self.apply_update_with_sorter(
+                    self.label_to_filter[label],
+                    measurements[label],
+                    metadata.use_orientation,
+                )
 
     def apply_update_with_sorter(
         self,
@@ -412,10 +417,11 @@ class RobotFilter:
             robot_filter.reset()
 
     def update_all_cmd_vels(self) -> None:
-        for robot_name, tracker in self.cmd_vel_trackers.items():
-            cmd_vel = tracker.get_command()
-            robot_filter = self.name_to_filter[robot_name]
-            self.apply_cmd_vel(robot_filter, cmd_vel)
+        with self.filter_lock:
+            for robot_name, tracker in self.cmd_vel_trackers.items():
+                cmd_vel = tracker.get_command()
+                robot_filter = self.name_to_filter[robot_name]
+                self.apply_cmd_vel(robot_filter, cmd_vel)
 
     def field_callback(self, msg: EstimatedObject) -> None:
         rospy.loginfo("Field received.")
@@ -435,8 +441,9 @@ class RobotFilter:
         self.reset_filters()
 
     def reset_filters(self) -> None:
-        for robot_filter in self.robot_filters:
-            robot_filter.reset()
+        with self.filter_lock:
+            for robot_filter in self.robot_filters:
+                robot_filter.reset()
 
     def field_received(self) -> bool:
         return self.field.header.stamp != rospy.Time(0)
@@ -473,15 +480,19 @@ class RobotFilter:
     def predict_all_filters(self) -> None:
         if not self.field_received():
             return
-        for robot_filter in self.robot_filters:
-            try:
-                robot_filter.predict()
-            except np.linalg.LinAlgError as e:
-                rospy.logwarn(f"Failed predict. Resetting filter. {e}")
-                robot_filter.reset()
-                continue
-            if not robot_filter.is_in_bounds(self.filter_bounds[0], self.filter_bounds[1]) or robot_filter.is_stale():
-                robot_filter.reset()
+        with self.filter_lock:
+            for robot_filter in self.robot_filters:
+                try:
+                    robot_filter.predict()
+                except np.linalg.LinAlgError as e:
+                    rospy.logwarn(f"Failed predict. Resetting filter. {e}")
+                    robot_filter.reset()
+                    continue
+                if (
+                    not robot_filter.is_in_bounds(self.filter_bounds[0], self.filter_bounds[1])
+                    or robot_filter.is_stale()
+                ):
+                    robot_filter.reset()
 
     def state_to_transform(self, state_msg: EstimatedObject) -> TransformStamped:
         transform = TransformStamped()
@@ -505,24 +516,25 @@ class RobotFilter:
         transforms = []
         now = rospy.Time.now()
         filtered_states = EstimatedObjectArray()
-        for robot_filter in self.robot_filters:
-            pose, twist = robot_filter.get_state()
-            robot_name = robot_filter.config.name
-            diameter = robot_filter.object_radius * 2
+        with self.filter_lock:
+            for robot_filter in self.robot_filters:
+                pose, twist = robot_filter.get_state()
+                robot_name = robot_filter.config.name
+                diameter = robot_filter.object_radius * 2
 
-            state_msg = EstimatedObject(
-                header=RosHeader(frame_id=self.map_frame, stamp=now),
-                child_frame_id=robot_name,
-                pose=pose,
-                twist=twist,
-                size=Vector3(diameter, diameter, diameter),
-                label=robot_name,
-            )
+                state_msg = EstimatedObject(
+                    header=RosHeader(frame_id=self.map_frame, stamp=now),
+                    child_frame_id=robot_name,
+                    pose=pose,
+                    twist=twist,
+                    size=Vector3(diameter, diameter, diameter),
+                    label=robot_name,
+                )
 
-            transforms.append(self.state_to_transform(state_msg))
-            self.filter_state_pubs[robot_name].publish(self.state_to_odom(state_msg))
+                transforms.append(self.state_to_transform(state_msg))
+                self.filter_state_pubs[robot_name].publish(self.state_to_odom(state_msg))
 
-            filtered_states.robots.append(state_msg)
+                filtered_states.robots.append(state_msg)
         self.filter_state_array_pub.publish(filtered_states)
 
         self.tf_broadcaster.sendTransform(transforms)

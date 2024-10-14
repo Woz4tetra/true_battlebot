@@ -1,6 +1,5 @@
 import time
 from abc import ABC, abstractmethod
-from threading import Lock
 
 import numpy as np
 from bw_shared.configs.robot_fleet_config import RobotConfig
@@ -34,7 +33,6 @@ class ModelBase(ABC):
         self.stale_timeout = stale_timeout
 
         self.object_radius = 0.0
-        self.lock = Lock()
         self.stale_timer = self._now()
         self._is_initialized = False
 
@@ -73,37 +71,34 @@ class ModelBase(ABC):
         )
 
     def get_state(self) -> tuple[PoseWithCovariance, TwistWithCovariance]:
-        with self.lock:
-            pose = measurement_to_pose(self.state, self.covariance)
-            return (
-                pose,
-                measurement_to_twist(self.state, self.covariance),
-            )
+        pose = measurement_to_pose(self.state, self.covariance)
+        return (
+            pose,
+            measurement_to_twist(self.state, self.covariance),
+        )
 
     def get_covariance(self) -> StateSquareMatrix:
         return self.covariance
 
     def teleport(self, pose: PoseWithCovariance, twist: TwistWithCovariance = TwistWithCovariance()) -> None:
-        with self.lock:
-            if all([c == 0 for c in twist.covariance]):
-                twist.covariance = np.eye(6).flatten().tolist()  # type: ignore
-            initial_pose, pose_noise = pose_to_measurement(pose)
-            initial_twist, twist_noise = twist_to_measurement(twist)
-            self.state = np.zeros(NUM_STATES)
-            self.state[0:NUM_STATES_1ST_ORDER] = initial_pose
-            self.state[NUM_STATES_1ST_ORDER:NUM_STATES] = initial_twist
-            self.covariance = np.zeros((NUM_STATES, NUM_STATES))
-            self.covariance[0:NUM_STATES_1ST_ORDER, 0:NUM_STATES_1ST_ORDER] = pose_noise
-            self.covariance[NUM_STATES_1ST_ORDER:NUM_STATES, NUM_STATES_1ST_ORDER:NUM_STATES] = twist_noise
-            self._is_initialized = True
-            self.reset_stale_timer()
+        if all([c == 0 for c in twist.covariance]):
+            twist.covariance = np.eye(6).flatten().tolist()  # type: ignore
+        initial_pose, pose_noise = pose_to_measurement(pose)
+        initial_twist, twist_noise = twist_to_measurement(twist)
+        self.state = np.zeros(NUM_STATES)
+        self.state[0:NUM_STATES_1ST_ORDER] = initial_pose
+        self.state[NUM_STATES_1ST_ORDER:NUM_STATES] = initial_twist
+        self.covariance = np.zeros((NUM_STATES, NUM_STATES))
+        self.covariance[0:NUM_STATES_1ST_ORDER, 0:NUM_STATES_1ST_ORDER] = pose_noise
+        self.covariance[NUM_STATES_1ST_ORDER:NUM_STATES, NUM_STATES_1ST_ORDER:NUM_STATES] = twist_noise
+        self._is_initialized = True
+        self.reset_stale_timer()
 
     def reset(self) -> None:
-        with self.lock:
-            self.state = np.zeros(NUM_STATES)
-            self.covariance = np.eye(NUM_STATES)
-            self._is_initialized = False
-            self.stale_timer = 0.0
+        self.state = np.zeros(NUM_STATES)
+        self.covariance = np.eye(NUM_STATES)
+        self._is_initialized = False
+        self.stale_timer = 0.0
 
     def is_in_bounds(self, lower_bound: XY, upper_bound: XY) -> bool:
         return lower_bound.x <= self.state[0] <= upper_bound.x and lower_bound.y <= self.state[1] <= upper_bound.y

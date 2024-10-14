@@ -12,7 +12,8 @@ namespace bw_shared_config
         {
             NHRL_SMALL,
             NHRL_LARGE,
-            MEATBALL_TESTBOX
+            MEATBALL_TESTBOX,
+            FLOOR
         };
 
         static Value fromString(const std::string &str)
@@ -28,6 +29,10 @@ namespace bw_shared_config
             else if (str == "meatball_testbox")
             {
                 return MEATBALL_TESTBOX;
+            }
+            else if (str == "floor")
+            {
+                return FLOOR;
             }
             else
             {

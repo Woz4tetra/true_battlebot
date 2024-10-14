@@ -11,7 +11,9 @@ from bw_interfaces.msg import (
     GoToGoalFeedback,
     GoToGoalGoal,
     GoToGoalResult,
+    RobotFleetConfigMsg,
 )
+from bw_shared.configs.robot_fleet_config import RobotConfig, RobotFleetConfig
 from bw_shared.enums.robot_team import RobotTeam
 from bw_shared.geometry.field_bounds import FieldBounds2D
 from bw_shared.geometry.xy import XY
@@ -43,6 +45,10 @@ class BwNavigationNode:
         if self.controlled_robot not in robot_configs:
             raise ValueError(f"Controlled robot {self.controlled_robot} not found in shared config")
 
+        self.non_opponent_robot_configs = [
+            robot for robot in shared_config.robots.robots if robot.team != RobotTeam.THEIR_TEAM
+        ]
+
         if not robot_configs[self.controlled_robot].is_controlled:
             raise ValueError(f"Controlled robot {self.controlled_robot} is not marked as controlled in shared config")
 
@@ -53,15 +59,43 @@ class BwNavigationNode:
         self.robots: dict[str, EstimatedObject] = {}
         self.field_bounds_2d: FieldBounds2D = (XY(0.0, 0.0), XY(0.0, 0.0))
 
+        self.initialize_planners(shared_config.robots.robots)
+
+        self.twist_pub = rospy.Publisher(f"{self.controlled_robot}/cmd_vel/navigation", Twist, queue_size=1)
+        self.goal_pose_pub = rospy.Publisher(f"{self.controlled_robot}/goal_pose", PoseStamped, queue_size=1)
+
+        self.estimated_field_sub = rospy.Subscriber(
+            "filter/field", EstimatedObject, queue_size=1, callback=self.estimated_field_callback
+        )
+        self.robot_states_sub = rospy.Subscriber(
+            "filtered_states", EstimatedObjectArray, queue_size=1, callback=self.robot_states_callback
+        )
+        self.opponent_fleet_sub = rospy.Subscriber(
+            "opponent_fleet", RobotFleetConfigMsg, self.opponent_fleet_callback, queue_size=1
+        )
+        self.goal_server.start()
+        rospy.loginfo("Navigation is ready")
+
+    def opponent_fleet_callback(self, msg: RobotFleetConfigMsg) -> None:
+        opponent_fleet = RobotFleetConfig.from_msg(msg)
+        rospy.loginfo(
+            f"Received opponent fleet. Resetting planners. "
+            f"{len(self.non_opponent_robot_configs)} friendly robots. "
+            f"{len(opponent_fleet.robots)} opponents."
+        )
+        robot_fleet = self.non_opponent_robot_configs + opponent_fleet.robots
+        self.initialize_planners(robot_fleet)
+
+    def initialize_planners(self, robots: list[RobotConfig]) -> None:
         if self.friendly_fire:
             rospy.logwarn("!!! Friendly fire is enabled !!!")
             opponent_names = [
                 robot.name
-                for robot in shared_config.robots.robots
+                for robot in robots
                 if (robot.team == RobotTeam.OUR_TEAM and robot.name != self.controlled_robot)
             ]
         else:
-            opponent_names = [robot.name for robot in shared_config.robots.robots if robot.team == RobotTeam.THEIR_TEAM]
+            opponent_names = [robot.name for robot in robots if robot.team == RobotTeam.THEIR_TEAM]
 
         self.goal_suppliers: Dict[GoalType, GoalSupplierInterface] = {
             GoalType.FIXED_POSE: FixedPoseSupplier(),
@@ -73,18 +107,7 @@ class BwNavigationNode:
                 self.controlled_robot, opponent_names, PlannerConfig()
             ),
         }
-
-        self.twist_pub = rospy.Publisher(f"{self.controlled_robot}/cmd_vel/navigation", Twist, queue_size=1)
-        self.goal_pose_pub = rospy.Publisher(f"{self.controlled_robot}/goal_pose", PoseStamped, queue_size=1)
-
-        self.estimated_field_sub = rospy.Subscriber(
-            "filter/field", EstimatedObject, queue_size=1, callback=self.estimated_field_callback
-        )
-        self.robot_states_sub = rospy.Subscriber(
-            "filtered_states", EstimatedObjectArray, queue_size=1, callback=self.robot_states_callback
-        )
-        self.goal_server.start()
-        rospy.loginfo("Navigation is ready")
+        rospy.loginfo(f"Initialized {len(self.goal_suppliers)} goal suppliers and {len(self.planners)} planners")
 
     def estimated_field_callback(self, estimated_field: EstimatedObject) -> None:
         if not self.field.header.frame_id:
@@ -148,8 +171,9 @@ class BwNavigationNode:
                 break
 
             if goal_target is None:
-                rospy.logwarn_throttle(1, f"No goal found. Available robots: {self.robots.keys()}")
-                continue
+                rospy.logwarn(f"No goal found. Available robots: {self.robots.keys()}")
+                self.goal_server.set_succeeded(GoToGoalResult(success=False))
+                break
 
             goal_feedback.pose = goal_target.pose.pose
             self.goal_pose_pub.publish(goal_feedback)

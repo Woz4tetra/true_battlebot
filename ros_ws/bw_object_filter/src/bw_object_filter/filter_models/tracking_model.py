@@ -50,30 +50,28 @@ class TrackingModel(ModelBase):
         self.position_H[0:2, 0:2] = np.eye(2)
 
     def predict(self) -> None:
-        with self.lock:
-            self._clamp_divergent()
-            next_state, next_covariance = kf_predict(
-                self.state[0:NUM_STATES], self.covariance[0:NUM_STATES, 0:NUM_STATES], self.process_noise_q
-            )
-            self.state[0:NUM_STATES] = next_state
-            self.covariance[0:NUM_STATES, 0:NUM_STATES] = next_covariance
+        self._clamp_divergent()
+        next_state, next_covariance = kf_predict(
+            self.state[0:NUM_STATES], self.covariance[0:NUM_STATES, 0:NUM_STATES], self.process_noise_q
+        )
+        self.state[0:NUM_STATES] = next_state
+        self.covariance[0:NUM_STATES, 0:NUM_STATES] = next_covariance
 
     def update_pose(self, msg: PoseWithCovariance) -> None:
         if not self._is_initialized:
             self.teleport(msg)
             return
-        with self.lock:
-            measurement, noise = pose_to_measurement(msg)
-            measurement = np.nan_to_num(measurement, copy=False)
-            state = self.state[0:NUM_STATES]
-            covariance = self.covariance[0:NUM_STATES, 0:NUM_STATES]
-            next_state, next_covariance = kf_update(state, covariance, self.pose_H, measurement, noise, (STATE_t,))
-            next_twist = self._compute_twist_all(state, next_state)
-            self.state[0:NUM_STATES] = next_state
-            self.state[NUM_STATES:] = next_twist
-            self.covariance[0:NUM_STATES, 0:NUM_STATES] = next_covariance
+        measurement, noise = pose_to_measurement(msg)
+        measurement = np.nan_to_num(measurement, copy=False)
+        state = self.state[0:NUM_STATES]
+        covariance = self.covariance[0:NUM_STATES, 0:NUM_STATES]
+        next_state, next_covariance = kf_update(state, covariance, self.pose_H, measurement, noise, (STATE_t,))
+        next_twist = self._compute_twist_all(state, next_state)
+        self.state[0:NUM_STATES] = next_state
+        self.state[NUM_STATES:] = next_twist
+        self.covariance[0:NUM_STATES, 0:NUM_STATES] = next_covariance
 
-            self.reset_stale_timer()
+        self.reset_stale_timer()
 
     def update_position(self, msg: PoseWithCovariance) -> None:
         if not self._is_initialized:

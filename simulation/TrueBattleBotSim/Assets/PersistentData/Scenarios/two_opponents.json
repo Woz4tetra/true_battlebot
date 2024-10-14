@@ -36,9 +36,14 @@
             "objective": "run_in_a_circle_large"
         },
         {
+            "name": "opponent_2",
+            "model": "MR STABS A-02",
+            "objective": "run_in_a_circle_small"
+        },
+        {
             "name": "referee",
             "model": "Referee",
-            "objective": "back_and_forth"
+            "objective": "idle_ref_corner"
         }
     ]
 }
