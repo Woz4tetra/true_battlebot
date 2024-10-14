@@ -4,12 +4,12 @@ import rospy
 from bw_interfaces.msg import EstimatedObject
 from bw_shared.geometry.field_bounds import FieldBounds2D
 from bw_shared.geometry.in_plane import nearest_projected_point
-from bw_shared.geometry.input_modulus import normalize_angle
 from bw_shared.geometry.pose2d import Pose2D
 from bw_shared.geometry.xy import XY
 from geometry_msgs.msg import Twist
 from visualization_msgs.msg import Marker, MarkerArray
 
+from bw_navigation.planners.engines.backaway_from_wall_engine import BackawayFromWallEngine
 from bw_navigation.planners.engines.local_planner_engine import LocalPlannerEngine
 from bw_navigation.planners.engines.thrash_engine import ThrashEngine
 from bw_navigation.planners.engines.trajectory_planner_engine import TrajectoryPlannerEngine
@@ -26,9 +26,9 @@ class CrashTrajectoryPlanner(PlannerInterface):
         self.avoid_robot_names = avoid_robot_names
         self.rotate_180_buffer = self.config.rotate_180_buffer
         self.buffer_xy = XY(self.config.rotate_180_buffer, self.config.rotate_180_buffer)
-        self.angle_tolerance = self.config.angle_tolerance
+        self.backaway_engine = BackawayFromWallEngine(self.config.backaway_recover)
         self.global_planner = TrajectoryPlannerEngine(self.traj_config)
-        self.local_planner = LocalPlannerEngine(self.config.local_planner, self.config.ramsete)
+        self.local_planner = LocalPlannerEngine(self.config.local_planner, self.config.ramsete, self.backaway_engine)
         self.thrash_recover_engine = ThrashEngine(self.config.thrash_recovery)
         self.visualization_publisher = rospy.Publisher(
             "trajectory_visualization", MarkerArray, queue_size=1, latch=True
@@ -51,7 +51,6 @@ class CrashTrajectoryPlanner(PlannerInterface):
         controlled_robot_point = XY(controlled_robot_pose.x, controlled_robot_pose.y)
 
         goal_pose = Pose2D.from_msg(goal_target.pose.pose)
-        goal_point = XY(goal_pose.x, goal_pose.y)
 
         friendly_robot_states = [state for name, state in robot_states.items() if (name in self.avoid_robot_names)]
 
@@ -91,13 +90,7 @@ class CrashTrajectoryPlanner(PlannerInterface):
             )
         else:
             rospy.logdebug(f"Backing away from wall. {controlled_robot_pose} -> {goal_pose}")
-            goal_heading = (goal_point - controlled_robot_point).heading()
-            angle_error = normalize_angle(goal_heading - controlled_robot_pose.theta)
-            angle_sign = 1 if angle_error > 0 else -1
-            linear_sign = 1 if abs(angle_error) < self.angle_tolerance else -1
-            twist = Twist()
-            twist.linear.x = linear_sign * self.config.backaway_recover.linear_velocity
-            twist.angular.z = angle_sign * self.config.backaway_recover.rotate_velocity
+            twist = self.backaway_engine.compute(goal_pose, controlled_robot_pose)
 
         twist.linear.x = max(
             -1 * self.traj_config.max_velocity,

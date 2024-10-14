@@ -1,6 +1,7 @@
 from typing import Callable, List, Optional
 
 from bw_interfaces.msg import EstimatedObject, GoToGoalGoal
+from bw_shared.geometry.field_bounds import FieldBounds2D
 from bw_shared.geometry.pose2d import Pose2D
 from bw_shared.geometry.xyz import XYZ
 from bw_tools.messages.target_type import TargetType
@@ -15,10 +16,15 @@ class TrackedTargetSupplier(GoalSupplierInterface):
         self.target_selectors: dict[TargetType, Callable[[dict[str, EstimatedObject]], Optional[EstimatedObject]]] = {
             TargetType.NEAREST_OPPONENT: self.nearest_target,
             TargetType.LARGEST_OPPONENT: self.largest_target,
+            TargetType.SMALLEST_OPPONENT: self.smallest_target,
         }
+        self.continuously_select_goal = True
+        self.last_target_name = None
 
-    def initialize(self, goal: GoToGoalGoal, field: EstimatedObject) -> None:
+    def initialize(self, goal: GoToGoalGoal, field: EstimatedObject, continuously_select_goal: bool) -> None:
         self.target_type = TargetType(goal.target_type)
+        self.continuously_select_goal = continuously_select_goal
+        self.last_target_name = None
 
     def nearest_target(self, robot_states: dict[str, EstimatedObject]) -> Optional[EstimatedObject]:
         if self.controlled_robot not in robot_states:
@@ -48,5 +54,22 @@ class TrackedTargetSupplier(GoalSupplierInterface):
                 largest_size = size
         return largest_target
 
-    def get_goal(self, robot_states: dict[str, EstimatedObject], field: EstimatedObject) -> Optional[EstimatedObject]:
-        return self.target_selectors[self.target_type](robot_states)
+    def smallest_target(self, robot_states: dict[str, EstimatedObject]) -> Optional[EstimatedObject]:
+        smallest_target: Optional[EstimatedObject] = None
+        smallest_size = float("inf")
+        for name, state in robot_states.items():
+            if name not in self.opponent_names:
+                continue
+            size = XYZ.from_msg(state.size).magnitude()
+            if size < smallest_size:
+                smallest_target = state
+                smallest_size = size
+        return smallest_target
+
+    def get_goal(self, robot_states: dict[str, EstimatedObject], field: FieldBounds2D) -> Optional[EstimatedObject]:
+        if not self.continuously_select_goal and self.last_target_name is not None:
+            return robot_states.get(self.last_target_name)
+        target_robot = self.target_selectors[self.target_type](robot_states)
+        if target_robot is not None and self.last_target_name is None:
+            self.last_target_name = target_robot.label
+        return target_robot

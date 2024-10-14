@@ -27,7 +27,7 @@ from std_msgs.msg._Header import Header as std_msgs_msg_Header
 import genpy
 
 class GoToGoalAction(genpy.Message):
-  _md5sum: str = "10d260c55f40d89566344f59321b5253"
+  _md5sum: str = "bdd7bcb3cf58b4a1633b9b1441312374"
   _type: str = "bw_interfaces/GoToGoalAction"
   _has_header: bool = False  # flag to mark the presence of a Header object
   _full_text: str = """GoToGoalActionGoal action_goal
@@ -75,6 +75,7 @@ string goal_type
 geometry_msgs/PoseStamped goal
 string target_type
 string strategy
+bool continuously_select_goal
 ================================================================================
 MSG: geometry_msgs/PoseStamped
 # A Pose with reference coordinate frame and timestamp
@@ -272,7 +273,7 @@ float64 z"""
         length = len(_x)
       buff.write(struct.Struct('<I%ss'%length).pack(length, _x))
       _x = self
-      buff.write(_get_struct_3I().pack(_x.action_result.header.seq, _x.action_result.header.stamp.secs, _x.action_result.header.stamp.nsecs))
+      buff.write(_get_struct_B3I().pack(_x.action_goal.goal.continuously_select_goal, _x.action_result.header.seq, _x.action_result.header.stamp.secs, _x.action_result.header.stamp.nsecs))
       _x = self.action_result.header.frame_id
       length = len(_x)
       if python3 or type(_x) == unicode:
@@ -461,8 +462,9 @@ float64 z"""
         self.action_goal.goal.strategy = bytes_[start:end]
       _x = self
       start = end
-      end += 12
-      (_x.action_result.header.seq, _x.action_result.header.stamp.secs, _x.action_result.header.stamp.nsecs,) = _get_struct_3I().unpack(bytes_[start:end])
+      end += 13
+      (_x.action_goal.goal.continuously_select_goal, _x.action_result.header.seq, _x.action_result.header.stamp.secs, _x.action_result.header.stamp.nsecs,) = _get_struct_B3I().unpack(bytes_[start:end])
+      self.action_goal.goal.continuously_select_goal = bool(self.action_goal.goal.continuously_select_goal)
       start = end
       end += 4
       (length,) = _struct_I.unpack(bytes_[start:end])
@@ -679,7 +681,7 @@ float64 z"""
         length = len(_x)
       buff.write(struct.Struct('<I%ss'%length).pack(length, _x))
       _x = self
-      buff.write(_get_struct_3I().pack(_x.action_result.header.seq, _x.action_result.header.stamp.secs, _x.action_result.header.stamp.nsecs))
+      buff.write(_get_struct_B3I().pack(_x.action_goal.goal.continuously_select_goal, _x.action_result.header.seq, _x.action_result.header.stamp.secs, _x.action_result.header.stamp.nsecs))
       _x = self.action_result.header.frame_id
       length = len(_x)
       if python3 or type(_x) == unicode:
@@ -869,8 +871,9 @@ float64 z"""
         self.action_goal.goal.strategy = bytes_[start:end]
       _x = self
       start = end
-      end += 12
-      (_x.action_result.header.seq, _x.action_result.header.stamp.secs, _x.action_result.header.stamp.nsecs,) = _get_struct_3I().unpack(bytes_[start:end])
+      end += 13
+      (_x.action_goal.goal.continuously_select_goal, _x.action_result.header.seq, _x.action_result.header.stamp.secs, _x.action_result.header.stamp.nsecs,) = _get_struct_B3I().unpack(bytes_[start:end])
+      self.action_goal.goal.continuously_select_goal = bool(self.action_goal.goal.continuously_select_goal)
       start = end
       end += 4
       (length,) = _struct_I.unpack(bytes_[start:end])

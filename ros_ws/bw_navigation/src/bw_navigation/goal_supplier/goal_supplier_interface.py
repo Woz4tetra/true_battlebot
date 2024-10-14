@@ -7,7 +7,7 @@ from bw_shared.geometry.field_bounds import FieldBounds2D
 
 class GoalSupplierInterface(ABC):
     @abstractmethod
-    def initialize(self, goal: GoToGoalGoal, field: EstimatedObject) -> None: ...
+    def initialize(self, goal: GoToGoalGoal, field: EstimatedObject, continuously_select_goal: bool) -> None: ...
 
     @abstractmethod
     def get_goal(

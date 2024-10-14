@@ -17,7 +17,7 @@ from std_msgs.msg._Header import Header as std_msgs_msg_Header
 import genpy
 
 class GoToGoalActionGoal(genpy.Message):
-  _md5sum: str = "260b136d446423e261b93d1908b5f0dc"
+  _md5sum: str = "e70db832ba37dba004099b2bc4c06e5d"
   _type: str = "bw_interfaces/GoToGoalActionGoal"
   _has_header: bool = True  # flag to mark the presence of a Header object
   _full_text: str = """Header header
@@ -59,6 +59,7 @@ string goal_type
 geometry_msgs/PoseStamped goal
 string target_type
 string strategy
+bool continuously_select_goal
 ================================================================================
 MSG: geometry_msgs/PoseStamped
 # A Pose with reference coordinate frame and timestamp
@@ -176,6 +177,8 @@ float64 w
         _x = _x.encode('utf-8')
         length = len(_x)
       buff.write(struct.Struct('<I%ss'%length).pack(length, _x))
+      _x = self.goal.continuously_select_goal
+      buff.write(_get_struct_B().pack(_x))
     except struct.error as se: self._check_types(struct.error("%s: '%s' when writing '%s'" % (type(se), str(se), str(locals().get('_x', self)))))
     except TypeError as te: self._check_types(ValueError("%s: '%s' when writing '%s'" % (type(te), str(te), str(locals().get('_x', self)))))
 
@@ -264,6 +267,10 @@ float64 w
         self.goal.strategy = bytes_[start:end].decode('utf-8', 'rosmsg')
       else:
         self.goal.strategy = bytes_[start:end]
+      start = end
+      end += 1
+      (self.goal.continuously_select_goal,) = _get_struct_B().unpack(bytes_[start:end])
+      self.goal.continuously_select_goal = bool(self.goal.continuously_select_goal)
       return self
     except struct.error as e:
       raise genpy.DeserializationError(e)  # most likely buffer underfill
@@ -320,6 +327,8 @@ float64 w
         _x = _x.encode('utf-8')
         length = len(_x)
       buff.write(struct.Struct('<I%ss'%length).pack(length, _x))
+      _x = self.goal.continuously_select_goal
+      buff.write(_get_struct_B().pack(_x))
     except struct.error as se: self._check_types(struct.error("%s: '%s' when writing '%s'" % (type(se), str(se), str(locals().get('_x', self)))))
     except TypeError as te: self._check_types(ValueError("%s: '%s' when writing '%s'" % (type(te), str(te), str(locals().get('_x', self)))))
 
@@ -409,6 +418,10 @@ float64 w
         self.goal.strategy = bytes_[start:end].decode('utf-8', 'rosmsg')
       else:
         self.goal.strategy = bytes_[start:end]
+      start = end
+      end += 1
+      (self.goal.continuously_select_goal,) = _get_struct_B().unpack(bytes_[start:end])
+      self.goal.continuously_select_goal = bool(self.goal.continuously_select_goal)
       return self
     except struct.error as e:
       raise genpy.DeserializationError(e)  # most likely buffer underfill
@@ -435,3 +448,9 @@ def _get_struct_7d():
     if _struct_7d is None:
         _struct_7d = struct.Struct("<7d")
     return _struct_7d
+_struct_B = None
+def _get_struct_B():
+    global _struct_B
+    if _struct_B is None:
+        _struct_B = struct.Struct("<B")
+    return _struct_B

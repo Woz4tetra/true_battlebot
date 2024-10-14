@@ -141,7 +141,7 @@ class BwNavigationNode:
 
         goal_supplier = self.goal_suppliers[goal_type]
         try:
-            goal_supplier.initialize(goal, self.field)
+            goal_supplier.initialize(goal, self.field, goal.continuously_select_goal)
         except NavigationError as e:
             rospy.logerr(f"Error initializing: {e}")
             self.goal_server.set_aborted()

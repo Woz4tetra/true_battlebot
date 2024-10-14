@@ -11,16 +11,20 @@ from wpimath import geometry
 from wpimath.controller import RamseteController
 from wpimath.trajectory import Trajectory
 
+from bw_navigation.planners.engines.backaway_from_wall_engine import BackawayFromWallEngine
 from bw_navigation.planners.engines.trajectory_helpers import get_theta, trajectory_to_msg
 from bw_navigation.planners.engines.trajectory_planner_engine_config import LocalPlannerEngineConfig, RamseteConfig
 from bw_navigation.planners.goal_progress import GoalProgress
 
 
 class LocalPlannerEngine:
-    def __init__(self, config: LocalPlannerEngineConfig, ramsete: RamseteConfig) -> None:
+    def __init__(
+        self, config: LocalPlannerEngineConfig, ramsete: RamseteConfig, backaway_engine: BackawayFromWallEngine
+    ) -> None:
         self.config = config
         self.ramsete_config = ramsete
         self.controller = RamseteController(b=self.ramsete_config.b, zeta=self.ramsete_config.zeta)
+        self.backaway_engine = backaway_engine
 
         self.desired_pose = Pose2D(0.0, 0.0, 0.0)
         self.obstacles: list[Optional[EstimatedObject]] = []
@@ -129,6 +133,7 @@ class LocalPlannerEngine:
         time_from_start = (rospy.Time.now() - start_time).to_sec()
         desired_state = trajectory.sample(time_from_start)
         desired_pose = Pose2D(desired_state.pose.X(), desired_state.pose.Y(), get_theta(desired_state.pose.rotation()))
+        robot_pose = Pose2D.from_msg(controlled_robot_state.pose.pose)
         rerouted_pose, was_colliding = self.respond_to_obstacles(
             controlled_robot_state, desired_pose, friendly_robot_states
         )
@@ -137,11 +142,12 @@ class LocalPlannerEngine:
         twist = Twist()
         if not was_colliding:
             desired_state.pose = geometry.Pose2d(rerouted_pose.x, rerouted_pose.y, rerouted_pose.theta)
-            robot_pose = Pose2D.from_msg(controlled_robot_state.pose.pose)
             current_pose = geometry.Pose2d(robot_pose.x, robot_pose.y, robot_pose.theta)
             chassis_speeds = self.controller.calculate(current_pose, desired_state)
             twist.linear.x = chassis_speeds.vx
             twist.angular.z = chassis_speeds.omega
+        else:
+            twist = self.backaway_engine.compute(desired_pose, robot_pose)
 
         total_time = trajectory.totalTime()
         is_done = time_from_start > total_time

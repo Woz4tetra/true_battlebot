@@ -10,5 +10,5 @@ def make_fight_behavior(container: Container) -> Behaviour:
     return Sequence(
         "fight_sequence",
         memory=False,
-        children=[SendTargetGoal(container, TargetType.NEAREST_OPPONENT)],
+        children=[SendTargetGoal(container, TargetType.SMALLEST_OPPONENT, continuously_select_goal=False)],
     )

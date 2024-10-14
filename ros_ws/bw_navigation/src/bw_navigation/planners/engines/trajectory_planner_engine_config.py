@@ -17,7 +17,7 @@ class PidFollowerEngineConfig:
 class BackawayRecoverConfig:
     linear_velocity: float = 5.0  # m/s
     rotate_velocity: float = 8.0  # rad/s
-    angle_in_tolerance: float = 0.1  # radians
+    angle_tolerance: float = 1.0
 
 
 @dataclass
@@ -66,7 +66,6 @@ class PlannerConfig:
     move_timeout: float = 1.0  # seconds
 
     rotate_180_buffer: float = 0.05
-    angle_tolerance: float = 1.0
 
     backaway_recover: BackawayRecoverConfig = field(default_factory=BackawayRecoverConfig)
     global_planner: TrajectoryPlannerEngineConfig = field(default_factory=TrajectoryPlannerEngineConfig)

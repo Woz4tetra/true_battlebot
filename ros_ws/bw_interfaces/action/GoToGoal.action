@@ -2,6 +2,7 @@ string goal_type
 geometry_msgs/PoseStamped goal
 string target_type
 string strategy
+bool continuously_select_goal
 ---
 bool success
 ---

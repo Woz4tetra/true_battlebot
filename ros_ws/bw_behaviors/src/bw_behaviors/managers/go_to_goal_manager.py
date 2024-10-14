@@ -30,12 +30,13 @@ class GoToGoalManager:
         goal.goal_type = GoalType.FIXED_POSE.value
         self.go_to_goal_client.send_goal(goal, feedback_cb=self.feedback_callback)
 
-    def send_target_goal(self, target_type: TargetType) -> None:
+    def send_target_goal(self, target_type: TargetType, continuously_select_goal: bool) -> None:
         rospy.loginfo("Sending go to goal action")
         goal = GoToGoalGoal()
         goal.target_type = target_type.value
         goal.strategy = self.strategy.value
         goal.goal_type = GoalType.TRACKED_TARGET.value
+        goal.continuously_select_goal = continuously_select_goal
         self.go_to_goal_client.send_goal(goal, feedback_cb=self.feedback_callback)
 
     def feedback_callback(self, feedback: GoToGoalFeedback) -> None:

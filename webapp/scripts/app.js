@@ -442,6 +442,12 @@ function reconnectRosBridge() {
     initFieldStableSubscriber();
 }
 
+document.addEventListener("keypress", function (event) {
+    if (event.key === "r") {
+        reconnectRosBridge();
+    }
+});
+
 window.onload = function () {
     connection_status = document.getElementById("connection-status");
     teleop_controller_status = document.getElementById(

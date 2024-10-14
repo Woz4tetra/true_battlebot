@@ -14,13 +14,14 @@ from geometry_msgs.msg._Quaternion import Quaternion as geometry_msgs_msg_Quater
 from std_msgs.msg._Header import Header as std_msgs_msg_Header
 
 class GoToGoalGoal(genpy.Message):
-  _md5sum: str = "03b8d3e154c841e3895911bed57a0540"
+  _md5sum: str = "a12435a3d09faa08f64efd3f0ec44b8e"
   _type: str = "bw_interfaces/GoToGoalGoal"
   _has_header: bool = False  # flag to mark the presence of a Header object
   _full_text: str = """string goal_type
 geometry_msgs/PoseStamped goal
 string target_type
 string strategy
+bool continuously_select_goal
 ================================================================================
 MSG: geometry_msgs/PoseStamped
 # A Pose with reference coordinate frame and timestamp
@@ -65,13 +66,14 @@ float64 y
 float64 z
 float64 w
 """
-  __slots__: List[str] = ['goal_type','goal','target_type','strategy']
-  _slot_types: List[str] = ['string','geometry_msgs/PoseStamped','string','string']
+  __slots__: List[str] = ['goal_type','goal','target_type','strategy','continuously_select_goal']
+  _slot_types: List[str] = ['string','geometry_msgs/PoseStamped','string','string','bool']
 
   def __init__(self, goal_type: str = None,
     goal: geometry_msgs_msg_PoseStamped = None,
     target_type: str = None,
-    strategy: str = None):
+    strategy: str = None,
+    continuously_select_goal: bool = None):
     """
     Constructor. Any message fields that are implicitly/explicitly
     set to None will be assigned a default value. The recommend
@@ -79,13 +81,13 @@ float64 w
     changes.  You cannot mix in-order arguments and keyword arguments.
 
     The available fields are:
-      goal_type,goal,target_type,strategy
+      goal_type,goal,target_type,strategy,continuously_select_goal
 
     :param args: complete set of field values, in .msg order
     :param kwds: use keyword arguments corresponding to message field names
     to set specific fields.
     """
-    super(GoToGoalGoal, self).__init__(**{'goal_type': goal_type, 'goal': goal, 'target_type': target_type, 'strategy': strategy})
+    super(GoToGoalGoal, self).__init__(**{'goal_type': goal_type, 'goal': goal, 'target_type': target_type, 'strategy': strategy, 'continuously_select_goal': continuously_select_goal})
     if self.goal_type is None:
       self.goal_type: str = ''
     else:
@@ -102,6 +104,10 @@ float64 w
       self.strategy: str = ''
     else:
       self.strategy = strategy
+    if self.continuously_select_goal is None:
+      self.continuously_select_goal: bool = False
+    else:
+      self.continuously_select_goal = continuously_select_goal
 
   def _get_types(self):
     """
@@ -143,6 +149,8 @@ float64 w
         _x = _x.encode('utf-8')
         length = len(_x)
       buff.write(struct.Struct('<I%ss'%length).pack(length, _x))
+      _x = self.continuously_select_goal
+      buff.write(_get_struct_B().pack(_x))
     except struct.error as se: self._check_types(struct.error("%s: '%s' when writing '%s'" % (type(se), str(se), str(locals().get('_x', self)))))
     except TypeError as te: self._check_types(ValueError("%s: '%s' when writing '%s'" % (type(te), str(te), str(locals().get('_x', self)))))
 
@@ -201,6 +209,10 @@ float64 w
         self.strategy = bytes_[start:end].decode('utf-8', 'rosmsg')
       else:
         self.strategy = bytes_[start:end]
+      start = end
+      end += 1
+      (self.continuously_select_goal,) = _get_struct_B().unpack(bytes_[start:end])
+      self.continuously_select_goal = bool(self.continuously_select_goal)
       return self
     except struct.error as e:
       raise genpy.DeserializationError(e)  # most likely buffer underfill
@@ -241,6 +253,8 @@ float64 w
         _x = _x.encode('utf-8')
         length = len(_x)
       buff.write(struct.Struct('<I%ss'%length).pack(length, _x))
+      _x = self.continuously_select_goal
+      buff.write(_get_struct_B().pack(_x))
     except struct.error as se: self._check_types(struct.error("%s: '%s' when writing '%s'" % (type(se), str(se), str(locals().get('_x', self)))))
     except TypeError as te: self._check_types(ValueError("%s: '%s' when writing '%s'" % (type(te), str(te), str(locals().get('_x', self)))))
 
@@ -300,6 +314,10 @@ float64 w
         self.strategy = bytes_[start:end].decode('utf-8', 'rosmsg')
       else:
         self.strategy = bytes_[start:end]
+      start = end
+      end += 1
+      (self.continuously_select_goal,) = _get_struct_B().unpack(bytes_[start:end])
+      self.continuously_select_goal = bool(self.continuously_select_goal)
       return self
     except struct.error as e:
       raise genpy.DeserializationError(e)  # most likely buffer underfill
@@ -320,3 +338,9 @@ def _get_struct_7d():
     if _struct_7d is None:
         _struct_7d = struct.Struct("<7d")
     return _struct_7d
+_struct_B = None
+def _get_struct_B():
+    global _struct_B
+    if _struct_B is None:
+        _struct_B = struct.Struct("<B")
+    return _struct_B
