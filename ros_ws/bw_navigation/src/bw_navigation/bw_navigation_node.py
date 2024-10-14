@@ -97,6 +97,8 @@ class BwNavigationNode:
         else:
             opponent_names = [robot.name for robot in robots if robot.team == RobotTeam.THEIR_TEAM]
 
+        avoid_robot_names = [robot.name for robot in robots if robot.team == RobotTeam.REFEREE]
+
         self.goal_suppliers: Dict[GoalType, GoalSupplierInterface] = {
             GoalType.FIXED_POSE: FixedPoseSupplier(),
             GoalType.TRACKED_TARGET: TrackedTargetSupplier(self.controlled_robot, opponent_names),
@@ -104,7 +106,7 @@ class BwNavigationNode:
         self.planners: Dict[GoalStrategy, PlannerInterface] = {
             GoalStrategy.CRASH_OPPONENT: CrashOpponent(self.controlled_robot),
             GoalStrategy.CRASH_TRAJECTORY_PLANNER: CrashTrajectoryPlanner(
-                self.controlled_robot, opponent_names, PlannerConfig()
+                self.controlled_robot, avoid_robot_names, PlannerConfig()
             ),
         }
         rospy.loginfo(f"Initialized {len(self.goal_suppliers)} goal suppliers and {len(self.planners)} planners")

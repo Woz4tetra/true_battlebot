@@ -19,11 +19,11 @@ from bw_navigation.planners.planner_interface import PlannerInterface
 
 
 class CrashTrajectoryPlanner(PlannerInterface):
-    def __init__(self, controlled_robot: str, opponent_names: list[str], config: PlannerConfig) -> None:
+    def __init__(self, controlled_robot: str, avoid_robot_names: list[str], config: PlannerConfig) -> None:
         self.config = config
         self.traj_config = config.global_planner
         self.controlled_robot = controlled_robot
-        self.opponent_names = opponent_names
+        self.avoid_robot_names = avoid_robot_names
         self.rotate_180_buffer = self.config.rotate_180_buffer
         self.buffer_xy = XY(self.config.rotate_180_buffer, self.config.rotate_180_buffer)
         self.angle_tolerance = self.config.angle_tolerance
@@ -53,11 +53,7 @@ class CrashTrajectoryPlanner(PlannerInterface):
         goal_pose = Pose2D.from_msg(goal_target.pose.pose)
         goal_point = XY(goal_pose.x, goal_pose.y)
 
-        friendly_robot_states = [
-            state
-            for name, state in robot_states.items()
-            if (name not in self.opponent_names and name != self.controlled_robot)
-        ]
+        friendly_robot_states = [state for name, state in robot_states.items() if (name in self.avoid_robot_names)]
 
         if controlled_robot_pose.relative_to(self.prev_move_pose).magnitude() > self.config.move_threshold:
             self.prev_move_time = now
