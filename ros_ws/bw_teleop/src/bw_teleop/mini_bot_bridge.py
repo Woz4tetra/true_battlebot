@@ -12,10 +12,10 @@ from bw_interfaces.msg import TelemetryStatus
 from bw_shared.enums.enum_auto_lower import EnumAutoLowerStr, auto
 from bw_shared.geometry.rpy import RPY
 from bw_tools.get_param import get_param
-from geometry_msgs.msg import Twist
+from geometry_msgs.msg import Quaternion, Twist
 from sensor_msgs.msg import Imu
 from serial.tools.list_ports import comports
-from std_msgs.msg import Header, String
+from std_msgs.msg import Bool, Header, String
 
 from bw_teleop.lookup_table_config import LookupTableConfig
 from bw_teleop.parameters import load_rosparam_robot_config
@@ -31,6 +31,12 @@ def find_transmitter() -> serial.Serial:
             rospy.logdebug(f"Transmitter found: {port.device}")
             return serial.Serial(port.device, 115200)
     raise RuntimeError("Transmitter not found")
+
+
+def calculate_cos_tilt_angle(quat: Quaternion) -> float:
+    x = quat.x
+    y = quat.y
+    return 1.0 - 2.0 * x * x - 2.0 * y * y
 
 
 class LookupTableKey(EnumAutoLowerStr):
@@ -115,8 +121,10 @@ class MiniBotBridge:
         self.command: list[bytes] = [b"", b""]
         self.telemetry_status = TelemetryStatus()
         self.did_status_update = False
+        self.upside_down_angle_cos_z = math.cos(math.radians(90))
 
         self.imu_pub = rospy.Publisher("imu", Imu, queue_size=1)
+        self.is_upside_down_pub = rospy.Publisher("is_upside_down", Bool, queue_size=1)
         self.telemetry_pub = rospy.Publisher("telemetry_status", TelemetryStatus, queue_size=1, latch=True)
         self.trainer_port_pub = rospy.Publisher("trainer_port", String, queue_size=1)
 
@@ -197,7 +205,11 @@ class MiniBotBridge:
 
     def attitude_callback(self, packet: CrsfAttitude) -> None:
         angles = RPY((packet.roll, packet.pitch, packet.yaw))
-        self.imu_pub.publish(Imu(header=self.header, orientation=angles.to_quaternion()))
+        quat = angles.to_quaternion()
+        self.imu_pub.publish(Imu(header=self.header, orientation=quat))
+
+        is_upside_down = calculate_cos_tilt_angle(quat) < self.upside_down_angle_cos_z
+        self.is_upside_down_pub.publish(Bool(data=is_upside_down))
 
     def flight_mode_callback(self, packet: CrsfFlightMode) -> None:
         if not self.telemetry_status.is_connected:

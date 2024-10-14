@@ -1,4 +1,5 @@
 var ros;
+var is_connected = false;
 var cageCornerPub;
 var robotModePub;
 var requestFieldPub;
@@ -9,13 +10,16 @@ var connection_status,
     teleop_connected_status,
     teleop_is_ready_status,
     teleop_is_armed_status,
-    field_stable_status;
+    field_stable_status,
+    opponents_send_status,
+    is_upside_down_status;
 var connection_icon,
     teleop_controller_icon,
     teleop_connected_icon,
     teleop_is_ready_icon,
     teleop_is_armed_icon,
-    field_stable_icon;
+    field_stable_icon,
+    opponents_send_icon;
 var opponent_template_names = [];
 var connection_icons = {
     connected: "resources/check_circle_black_24dp.svg",
@@ -112,6 +116,19 @@ function setRecordState(button, state) {
             button.innerHTML = next_text;
         }
     );
+}
+
+function setOpponentSendState(state) {
+    if (!is_connected) {
+        state = false;
+    }
+    if (state) {
+        next_text = "Sent";
+    } else {
+        next_text = "Not sent";
+    }
+    opponents_send_status.innerHTML = next_text;
+    setConnectionIconState(opponents_send_icon, state);
 }
 
 function initTreeSnapshotSubscriber() {
@@ -260,6 +277,20 @@ function initFieldStableSubscriber() {
     });
 }
 
+function initIsUpsideDownSubscriber() {
+    isUpsideDownSub = new ROSLIB.Topic({
+        ros: ros,
+        name: "/mini_bot/is_upside_down",
+        messageType: "std_msgs/Bool",
+    });
+
+    isUpsideDownSub.subscribe(function (message) {
+        is_upside_down_status.innerHTML = message.data
+            ? "Upside down"
+            : "Right side up";
+    });
+}
+
 function onSetNumOpponents(number_input) {
     if (number_input.value == "" || isNaN(number_input.value)) {
         return;
@@ -296,6 +327,7 @@ function updateOpponentConfigurationGrid() {
     for (var i = num_nodes; i > num_opponents; i--) {
         container.removeChild(container.lastChild);
     }
+    setOpponentSendState(false);
 }
 
 function getOpponentConfigurationSubcomponent(grid_container, node_id) {
@@ -326,6 +358,7 @@ function publishOpponentConfiguration() {
     }
     console.log(`Publishing opponent configuration: ${keys}`);
     opponentConfigurationPub.publish({ names: keys });
+    setOpponentSendState(true);
 }
 
 function updateOpponentConfiguationOptions(options) {
@@ -414,18 +447,21 @@ function reconnectRosBridge() {
         console.log("Connected to websocket server.");
         connection_status.innerHTML = "Connected";
         setConnectionIconState(connection_icon, true);
+        is_connected = true;
     });
 
     ros.on("error", function (error) {
         console.log("Error connecting to websocket server: ", error);
         connection_status.innerHTML = "Error: " + error;
         setConnectionIconState(connection_icon, false);
+        is_connected = false;
     });
 
     ros.on("close", function () {
         console.log("Connection to websocket server closed.");
         connection_status.innerHTML = "Disconnected";
         setConnectionIconState(connection_icon, false);
+        is_connected = false;
     });
 
     initSummarySubscriber();
@@ -440,6 +476,8 @@ function reconnectRosBridge() {
     initOpponentTemplateSubscriber();
     initTelemetrySubscriber();
     initFieldStableSubscriber();
+    initIsUpsideDownSubscriber();
+    setOpponentSendState(false);
 }
 
 document.addEventListener("keypress", function (event) {
@@ -559,6 +597,12 @@ window.onload = function () {
     field_stable_status = document.getElementById("field-stable-status");
     field_stable_status.innerHTML = "Field not found";
     field_stable_icon = initConnectionIcon("field-stable-icon");
+
+    opponents_send_status = document.getElementById("opponent-send-status");
+    opponents_send_status.innerHTML = "Not sent";
+    opponents_send_icon = initConnectionIcon("opponent-send-icon");
+
+    is_upside_down_status = document.getElementById("is-upside-down-status");
 
     document.getElementById("num-opponents").value = 1;
     updateOpponentConfigurationGrid();

@@ -11,25 +11,14 @@
                 font: var(--font);
             }
 
-            .container_left {
-                width: 75%;
-                display: flex, grid;
+            .split-container {
+                display: grid;
+                grid-template-columns: 2fr 1fr;
             }
-            .container_right {
-                /* Take the remaining width */
-                flex: 1;
-
-                align-items: left;
-                display: flex, grid;
-                flex-direction: column;
-                justify-content: left;
-            }
-
-            .resizer[data-direction='vertical'] {
-                background-color: #cbd5e0;
-                cursor: ew-resize;
-                height: 100%;
-                width: 10px;
+            .split-grid-item {
+                margin-right: 30px;
+                font-size: 20px;
+                text-align: left;
             }
 
             .number-input {
@@ -57,6 +46,21 @@
                 font-size: 20px;
                 text-align: left;
             }
+
+            .vertical-container {
+                margin-top: 10px;
+                width: 100%;
+                display: grid;
+                grid-template-columns: auto;
+                padding: 7px;
+                border: 1px solid #ccc;
+            }
+            .vertical-grid-item {
+                padding: 10px;
+                font-size: 20px;
+                text-align: left;
+            }
+
 
             .button {
                 padding: 10px;
@@ -123,6 +127,14 @@
                 height: 2.2em;
             }
 
+
+            input[type=checkbox] {
+                border: 0px;
+                width: 8%;
+                height: 2.2em;
+                transform: translate(0%, 15%);
+            }
+
             code {
                 display:inline-block;
                 font-size: 10px;
@@ -141,223 +153,244 @@
             <p>Push some robots around!</p>
         </div>
 
-        <div class="container_left">
-            <!-- Summary -->
-            <div class="grid-container">
-                <div class="grid-item">
-                    <span>Connection</span>
-                </div>
-                <div class="grid-item">
-                    <div>
-                        <img id="connection-icon" class="filter-red" width="30" height="30">
-                        <span id="connection-status" class="inline-with-icon">Disconnected</span>
+        <div class="split-container">
+            <div class="split-grid-item">
+                <!-- Summary -->
+                <div class="grid-container">
+                    <div class="grid-item">
+                        <span>Connection</span>
                     </div>
-                </div>
-                <button class="button" onclick="reconnectRosBridge()">
-                    Reconnect
-                </button>
-            </div>
-            <div class="grid-container">
-                <div class="grid-item">
-                    <div>Summary</div>
-                </div>
-
-                <div class="grid-item">
-                    <div>Robot</div>
-                </div>
-                <div class="grid-item">
-                    <span id="summary-robot"></span>
-                </div>
-
-                <div class="grid-item"></div>
-                <div class="grid-item">
-                    <div>Map</span></div>
-                </div>
-                <div class="grid-item">
-                    <span id="summary-map"></span>
-                </div>
-
-                <div class="grid-item"></div>
-                <div class="grid-item">
-                    <div>Version</span></div>
-                </div>
-                <div class="grid-item">
-                    <span id="summary-version"></span>
-                </div>
-            </div>
-
-            <!-- Node health -->
-            <div class="grid-container">
-                <div class="grid-item">
-                    <div>Node health</div>
-                </div>
-
-                <div class="grid-item">
-                    <div>
-                        <div class="caret" id="health-active-count">Active nodes: 0</div>
-                        <ul class="nested">
-                            <div id="health-active-list"></div>
-                        </ul>
+                    <div class="grid-item">
+                        <div>
+                            <img id="connection-icon" class="filter-red" width="30" height="30">
+                            <span id="connection-status" class="inline-with-icon">Disconnected</span>
+                        </div>
                     </div>
+                    <button class="button" onclick="reconnectRosBridge()">
+                        Reconnect
+                    </button>
                 </div>
-                <div class="grid-item">
-                    <div>
-                        <div class="caret" id="health-dead-count">Dead nodes: 0</div>
-                        <ul class="nested">
-                            <div id="health-dead-list"></div>
-                        </ul>
+                <div class="grid-container">
+                    <div class="grid-item">
+                        <div>Summary</div>
                     </div>
-                </div>
-            </div>
 
-            <!-- Teleop Health -->
-            <div class="grid-container">
-                <div class="grid-item">
-                    <div>Teleop</span></div>
-                </div>
-                <div class="grid-item">
-                    <div>
-                        <img id="teleop-controller-icon" class="filter-red" width="30" height="30">
-                        <span id="teleop-controller-status" class="inline-with-icon"></span>
+                    <div class="grid-item">
+                        <div>Robot</div>
                     </div>
-                </div>
-                <div class="grid-item">
-                    <div>
-                        <img id="teleop-connected-icon" class="filter-red" width="30" height="30">
-                        <span id="teleop-connected-status" class="inline-with-icon"></span>
+                    <div class="grid-item">
+                        <span id="summary-robot"></span>
                     </div>
-                </div>
-                <div class="grid-item"></div>
-                <div class="grid-item">
-                    <div>
-                        <img id="teleop-is-ready-icon" class="filter-red" width="30" height="30">
-                        <span id="teleop-is-ready-status" class="inline-with-icon"></span>
+
+                    <div class="grid-item"></div>
+                    <div class="grid-item">
+                        <div>Map</span></div>
                     </div>
-                </div>
-                <div class="grid-item">
-                    <div>
-                        <img id="teleop-is-armed-icon" class="filter-red" width="30" height="30">
-                        <span id="teleop-is-armed-status" class="inline-with-icon"></span>
+                    <div class="grid-item">
+                        <span id="summary-map"></span>
                     </div>
-                </div>
-                <div class="grid-item"></div>
-                <div class="grid-item">
-                    <div id="teleop-battery-voltage"></span></div>
-                </div>
-                <div class="grid-item">
-                    <div id="teleop-mode"></span></div>
-                </div>
-                <div class="grid-item"></div>
-                
-            </div>
 
-            <!-- Cage corner -->
-            <div class="grid-container">
-                <div class="grid-item">
-                    <div>Cage corner</div>
-                </div>
-
-                <div class="grid-item" id="radio-group">
-                    <!-- Matches values found in ros_ws/bw_tools/bw_tools/structs/cage_corner.py -->
-                    <input type="radio" id="blue-side" name="cage-corner" onclick="publishCageCorner(0)">
-                    <label for="blue-side" class="inline-with-icon">Blue side</label><br>
-                    <input type="radio" id="red-side" name="cage-corner" onclick="publishCageCorner(1)">
-                    <label for="red-side" class="inline-with-icon">Red side</label><br>
-                </div>
-            </div>
-
-            <!-- Mode -->
-            <div class="grid-container">
-                <div class="grid-item">
-                    <div>Mode</div>
-                </div>
-
-                <div class="grid-item" id="radio-group">
-                    <input type="radio" class="mode-idle" name="robot-mode" onclick="publishRobotMode(0)">
-                    <label for="mode-idle" class="inline-with-icon">Idle</label><br>
-                    <input type="radio" class="mode-corner" name="robot-mode" onclick="publishRobotMode(1)">
-                    <label for="mode-corner" class="inline-with-icon">Corner</label><br>
-                    <input type="radio" class="mode-clicked" name="robot-mode" onclick="publishRobotMode(3)">
-                    <label for="mode-clicked" class="inline-with-icon">Clicked point</label><br>
-                    <input type="radio" class="mode-fight" name="robot-mode" onclick="publishRobotMode(2)">
-                    <label for="mode-fight" class="inline-with-icon">Fight!!!</label><br>
-                </div>
-            </div>
-
-            <!-- Request field -->
-            <div class="grid-container">
-                <div class="grid-item">
-                    <div>Request field</div>
-                </div>
-
-                <div class="grid-item">
-                    <div>
-                        <img id="field-stable-icon" class="filter-red" width="30" height="30">
-                        <span id="field-stable-status" class="inline-with-icon"></span>
+                    <div class="grid-item"></div>
+                    <div class="grid-item">
+                        <div>Version</span></div>
+                    </div>
+                    <div class="grid-item">
+                        <span id="summary-version"></span>
                     </div>
                 </div>
 
-                <button class="button" onclick="publishRequestField(); republishCageCorner();">
-                    <div>Request</div>
-                </button>
+                <!-- Node health -->
+                <div class="grid-container">
+                    <div class="grid-item">
+                        <div>Node health</div>
+                    </div>
 
-            </div>
-
-            <!-- Record bag -->
-            <div class="grid-container">
-                <div class="grid-item">
-                    <div>Recording</div>
+                    <div class="grid-item">
+                        <div>
+                            <div class="caret" id="health-active-count">Active nodes: 0</div>
+                            <ul class="nested">
+                                <div id="health-active-list"></div>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="grid-item">
+                        <div>
+                            <div class="caret" id="health-dead-count">Dead nodes: 0</div>
+                            <ul class="nested">
+                                <div id="health-dead-list"></div>
+                            </ul>
+                        </div>
+                    </div>
                 </div>
 
-                <button class="button" onclick="setRecordState(this, !recordState)">
-                    <div>Start Recording</div>
-                </button>
-            </div>
-
-            <!-- Opponent configuration -->
-            <div class="grid-container">
-                <div class="grid-item">
-                    <div>Opponent configuration</div>
+                <!-- Teleop Health -->
+                <div class="grid-container">
+                    <div class="grid-item">
+                        <div>Teleop</span></div>
+                    </div>
+                    <div class="grid-item">
+                        <div>
+                            <img id="teleop-controller-icon" class="filter-red" width="30" height="30">
+                            <span id="teleop-controller-status" class="inline-with-icon"></span>
+                        </div>
+                    </div>
+                    <div class="grid-item">
+                        <div>
+                            <img id="teleop-connected-icon" class="filter-red" width="30" height="30">
+                            <span id="teleop-connected-status" class="inline-with-icon"></span>
+                        </div>
+                    </div>
+                    <div class="grid-item"></div>
+                    <div class="grid-item">
+                        <div>
+                            <img id="teleop-is-ready-icon" class="filter-red" width="30" height="30">
+                            <span id="teleop-is-ready-status" class="inline-with-icon"></span>
+                        </div>
+                    </div>
+                    <div class="grid-item">
+                        <div>
+                            <img id="teleop-is-armed-icon" class="filter-red" width="30" height="30">
+                            <span id="teleop-is-armed-status" class="inline-with-icon"></span>
+                        </div>
+                    </div>
+                    <div class="grid-item"></div>
+                    <div class="grid-item">
+                        <div id="teleop-battery-voltage"></span></div>
+                    </div>
+                    <div class="grid-item">
+                        <div id="teleop-mode"></span></div>
+                    </div>
+                    <div class="grid-item"></div>
+                    
+                    <div class="grid-item">
+                        <div id="is-upside-down-status"></span></div>
+                    </div>
                 </div>
 
-                <div class="grid-item">
-                    <input class="number-input" type="number" id="num-opponents" onkeyup="onSetNumOpponents(this);" onchange="onSetNumOpponents(this);"/>
+                <!-- Cage corner -->
+                <div class="grid-container">
+                    <div class="grid-item">
+                        <div>Cage corner</div>
+                    </div>
+
+                    <div class="grid-item" id="radio-group">
+                        <!-- Matches values found in ros_ws/bw_tools/bw_tools/structs/cage_corner.py -->
+                        <input type="radio" id="blue-side" name="cage-corner" onclick="publishCageCorner(0)">
+                        <label for="blue-side" class="inline-with-icon">Blue side</label><br>
+                        <input type="radio" id="red-side" name="cage-corner" onclick="publishCageCorner(1)">
+                        <label for="red-side" class="inline-with-icon">Red side</label><br>
+                    </div>
                 </div>
 
-                <button class="button" onclick="publishOpponentConfiguration()">
-                    <div>Send</div>
-                </button>
+                <!-- Mode -->
+                <div class="grid-container">
+                    <div class="grid-item">
+                        <div>Mode</div>
+                    </div>
 
-                <div class="grid-item">
+                    <div class="grid-item" id="radio-group">
+                        <input type="radio" class="mode-idle" name="robot-mode" onclick="publishRobotMode(0)">
+                        <label for="mode-idle" class="inline-with-icon">Idle</label><br>
+                        <input type="radio" class="mode-corner" name="robot-mode" onclick="publishRobotMode(1)">
+                        <label for="mode-corner" class="inline-with-icon">Corner</label><br>
+                        <input type="radio" class="mode-clicked" name="robot-mode" onclick="publishRobotMode(3)">
+                        <label for="mode-clicked" class="inline-with-icon">Clicked point</label><br>
+                        <input type="radio" class="mode-fight" name="robot-mode" onclick="publishRobotMode(2)">
+                        <label for="mode-fight" class="inline-with-icon">Fight!!!</label><br>
+                    </div>
                 </div>
 
-                <div class="grid-item">
-                    <div class="grid-container" id="opponent-configuration-grid" style="width: 600px">
+                <!-- Request field -->
+                <div class="grid-container">
+                    <div class="grid-item">
+                        <div>Request field</div>
+                    </div>
+
+                    <div class="grid-item">
+                        <div>
+                            <img id="field-stable-icon" class="filter-red" width="30" height="30">
+                            <span id="field-stable-status" class="inline-with-icon"></span>
+                        </div>
+                    </div>
+
+                    <button class="button" onclick="publishRequestField(); republishCageCorner();">
+                        <div>Request</div>
+                    </button>
+
+                </div>
+
+                <!-- Record bag -->
+                <div class="grid-container">
+                    <div class="grid-item">
+                        <div>Recording</div>
+                    </div>
+
+                    <button class="button" onclick="setRecordState(this, !recordState)">
+                        <div>Start Recording</div>
+                    </button>
+                </div>
+
+                <!-- Opponent configuration -->
+                <div class="grid-container">
+                    <div class="grid-item">
+                        <div>Opponent configuration</div>
+                    </div>
+
+                    <div class="grid-item">
+                        <input class="number-input" type="number" id="num-opponents" onkeyup="onSetNumOpponents(this);" onchange="onSetNumOpponents(this);"/>
+                    </div>
+
+                    <button class="button" onclick="publishOpponentConfiguration()">
+                        <div>Send</div>
+                    </button>
+
+                    <div class="grid-item">
+                    </div>
+
+                    <div class="grid-item">
+                        <div class="grid-container" id="opponent-configuration-grid" style="width: 600px">
+                        </div>
+                    </div>
+
+
+                    <div class="grid-item">
+                        <div>
+                            <img id="opponent-send-icon" class="filter-red" width="30" height="30">
+                            <span id="opponent-send-status" class="inline-with-icon"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tree snapshot -->
+                <div class="grid-container">
+                    <div class="grid-item">
+                        <div>Tree snapshot</div>
+                    </div>
+
+                    <div class="grid-item">
+                        <div>
+                            <span class="caret">Tree</span>
+                            <ul class="nested">
+                                <div id="tree-snapshot"></div>
+                            </ul>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Tree snapshot -->
-            <div class="grid-container">
-                <div class="grid-item">
-                    <div>Tree snapshot</div>
-                </div>
-
-                <div class="grid-item">
-                    <div>
-                        <span class="caret">Tree</span>
-                        <ul class="nested">
-                            <div id="tree-snapshot"></div>
-                        </ul>
-                    </div>
+            <div class="split-grid-item">
+                <div class="vertical-container">
+                    <div class="vertical-grid-item"><input type="checkbox">Robot type is set</input></div>
+                    <div class="vertical-grid-item"><input type="checkbox">Map type is set</input></div>
+                    <div class="vertical-grid-item"><input type="checkbox">Cage corner set</input></div>
+                    <div class="vertical-grid-item"><input type="checkbox">Battery voltage > 17 V</input></div>
+                    <div class="vertical-grid-item"><input type="checkbox">Laptop battery OK</input></div>
+                    <div class="vertical-grid-item"><input type="checkbox">Tripod positioned and stable</input></div>
+                    <div class="vertical-grid-item"><input type="checkbox">Field alignment looks good</input></div>
+                    <div class="vertical-grid-item"><input type="checkbox">IMU stable</input></div>
+                    <div class="vertical-grid-item"><input type="checkbox">All statuses green</input></div>
                 </div>
             </div>
-        </div>
-    
-        <div class="resizer" data-direction="vertical"></div>
-
-        <div class="container_right">
-            Right
         </div>
     </body>
 
