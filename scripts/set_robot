@@ -67,13 +67,16 @@ def load_file() -> Environment:
 
 def main() -> None:
     env = load_file()
-    print(f"Robot: {env.ROBOT}")
-    print(f"Map: {env.MAP_NAME}")
     parser = argparse.ArgumentParser(description="set_robot")
     parser.add_argument("robot", type=str, choices=ALL_ROBOTS, help="robot name")
     parser.add_argument("map_name", type=str, default="", choices=ALL_MAPS, help="map name")
     argcomplete.autocomplete(parser)
-    args = parser.parse_args()
+    try:
+        args = parser.parse_args()
+    except SystemExit:
+        print(f"Robot: {env.ROBOT}")
+        print(f"Map: {env.MAP_NAME}")
+        return
 
     robot = args.robot
     if robot not in ALL_ROBOTS:

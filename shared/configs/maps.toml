@@ -18,3 +18,10 @@ name = "meatball_testbox"
 x = 1.15
 y = 1.15
 z = 0.0
+
+[[maps]]
+name = "floor"
+[maps.size]
+x = nan
+y = nan
+z = nan

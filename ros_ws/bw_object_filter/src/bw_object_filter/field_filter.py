@@ -25,17 +25,21 @@ class FieldFilter:
     def __init__(self) -> None:
         shared_config = get_shared_config()
         map_name = get_map()
-        map_config = shared_config.get_map(FieldType(map_name))
+        self.field_type = FieldType(map_name)
+        map_config = shared_config.get_map(self.field_type)
 
         self.map_frame = get_param("~map_frame", "map")
         self.relative_map_frame = get_param("~relative_map_frame", "map_relative")
         auto_initialize = get_param("~auto_initialize", False)
+        self.check_field_size = self.field_type != FieldType.FLOOR
         self.expected_size = XYZ.from_size(map_config.size)
         field_dims_buffer = get_param("~field_dims_buffer", 0.35)
         buffer_extents = XYZ(field_dims_buffer, field_dims_buffer, field_dims_buffer)
         self.extents_range = (self.expected_size - buffer_extents, self.expected_size + buffer_extents)
         rospy.loginfo(f"Map name: {map_name}")
         rospy.loginfo(f"Extents range: {self.extents_range}")
+        if not self.check_field_size:
+            rospy.logwarn("Field size check is disabled.")
 
         self.cage_corner: Optional[CageCorner] = None
         self.field_rotations = {
@@ -94,7 +98,7 @@ class FieldFilter:
         tf_camera_from_relativemap = Transform3D.from_pose_msg(field.pose.pose).inverse()
 
         extents = XYZ.from_msg(field.size)
-        passes = self.extents_range[0] < extents < self.extents_range[1]
+        passes = (not self.check_field_size) or self.extents_range[0] < extents < self.extents_range[1]
 
         if not passes:
             rospy.logwarn(f"Field size does not match expected size: Got {extents}, expected {self.expected_size}")

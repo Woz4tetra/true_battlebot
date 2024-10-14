@@ -6,3 +6,4 @@ class FieldType(str, EnumAutoLowerStr):
     NHRL_SMALL = auto()
     NHRL_LARGE = auto()
     MEATBALL_TESTBOX = auto()
+    FLOOR = auto()
