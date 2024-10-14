@@ -1,5 +1,6 @@
 import argparse
 import logging
+import time
 from typing import Protocol, cast
 
 import rospy
@@ -65,6 +66,7 @@ class Runner:
         )
         self.camera_data = CameraData()
         self.is_field_request_active = False
+        self.prev_no_camera_warning_time = time.monotonic()
         self.logger = logging.getLogger("perception")
 
     def start(self) -> None:
@@ -110,7 +112,10 @@ class Runner:
 
         camera_data = self.camera.poll()
         if camera_data is None or camera_data.color_image.data.size == 0:
-            self.logger.warning("No camera data. Ignoring field request.")
+            now = time.monotonic()
+            if now - self.prev_no_camera_warning_time > 1.0:
+                self.logger.warning("No camera data. Ignoring field request.")
+                self.prev_no_camera_warning_time = now
             return False
         self.camera_data = camera_data
 
