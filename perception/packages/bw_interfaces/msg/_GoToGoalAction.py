@@ -16,6 +16,7 @@ from bw_interfaces.msg._GoToGoalFeedback import GoToGoalFeedback as bw_interface
 from bw_interfaces.msg._GoToGoalGoal import GoToGoalGoal as bw_interfaces_msg_GoToGoalGoal
 from bw_interfaces.msg._GoToGoalResult import GoToGoalResult as bw_interfaces_msg_GoToGoalResult
 from bw_interfaces.msg._Trajectory import Trajectory as bw_interfaces_msg_Trajectory
+from bw_interfaces.msg._VelocityProfile import VelocityProfile as bw_interfaces_msg_VelocityProfile
 from geometry_msgs.msg._Point import Point as geometry_msgs_msg_Point
 from geometry_msgs.msg._Pose import Pose as geometry_msgs_msg_Pose
 from geometry_msgs.msg._PoseStamped import PoseStamped as geometry_msgs_msg_PoseStamped
@@ -27,7 +28,7 @@ from std_msgs.msg._Header import Header as std_msgs_msg_Header
 import genpy
 
 class GoToGoalAction(genpy.Message):
-  _md5sum: str = "bdd7bcb3cf58b4a1633b9b1441312374"
+  _md5sum: str = "9a1b90d7ab8e2365b20bdc01d47dc0fd"
   _type: str = "bw_interfaces/GoToGoalAction"
   _has_header: bool = False  # flag to mark the presence of a Header object
   _full_text: str = """GoToGoalActionGoal action_goal
@@ -76,6 +77,8 @@ geometry_msgs/PoseStamped goal
 string target_type
 string strategy
 bool continuously_select_goal
+bool overwrite_velocity_profile
+bw_interfaces/VelocityProfile velocity_profile
 ================================================================================
 MSG: geometry_msgs/PoseStamped
 # A Pose with reference coordinate frame and timestamp
@@ -103,6 +106,13 @@ float64 x
 float64 y
 float64 z
 float64 w
+
+================================================================================
+MSG: bw_interfaces/VelocityProfile
+float64 max_velocity
+float64 max_angular_velocity
+float64 max_acceleration
+float64 max_centripetal_acceleration
 
 ================================================================================
 MSG: bw_interfaces/GoToGoalActionResult
@@ -273,7 +283,7 @@ float64 z"""
         length = len(_x)
       buff.write(struct.Struct('<I%ss'%length).pack(length, _x))
       _x = self
-      buff.write(_get_struct_B3I().pack(_x.action_goal.goal.continuously_select_goal, _x.action_result.header.seq, _x.action_result.header.stamp.secs, _x.action_result.header.stamp.nsecs))
+      buff.write(_get_struct_2B4d3I().pack(_x.action_goal.goal.continuously_select_goal, _x.action_goal.goal.overwrite_velocity_profile, _x.action_goal.goal.velocity_profile.max_velocity, _x.action_goal.goal.velocity_profile.max_angular_velocity, _x.action_goal.goal.velocity_profile.max_acceleration, _x.action_goal.goal.velocity_profile.max_centripetal_acceleration, _x.action_result.header.seq, _x.action_result.header.stamp.secs, _x.action_result.header.stamp.nsecs))
       _x = self.action_result.header.frame_id
       length = len(_x)
       if python3 or type(_x) == unicode:
@@ -462,9 +472,10 @@ float64 z"""
         self.action_goal.goal.strategy = bytes_[start:end]
       _x = self
       start = end
-      end += 13
-      (_x.action_goal.goal.continuously_select_goal, _x.action_result.header.seq, _x.action_result.header.stamp.secs, _x.action_result.header.stamp.nsecs,) = _get_struct_B3I().unpack(bytes_[start:end])
+      end += 46
+      (_x.action_goal.goal.continuously_select_goal, _x.action_goal.goal.overwrite_velocity_profile, _x.action_goal.goal.velocity_profile.max_velocity, _x.action_goal.goal.velocity_profile.max_angular_velocity, _x.action_goal.goal.velocity_profile.max_acceleration, _x.action_goal.goal.velocity_profile.max_centripetal_acceleration, _x.action_result.header.seq, _x.action_result.header.stamp.secs, _x.action_result.header.stamp.nsecs,) = _get_struct_2B4d3I().unpack(bytes_[start:end])
       self.action_goal.goal.continuously_select_goal = bool(self.action_goal.goal.continuously_select_goal)
+      self.action_goal.goal.overwrite_velocity_profile = bool(self.action_goal.goal.overwrite_velocity_profile)
       start = end
       end += 4
       (length,) = _struct_I.unpack(bytes_[start:end])
@@ -681,7 +692,7 @@ float64 z"""
         length = len(_x)
       buff.write(struct.Struct('<I%ss'%length).pack(length, _x))
       _x = self
-      buff.write(_get_struct_B3I().pack(_x.action_goal.goal.continuously_select_goal, _x.action_result.header.seq, _x.action_result.header.stamp.secs, _x.action_result.header.stamp.nsecs))
+      buff.write(_get_struct_2B4d3I().pack(_x.action_goal.goal.continuously_select_goal, _x.action_goal.goal.overwrite_velocity_profile, _x.action_goal.goal.velocity_profile.max_velocity, _x.action_goal.goal.velocity_profile.max_angular_velocity, _x.action_goal.goal.velocity_profile.max_acceleration, _x.action_goal.goal.velocity_profile.max_centripetal_acceleration, _x.action_result.header.seq, _x.action_result.header.stamp.secs, _x.action_result.header.stamp.nsecs))
       _x = self.action_result.header.frame_id
       length = len(_x)
       if python3 or type(_x) == unicode:
@@ -871,9 +882,10 @@ float64 z"""
         self.action_goal.goal.strategy = bytes_[start:end]
       _x = self
       start = end
-      end += 13
-      (_x.action_goal.goal.continuously_select_goal, _x.action_result.header.seq, _x.action_result.header.stamp.secs, _x.action_result.header.stamp.nsecs,) = _get_struct_B3I().unpack(bytes_[start:end])
+      end += 46
+      (_x.action_goal.goal.continuously_select_goal, _x.action_goal.goal.overwrite_velocity_profile, _x.action_goal.goal.velocity_profile.max_velocity, _x.action_goal.goal.velocity_profile.max_angular_velocity, _x.action_goal.goal.velocity_profile.max_acceleration, _x.action_goal.goal.velocity_profile.max_centripetal_acceleration, _x.action_result.header.seq, _x.action_result.header.stamp.secs, _x.action_result.header.stamp.nsecs,) = _get_struct_2B4d3I().unpack(bytes_[start:end])
       self.action_goal.goal.continuously_select_goal = bool(self.action_goal.goal.continuously_select_goal)
+      self.action_goal.goal.overwrite_velocity_profile = bool(self.action_goal.goal.overwrite_velocity_profile)
       start = end
       end += 4
       (length,) = _struct_I.unpack(bytes_[start:end])
@@ -1041,6 +1053,12 @@ _struct_I = genpy.struct_I
 def _get_struct_I():
     global _struct_I
     return _struct_I
+_struct_2B4d3I = None
+def _get_struct_2B4d3I():
+    global _struct_2B4d3I
+    if _struct_2B4d3I is None:
+        _struct_2B4d3I = struct.Struct("<2B4d3I")
+    return _struct_2B4d3I
 _struct_2I = None
 def _get_struct_2I():
     global _struct_2I

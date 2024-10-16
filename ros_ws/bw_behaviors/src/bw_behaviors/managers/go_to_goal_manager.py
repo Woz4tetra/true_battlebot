@@ -1,7 +1,9 @@
+from typing import Optional
+
 import rospy
 from actionlib import SimpleActionClient
 from actionlib_msgs.msg import GoalStatus
-from bw_interfaces.msg import GoToGoalAction, GoToGoalFeedback, GoToGoalGoal
+from bw_interfaces.msg import GoToGoalAction, GoToGoalFeedback, GoToGoalGoal, VelocityProfile
 from bw_tools.messages.goal_strategy import GoalStrategy
 from bw_tools.messages.goal_type import GoalType
 from bw_tools.messages.target_type import TargetType
@@ -22,21 +24,32 @@ class GoToGoalManager:
     def set_strategy(self, strategy: GoalStrategy) -> None:
         self.strategy = strategy
 
-    def send_pose_goal(self, pose: PoseStamped) -> None:
+    def send_pose_goal(self, pose: PoseStamped, velocity_profile: Optional[VelocityProfile] = None) -> None:
         rospy.loginfo("Sending go to goal action")
         goal = GoToGoalGoal()
         goal.goal = pose
         goal.strategy = self.strategy.value
         goal.goal_type = GoalType.FIXED_POSE.value
+        goal.overwrite_velocity_profile = velocity_profile is not None
+        if velocity_profile is not None:
+            goal.velocity_profile = velocity_profile
         self.go_to_goal_client.send_goal(goal, feedback_cb=self.feedback_callback)
 
-    def send_target_goal(self, target_type: TargetType, continuously_select_goal: bool) -> None:
+    def send_target_goal(
+        self,
+        target_type: TargetType,
+        continuously_select_goal: bool,
+        velocity_profile: Optional[VelocityProfile] = None,
+    ) -> None:
         rospy.loginfo("Sending go to goal action")
         goal = GoToGoalGoal()
         goal.target_type = target_type.value
         goal.strategy = self.strategy.value
         goal.goal_type = GoalType.TRACKED_TARGET.value
         goal.continuously_select_goal = continuously_select_goal
+        goal.overwrite_velocity_profile = velocity_profile is not None
+        if velocity_profile is not None:
+            goal.velocity_profile = velocity_profile
         self.go_to_goal_client.send_goal(goal, feedback_cb=self.feedback_callback)
 
     def feedback_callback(self, feedback: GoToGoalFeedback) -> None:

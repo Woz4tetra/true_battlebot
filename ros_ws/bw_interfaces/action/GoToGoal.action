@@ -3,6 +3,8 @@ geometry_msgs/PoseStamped goal
 string target_type
 string strategy
 bool continuously_select_goal
+bool overwrite_velocity_profile
+bw_interfaces/VelocityProfile velocity_profile
 ---
 bool success
 ---

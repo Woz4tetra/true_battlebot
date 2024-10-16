@@ -5,7 +5,7 @@ from typing import Optional
 
 import numpy as np
 import rospy
-from bw_interfaces.msg import EstimatedObject
+from bw_interfaces.msg import EstimatedObject, VelocityProfile
 from bw_interfaces.msg import Trajectory as TrajectoryMsg
 from bw_shared.geometry.field_bounds import FieldBounds2D
 from bw_shared.geometry.in_plane import line_bounds_intersection
@@ -24,23 +24,8 @@ from bw_navigation.planners.engines.trajectory_planner_engine_config import Traj
 class TrajectoryPlannerEngine:
     def __init__(self, config: TrajectoryPlannerEngineConfig) -> None:
         self.plan_config = config
-        self.traj_config = TrajectoryConfig(
-            maxVelocity=self.plan_config.max_velocity, maxAcceleration=self.plan_config.max_acceleration
-        )
         self.kinematics = DifferentialDriveKinematics(self.plan_config.track_width)
         self.replan_interval = rospy.Duration.from_sec(self.plan_config.replan_interval)
-
-        self.traj_config.setStartVelocity(self.plan_config.max_velocity)
-        self.traj_config.setEndVelocity(self.plan_config.max_velocity)
-        if self.plan_config.max_centripetal_acceleration is not None:
-            self.traj_config.addConstraint(
-                CentripetalAccelerationConstraint(
-                    maxCentripetalAcceleration=self.plan_config.max_centripetal_acceleration
-                ),
-            )
-        self.traj_config.addConstraint(
-            DifferentialDriveKinematicsConstraint(self.kinematics, self.plan_config.max_velocity),
-        )
         self.start_time = rospy.Time()
 
         self.planning_thread = Thread(daemon=True, target=self._planning_task)
@@ -51,6 +36,39 @@ class TrajectoryPlannerEngine:
         self.active_trajectory_msg = TrajectoryMsg()
 
         self.planning_thread.start()
+
+    def make_trajectory_config_from_velocity_profile(
+        self, velocity_profile: Optional[VelocityProfile]
+    ) -> TrajectoryConfig:
+        if velocity_profile:
+            return self.make_trajectory_config(
+                velocity_profile.max_velocity,
+                velocity_profile.max_acceleration,
+                None
+                if np.isnan(velocity_profile.max_centripetal_acceleration)
+                else velocity_profile.max_centripetal_acceleration,
+            )
+        else:
+            return self.make_trajectory_config(
+                self.plan_config.max_velocity,
+                self.plan_config.max_acceleration,
+                self.plan_config.max_centripetal_acceleration,
+            )
+
+    def make_trajectory_config(
+        self, max_velocity: float, max_acceleration: float, max_centripetal_acceleration: Optional[float] = None
+    ) -> TrajectoryConfig:
+        traj_config = TrajectoryConfig(maxVelocity=max_velocity, maxAcceleration=max_acceleration)
+        traj_config.setStartVelocity(max_velocity)
+        traj_config.setEndVelocity(max_velocity)
+        if max_centripetal_acceleration is not None:
+            traj_config.addConstraint(
+                CentripetalAccelerationConstraint(maxCentripetalAcceleration=max_centripetal_acceleration)
+            )
+        traj_config.addConstraint(
+            DifferentialDriveKinematicsConstraint(self.kinematics, max_velocity),
+        )
+        return traj_config
 
     def _bound_pose_along_line(self, pose: Pose2D, projected_pose: Pose2D, bounds: FieldBounds2D) -> Pose2D:
         segment = np.array(
@@ -78,10 +96,10 @@ class TrajectoryPlannerEngine:
         travel_distance = ticket.goal_velocity.x * total_time
         projected_goal = Pose2D(travel_distance, 0.0, 0.0).transform_by(goal_pose)
         projected_goal = self._bound_pose_along_line(goal_pose, projected_goal, ticket.field)
-        trajectory = self._plan_once(robot_pose, projected_goal)
+        trajectory = self._plan_once(robot_pose, projected_goal, ticket.trajectory_config)
         return trajectory
 
-    def _plan_once(self, robot_pose: Pose2D, goal_pose: Pose2D) -> Trajectory:
+    def _plan_once(self, robot_pose: Pose2D, goal_pose: Pose2D, trajectory_config: TrajectoryConfig) -> Trajectory:
         trajectory = None
         original_goal_pose = goal_pose
         noise = self.plan_config.planning_failure_random_noise
@@ -92,7 +110,7 @@ class TrajectoryPlannerEngine:
                         geometry.Pose2d(robot_pose.x, robot_pose.y, robot_pose.theta),
                         geometry.Pose2d(goal_pose.x, goal_pose.y, goal_pose.theta),
                     ],
-                    config=self.traj_config,
+                    config=trajectory_config,
                 )
             except RuntimeError as e:
                 rospy.logerr(f"Trajectory generation failed: {e}")
@@ -109,15 +127,12 @@ class TrajectoryPlannerEngine:
             try:
                 ticket = self.goal_in_queue.get()
 
-                if self.plan_config.used_measured_velocity:
-                    robot_velocity = ticket.robot_velocity
-                    self.traj_config.setStartVelocity(robot_velocity.x)
                 self.is_planning = True
                 planning_start_time = rospy.Time.now()
                 if self.plan_config.forward_project_goal_velocity:
                     trajectory = self._plan_with_goal_velocity(ticket)
                 else:
-                    trajectory = self._plan_once(ticket.robot_pose, ticket.goal_pose)
+                    trajectory = self._plan_once(ticket.robot_pose, ticket.goal_pose, ticket.trajectory_config)
                 planning_finish_time = rospy.Time.now()
                 self.plan_out_queue.put(PlanningResult(trajectory, planning_start_time, planning_finish_time))
                 self.is_planning = False
@@ -167,24 +182,38 @@ class TrajectoryPlannerEngine:
         )
 
     def generate_trajectory(
-        self, robot_state: EstimatedObject, goal_target: EstimatedObject, field: FieldBounds2D
+        self,
+        robot_state: EstimatedObject,
+        goal_target: EstimatedObject,
+        field: FieldBounds2D,
+        velocity_profile: Optional[VelocityProfile],
     ) -> None:
         if not self.is_planning:
             robot_pose = Pose2D.from_msg(robot_state.pose.pose)
             robot_velocity = Twist2D.from_msg(robot_state.twist.twist)
             goal_pose = Pose2D.from_msg(goal_target.pose.pose)
             goal_velocity = Twist2D.from_msg(goal_target.twist.twist)
-            self.goal_in_queue.put(PlanningTicket(robot_pose, robot_velocity, goal_pose, goal_velocity, field))
+
+            trajectory_config = self.make_trajectory_config_from_velocity_profile(velocity_profile)
+            if self.plan_config.used_measured_velocity:
+                trajectory_config.setStartVelocity(robot_velocity.x)
+            self.goal_in_queue.put(
+                PlanningTicket(robot_pose, robot_velocity, goal_pose, goal_velocity, field, trajectory_config)
+            )
         else:
             rospy.logdebug("Trajectory generation already in progress")
 
     def compute(
-        self, robot_state: EstimatedObject, goal_target: EstimatedObject, field: FieldBounds2D
+        self,
+        robot_state: EstimatedObject,
+        goal_target: EstimatedObject,
+        field: FieldBounds2D,
+        velocity_profile: Optional[VelocityProfile],
     ) -> tuple[Optional[Trajectory], bool, rospy.Time]:
         did_replan = False
         now = rospy.Time.now()
         if self.should_replan():
-            self.generate_trajectory(robot_state, goal_target, field)
+            self.generate_trajectory(robot_state, goal_target, field, velocity_profile)
         if not self.plan_out_queue.empty():
             while not self.plan_out_queue.empty():
                 result = self.plan_out_queue.get()

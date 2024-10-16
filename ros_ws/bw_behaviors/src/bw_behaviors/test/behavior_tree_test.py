@@ -1,5 +1,5 @@
 import pytest
-from bw_behaviors.container import ContainerConfig
+from bw_behaviors.config.container_config import ContainerConfig
 from bw_behaviors.trees_node import TreesNode
 from bw_tools.messages.behavior_mode import BehaviorMode
 

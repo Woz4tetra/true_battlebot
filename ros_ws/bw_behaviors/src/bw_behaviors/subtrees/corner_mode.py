@@ -12,7 +12,7 @@ def make_stay_in_corner_behavior(container: Container) -> Behaviour:
         "stay_in_corner_sequence",
         memory=False,
         children=[
-            SendCornerGoal(container),
+            SendCornerGoal(container, velocity_profile=container.config.corner_mode.velocity_profile),
             SetMode(container, BehaviorMode.IDLE),
         ],
     )

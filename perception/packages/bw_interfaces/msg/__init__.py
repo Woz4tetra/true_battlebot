@@ -35,3 +35,4 @@ from ._TagConfigMsg import *
 from ._TelemetryStatus import *
 from ._Trajectory import *
 from ._UVKeypoint import *
+from ._VelocityProfile import *

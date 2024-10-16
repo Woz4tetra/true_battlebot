@@ -8,7 +8,8 @@ from py_trees.trees import BehaviourTree
 from py_trees.visitors import DisplaySnapshotVisitor
 from std_msgs.msg import String
 
-from bw_behaviors.container import Container, ContainerConfig
+from bw_behaviors.config.container_config import ContainerConfig
+from bw_behaviors.container import Container
 from bw_behaviors.subtrees import make_mode_tree
 
 

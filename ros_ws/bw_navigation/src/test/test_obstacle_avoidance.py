@@ -1,9 +1,23 @@
+import pytest
 from bw_interfaces.msg import EstimatedObject
+from bw_navigation.planners.engines.backaway_from_wall_engine import BackawayFromWallEngine
 from bw_navigation.planners.engines.local_planner_engine import LocalPlannerEngine
-from bw_navigation.planners.engines.trajectory_planner_engine_config import LocalPlannerEngineConfig, RamseteConfig
+from bw_navigation.planners.engines.trajectory_planner_engine_config import (
+    BackawayRecoverConfig,
+    LocalPlannerEngineConfig,
+    RamseteConfig,
+)
 from bw_shared.geometry.pose2d import Pose2D
 from matplotlib import pyplot as plt
 from plot_helpers import draw_arrow, plot_robots
+
+
+@pytest.fixture
+def local_planner_engine() -> LocalPlannerEngine:
+    config = LocalPlannerEngineConfig()
+    ramsete = RamseteConfig()
+    backaway_engine = BackawayFromWallEngine(BackawayRecoverConfig())
+    return LocalPlannerEngine(config, ramsete, backaway_engine)
 
 
 def make_robot(pose: Pose2D, size: float, label: str) -> EstimatedObject:
@@ -33,7 +47,7 @@ def plot_planner_state(
     plt.show()
 
 
-def test_basic() -> None:
+def test_basic(local_planner_engine: LocalPlannerEngine) -> None:
     start_pose = Pose2D(0.0, 0.0, 0.0)
     goal_pose = Pose2D(1.0, 0.0, 0.0)
 
@@ -41,18 +55,16 @@ def test_basic() -> None:
     friendly_robot = make_robot(Pose2D(0.5, 0.0, 0.0), 0.2, "main_bot")
     friendly_robots = [friendly_robot]
 
-    planner_engine = LocalPlannerEngine(LocalPlannerEngineConfig(), RamseteConfig())
+    assert local_planner_engine.get_robot_collisions(controlled_robot, goal_pose, friendly_robots) == friendly_robots
 
-    assert planner_engine.get_robot_collisions(controlled_robot, goal_pose, friendly_robots) == friendly_robots
-
-    new_goal, was_colliding = planner_engine.respond_to_obstacles(controlled_robot, goal_pose, friendly_robots)
+    new_goal, was_colliding = local_planner_engine.respond_to_obstacles(controlled_robot, goal_pose, friendly_robots)
     assert was_colliding
-    plot_planner_state(controlled_robot, goal_pose, new_goal, friendly_robots)
+    # plot_planner_state(controlled_robot, goal_pose, new_goal, friendly_robots)
 
-    assert not planner_engine.get_robot_collisions(controlled_robot, new_goal, friendly_robots)
+    assert not local_planner_engine.get_robot_collisions(controlled_robot, new_goal, friendly_robots)
 
 
-def test_multi_bot() -> None:
+def test_multi_bot(local_planner_engine: LocalPlannerEngine) -> None:
     start_pose = Pose2D(0.0, 0.0, 0.0)
     goal_pose = Pose2D(1.0, 0.0, 0.0)
     controlled_robot = make_robot(start_pose, 0.2, "mini_bot")
@@ -61,12 +73,10 @@ def test_multi_bot() -> None:
         make_robot(Pose2D(0.5, 0.2, 0.0), 0.2, "bot2"),
     ]
 
-    planner_engine = LocalPlannerEngine(LocalPlannerEngineConfig(), RamseteConfig())
+    assert local_planner_engine.get_robot_collisions(controlled_robot, goal_pose, friendly_robots)
 
-    assert planner_engine.get_robot_collisions(controlled_robot, goal_pose, friendly_robots)
-
-    new_goal, was_colliding = planner_engine.respond_to_obstacles(controlled_robot, goal_pose, friendly_robots)
+    new_goal, was_colliding = local_planner_engine.respond_to_obstacles(controlled_robot, goal_pose, friendly_robots)
     assert was_colliding
-    plot_planner_state(controlled_robot, goal_pose, new_goal, friendly_robots)
+    # plot_planner_state(controlled_robot, goal_pose, new_goal, friendly_robots)
 
-    assert not planner_engine.get_robot_collisions(controlled_robot, new_goal, friendly_robots)
+    assert not local_planner_engine.get_robot_collisions(controlled_robot, new_goal, friendly_robots)

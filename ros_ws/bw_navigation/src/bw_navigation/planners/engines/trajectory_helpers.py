@@ -7,7 +7,7 @@ from bw_shared.geometry.pose2d import Pose2D
 from bw_shared.geometry.twist2d import Twist2D
 from geometry_msgs.msg import PoseStamped, TwistStamped
 from wpimath import geometry
-from wpimath.trajectory import Trajectory
+from wpimath.trajectory import Trajectory, TrajectoryConfig
 
 
 @dataclass
@@ -17,6 +17,7 @@ class PlanningTicket:
     goal_pose: Pose2D
     goal_velocity: Twist2D
     field: FieldBounds2D
+    trajectory_config: TrajectoryConfig
 
 
 @dataclass

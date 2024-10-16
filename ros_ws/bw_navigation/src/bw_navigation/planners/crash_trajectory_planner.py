@@ -1,7 +1,7 @@
-from typing import Tuple
+from typing import Optional, Tuple
 
 import rospy
-from bw_interfaces.msg import EstimatedObject
+from bw_interfaces.msg import EstimatedObject, VelocityProfile
 from bw_shared.geometry.field_bounds import FieldBounds2D
 from bw_shared.geometry.in_plane import nearest_projected_point
 from bw_shared.geometry.pose2d import Pose2D
@@ -37,7 +37,12 @@ class CrashTrajectoryPlanner(PlannerInterface):
         self.prev_move_pose = Pose2D(0.0, 0.0, 0.0)
 
     def go_to_goal(
-        self, dt: float, goal_target: EstimatedObject, robot_states: dict[str, EstimatedObject], field: FieldBounds2D
+        self,
+        dt: float,
+        goal_target: EstimatedObject,
+        robot_states: dict[str, EstimatedObject],
+        field: FieldBounds2D,
+        velocity_profile: Optional[VelocityProfile],
     ) -> Tuple[Twist, GoalProgress]:
         now = rospy.Time.now()
         if self.controlled_robot not in robot_states:
@@ -78,7 +83,9 @@ class CrashTrajectoryPlanner(PlannerInterface):
             twist = self.thrash_recover_engine.compute(dt)
         elif is_in_bounds:
             markers.extend(self.local_planner.visualize_local_plan())
-            trajectory, did_replan, start_time = self.global_planner.compute(controlled_robot_state, goal_target, field)
+            trajectory, did_replan, start_time = self.global_planner.compute(
+                controlled_robot_state, goal_target, field, velocity_profile
+            )
             if trajectory is None:
                 rospy.logwarn("No active trajectory")
                 return Twist(), goal_progress
@@ -92,14 +99,14 @@ class CrashTrajectoryPlanner(PlannerInterface):
             rospy.logdebug(f"Backing away from wall. {controlled_robot_pose} -> {goal_pose}")
             twist = self.backaway_engine.compute(goal_pose, controlled_robot_pose)
 
-        twist.linear.x = max(
-            -1 * self.traj_config.max_velocity,
-            min(self.traj_config.max_velocity, twist.linear.x),
-        )
-        twist.angular.z = max(
-            -1 * self.traj_config.max_angular_velocity,
-            min(self.traj_config.max_angular_velocity, twist.angular.z),
-        )
+        if velocity_profile:
+            max_velocity = velocity_profile.max_velocity
+            max_angular_velocity = velocity_profile.max_angular_velocity
+        else:
+            max_velocity = self.traj_config.max_velocity
+            max_angular_velocity = self.traj_config.max_angular_velocity
+        twist.linear.x = max(-1 * max_velocity, min(max_velocity, twist.linear.x))
+        twist.angular.z = max(-1 * max_angular_velocity, min(max_angular_velocity, twist.angular.z))
 
         goal_progress.distance_to_goal = compute_feedback_distance(controlled_robot_state, goal_target)
 

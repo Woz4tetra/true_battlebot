@@ -1,4 +1,7 @@
+from typing import Optional
+
 import rospy
+from bw_interfaces.msg import VelocityProfile
 from geometry_msgs.msg import PoseStamped
 from py_trees.behaviour import Behaviour
 from py_trees.common import Status
@@ -7,9 +10,10 @@ from bw_behaviors.container import Container
 
 
 class SendClickedGoal(Behaviour):
-    def __init__(self, container: Container) -> None:
+    def __init__(self, container: Container, velocity_profile: Optional[VelocityProfile] = None) -> None:
         super().__init__(self.__class__.__name__)
         self.go_to_goal_manager = container.go_to_goal_manager
+        self.velocity_profile = velocity_profile
         self.start_time = rospy.Time.now()
         self.goal = PoseStamped()
         self.is_active = False
@@ -40,5 +44,5 @@ class SendClickedGoal(Behaviour):
             return
         rospy.loginfo("Received new goal")
         self.go_to_goal_manager.cancel()
-        self.go_to_goal_manager.send_pose_goal(msg)
+        self.go_to_goal_manager.send_pose_goal(msg, self.velocity_profile)
         self.goal_sent = True

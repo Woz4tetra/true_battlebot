@@ -147,6 +147,8 @@ class BwNavigationNode:
             self.goal_server.set_aborted()
             return
 
+        velocity_profile = goal.velocity_profile if goal.overwrite_velocity_profile else None
+
         planner = self.planners[goal_strategy]
 
         goal_feedback = PoseStamped(header=self.field.header)
@@ -181,7 +183,9 @@ class BwNavigationNode:
             self.goal_pose_pub.publish(goal_feedback)
 
             try:
-                twist, goal_progress = planner.go_to_goal(dt, goal_target, self.robots, self.field_bounds_2d)
+                twist, goal_progress = planner.go_to_goal(
+                    dt, goal_target, self.robots, self.field_bounds_2d, velocity_profile
+                )
             except NavigationError as e:
                 rospy.logerr(f"Error going to goal: {e}")
                 self.goal_server.set_aborted()
