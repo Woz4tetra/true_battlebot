@@ -13,12 +13,18 @@
 
             .split-container {
                 display: grid;
-                grid-template-columns: 2fr 1fr;
+                grid-template-columns: 100%;
             }
             .split-grid-item {
                 margin-right: 30px;
                 font-size: 20px;
                 text-align: left;
+            }
+            @media only screen and (min-width: 1280px) {
+                .split-container {
+                    display: grid;
+                    grid-template-columns: 2fr 1fr;
+                }
             }
 
             .number-input {
