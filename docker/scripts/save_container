@@ -1,0 +1,19 @@
+#!/bin/bash
+set -e
+
+SOURCE_DIR="${1:-.}"
+
+BASE_DIR=$(realpath "$(dirname $0)")
+IMAGE_TAG=$(${BASE_DIR}/../get_image_tag)
+FILENAME=$(${BASE_DIR}/../get_archive_filename)
+OUTPUT=${SOURCE_DIR}/${FILENAME}
+echo "Saving image ${IMAGE_TAG} to ${OUTPUT}. This could take a while."
+docker save ${IMAGE_TAG} | pigz --fast > ${OUTPUT}
+echo "Saved ${IMAGE_TAG} to ${OUTPUT}"
+
+IMAGE_TAG=$(${BASE_DIR}/../get_image_tag "perception")
+FILENAME=$(${BASE_DIR}/../get_archive_filename "perception")
+OUTPUT=${SOURCE_DIR}/${FILENAME}
+echo "Saving image ${IMAGE_TAG} to ${OUTPUT}. This could take a while."
+docker save ${IMAGE_TAG} | pigz --fast > ${OUTPUT}
+echo "Saved ${IMAGE_TAG} to ${OUTPUT}"

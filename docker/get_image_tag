@@ -1,8 +1,9 @@
 #!/bin/bash
-SUBTYPE=$1
+SUBTYPE=${1}
+BASE_DIR=$(realpath "$(dirname $0)")
+VERSION=${2:-$(cat ${BASE_DIR}/../image_version)}
 if [ -n "${SUBTYPE}" ]; then
   SUBTYPE=_${SUBTYPE}
 fi
-BASE_DIR=$(realpath "$(dirname $0)")
 PROJECT_NAME=$(${BASE_DIR}/get_project_name)
-echo ${PROJECT_NAME}${SUBTYPE}:$(cat ${BASE_DIR}/../image_version)
+echo ${PROJECT_NAME}${SUBTYPE}:${VERSION}
