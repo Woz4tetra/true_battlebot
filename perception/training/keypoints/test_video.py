@@ -69,7 +69,8 @@ def main() -> None:
     is_metadata_set = bool(metadata_path)
 
     window_name = str(video_path.stem)
-    cv2.namedWindow(window_name)
+    if show:
+        cv2.namedWindow(window_name)
 
     should_quit = False
 
