@@ -1,0 +1,22 @@
+{
+    "type": "auto",
+    "init": {
+        "type": "relative",
+        "x": -0.85,
+        "y": 0.5,
+        "yaw": -90.0
+    },
+    "linear_pid": {
+        "kp": 20.0,
+        "ki": 0.1,
+        "kd": 0.005,
+        "kf": 1.0
+    },
+    "angular_pid": {
+        "kp": 30.0,
+        "ki": 0.01,
+        "kd": 0.0001,
+        "kf": 1.0
+    },
+    "sequence": []
+}

@@ -23,7 +23,7 @@
         {
             "name": "mini_bot",
             "model": "MR STABS MK2",
-            "objective": "auto_blue_corner"
+            "objective": "auto_blue_corner_90"
         },
         {
             "name": "main_bot",
