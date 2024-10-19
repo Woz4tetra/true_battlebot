@@ -59,7 +59,7 @@ def compute_field_estimate(
 
     length_1_2 = float(np.linalg.norm(flattened_points[1] - flattened_points[0]))
     length_2_3 = float(np.linalg.norm(flattened_points[2] - flattened_points[1]))
-    extents = XY(length_1_2, length_2_3)
+    extents = XY(length_2_3, length_1_2)
 
     return field_centered_plane, extents
 
@@ -176,8 +176,8 @@ class LabelState:
         h_tf = plane_transform.tfmat
         scaling_matrix = np.array(
             [
-                [plane_extents[0], 0, 0, 0],
-                [0, plane_extents[1], 0, 0],
+                [plane_extents[1], 0, 0, 0],
+                [0, plane_extents[0], 0, 0],
                 [0, 0, 1.0, 0],
                 [0, 0, 0, 1.0],
             ]
