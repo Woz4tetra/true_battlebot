@@ -38,46 +38,29 @@ public class QueueWithCapacity<T>
 public class RosPollSubscriber<T> where T : Message
 {
     private ROSConnection ros;
-    private static HashSet<string> registeredTopics = new HashSet<string>();
-    private static List<QueueWithCapacity<T>> allMessageQueues = new List<QueueWithCapacity<T>>();
     private QueueWithCapacity<T> messageQueue;
     public RosPollSubscriber(string topic, int queueSize = 1)
     {
         ros = ROSConnection.GetOrCreateInstance();
         messageQueue = new QueueWithCapacity<T>(queueSize);
-        lock (allMessageQueues)
+        lock (messageQueue)
         {
-            allMessageQueues.Add(messageQueue);
-            if (!registeredTopics.Contains(topic))
-            {
-                ros.Subscribe<T>(topic, MessageCallback);
-                registeredTopics.Add(topic);
-            }
+            Debug.Log($"Subscribing to {topic}");
+            ros.Subscribe<T>(topic, MessageCallback);
         }
     }
 
-    ~RosPollSubscriber()
+    private void MessageCallback(T message)
     {
-        lock (allMessageQueues)
+        lock (messageQueue)
         {
-            allMessageQueues.Remove(messageQueue);
-        }
-    }
-
-    private static void MessageCallback(T message)
-    {
-        lock (allMessageQueues)
-        {
-            foreach (QueueWithCapacity<T> queue in allMessageQueues)
-            {
-                queue.Enqueue(message);
-            }
+            messageQueue.Enqueue(message);
         }
     }
 
     public Optional<T> Receive()
     {
-        lock (allMessageQueues)
+        lock (messageQueue)
         {
             Optional<T> message;
             if (messageQueue.Count > 0)

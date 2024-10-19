@@ -11,6 +11,10 @@ class ThrashEngine:
         self.prev_direction_change_time = 0.0
         self.now = 0.0
 
+    def reset(self) -> None:
+        self.prev_direction_change_time = 0.0
+        self.now = 0.0
+
     def compute(self, dt: float) -> Twist:
         self.now += dt
         if self.now - self.prev_direction_change_time > self.direction_change_interval:

@@ -29,6 +29,10 @@ class LocalPlannerEngine:
         self.desired_pose = Pose2D(0.0, 0.0, 0.0)
         self.obstacles: list[Optional[EstimatedObject]] = []
 
+    def reset(self) -> None:
+        self.desired_pose = Pose2D(0.0, 0.0, 0.0)
+        self.obstacles = []
+
     def make_desired_pose_marker(self) -> Marker:
         marker = Marker()
         marker.header.frame_id = "map"

@@ -23,8 +23,18 @@ class BackawayRecoverConfig:
 @dataclass
 class ThrashRecoveryConfig:
     direction_change_interval: float = 0.5
-    linear_magnitude: float = 5.0
-    angular_magnitude: float = 8.0
+    linear_magnitude: float = 2.0
+    angular_magnitude: float = 10.0
+
+
+@dataclass
+class InDangerRecoveryConfig:
+    angle_tolerance: float = 0.2
+    linear_tolerance: float = 2.5
+    size_multiplier: float = 1.5
+
+    linear_magnitude: float = 2.0
+    angular_magnitude: float = 10.0
 
 
 @dataclass
@@ -72,3 +82,4 @@ class PlannerConfig:
     local_planner: LocalPlannerEngineConfig = field(default_factory=LocalPlannerEngineConfig)
     ramsete: RamseteConfig = field(default_factory=RamseteConfig)
     thrash_recovery: ThrashRecoveryConfig = field(default_factory=ThrashRecoveryConfig)
+    in_danger_recovery: InDangerRecoveryConfig = field(default_factory=InDangerRecoveryConfig)

@@ -10,6 +10,9 @@ from bw_navigation.planners.goal_progress import GoalProgress
 
 class PlannerInterface(ABC):
     @abstractmethod
+    def reset(self) -> None: ...
+
+    @abstractmethod
     def go_to_goal(
         self,
         dt: float,

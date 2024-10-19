@@ -37,6 +37,15 @@ class TrajectoryPlannerEngine:
 
         self.planning_thread.start()
 
+    def reset(self) -> None:
+        self.active_trajectory = None
+        self.start_time = rospy.Time()
+        while self.is_planning:
+            rospy.loginfo("Waiting for planning to finish before resetting")
+            rospy.sleep(0.1)
+        while not self.goal_in_queue.empty():
+            self.goal_in_queue.get()
+
     def make_trajectory_config_from_velocity_profile(
         self, velocity_profile: Optional[VelocityProfile]
     ) -> TrajectoryConfig:

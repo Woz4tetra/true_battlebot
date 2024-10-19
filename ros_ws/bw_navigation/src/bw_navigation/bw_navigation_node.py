@@ -150,6 +150,7 @@ class BwNavigationNode:
         velocity_profile = goal.velocity_profile if goal.overwrite_velocity_profile else None
 
         planner = self.planners[goal_strategy]
+        planner.reset()
 
         goal_feedback = PoseStamped(header=self.field.header)
 

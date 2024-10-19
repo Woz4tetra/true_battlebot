@@ -23,6 +23,9 @@ class CrashOpponent(PlannerInterface):
         )
         self.pid_follower = PidFollowerEngine(config)
 
+    def reset(self) -> None:
+        pass
+
     def go_to_goal(
         self,
         dt: float,
