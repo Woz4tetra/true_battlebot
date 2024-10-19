@@ -27,6 +27,7 @@ public class UiManager : MonoBehaviour
     DisplayReadoutManager displayReadoutManager;
 
     string remoteScenarioSelectionTopic = "simulation/scenario_selection";
+    string setPauseTopic = "simulation/set_pause";
     string addConfigurationTopic = "simulation/add_configuration";
     string acknowledgeConfigurationTopic = "simulation/acknowledge_configuration";
     string scenarioListTopic = "simulation/scenarios";
@@ -73,6 +74,7 @@ public class UiManager : MonoBehaviour
         ros = ROSConnection.GetOrCreateInstance();
         ros.Subscribe<StringMsg>(remoteScenarioSelectionTopic, RemoteScenarioSelectionCallback);
         ros.Subscribe<ConfigureSimulationMsg>(addConfigurationTopic, AddConfigurationCallback);
+        ros.Subscribe<BoolMsg>(setPauseTopic, SetPauseCallback);
         ros.RegisterPublisher<LabelsMsg>(acknowledgeConfigurationTopic);
         ros.RegisterPublisher<LabelsMsg>(scenarioListTopic);
 
@@ -203,6 +205,11 @@ public class UiManager : MonoBehaviour
         QualitySettings.antiAliasing = aaIndex;
     }
 
+    public void ShowHideSettingsPanelAndClearState(bool show)
+    {
+        wasPausedWhenSettingsOpened = false;
+        ShowHideSettingsPanel(show);
+    }
     public void ShowHideSettingsPanel(bool show)
     {
         Debug.Log($"Show settings panel: {show}");
@@ -336,12 +343,24 @@ public class UiManager : MonoBehaviour
             scenarioDropdown.value = scenarioIndex[msg.data];
             scenarioDropdown.RefreshShownValue();
             SetScenario(scenarioDropdown.value);
-            wasPausedWhenSettingsOpened = false;
-            ShowHideSettingsPanel(false);
+            ShowHideSettingsPanelAndClearState(false);
         }
         else
         {
             Debug.LogWarning($"Scenario {msg.data} not found in scenario index");
+        }
+    }
+
+    void SetPauseCallback(BoolMsg msg)
+    {
+        Debug.Log($"Set pause callback: {msg.data}");
+        if (msg.data)
+        {
+            SetPause(true);
+        }
+        else
+        {
+            ShowHideSettingsPanelAndClearState(false);
         }
     }
 
@@ -413,11 +432,11 @@ public class UiManager : MonoBehaviour
             {
                 SetPause(!sceneManager.GetPauseManager().IsPaused());
             }
+        }
 
-            if (Input.GetKeyDown(KeyCode.R))
-            {
-                restartButton.RestartScenario();
-            }
+        if (Input.GetKeyDown(KeyCode.R))
+        {
+            restartButton.RestartScenario();
         }
     }
 }
