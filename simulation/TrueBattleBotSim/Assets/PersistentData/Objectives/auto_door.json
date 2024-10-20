@@ -1,0 +1,10 @@
+{
+    "type": "auto",
+    "init": {
+        "type": "relative",
+        "x": 0.1,
+        "y": 0.8,
+        "yaw": -90.0
+    },
+    "sequence": []
+}
