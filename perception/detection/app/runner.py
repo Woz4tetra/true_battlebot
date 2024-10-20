@@ -304,4 +304,4 @@ def main() -> None:
         app.stop()
         logger.info("perception stopped")
         if profile:
-            Stats(profile).strip_dirs().sort_stats(SortKey.CALLS).print_stats()
+            Stats(profile).strip_dirs().sort_stats(SortKey.TIME).print_stats()

@@ -48,18 +48,18 @@ def make_zed_camera(camera_config: ZedCameraConfig, container: Container) -> Cam
     color_image_pub = RosPublisher(ns + "/rgb/image_raw", Image)
     camera_info_pub = RosPublisher(ns + "/rgb/camera_info", CameraInfo)
     imu_pub = RosPublisher(ns + "/imu/data", Imu)
-    compressed_image_pub = RosPublisher(ns + "/rgb/image_raw/compressed", CompressedImage)
+    # compressed_image_pub = RosPublisher(ns + "/rgb/image_raw/compressed", CompressedImage)
 
     svo_record_sub = RosPollSubscriber(ns + "/record_svo", ControlRecording)
 
     return ZedCamera(
-        camera_config,
-        config.camera_topic,
-        color_image_pub,
-        camera_info_pub,
-        compressed_image_pub,
-        imu_pub,
-        svo_record_sub,
+        config=camera_config,
+        camera_topic_config=config.camera_topic,
+        color_image_pub=color_image_pub,
+        camera_info_pub=camera_info_pub,
+        compressed_image_pub=None,
+        imu_pub=imu_pub,
+        record_svo_sub=svo_record_sub,
     )
 
 
