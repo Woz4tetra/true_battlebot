@@ -57,6 +57,7 @@ class BwNavigationNode:
         self.field = EstimatedObject()
         self.robots: dict[str, EstimatedObject] = {}
         self.field_bounds_2d: FieldBounds2D = (XY(0.0, 0.0), XY(0.0, 0.0))
+        self.should_cancel = False
 
         self.initialize_planners(shared_config.robots.robots)
 
@@ -108,6 +109,7 @@ class BwNavigationNode:
                 self.controlled_robot, avoid_robot_names, PlannerConfig()
             ),
         }
+        self.should_cancel = True
         rospy.loginfo(f"Initialized {len(self.goal_suppliers)} goal suppliers and {len(self.planners)} planners")
 
     def estimated_field_callback(self, estimated_field: EstimatedObject) -> None:
@@ -130,6 +132,7 @@ class BwNavigationNode:
 
     def go_to_goal_callback(self, goal: GoToGoalGoal) -> None:
         rospy.loginfo("Received goal")
+        self.should_cancel = False
         if not self.field.header.frame_id:
             rospy.logwarn("No field found, cannot go to goal")
             self.goal_server.set_aborted()
@@ -154,7 +157,7 @@ class BwNavigationNode:
         goal_feedback = PoseStamped(header=self.field.header)
 
         for dt in regulate_tick(self.tick_rate):
-            if rospy.is_shutdown():
+            if rospy.is_shutdown() or self.should_cancel:
                 self.goal_server.set_aborted()
                 break
 

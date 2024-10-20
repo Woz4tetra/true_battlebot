@@ -1,5 +1,6 @@
 from typing import Callable, List, Optional
 
+import rospy
 from bw_interfaces.msg import EstimatedObject, GoToGoalGoal
 from bw_shared.geometry.field_bounds import FieldBounds2D
 from bw_shared.geometry.pose2d import Pose2D
@@ -40,6 +41,8 @@ class TrackedTargetSupplier(GoalSupplierInterface):
             if distance < nearest_distance:
                 nearest_target = state
                 nearest_distance = distance
+        if nearest_target is None:
+            rospy.logwarn(f"No nearest target found. Opponent names: {self.opponent_names}")
         return nearest_target
 
     def largest_target(self, robot_states: dict[str, EstimatedObject]) -> Optional[EstimatedObject]:
@@ -52,6 +55,8 @@ class TrackedTargetSupplier(GoalSupplierInterface):
             if size > largest_size:
                 largest_target = state
                 largest_size = size
+        if largest_target is None:
+            rospy.logwarn(f"No largest target found. Opponent names: {self.opponent_names}")
         return largest_target
 
     def smallest_target(self, robot_states: dict[str, EstimatedObject]) -> Optional[EstimatedObject]:
@@ -64,6 +69,8 @@ class TrackedTargetSupplier(GoalSupplierInterface):
             if size < smallest_size:
                 smallest_target = state
                 smallest_size = size
+        if smallest_target is None:
+            rospy.logwarn(f"No smallest target found. Opponent names: {self.opponent_names}")
         return smallest_target
 
     def get_goal(self, robot_states: dict[str, EstimatedObject], field: FieldBounds2D) -> Optional[EstimatedObject]:
