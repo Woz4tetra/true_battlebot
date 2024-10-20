@@ -36,7 +36,7 @@ wait_for_pid() {
 tmux send -t "${SESSION}" 'source /opt/${ORGANIZATION}/scripts/lib/enable_tmux_logger.sh ${PROJECT_NAME}_perception ${PROJECT_NAME}_perception' ENTER
 tmux send -t "${SESSION}" 'source /opt/${ORGANIZATION}/scripts/lib/set_master.sh ${ROS_MASTER_INTERFACE}' ENTER
 tmux send -t "${SESSION}" 'cd /opt/${ORGANIZATION}/${PROJECT_NAME}' ENTER
-tmux send -t "${SESSION}" 'python perception/detection/main.py perception/configs &' ENTER
+tmux send -t "${SESSION}" 'python perception/detection/main.py &' ENTER
 tmux send -t "${SESSION}" 'echo $! > /opt/${ORGANIZATION}/app_pid' ENTER
 
 wait_for_pid

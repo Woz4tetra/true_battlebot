@@ -5,9 +5,4 @@ BASE_DIR=$(realpath "$(dirname $0)")
 
 CHECK_DIRS=$(${BASE_DIR}/get_ros_ws_check_dirs.sh $1)
 
-for dir in ${CHECK_DIRS}; do
-    cd ${dir}
-    printf "\n\nTesting ${dir}\n"
-
-    pytest
-done
+pytest ${CHECK_DIRS}

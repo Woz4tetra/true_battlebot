@@ -1,7 +1,7 @@
 from typing import Optional
 
 import rospy
-from actionlib import SimpleActionClient
+from actionlib.simple_action_client import SimpleActionClient
 from actionlib_msgs.msg import GoalStatus
 from bw_interfaces.msg import GoToGoalAction, GoToGoalFeedback, GoToGoalGoal, VelocityProfile
 from bw_tools.messages.goal_strategy import GoalStrategy

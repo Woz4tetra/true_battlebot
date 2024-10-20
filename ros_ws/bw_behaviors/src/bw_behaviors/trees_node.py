@@ -49,8 +49,8 @@ def get_config_from_params() -> ContainerConfig:
 
 
 class TreesNode:
-    def __init__(self, config: ContainerConfig) -> None:
-        self.container = Container(config)
+    def __init__(self, container: Container) -> None:
+        self.container = container
         self.tree = self.make_tree()
         self.tick_rate = get_param("~tick_rate", 10.0)
 
@@ -83,5 +83,6 @@ class TreesNode:
 if __name__ == "__main__":
     rospy.init_node("bw_behaviors", log_level=rospy.DEBUG)
     config = get_config_from_params()
-    node = TreesNode(config)
+    container = Container(config)
+    node = TreesNode(container)
     node.run()

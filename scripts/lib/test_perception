@@ -10,9 +10,4 @@ CHECK_DIRS=(
     "${PROJECT_DIR}/shared/bw_shared"
 )
 
-for dir in ${CHECK_DIRS[@]}; do
-    cd ${dir}
-    printf "\n\nTesting ${dir}\n"
-
-    pytest
-done
+pytest ${CHECK_DIRS[@]}

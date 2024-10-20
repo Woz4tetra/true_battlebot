@@ -4,12 +4,14 @@ from app.keypoint.yolo_keypoint import YoloKeypoint
 from bw_shared.configs.model_to_system_labels_map import ModelToSystemLabelsMap
 from bw_shared.enums.label import Label, ModelLabel
 
+MODEL_NAME = "yolo11n-pose_2024-10-09"
+
 
 @pytest.fixture(scope="module")
 def yolo_keypoint_config() -> YoloKeypointConfig:
     return YoloKeypointConfig(
-        model_path="yolov8n-pose_2024-09-02.pt",
-        metadata_path="yolov8n-pose_2024-09-02.json",
+        model_path=MODEL_NAME + ".pt",
+        metadata_path=MODEL_NAME + ".json",
         debug_timing=True,
         model_to_system_labels=ModelToSystemLabelsMap(
             {

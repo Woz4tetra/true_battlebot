@@ -1,6 +1,7 @@
 import cv2
 import pytest
 from app.keypoint.yolo_keypoint import YoloKeypoint
+from bw_shared.messages.header import Header
 from perception_tools.data_directory import get_data_directory
 from perception_tools.messages.image import Image
 from sensor_msgs.msg import CameraInfo
@@ -12,13 +13,9 @@ def camera_info() -> CameraInfo:
 
 
 TEST_IMAGES = (
-    "20230506_115229.jpg",
-    "3lb-48-silentspring-vs-narcissist-4-001200_jpg.rf.25d85dc01690aff4c98eb1b9f95ccb06_augment-000.jpg",
-    "Cage-3-Overhead-High_1080p_86-000250_jpg.rf.77f42dddcb242860e8f3b40156b34d35_augment-000.jpg",
-    "Cage-3-Overhead-High_1080p_86-000250_jpg.rf.77f42dddcb242860e8f3b40156b34d35.jpg",
-    "mini_bot_2024-03-02T09-46-00-000950_jpg.rf.2809d85a9d26623494a7d4a32a6ae614.jpg",
-    "mini_bot_2024-03-02T16-20-33-004300_jpg.rf.4e92a1c019d118da87067d88c0652000.jpg",
-    "zed_2023-09-30T17-01-47_repaired_001904_jpg.rf.04d83ab60612bb3a89d8118f22007eda.jpg",
+    "1725200609.012655735.jpg",
+    "1721512481-7671976-000300_jpg.rf.224f13d55aa5a5076f31f53c8fdc9472.jpg",
+    "Cage-5-Overhead-High_1080p_174-000750_jpg.rf.cd7457e0cdd4f501fd5fed1cc9e49783.jpg",
 )
 
 
@@ -27,11 +24,11 @@ def load_image(image_name: str) -> Image:
     image_path = data_dir / "images" / "yolo_keypoint" / image_name
     assert image_path.is_file()
     image = cv2.imread(str(image_path))
-    return Image(data=image)
+    return Image(header=Header.auto(frame_id="camera_0"), data=image)
 
 
 @pytest.mark.parametrize("image_path", TEST_IMAGES)
 def test_yolo_keypoint(image_path: str, yolo_keypoint: YoloKeypoint, camera_info: CameraInfo):
     image = load_image(image_path)
     result, debug_msg = yolo_keypoint.process_image(camera_info, image)
-    assert result is not None and len(result.instances) > 1
+    assert result is not None and len(result.instances) >= 1

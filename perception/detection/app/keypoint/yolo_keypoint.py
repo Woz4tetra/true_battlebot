@@ -37,7 +37,7 @@ class YoloKeypoint(KeypointInterface):
         self.logger.info("Warming up model")
         t0 = time.perf_counter()
         for _ in range(3):
-            image = np.random.random_integers(0, 255, size=(720, 1280, 3)).astype(np.uint8)
+            image = np.random.randint(0, 256, size=(720, 1280, 3)).astype(np.uint8)
             self.model(image)
         t1 = time.perf_counter()
         self.logger.info(f"Model warmed up in {t1 - t0} seconds")
@@ -80,8 +80,8 @@ class YoloKeypoint(KeypointInterface):
             keypoint_instances.append(
                 KeypointInstance(
                     keypoints=[named_keypoints[keypoint_name] for keypoint_name in keypoint_names],
-                    names=keypoint_names,  # type: ignore
-                    label=label,
+                    names=[name.value for name in keypoint_names],  # type: ignore
+                    label=label.value,
                     class_index=system_label_class_idx,
                     object_index=object_counts[label],
                 )

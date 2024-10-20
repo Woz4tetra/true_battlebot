@@ -1,6 +1,7 @@
 import argparse
 import logging
 import time
+from pathlib import Path
 from typing import Protocol, cast
 
 import rospy
@@ -8,6 +9,7 @@ from app.camera.camera_interface import CameraInterface, CameraMode
 from app.camera.camera_loader import load_camera
 from app.config.config import Config
 from app.config.config_loader import load_config
+from app.config.list_configs import get_config_path
 from app.container import Container
 from app.field_filter.field_filter_interface import FieldFilterInterface
 from app.field_filter.field_filter_loader import load_field_filter
@@ -240,10 +242,10 @@ def make_field_request_handler(container: Container) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("config_dir", type=str)
+    parser.add_argument("config_dir", nargs="?", type=str, default=str(get_config_path()))
     args: CommandLineArgs = cast(CommandLineArgs, parser.parse_args())
 
-    config_dir = args.config_dir
+    config_dir = Path(args.config_dir)
 
     shared_config = SharedConfig.from_files()
     config = load_config(config_dir, get_robot())
