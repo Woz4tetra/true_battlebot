@@ -58,3 +58,9 @@ class RosPollSubscriber(Generic[T]):
         except Empty:
             return_val = None
         return return_val
+
+    def unregister(self) -> None:
+        self.subscriber.unregister()
+        if self.queue_size != 1:
+            while not self.queue.empty():
+                self.queue.get()

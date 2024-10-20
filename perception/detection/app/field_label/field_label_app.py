@@ -277,7 +277,7 @@ class FieldLabelApp:
                 response_publisher.publish(self.labels.field_estimate)
 
     def run(self) -> None:
-        rospy.init_node("field_label_app")
+        rospy.init_node("field_label_app", disable_signals=True)
         match self.args.command:
             case "bag":
                 self.run_bag(cast(BagCommandLineArgs, self.args))

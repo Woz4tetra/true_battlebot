@@ -1,7 +1,9 @@
 import argparse
 import logging
 import time
+from cProfile import Profile
 from pathlib import Path
+from pstats import SortKey, Stats
 from typing import Protocol, cast
 
 import rospy
@@ -153,7 +155,8 @@ class Runner:
 
 
 class CommandLineArgs(Protocol):
-    config_dir: str
+    config: str
+    profile: bool
 
 
 def make_camera(container: Container) -> None:
@@ -240,16 +243,22 @@ def make_field_request_handler(container: Container) -> None:
     container.register(field_request_handler)
 
 
-from cProfile import Profile
-from pstats import SortKey, Stats
+def run_loop(app: Runner, config: Config) -> None:
+    logger = logging.getLogger("perception")
+    logger.info("Running perception")
+    for dt in regulate_tick(config.target_tick_rate):
+        if dt > config.loop_overrun_threshold:
+            logger.warning(f"Loop overrun: {dt:.6f} seconds")
+        app.loop()
 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("config_dir", nargs="?", type=str, default=str(get_config_path()))
+    parser.add_argument("--config", type=str, default=str(get_config_path()))
+    parser.add_argument("--profile", action="store_true")
     args: CommandLineArgs = cast(CommandLineArgs, parser.parse_args())
 
-    config_dir = Path(args.config_dir)
+    config_dir = Path(args.config)
 
     shared_config = SharedConfig.from_files()
     config = load_config(config_dir, get_robot())
@@ -279,12 +288,13 @@ def main() -> None:
     app = Runner(container)
     app.start()
 
-    logger.info("Running perception")
     try:
-        for dt in regulate_tick(config.target_tick_rate):
-            if dt > config.loop_overrun_threshold:
-                logger.warning(f"Loop overrun: {dt:.6f} seconds")
-            app.loop()
+        if args.profile:
+            with Profile() as profile:
+                run_loop(app, config)
+            Stats(profile).strip_dirs().sort_stats(SortKey.CALLS).print_stats()
+        else:
+            run_loop(app, config)
     finally:
         logger.info("perception is stopping")
         app.stop()

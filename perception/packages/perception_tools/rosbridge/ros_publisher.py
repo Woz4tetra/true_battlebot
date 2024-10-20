@@ -31,3 +31,6 @@ class RosPublisher(Generic[T]):
 
     def num_subscribers(self) -> int:
         return self.publisher.get_num_connections()
+
+    def unregister(self) -> None:
+        self.publisher.unregister()
