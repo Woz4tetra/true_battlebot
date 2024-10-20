@@ -2,7 +2,7 @@ import math
 from typing import Optional, Tuple
 
 import rospy
-from bw_interfaces.msg import EstimatedObject, VelocityProfile
+from bw_interfaces.msg import EstimatedObject, GoalEngineConfig
 from bw_shared.geometry.field_bounds import FieldBounds2D
 from bw_shared.geometry.in_plane import nearest_projected_point
 from bw_shared.geometry.pose2d import Pose2D
@@ -12,6 +12,7 @@ from visualization_msgs.msg import Marker, MarkerArray
 
 from bw_navigation.planners.engines.backaway_from_wall_engine import BackawayFromWallEngine
 from bw_navigation.planners.engines.local_planner_engine import LocalPlannerEngine
+from bw_navigation.planners.engines.rotate_to_angle_engine import RotateToAngleEngine
 from bw_navigation.planners.engines.thrash_engine import ThrashEngine
 from bw_navigation.planners.engines.trajectory_planner_engine import TrajectoryPlannerEngine
 from bw_navigation.planners.engines.trajectory_planner_engine_config import PlannerConfig
@@ -31,10 +32,12 @@ class CrashTrajectoryPlanner(PlannerInterface):
         self.backaway_engine = BackawayFromWallEngine(self.config.backaway_recover)
         self.global_planner = TrajectoryPlannerEngine(self.traj_config)
         self.local_planner = LocalPlannerEngine(self.config.local_planner, self.config.ramsete, self.backaway_engine)
+        self.rotate_to_angle_engine = RotateToAngleEngine(self.config.rotate_to_angle.pid)
         self.thrash_recover_engine = ThrashEngine(self.config.thrash_recovery)
         self.visualization_publisher = rospy.Publisher(
             "trajectory_visualization", MarkerArray, queue_size=1, latch=True
         )
+        self.trajectory_complete_time = None
         self.prev_move_time = rospy.Time.now()
         self.prev_move_pose = Pose2D(0.0, 0.0, 0.0)
 
@@ -44,6 +47,7 @@ class CrashTrajectoryPlanner(PlannerInterface):
         self.thrash_recover_engine.reset()
         self.prev_move_time = rospy.Time.now()
         self.prev_move_pose = Pose2D(0.0, 0.0, 0.0)
+        self.trajectory_complete_time = None
 
     def go_to_goal(
         self,
@@ -51,7 +55,8 @@ class CrashTrajectoryPlanner(PlannerInterface):
         goal_target: EstimatedObject,
         robot_states: dict[str, EstimatedObject],
         field: FieldBounds2D,
-        velocity_profile: Optional[VelocityProfile],
+        engine_config: Optional[GoalEngineConfig],
+        xy_tolerance: float,
     ) -> Tuple[Twist, GoalProgress]:
         now = rospy.Time.now()
         if self.controlled_robot not in robot_states:
@@ -66,11 +71,20 @@ class CrashTrajectoryPlanner(PlannerInterface):
         )
 
         markers: list[Marker] = []
-
         controlled_robot = match_state.controlled_robot
-
+        rotate_at_end = False if engine_config is None else engine_config.rotate_at_end
         goal_progress = GoalProgress(is_done=False)
-        if not self.did_controlled_robot_move(now, match_state):
+        twist = Twist()
+
+        if self.trajectory_complete_time is not None and rotate_at_end:
+            rospy.logdebug("Rotating at end.")
+            if now - self.trajectory_complete_time < rospy.Duration.from_sec(self.config.rotate_to_angle.timeout):
+                twist = self.rotate_to_angle_engine.compute(
+                    dt, match_state.controlled_robot_pose.theta, match_state.goal_pose.theta
+                )
+            else:
+                goal_progress.is_done = True
+        elif not self.did_controlled_robot_move(now, match_state):
             rospy.logdebug("Thrashing to recover")
             twist = self.thrash_recover_engine.compute(dt)
         elif self.is_controlled_robot_in_danger(match_state):
@@ -85,7 +99,7 @@ class CrashTrajectoryPlanner(PlannerInterface):
         elif self.is_in_bounds(match_state):
             markers.extend(self.local_planner.visualize_local_plan())
             trajectory, did_replan, start_time = self.global_planner.compute(
-                controlled_robot, goal_target, field, velocity_profile
+                controlled_robot, goal_target, field, engine_config
             )
             if trajectory is None:
                 rospy.logwarn("No active trajectory")
@@ -97,13 +111,16 @@ class CrashTrajectoryPlanner(PlannerInterface):
             twist, goal_progress = self.local_planner.compute(
                 trajectory, start_time, controlled_robot, friendly_robot_states
             )
+            if goal_progress.is_done and match_state.distance_to_goal < xy_tolerance:
+                self.trajectory_complete_time = now
+                goal_progress.is_done = not rotate_at_end
         else:
             rospy.logdebug("Backing away from wall.")
             twist = self.backaway_engine.compute(match_state.goal_pose, match_state.controlled_robot_pose)
 
-        if velocity_profile:
-            max_velocity = velocity_profile.max_velocity
-            max_angular_velocity = velocity_profile.max_angular_velocity
+        if engine_config:
+            max_velocity = engine_config.max_velocity
+            max_angular_velocity = engine_config.max_angular_velocity
         else:
             max_velocity = self.traj_config.max_velocity
             max_angular_velocity = self.traj_config.max_angular_velocity
@@ -140,8 +157,12 @@ class CrashTrajectoryPlanner(PlannerInterface):
         controlled_bot_relative_to_target = match_state.controlled_robot_pose.relative_to(match_state.goal_pose)
         combined_width = match_state.controlled_robot_width + match_state.goal_target_width
         magnitude_lower_bound = combined_width * self.config.in_danger_recovery.size_multiplier
-        return abs(controlled_bot_relative_to_target.heading()) < self.config.in_danger_recovery.angle_tolerance and (
-            magnitude_lower_bound
-            < controlled_bot_relative_to_target.magnitude()
-            < self.config.in_danger_recovery.linear_tolerance
+        return (
+            abs(controlled_bot_relative_to_target.heading()) < self.config.in_danger_recovery.angle_tolerance
+            and (
+                magnitude_lower_bound
+                < controlled_bot_relative_to_target.magnitude()
+                < self.config.in_danger_recovery.linear_tolerance
+            )
+            and match_state.goal_target.twist.twist.linear.x > self.config.in_danger_recovery.velocity_threshold
         )

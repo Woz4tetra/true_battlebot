@@ -9,7 +9,7 @@ import struct
 import genpy
 from actionlib_msgs.msg._GoalID import GoalID as actionlib_msgs_msg_GoalID
 from bw_interfaces.msg._GoToGoalGoal import GoToGoalGoal as bw_interfaces_msg_GoToGoalGoal
-from bw_interfaces.msg._VelocityProfile import VelocityProfile as bw_interfaces_msg_VelocityProfile
+from bw_interfaces.msg._GoalEngineConfig import GoalEngineConfig as bw_interfaces_msg_GoalEngineConfig
 from geometry_msgs.msg._Point import Point as geometry_msgs_msg_Point
 from geometry_msgs.msg._Pose import Pose as geometry_msgs_msg_Pose
 from geometry_msgs.msg._PoseStamped import PoseStamped as geometry_msgs_msg_PoseStamped
@@ -18,7 +18,7 @@ from std_msgs.msg._Header import Header as std_msgs_msg_Header
 import genpy
 
 class GoToGoalActionGoal(genpy.Message):
-  _md5sum: str = "966532af21b656c928cb1ac7f9c9237a"
+  _md5sum: str = "70350d65ae1bb25d463f1aceb66a7f24"
   _type: str = "bw_interfaces/GoToGoalActionGoal"
   _has_header: bool = True  # flag to mark the presence of a Header object
   _full_text: str = """Header header
@@ -61,8 +61,9 @@ geometry_msgs/PoseStamped goal
 string target_type
 string strategy
 bool continuously_select_goal
-bool overwrite_velocity_profile
-bw_interfaces/VelocityProfile velocity_profile
+bool overwrite_engine_config
+bw_interfaces/GoalEngineConfig engine_config
+float64 xy_tolerance
 ================================================================================
 MSG: geometry_msgs/PoseStamped
 # A Pose with reference coordinate frame and timestamp
@@ -92,11 +93,17 @@ float64 z
 float64 w
 
 ================================================================================
-MSG: bw_interfaces/VelocityProfile
+MSG: bw_interfaces/GoalEngineConfig
 float64 max_velocity
 float64 max_angular_velocity
 float64 max_acceleration
 float64 max_centripetal_acceleration
+bool is_max_centripetal_acceleration
+bool rotate_at_end
+float64 start_velocity
+bool is_start_velocity
+float64 end_velocity
+bool is_end_velocity
 """
   __slots__: List[str] = ['header','goal_id','goal']
   _slot_types: List[str] = ['std_msgs/Header','actionlib_msgs/GoalID','bw_interfaces/GoToGoalGoal']
@@ -188,7 +195,7 @@ float64 max_centripetal_acceleration
         length = len(_x)
       buff.write(struct.Struct('<I%ss'%length).pack(length, _x))
       _x = self
-      buff.write(_get_struct_2B4d().pack(_x.goal.continuously_select_goal, _x.goal.overwrite_velocity_profile, _x.goal.velocity_profile.max_velocity, _x.goal.velocity_profile.max_angular_velocity, _x.goal.velocity_profile.max_acceleration, _x.goal.velocity_profile.max_centripetal_acceleration))
+      buff.write(_get_struct_2B4d2BdBdBd().pack(_x.goal.continuously_select_goal, _x.goal.overwrite_engine_config, _x.goal.engine_config.max_velocity, _x.goal.engine_config.max_angular_velocity, _x.goal.engine_config.max_acceleration, _x.goal.engine_config.max_centripetal_acceleration, _x.goal.engine_config.is_max_centripetal_acceleration, _x.goal.engine_config.rotate_at_end, _x.goal.engine_config.start_velocity, _x.goal.engine_config.is_start_velocity, _x.goal.engine_config.end_velocity, _x.goal.engine_config.is_end_velocity, _x.goal.xy_tolerance))
     except struct.error as se: self._check_types(struct.error("%s: '%s' when writing '%s'" % (type(se), str(se), str(locals().get('_x', self)))))
     except TypeError as te: self._check_types(ValueError("%s: '%s' when writing '%s'" % (type(te), str(te), str(locals().get('_x', self)))))
 
@@ -279,10 +286,14 @@ float64 max_centripetal_acceleration
         self.goal.strategy = bytes_[start:end]
       _x = self
       start = end
-      end += 34
-      (_x.goal.continuously_select_goal, _x.goal.overwrite_velocity_profile, _x.goal.velocity_profile.max_velocity, _x.goal.velocity_profile.max_angular_velocity, _x.goal.velocity_profile.max_acceleration, _x.goal.velocity_profile.max_centripetal_acceleration,) = _get_struct_2B4d().unpack(bytes_[start:end])
+      end += 62
+      (_x.goal.continuously_select_goal, _x.goal.overwrite_engine_config, _x.goal.engine_config.max_velocity, _x.goal.engine_config.max_angular_velocity, _x.goal.engine_config.max_acceleration, _x.goal.engine_config.max_centripetal_acceleration, _x.goal.engine_config.is_max_centripetal_acceleration, _x.goal.engine_config.rotate_at_end, _x.goal.engine_config.start_velocity, _x.goal.engine_config.is_start_velocity, _x.goal.engine_config.end_velocity, _x.goal.engine_config.is_end_velocity, _x.goal.xy_tolerance,) = _get_struct_2B4d2BdBdBd().unpack(bytes_[start:end])
       self.goal.continuously_select_goal = bool(self.goal.continuously_select_goal)
-      self.goal.overwrite_velocity_profile = bool(self.goal.overwrite_velocity_profile)
+      self.goal.overwrite_engine_config = bool(self.goal.overwrite_engine_config)
+      self.goal.engine_config.is_max_centripetal_acceleration = bool(self.goal.engine_config.is_max_centripetal_acceleration)
+      self.goal.engine_config.rotate_at_end = bool(self.goal.engine_config.rotate_at_end)
+      self.goal.engine_config.is_start_velocity = bool(self.goal.engine_config.is_start_velocity)
+      self.goal.engine_config.is_end_velocity = bool(self.goal.engine_config.is_end_velocity)
       return self
     except struct.error as e:
       raise genpy.DeserializationError(e)  # most likely buffer underfill
@@ -340,7 +351,7 @@ float64 max_centripetal_acceleration
         length = len(_x)
       buff.write(struct.Struct('<I%ss'%length).pack(length, _x))
       _x = self
-      buff.write(_get_struct_2B4d().pack(_x.goal.continuously_select_goal, _x.goal.overwrite_velocity_profile, _x.goal.velocity_profile.max_velocity, _x.goal.velocity_profile.max_angular_velocity, _x.goal.velocity_profile.max_acceleration, _x.goal.velocity_profile.max_centripetal_acceleration))
+      buff.write(_get_struct_2B4d2BdBdBd().pack(_x.goal.continuously_select_goal, _x.goal.overwrite_engine_config, _x.goal.engine_config.max_velocity, _x.goal.engine_config.max_angular_velocity, _x.goal.engine_config.max_acceleration, _x.goal.engine_config.max_centripetal_acceleration, _x.goal.engine_config.is_max_centripetal_acceleration, _x.goal.engine_config.rotate_at_end, _x.goal.engine_config.start_velocity, _x.goal.engine_config.is_start_velocity, _x.goal.engine_config.end_velocity, _x.goal.engine_config.is_end_velocity, _x.goal.xy_tolerance))
     except struct.error as se: self._check_types(struct.error("%s: '%s' when writing '%s'" % (type(se), str(se), str(locals().get('_x', self)))))
     except TypeError as te: self._check_types(ValueError("%s: '%s' when writing '%s'" % (type(te), str(te), str(locals().get('_x', self)))))
 
@@ -432,10 +443,14 @@ float64 max_centripetal_acceleration
         self.goal.strategy = bytes_[start:end]
       _x = self
       start = end
-      end += 34
-      (_x.goal.continuously_select_goal, _x.goal.overwrite_velocity_profile, _x.goal.velocity_profile.max_velocity, _x.goal.velocity_profile.max_angular_velocity, _x.goal.velocity_profile.max_acceleration, _x.goal.velocity_profile.max_centripetal_acceleration,) = _get_struct_2B4d().unpack(bytes_[start:end])
+      end += 62
+      (_x.goal.continuously_select_goal, _x.goal.overwrite_engine_config, _x.goal.engine_config.max_velocity, _x.goal.engine_config.max_angular_velocity, _x.goal.engine_config.max_acceleration, _x.goal.engine_config.max_centripetal_acceleration, _x.goal.engine_config.is_max_centripetal_acceleration, _x.goal.engine_config.rotate_at_end, _x.goal.engine_config.start_velocity, _x.goal.engine_config.is_start_velocity, _x.goal.engine_config.end_velocity, _x.goal.engine_config.is_end_velocity, _x.goal.xy_tolerance,) = _get_struct_2B4d2BdBdBd().unpack(bytes_[start:end])
       self.goal.continuously_select_goal = bool(self.goal.continuously_select_goal)
-      self.goal.overwrite_velocity_profile = bool(self.goal.overwrite_velocity_profile)
+      self.goal.overwrite_engine_config = bool(self.goal.overwrite_engine_config)
+      self.goal.engine_config.is_max_centripetal_acceleration = bool(self.goal.engine_config.is_max_centripetal_acceleration)
+      self.goal.engine_config.rotate_at_end = bool(self.goal.engine_config.rotate_at_end)
+      self.goal.engine_config.is_start_velocity = bool(self.goal.engine_config.is_start_velocity)
+      self.goal.engine_config.is_end_velocity = bool(self.goal.engine_config.is_end_velocity)
       return self
     except struct.error as e:
       raise genpy.DeserializationError(e)  # most likely buffer underfill
@@ -444,12 +459,12 @@ _struct_I = genpy.struct_I
 def _get_struct_I():
     global _struct_I
     return _struct_I
-_struct_2B4d = None
-def _get_struct_2B4d():
-    global _struct_2B4d
-    if _struct_2B4d is None:
-        _struct_2B4d = struct.Struct("<2B4d")
-    return _struct_2B4d
+_struct_2B4d2BdBdBd = None
+def _get_struct_2B4d2BdBdBd():
+    global _struct_2B4d2BdBdBd
+    if _struct_2B4d2BdBdBd is None:
+        _struct_2B4d2BdBdBd = struct.Struct("<2B4d2BdBdBd")
+    return _struct_2B4d2BdBdBd
 _struct_2I = None
 def _get_struct_2I():
     global _struct_2I

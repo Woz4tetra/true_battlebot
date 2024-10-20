@@ -15,8 +15,8 @@ class PidFollowerEngineConfig:
 
 @dataclass
 class BackawayRecoverConfig:
-    linear_velocity: float = 5.0  # m/s
-    rotate_velocity: float = 8.0  # rad/s
+    linear_velocity: float = 2.0  # m/s
+    rotate_velocity: float = 10.0  # rad/s
     angle_tolerance: float = 1.0
 
 
@@ -32,6 +32,7 @@ class InDangerRecoveryConfig:
     angle_tolerance: float = 0.2
     linear_tolerance: float = 2.5
     size_multiplier: float = 1.5
+    velocity_threshold: float = 0.2
 
     linear_magnitude: float = 2.0
     angular_magnitude: float = 10.0
@@ -55,6 +56,12 @@ class TrajectoryPlannerEngineConfig:
     @property
     def max_angular_velocity(self) -> float:
         return self.max_velocity / self.track_width
+
+
+@dataclass
+class RotateToAngleConfig:
+    pid: PidConfig = field(default_factory=lambda: PidConfig(kp=3.0, ki=0.0, kd=0.0, kf=1.0))
+    timeout: float = 3.0
 
 
 @dataclass
@@ -83,3 +90,4 @@ class PlannerConfig:
     ramsete: RamseteConfig = field(default_factory=RamseteConfig)
     thrash_recovery: ThrashRecoveryConfig = field(default_factory=ThrashRecoveryConfig)
     in_danger_recovery: InDangerRecoveryConfig = field(default_factory=InDangerRecoveryConfig)
+    rotate_to_angle: RotateToAngleConfig = field(default_factory=RotateToAngleConfig)

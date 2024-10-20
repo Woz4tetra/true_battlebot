@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Optional, Tuple
 
-from bw_interfaces.msg import EstimatedObject, VelocityProfile
+from bw_interfaces.msg import EstimatedObject, GoalEngineConfig
 from bw_shared.geometry.field_bounds import FieldBounds2D
 from geometry_msgs.msg import Twist
 
@@ -19,5 +19,6 @@ class PlannerInterface(ABC):
         goal_target: EstimatedObject,
         robot_states: dict[str, EstimatedObject],
         field: FieldBounds2D,
-        velocity_profile: Optional[VelocityProfile],
+        engine_config: Optional[GoalEngineConfig],
+        xy_tolerance: float,
     ) -> Tuple[Twist, GoalProgress]: ...

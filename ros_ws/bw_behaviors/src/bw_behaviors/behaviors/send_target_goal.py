@@ -1,7 +1,7 @@
 from typing import Optional
 
 import rospy
-from bw_interfaces.msg import VelocityProfile
+from bw_interfaces.msg import GoalEngineConfig
 from bw_tools.messages.target_type import TargetType
 from py_trees.behaviour import Behaviour
 from py_trees.common import Status
@@ -15,17 +15,17 @@ class SendTargetGoal(Behaviour):
         container: Container,
         target_type: TargetType,
         continuously_select_goal: bool,
-        velocity_profile: Optional[VelocityProfile] = None,
+        engine_config: Optional[GoalEngineConfig] = None,
     ) -> None:
         super().__init__(self.__class__.__name__)
         self.go_to_goal_manager = container.go_to_goal_manager
         self.target_type = target_type
         self.continuously_select_goal = continuously_select_goal
-        self.velocity_profile = velocity_profile
+        self.engine_config = engine_config
         rospy.logdebug("SendTargetGoal is ready")
 
     def initialise(self) -> None:
-        self.go_to_goal_manager.send_target_goal(self.target_type, self.continuously_select_goal, self.velocity_profile)
+        self.go_to_goal_manager.send_target_goal(self.target_type, self.continuously_select_goal, self.engine_config)
 
     def update(self) -> Status:
         return self.go_to_goal_manager.get_status()

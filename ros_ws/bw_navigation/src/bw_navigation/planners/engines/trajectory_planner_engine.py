@@ -5,7 +5,7 @@ from typing import Optional
 
 import numpy as np
 import rospy
-from bw_interfaces.msg import EstimatedObject, VelocityProfile
+from bw_interfaces.msg import EstimatedObject, GoalEngineConfig
 from bw_interfaces.msg import Trajectory as TrajectoryMsg
 from bw_shared.geometry.field_bounds import FieldBounds2D
 from bw_shared.geometry.in_plane import line_bounds_intersection
@@ -47,15 +47,15 @@ class TrajectoryPlannerEngine:
             self.goal_in_queue.get()
 
     def make_trajectory_config_from_velocity_profile(
-        self, velocity_profile: Optional[VelocityProfile]
+        self, engine_config: Optional[GoalEngineConfig]
     ) -> TrajectoryConfig:
-        if velocity_profile:
+        if engine_config:
             return self.make_trajectory_config(
-                velocity_profile.max_velocity,
-                velocity_profile.max_acceleration,
-                None
-                if np.isnan(velocity_profile.max_centripetal_acceleration)
-                else velocity_profile.max_centripetal_acceleration,
+                engine_config.max_velocity,
+                engine_config.max_acceleration,
+                engine_config.max_centripetal_acceleration if engine_config.is_max_centripetal_acceleration else None,
+                engine_config.start_velocity if not engine_config.is_start_velocity else None,
+                engine_config.end_velocity if not engine_config.is_end_velocity else None,
             )
         else:
             return self.make_trajectory_config(
@@ -65,11 +65,16 @@ class TrajectoryPlannerEngine:
             )
 
     def make_trajectory_config(
-        self, max_velocity: float, max_acceleration: float, max_centripetal_acceleration: Optional[float] = None
+        self,
+        max_velocity: float,
+        max_acceleration: float,
+        max_centripetal_acceleration: Optional[float] = None,
+        start_velocity: Optional[float] = None,
+        end_velocity: Optional[float] = None,
     ) -> TrajectoryConfig:
         traj_config = TrajectoryConfig(maxVelocity=max_velocity, maxAcceleration=max_acceleration)
-        traj_config.setStartVelocity(max_velocity)
-        traj_config.setEndVelocity(max_velocity)
+        traj_config.setStartVelocity(max_velocity if start_velocity is None else start_velocity)
+        traj_config.setEndVelocity(max_velocity if end_velocity is None else end_velocity)
         if max_centripetal_acceleration is not None:
             traj_config.addConstraint(
                 CentripetalAccelerationConstraint(maxCentripetalAcceleration=max_centripetal_acceleration)
@@ -122,7 +127,7 @@ class TrajectoryPlannerEngine:
                     config=trajectory_config,
                 )
             except RuntimeError as e:
-                rospy.logerr(f"Trajectory generation failed: {e}")
+                rospy.logerr(f"Trajectory generation failed: {e}", exc_info=True)
                 # randomize the goal pose to avoid getting stuck in the same failure
                 goal_pose = Pose2D(
                     original_goal_pose.x + random.uniform(-noise, noise),
@@ -195,7 +200,7 @@ class TrajectoryPlannerEngine:
         robot_state: EstimatedObject,
         goal_target: EstimatedObject,
         field: FieldBounds2D,
-        velocity_profile: Optional[VelocityProfile],
+        engine_config: Optional[GoalEngineConfig],
     ) -> None:
         if not self.is_planning:
             robot_pose = Pose2D.from_msg(robot_state.pose.pose)
@@ -203,7 +208,7 @@ class TrajectoryPlannerEngine:
             goal_pose = Pose2D.from_msg(goal_target.pose.pose)
             goal_velocity = Twist2D.from_msg(goal_target.twist.twist)
 
-            trajectory_config = self.make_trajectory_config_from_velocity_profile(velocity_profile)
+            trajectory_config = self.make_trajectory_config_from_velocity_profile(engine_config)
             if self.plan_config.used_measured_velocity:
                 trajectory_config.setStartVelocity(robot_velocity.x)
             self.goal_in_queue.put(
@@ -217,12 +222,12 @@ class TrajectoryPlannerEngine:
         robot_state: EstimatedObject,
         goal_target: EstimatedObject,
         field: FieldBounds2D,
-        velocity_profile: Optional[VelocityProfile],
+        engine_config: Optional[GoalEngineConfig],
     ) -> tuple[Optional[Trajectory], bool, rospy.Time]:
         did_replan = False
         now = rospy.Time.now()
         if self.should_replan():
-            self.generate_trajectory(robot_state, goal_target, field, velocity_profile)
+            self.generate_trajectory(robot_state, goal_target, field, engine_config)
         if not self.plan_out_queue.empty():
             while not self.plan_out_queue.empty():
                 result = self.plan_out_queue.get()

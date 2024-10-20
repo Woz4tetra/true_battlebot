@@ -1,7 +1,7 @@
 from typing import Optional, Tuple
 
 import rospy
-from bw_interfaces.msg import EstimatedObject, VelocityProfile
+from bw_interfaces.msg import EstimatedObject, GoalEngineConfig
 from bw_shared.geometry.field_bounds import FieldBounds2D
 from bw_shared.geometry.pose2d import Pose2D
 from bw_shared.pid.config import PidConfig
@@ -32,7 +32,8 @@ class CrashOpponent(PlannerInterface):
         goal_target: EstimatedObject,
         robot_states: dict[str, EstimatedObject],
         field: FieldBounds2D,
-        velocity_profile: Optional[VelocityProfile],
+        engine_config: Optional[GoalEngineConfig],
+        xy_tolerance: float,
     ) -> Tuple[Twist, GoalProgress]:
         if self.controlled_robot not in robot_states:
             rospy.logwarn_throttle(1, f"Robot {self.controlled_robot} not found in robot states")
@@ -42,14 +43,14 @@ class CrashOpponent(PlannerInterface):
         goal_pose = Pose2D.from_msg(goal_target.pose.pose)
         twist = self.pid_follower.compute(dt, controlled_robot_pose, goal_pose)
 
-        if velocity_profile:
+        if engine_config:
             twist.linear.x = max(
-                -1 * velocity_profile.max_velocity,
-                min(velocity_profile.max_velocity, twist.linear.x),
+                -1 * engine_config.max_velocity,
+                min(engine_config.max_velocity, twist.linear.x),
             )
             twist.angular.z = max(
-                -1 * velocity_profile.max_angular_velocity,
-                min(velocity_profile.max_angular_velocity, twist.angular.z),
+                -1 * engine_config.max_angular_velocity,
+                min(engine_config.max_angular_velocity, twist.angular.z),
             )
 
         return twist, GoalProgress(

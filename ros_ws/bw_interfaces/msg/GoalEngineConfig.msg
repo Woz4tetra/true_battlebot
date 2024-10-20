@@ -1,0 +1,10 @@
+float64 max_velocity
+float64 max_angular_velocity
+float64 max_acceleration
+float64 max_centripetal_acceleration
+bool is_max_centripetal_acceleration
+bool rotate_at_end
+float64 start_velocity
+bool is_start_velocity
+float64 end_velocity
+bool is_end_velocity

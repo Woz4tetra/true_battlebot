@@ -41,3 +41,7 @@ class MatchState:
     @cached_property
     def goal_point(self) -> XY:
         return XY(self.goal_pose.x, self.goal_pose.y)
+
+    @cached_property
+    def distance_to_goal(self) -> float:
+        return self.controlled_robot_point.magnitude(self.goal_point)

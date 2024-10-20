@@ -36,7 +36,6 @@ class BwNavigationNode:
         shared_config = get_shared_config()
 
         self.controlled_robot = get_param("~controlled_robot", "mini_bot")
-        self.goal_tolerance = get_param("~goal_tolerance", 0.1)
         self.tick_rate = get_param("~tick_rate", 100.0)
         self.friendly_fire = get_param("~friendly_fire", False)
         self.try_again_if_not_in_tolerance = get_param("~try_again_if_not_in_tolerance", True)
@@ -147,7 +146,7 @@ class BwNavigationNode:
             self.goal_server.set_aborted()
             return
 
-        velocity_profile = goal.velocity_profile if goal.overwrite_velocity_profile else None
+        engine_config = goal.engine_config if goal.overwrite_engine_config else None
 
         planner = self.planners[goal_strategy]
         planner.reset()
@@ -185,7 +184,7 @@ class BwNavigationNode:
 
             try:
                 twist, goal_progress = planner.go_to_goal(
-                    dt, goal_target, self.robots, self.field_bounds_2d, velocity_profile
+                    dt, goal_target, self.robots, self.field_bounds_2d, engine_config, goal.xy_tolerance
                 )
             except NavigationError as e:
                 rospy.logerr(f"Error going to goal: {e}")
@@ -199,9 +198,10 @@ class BwNavigationNode:
             self.goal_server.publish_feedback(feedback)
 
             if goal_progress.is_done:
-                is_success = goal_progress.distance_to_goal < self.goal_tolerance
+                is_success = goal_progress.distance_to_goal < goal.xy_tolerance
                 if not is_success and self.try_again_if_not_in_tolerance:
                     rospy.loginfo("Goal not reached, trying again")
+                    planner.reset()
                     continue
                 rospy.loginfo(f"Planner finished successfully: {is_success}")
                 self.goal_server.set_succeeded(GoToGoalResult(success=is_success))

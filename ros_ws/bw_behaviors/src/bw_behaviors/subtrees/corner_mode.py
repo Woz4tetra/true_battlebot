@@ -8,11 +8,12 @@ from bw_behaviors.container import Container
 
 
 def make_stay_in_corner_behavior(container: Container) -> Behaviour:
+    config = container.config.corner_mode
     return Sequence(
         "stay_in_corner_sequence",
         memory=False,
         children=[
-            SendCornerGoal(container, velocity_profile=container.config.corner_mode.velocity_profile),
+            SendCornerGoal(container, engine_config=config.engine_config, xy_tolerance=config.xy_tolerance),
             SetMode(container, BehaviorMode.IDLE),
         ],
     )

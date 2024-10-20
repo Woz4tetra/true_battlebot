@@ -14,6 +14,7 @@ from ._GoToGoalActionResult import *
 from ._GoToGoalFeedback import *
 from ._GoToGoalGoal import *
 from ._GoToGoalResult import *
+from ._GoalEngineConfig import *
 from ._HealthSummary import *
 from ._Heartbeat import *
 from ._KeypointInstance import *
@@ -35,4 +36,3 @@ from ._TagConfigMsg import *
 from ._TelemetryStatus import *
 from ._Trajectory import *
 from ._UVKeypoint import *
-from ._VelocityProfile import *

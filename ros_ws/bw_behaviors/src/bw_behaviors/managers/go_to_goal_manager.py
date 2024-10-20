@@ -3,16 +3,19 @@ from typing import Optional
 import rospy
 from actionlib.simple_action_client import SimpleActionClient
 from actionlib_msgs.msg import GoalStatus
-from bw_interfaces.msg import GoToGoalAction, GoToGoalFeedback, GoToGoalGoal, VelocityProfile
+from bw_interfaces.msg import GoalEngineConfig, GoToGoalAction, GoToGoalFeedback, GoToGoalGoal
 from bw_tools.messages.goal_strategy import GoalStrategy
 from bw_tools.messages.goal_type import GoalType
 from bw_tools.messages.target_type import TargetType
 from geometry_msgs.msg import PoseStamped
 from py_trees.common import Status
 
+from bw_behaviors.config.go_to_goal_config import GoToGoalConfig
+
 
 class GoToGoalManager:
-    def __init__(self) -> None:
+    def __init__(self, config: GoToGoalConfig) -> None:
+        self.config = config
         self.go_to_goal_client = SimpleActionClient("go_to_goal", GoToGoalAction)
         rospy.loginfo("Waiting for go to goal action server")
         self.go_to_goal_client.wait_for_server()
@@ -24,22 +27,26 @@ class GoToGoalManager:
     def set_strategy(self, strategy: GoalStrategy) -> None:
         self.strategy = strategy
 
-    def send_pose_goal(self, pose: PoseStamped, velocity_profile: Optional[VelocityProfile] = None) -> None:
+    def send_pose_goal(
+        self, pose: PoseStamped, engine_config: Optional[GoalEngineConfig] = None, xy_tolerance: Optional[float] = None
+    ) -> None:
         rospy.loginfo("Sending go to goal action")
         goal = GoToGoalGoal()
         goal.goal = pose
         goal.strategy = self.strategy.value
         goal.goal_type = GoalType.FIXED_POSE.value
-        goal.overwrite_velocity_profile = velocity_profile is not None
-        if velocity_profile is not None:
-            goal.velocity_profile = velocity_profile
+        goal.overwrite_engine_config = engine_config is not None
+        goal.xy_tolerance = xy_tolerance or self.config.xy_tolerance
+        if engine_config is not None:
+            goal.engine_config = engine_config
         self.go_to_goal_client.send_goal(goal, feedback_cb=self.feedback_callback)
 
     def send_target_goal(
         self,
         target_type: TargetType,
         continuously_select_goal: bool,
-        velocity_profile: Optional[VelocityProfile] = None,
+        engine_config: Optional[GoalEngineConfig] = None,
+        xy_tolerance: Optional[float] = None,
     ) -> None:
         rospy.loginfo("Sending go to goal action")
         goal = GoToGoalGoal()
@@ -47,9 +54,10 @@ class GoToGoalManager:
         goal.strategy = self.strategy.value
         goal.goal_type = GoalType.TRACKED_TARGET.value
         goal.continuously_select_goal = continuously_select_goal
-        goal.overwrite_velocity_profile = velocity_profile is not None
-        if velocity_profile is not None:
-            goal.velocity_profile = velocity_profile
+        goal.overwrite_engine_config = engine_config is not None
+        goal.xy_tolerance = xy_tolerance or self.config.xy_tolerance
+        if engine_config is not None:
+            goal.engine_config = engine_config
         self.go_to_goal_client.send_goal(goal, feedback_cb=self.feedback_callback)
 
     def feedback_callback(self, feedback: GoToGoalFeedback) -> None:

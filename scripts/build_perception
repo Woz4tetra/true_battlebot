@@ -10,6 +10,9 @@ SOURCE_MSG_DIR=/opt/${ORGANIZATION}/${PROJECT_NAME}/ros_ws/bw_interfaces
 BUILD_MSG_DIR=${BUILD_ROOT_DIR}/bw_interfaces
 INSTALL_MSG_DIR=/opt/${ORGANIZATION}/${PROJECT_NAME}/perception/packages
 
+sudo rm -rf ${BUILD_MSG_DIR} || true
+mkdir -p ${BUILD_MSG_DIR}
+
 mkdir -p ${ROS_DEP_MSG_DIR}
 cd ${ROS_DEP_MSG_DIR}
 
@@ -23,6 +26,7 @@ if [ ! -d ${ROS_DEP_MSG_DIR}/common_msgs ] ; then
     git clone https://github.com/ros/common_msgs.git ${ROS_DEP_MSG_DIR}/common_msgs
 fi
 
+rm -rf ${INSTALL_MSG_DIR}/bw_interfaces || true
 sudo -H rospy-build genmsg ${BUILD_MSG_DIR} -s ${ROS_DEP_MSG_DIR} > /dev/null
 cp -r ${BUILD_MSG_DIR}/bw_interfaces ${INSTALL_MSG_DIR}
 echo "Generated messages in ${INSTALL_MSG_DIR}"

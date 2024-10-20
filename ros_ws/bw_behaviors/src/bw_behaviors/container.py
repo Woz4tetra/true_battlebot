@@ -9,4 +9,4 @@ class Container:
         self.config = config
         self.mode_manager = ModeManager()
         self.corner_manager = CornerManager(config.corner_offset)
-        self.go_to_goal_manager = GoToGoalManager()
+        self.go_to_goal_manager = GoToGoalManager(config.go_to_goal)
