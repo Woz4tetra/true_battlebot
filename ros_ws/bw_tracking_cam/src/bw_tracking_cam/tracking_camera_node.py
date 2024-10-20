@@ -41,6 +41,7 @@ class TrackingCameraConfig:
     detect_params_path: str
     refine_params_path: str
     publish_camera: bool
+    publish_compressed: bool
 
 
 def config_from_ros_param() -> TrackingCameraConfig:
@@ -48,12 +49,13 @@ def config_from_ros_param() -> TrackingCameraConfig:
         camera_name=get_param("~camera_name", "camera"),
         width=get_param("~width", 1920),
         height=get_param("~height", 1080),
-        compressed_fps=get_param("~compressed_fps", 10.0),
+        compressed_fps=get_param("~compressed_fps", 0.0),
         debug_image=get_param("~debug_image", False),
         camera_matrix_alpha=get_param("~camera_matrix_alpha", 0.0),
         detect_params_path=get_param("~detect_params_path", ""),
         refine_params_path=get_param("~refine_params_path", ""),
         publish_camera=True,
+        publish_compressed=get_param("~publish_compressed", True),
     )
 
 
@@ -79,7 +81,10 @@ class TrackingCameraNode:
         self.tag_detector = ApriltagDetector(detector_config)
 
         self.prev_compressed_pub_time = rospy.Time(0)
-        self.compressed_pub_interval = rospy.Duration.from_sec(1.0 / self.compressed_fps)
+        if self.compressed_fps > 0.0:
+            self.compressed_pub_interval = rospy.Duration.from_sec(1.0 / self.compressed_fps)
+        else:
+            self.compressed_pub_interval = rospy.Duration(0)
 
         self.bridge = CvBridge()
         self.image_supplier = image_supplier
@@ -92,9 +97,12 @@ class TrackingCameraNode:
         if self.config.publish_camera:
             self.camera_info_pub = rospy.Publisher(f"{self.camera_name}/camera_info", CameraInfo, queue_size=1)
             self.camera_image_pub = rospy.Publisher(f"{self.camera_name}/image_rect", Image, queue_size=1)
-            self.compressed_image_pub = rospy.Publisher(
-                f"{self.camera_name}/image_rect/compressed", CompressedImage, queue_size=1
-            )
+            if self.config.publish_compressed:
+                self.compressed_image_pub = rospy.Publisher(
+                    f"{self.camera_name}/image_rect/compressed", CompressedImage, queue_size=1
+                )
+            else:
+                self.compressed_image_pub = None
         else:
             self.camera_info_pub = None
             self.camera_image_pub = None

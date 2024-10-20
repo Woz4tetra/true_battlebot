@@ -146,8 +146,10 @@ void ComboTracker::image_callback(const sensor_msgs::ImageConstPtr &image_msg)
             cv::Rect2d scaled_bbox;
             scaled_bbox.x = std::max(0.0, _init_boxes[index].x / width_ratio);
             scaled_bbox.y = std::max(0.0, _init_boxes[index].y / height_ratio);
-            scaled_bbox.width = std::min(_init_boxes[index].width / width_ratio, _min_track_size_px);
-            scaled_bbox.height = std::min(_init_boxes[index].height / height_ratio, _min_track_size_px);
+            scaled_bbox.width = std::max(_init_boxes[index].width / width_ratio, _min_track_size_px);
+            scaled_bbox.height = std::max(_init_boxes[index].height / height_ratio, _min_track_size_px);
+            scaled_bbox.width = std::min(scaled_bbox.width, (double)processing_image.cols - scaled_bbox.x);
+            scaled_bbox.height = std::min(scaled_bbox.height, (double)processing_image.rows - scaled_bbox.y);
             ROS_DEBUG("Initializing tracker %lu with bbox (%f, %f, %f, %f)", index, scaled_bbox.x, scaled_bbox.y, scaled_bbox.width, scaled_bbox.height);
 
             _tracking_mask(scaled_bbox) = 255;

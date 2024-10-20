@@ -8,5 +8,6 @@
         <param name="detect_params_path"
             value="$(find bw_tracking_cam)/config/tracking_detect_parameters.json" />
         <param name="refine_params_path" value="" />
+        <param name="publish_compressed" value="false" />
     </node>
 </launch>

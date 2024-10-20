@@ -2,7 +2,7 @@
     <node pkg="bw_command_center" type="webapp_relay_node.py" name="webapp_relay_node"
         output="screen" clear_params="true">
         <param name="exclude_regex"
-        value="/camera_0/rgb/image_raw|/camera_1/image_rect|/camera_0/robot/debug_image|/camera_0/field/debug_image|/camera_1/debug_motion_image|/rosout.*|/foxglove.*"/>
+        value="/camera_0/rgb/image_raw|/camera_0/robot/debug_image|/camera_0/field/debug_image|/camera_1/debug_motion_image|/rosout.*|/foxglove.*"/>
         <!-- <param name="exclude_regex"
         value="\/camera_.*\/.*.*image.*|\/camera_.*\/point_cloud.*|\/camera_.*\/depth.*|\/camera_.*\/confidence.*|\/tag_detections_image.*|\/rosout.*"
         /> -->
