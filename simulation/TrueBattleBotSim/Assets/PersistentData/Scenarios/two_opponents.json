@@ -33,12 +33,12 @@
         {
             "name": "opponent_1",
             "model": "MRS BUFF B-03 Bizarro",
-            "objective": "run_in_a_circle_large"
+            "objective": "target_main_bot_red_corner"
         },
         {
             "name": "opponent_2",
             "model": "MR STABS A-02",
-            "objective": "run_in_a_circle_small"
+            "objective": "target_mini_bot_red_corner"
         },
         {
             "name": "referee",

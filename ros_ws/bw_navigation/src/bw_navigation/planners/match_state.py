@@ -13,6 +13,7 @@ class MatchState:
     robot_states: dict[str, EstimatedObject]
     field_bounds: FieldBounds2D
     controlled_robot_name: str
+    avoid_robot_names: list[str]
 
     @cached_property
     def controlled_robot(self) -> EstimatedObject:
@@ -31,10 +32,6 @@ class MatchState:
         return max(self.controlled_robot.size.x, self.controlled_robot.size.y)
 
     @cached_property
-    def goal_target_width(self) -> float:
-        return max(self.goal_target.size.x, self.goal_target.size.y)
-
-    @cached_property
     def goal_pose(self) -> Pose2D:
         return Pose2D.from_msg(self.goal_target.pose.pose)
 
@@ -45,3 +42,15 @@ class MatchState:
     @cached_property
     def distance_to_goal(self) -> float:
         return self.controlled_robot_point.magnitude(self.goal_point)
+
+    @cached_property
+    def friendly_robot_states(self) -> list[EstimatedObject]:
+        return [state for name, state in self.robot_states.items() if (name in self.avoid_robot_names)]
+
+    @cached_property
+    def opponent_robot_states(self) -> list[EstimatedObject]:
+        return [
+            state
+            for name, state in self.robot_states.items()
+            if (name not in self.avoid_robot_names and name != self.controlled_robot_name)
+        ]

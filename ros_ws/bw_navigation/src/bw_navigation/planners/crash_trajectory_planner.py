@@ -68,6 +68,7 @@ class CrashTrajectoryPlanner(PlannerInterface):
             robot_states=robot_states,
             field_bounds=field,
             controlled_robot_name=self.controlled_robot,
+            avoid_robot_names=self.avoid_robot_names,
         )
 
         markers: list[Marker] = []
@@ -107,9 +108,8 @@ class CrashTrajectoryPlanner(PlannerInterface):
             if did_replan:
                 rospy.logdebug("Replanned trajectory.")
                 markers.extend(self.global_planner.visualize_trajectory())
-            friendly_robot_states = [state for name, state in robot_states.items() if (name in self.avoid_robot_names)]
             twist, goal_progress = self.local_planner.compute(
-                trajectory, start_time, controlled_robot, friendly_robot_states
+                trajectory, start_time, controlled_robot, match_state.friendly_robot_states
             )
             if goal_progress.is_done and match_state.distance_to_goal < xy_tolerance:
                 self.trajectory_complete_time = now
@@ -154,15 +154,20 @@ class CrashTrajectoryPlanner(PlannerInterface):
         )
 
     def is_controlled_robot_in_danger(self, match_state: MatchState) -> bool:
-        controlled_bot_relative_to_target = match_state.controlled_robot_pose.relative_to(match_state.goal_pose)
-        combined_width = match_state.controlled_robot_width + match_state.goal_target_width
-        magnitude_lower_bound = combined_width * self.config.in_danger_recovery.size_multiplier
-        return (
-            abs(controlled_bot_relative_to_target.heading()) < self.config.in_danger_recovery.angle_tolerance
-            and (
-                magnitude_lower_bound
-                < controlled_bot_relative_to_target.magnitude()
-                < self.config.in_danger_recovery.linear_tolerance
-            )
-            and match_state.goal_target.twist.twist.linear.x > self.config.in_danger_recovery.velocity_threshold
-        )
+        for opponent_state in match_state.opponent_robot_states:
+            opponent_pose = Pose2D.from_msg(opponent_state.pose.pose)
+            controlled_bot_relative_to_target = match_state.controlled_robot_pose.relative_to(opponent_pose)
+            opponent_width = max(opponent_state.size.x, opponent_state.size.y)
+            combined_width = match_state.controlled_robot_width + opponent_width
+            magnitude_lower_bound = combined_width * self.config.in_danger_recovery.size_multiplier
+            if (
+                abs(controlled_bot_relative_to_target.heading()) < self.config.in_danger_recovery.angle_tolerance
+                and (
+                    magnitude_lower_bound
+                    < controlled_bot_relative_to_target.magnitude()
+                    < self.config.in_danger_recovery.linear_tolerance
+                )
+                and match_state.goal_target.twist.twist.linear.x > self.config.in_danger_recovery.velocity_threshold
+            ):
+                return True
+        return False

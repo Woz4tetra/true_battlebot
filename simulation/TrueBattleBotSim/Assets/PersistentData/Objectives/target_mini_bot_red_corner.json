@@ -2,8 +2,8 @@
     "type": "target",
     "init": {
         "type": "relative",
-        "x": 0.5,
-        "y": -0.8,
+        "x": 0.85,
+        "y": -0.5,
         "yaw": 135.0
     },
     "sequence": [
