@@ -259,6 +259,7 @@ def main() -> None:
     args: CommandLineArgs = cast(CommandLineArgs, parser.parse_args())
 
     config_dir = Path(args.config)
+    profile_app = args.profile
 
     shared_config = SharedConfig.from_files()
     config = load_config(config_dir, get_robot())
@@ -267,6 +268,8 @@ def main() -> None:
     print()  # Start log on a fresh line
     logger = logging.getLogger("perception")
     logger.info("Initializing perception")
+    if profile_app:
+        logger.info("Profiling enabled")
 
     container = Container()
     container.register(config)
@@ -288,14 +291,17 @@ def main() -> None:
     app = Runner(container)
     app.start()
 
+    profile = None
+
     try:
-        if args.profile:
+        if profile_app:
             with Profile() as profile:
                 run_loop(app, config)
-            Stats(profile).strip_dirs().sort_stats(SortKey.CALLS).print_stats()
         else:
             run_loop(app, config)
     finally:
         logger.info("perception is stopping")
         app.stop()
         logger.info("perception stopped")
+        if profile:
+            Stats(profile).strip_dirs().sort_stats(SortKey.CALLS).print_stats()
