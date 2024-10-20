@@ -7,8 +7,10 @@ from bw_behaviors.container import Container
 
 
 def make_fight_behavior(container: Container) -> Behaviour:
+    target_goal = SendTargetGoal(container, TargetType.NEAREST_OPPONENT, continuously_select_goal=True)
+    # target_goal = SendTargetGoal(container, TargetType.LARGEST_OPPONENT, continuously_select_goal=False)
     return Sequence(
         "fight_sequence",
         memory=False,
-        children=[SendTargetGoal(container, TargetType.LARGEST_OPPONENT, continuously_select_goal=False)],
+        children=[target_goal],
     )
