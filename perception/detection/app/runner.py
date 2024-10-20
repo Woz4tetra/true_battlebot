@@ -240,6 +240,10 @@ def make_field_request_handler(container: Container) -> None:
     container.register(field_request_handler)
 
 
+from cProfile import Profile
+from pstats import SortKey, Stats
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("config_dir", nargs="?", type=str, default=str(get_config_path()))
@@ -278,6 +282,8 @@ def main() -> None:
     logger.info("Running perception")
     try:
         for dt in regulate_tick(config.target_tick_rate):
+            if dt > config.loop_overrun_threshold:
+                logger.warning(f"Loop overrun: {dt:.6f} seconds")
             app.loop()
     finally:
         logger.info("perception is stopping")

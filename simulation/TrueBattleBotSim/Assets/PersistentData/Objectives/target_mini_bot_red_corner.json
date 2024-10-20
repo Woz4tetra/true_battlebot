@@ -8,7 +8,7 @@
     },
     "sequence": [
         {
-            "target_name": "mini_bot"
+            "target_name": "main_bot"
         }
     ]
 }

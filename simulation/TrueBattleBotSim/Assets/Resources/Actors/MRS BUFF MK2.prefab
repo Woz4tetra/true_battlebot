@@ -19350,7 +19350,7 @@ MonoBehaviour:
     i_max: 0
     epsilon: 0.000000001
     tolerance: 0
-  enablePid: 1
+  enablePid: 0
   reverseLeft: 1
   reverseRight: 0
   referenceObject: {fileID: 0}
@@ -19382,7 +19382,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   linearScale: 4
   angularScale: 50
-  useJoystick: 0
+  useJoystick: 1
 --- !u!114 &8431490954655205155
 MonoBehaviour:
   m_ObjectHideFlags: 0

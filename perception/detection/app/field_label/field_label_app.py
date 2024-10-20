@@ -257,9 +257,12 @@ class FieldLabelApp:
                         radius = 0
                     else:
                         radius = self.labels.highlighted_radius
-                else:
+                elif index == 0:
+                    color = (255, 0, 128)
                     radius = self.labels.unhighlighted_radius
+                else:
                     color = (0, 255, 128)
+                    radius = self.labels.unhighlighted_radius
                 if radius > 0:
                     cv2.circle(show_image, tuple(point), radius, color, -1)
 

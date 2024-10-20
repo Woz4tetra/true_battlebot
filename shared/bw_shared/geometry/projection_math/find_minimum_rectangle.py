@@ -1,7 +1,6 @@
 import numpy as np
 from scipy.spatial import ConvexHull
 
-from bw_shared.geometry.input_modulus import normalize_angle
 from bw_shared.geometry.xy import XY
 
 
@@ -75,19 +74,14 @@ def get_rectangle_angle(rectangle: np.ndarray) -> float:
     rectangle is a 4x2 matrix of points
     """
     angles = []
+    midpoints = []
     for index in range(len(rectangle) - 1):
         p0 = rectangle[index]
         p1 = rectangle[index + 1]
         delta = p1 - p0
         angle = np.arctan2(delta[1], delta[0])
         angles.append(angle)
+        midpoints.append((p0 + p1) / 2)
     angles_array = np.array(angles)
-    compliment_angles = normalize_angle(angles_array + np.pi)
-    smallest_angle = np.argmin(np.abs(angles_array))
-    smallest_compliment_angle = np.argmin(np.abs(compliment_angles))
-    smallest_index = (
-        smallest_angle
-        if angles_array[smallest_angle] < compliment_angles[smallest_compliment_angle]
-        else smallest_compliment_angle
-    )
-    return normalize_angle(angles_array[smallest_index] + np.pi)
+    midpoints_array = np.array(midpoints)
+    return angles_array[np.argmin(midpoints_array[:, 1])]

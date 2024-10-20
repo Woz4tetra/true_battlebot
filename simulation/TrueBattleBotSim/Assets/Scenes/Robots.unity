@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0.44657898, g: 0.4964133, b: 0.5748178, a: 1}
+  m_IndirectSpecularColor: {r: 0.44657832, g: 0.49641222, b: 0.57481664, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -1347,6 +1347,67 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 81c7a16dfcf95b12fa70567bbc2c4661, type: 3}
+--- !u!1001 &3024281410027471437
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 2468643234802142399, guid: 92ef453437936aa8fba1669e05f666d6, type: 3}
+      propertyPath: m_RootOrder
+      value: 18
+      objectReference: {fileID: 0}
+    - target: {fileID: 2468643234802142399, guid: 92ef453437936aa8fba1669e05f666d6, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -0.155
+      objectReference: {fileID: 0}
+    - target: {fileID: 2468643234802142399, guid: 92ef453437936aa8fba1669e05f666d6, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2468643234802142399, guid: 92ef453437936aa8fba1669e05f666d6, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 1.2409
+      objectReference: {fileID: 0}
+    - target: {fileID: 2468643234802142399, guid: 92ef453437936aa8fba1669e05f666d6, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2468643234802142399, guid: 92ef453437936aa8fba1669e05f666d6, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2468643234802142399, guid: 92ef453437936aa8fba1669e05f666d6, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2468643234802142399, guid: 92ef453437936aa8fba1669e05f666d6, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2468643234802142399, guid: 92ef453437936aa8fba1669e05f666d6, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2468643234802142399, guid: 92ef453437936aa8fba1669e05f666d6, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2468643234802142399, guid: 92ef453437936aa8fba1669e05f666d6, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3603318423262771975, guid: 92ef453437936aa8fba1669e05f666d6, type: 3}
+      propertyPath: m_Name
+      value: MR STABS A-02 Bizarro
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 92ef453437936aa8fba1669e05f666d6, type: 3}
 --- !u!1001 &3174106871414805698
 PrefabInstance:
   m_ObjectHideFlags: 0

@@ -17,6 +17,7 @@ from bw_shared.messages.dataclass_utils import from_dict, to_dict
 @dataclass
 class Config:
     target_tick_rate: float = 1000.0
+    loop_overrun_threshold: float = 0.2  # seconds
     camera_topic: CameraTopicConfig = field(default_factory=lambda: CameraTopicConfig("/camera_0", "camera_0"))
     camera: CameraConfig = field(default_factory=NoopCameraConfig)
     ros: RosConfig = field(default_factory=RosConfig)

@@ -6261,7 +6261,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   linearScale: 4
   angularScale: 20
-  useJoystick: 0
+  useJoystick: 1
 --- !u!114 &1939728092720651210
 MonoBehaviour:
   m_ObjectHideFlags: 0

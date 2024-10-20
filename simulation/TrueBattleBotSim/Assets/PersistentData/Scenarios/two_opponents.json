@@ -37,7 +37,7 @@
         },
         {
             "name": "opponent_2",
-            "model": "MR STABS A-02",
+            "model": "MR STABS A-02 Bizarro",
             "objective": "target_mini_bot_red_corner"
         },
         {

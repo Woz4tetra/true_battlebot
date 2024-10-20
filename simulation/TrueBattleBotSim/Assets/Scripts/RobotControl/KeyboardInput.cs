@@ -55,6 +55,7 @@ class KeyboardInput : MonoBehaviour
             linear = Input.GetAxis("Vertical") * -linearScale;
             angular = Input.GetAxis("Horizontal") * -angularScale;
         }
+
         TwistMsg command = new TwistMsg
         {
             linear = new Vector3Msg { x = linear },
