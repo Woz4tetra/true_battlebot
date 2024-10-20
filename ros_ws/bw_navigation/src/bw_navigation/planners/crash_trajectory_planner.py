@@ -156,18 +156,18 @@ class CrashTrajectoryPlanner(PlannerInterface):
     def is_controlled_robot_in_danger(self, match_state: MatchState) -> bool:
         for opponent_state in match_state.opponent_robot_states:
             opponent_pose = Pose2D.from_msg(opponent_state.pose.pose)
-            controlled_bot_relative_to_target = match_state.controlled_robot_pose.relative_to(opponent_pose)
+            controlled_bot_relative_to_opponent = match_state.controlled_robot_pose.relative_to(opponent_pose)
             opponent_width = max(opponent_state.size.x, opponent_state.size.y)
             combined_width = match_state.controlled_robot_width + opponent_width
             magnitude_lower_bound = combined_width * self.config.in_danger_recovery.size_multiplier
             if (
-                abs(controlled_bot_relative_to_target.heading()) < self.config.in_danger_recovery.angle_tolerance
+                abs(controlled_bot_relative_to_opponent.heading()) < self.config.in_danger_recovery.angle_tolerance
                 and (
                     magnitude_lower_bound
-                    < controlled_bot_relative_to_target.magnitude()
+                    < controlled_bot_relative_to_opponent.magnitude()
                     < self.config.in_danger_recovery.linear_tolerance
                 )
-                and match_state.goal_target.twist.twist.linear.x > self.config.in_danger_recovery.velocity_threshold
+                and opponent_state.twist.twist.linear.x > self.config.in_danger_recovery.velocity_threshold
             ):
                 return True
         return False
