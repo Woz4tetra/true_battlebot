@@ -50,7 +50,7 @@ def rotated_rectangle(points: np.ndarray, rotation: float) -> np.ndarray:
                 ]
             ),
             0.0,
-            1.5472330183995335,
+            -0.02356330839536369,
         ),
     ],
 )

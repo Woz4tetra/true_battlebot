@@ -6,7 +6,6 @@ from app.field_filter.field_filter_interface import FieldFilterInterface
 from app.field_filter.helpers import get_field
 from app.field_filter.solvers.base_plane_solver import BasePlaneSolver
 from bw_interfaces.msg import EstimatedObject, SegmentationInstanceArray
-from bw_shared.geometry.input_modulus import normalize_angle
 from bw_shared.geometry.projection_math.find_minimum_rectangle import (
     find_minimum_rectangle,
     get_rectangle_angle,
@@ -56,10 +55,6 @@ class PointCloudFieldFilter(FieldFilterInterface):
         extents = get_rectangle_extents(min_rect)  # get the 2D bounds of the rectangle
         # get the angle of the rectangle with respect to and nearest to the x-axis
         angle = get_rectangle_angle(min_rect)
-        complimentary_angle = normalize_angle(angle + np.pi)
-        if abs(complimentary_angle) < abs(angle):
-            self.logger.debug(f"Selecting complimentary angle: {complimentary_angle} over {angle}.")
-            angle = complimentary_angle
         if angle > 0:
             extents = XY(extents.y, extents.x)
         centroid = np.mean(min_rect, axis=0)  # compute 2D centroid

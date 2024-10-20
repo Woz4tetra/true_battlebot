@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.spatial import ConvexHull
 
+from bw_shared.geometry.input_modulus import normalize_angle
 from bw_shared.geometry.xy import XY
 
 
@@ -75,13 +76,17 @@ def get_rectangle_angle(rectangle: np.ndarray) -> float:
     """
     angles = []
     midpoints = []
-    for index in range(len(rectangle) - 1):
+    for index in range(len(rectangle)):
         p0 = rectangle[index]
-        p1 = rectangle[index + 1]
+        p1 = rectangle[(index + 1) % len(rectangle)]
         delta = p1 - p0
         angle = np.arctan2(delta[1], delta[0])
         angles.append(angle)
         midpoints.append((p0 + p1) / 2)
     angles_array = np.array(angles)
     midpoints_array = np.array(midpoints)
-    return angles_array[np.argmin(midpoints_array[:, 1])]
+    angle = angles_array[np.argmin(midpoints_array[:, 1])]
+    complimentary_angle = normalize_angle(angle + np.pi)
+    if abs(complimentary_angle) < abs(angle):
+        angle = complimentary_angle
+    return angle
