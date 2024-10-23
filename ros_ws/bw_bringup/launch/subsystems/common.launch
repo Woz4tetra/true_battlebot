@@ -2,9 +2,9 @@
     <arg name="auto_initialize" default="false" />
 
     <node pkg="bw_shared_config" type="shared_config_node.py" name="shared_config_node"
-        output="screen" clear_params="true" />
+        output="screen" clear_params="true" required="true" />
     <node pkg="bw_shared_config" type="dynamic_opponent_config_node.py"
-        name="dynamic_opponent_config_node" output="screen" clear_params="true" />
+        name="dynamic_opponent_config_node" output="screen" clear_params="true" required="true" />
 
     <include file="$(find bw_object_estimation)/launch/segmentation_to_object.launch" />
     <include file="$(find bw_object_estimation)/launch/keypoint_to_object.launch" />

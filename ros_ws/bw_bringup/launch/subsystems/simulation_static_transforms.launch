@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
     <node pkg="tf2_ros" type="static_transform_publisher" name="camera_0_to_1"
-        args="0.003153 0.065055 0.027134  0.003798 -0.000511 0.000935 0.999992 camera_0 camera_1" clear_params="true" />
+        args="0.003153 0.065055 0.027134  0.003798 -0.000511 0.000935 0.999992 camera_0 camera_1"
+        clear_params="true" required="true" />
 </launch>

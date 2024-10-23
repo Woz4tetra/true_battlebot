@@ -1,7 +1,7 @@
 <launch>
 	<group ns="camera_0">
 		<node pkg="bw_object_estimation" type="keypoint_to_object" name="keypoint_to_object"
-			output="screen" clear_params="true">
+			output="screen" clear_params="true" respawn="true">
 			<remap from="camera_info" to="rgb/camera_info" />
 			<remap from="field" to="/filter/field" />
 			<remap from="keypoints" to="robot/keypoints" />
