@@ -1,3 +1,4 @@
+import numpy as np
 from app.camera.camera_interface import CameraInterface, CameraMode
 from app.config.camera_config.noop_camera_config import NoopCameraConfig
 from bw_shared.messages.header import Header
@@ -20,9 +21,9 @@ class NoopCamera(CameraInterface):
     def poll(self) -> CameraData | None:
         header = Header.auto()
         return CameraData(
-            color_image=Image(header),
+            color_image=Image(header, np.zeros((480, 640, 3), dtype=np.uint8)),
             point_cloud=PointCloud(header),
-            camera_info=CameraInfo(header),
+            camera_info=CameraInfo(header=header.to_msg()),
         )
 
     def close(self) -> None:

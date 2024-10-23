@@ -18,6 +18,7 @@ from app.field_filter.field_filter_loader import load_field_filter
 from app.field_filter.field_request_handler import FieldRequestHandler
 from app.keypoint.keypoint_interface import KeypointInterface
 from app.keypoint.keypoint_loader import load_keypoint
+from app.profiling.context_timer import ContextTimer
 from app.segmentation.segmentation_interface import SegmentationInterface
 from app.segmentation.segmentation_loader import load_segmentation
 from bw_interfaces.msg import EstimatedObject, Heartbeat, KeypointInstanceArray, LabelMap, SegmentationInstanceArray
@@ -101,7 +102,10 @@ class Runner:
         if camera_data is None or camera_data.color_image.data.size == 0:
             return
         self.camera_data = camera_data
-        robot_points, debug_image = self.robot_keypoint.process_image(camera_data.camera_info, camera_data.color_image)
+        with ContextTimer("robot_keypoint.process_image"):
+            robot_points, debug_image = self.robot_keypoint.process_image(
+                camera_data.camera_info, camera_data.color_image
+            )
         if debug_image:
             self.robot_debug_image_publisher.publish(debug_image.to_msg())
         if robot_points:
@@ -126,12 +130,14 @@ class Runner:
         self.point_cloud_publisher.publish(camera_data.point_cloud.to_msg())
 
         image = camera_data.color_image
-        field_seg, debug_image = self.field_segmentation.process_image(image)
+        with ContextTimer("field_segmentation.process_image"):
+            field_seg, debug_image = self.field_segmentation.process_image(image)
         if not field_seg:
             self.logger.debug("No field detected")
             return False
         self.field_segmentation_publisher.publish(field_seg)
-        field_result, field_point_cloud = self.field_filter.compute_field(field_seg, camera_data.point_cloud)
+        with ContextTimer("field_filter.compute_field"):
+            field_result, field_point_cloud = self.field_filter.compute_field(field_seg, camera_data.point_cloud)
         if not field_result:
             self.logger.debug("No field result")
             return False

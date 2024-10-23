@@ -23,6 +23,7 @@ public class UiManager : MonoBehaviour
     [SerializeField] MainSceneManager sceneManager;
     [SerializeField] RestartButton restartButton;
     [SerializeField] PlayPauseButton playPauseButton;
+    [SerializeField] int maxFrameRate = 120;
 
     DisplayReadoutManager displayReadoutManager;
 
@@ -71,6 +72,9 @@ public class UiManager : MonoBehaviour
 
     void Start()
     {
+        QualitySettings.vSyncCount = 0;
+        Application.targetFrameRate = maxFrameRate;
+
         ros = ROSConnection.GetOrCreateInstance();
         ros.Subscribe<StringMsg>(remoteScenarioSelectionTopic, RemoteScenarioSelectionCallback);
         ros.Subscribe<ConfigureSimulationMsg>(addConfigurationTopic, AddConfigurationCallback);
@@ -148,6 +152,8 @@ public class UiManager : MonoBehaviour
         ShowHideSettingsPanel(settingsPanel.activeSelf);
         StartCoroutine(PublishScenarioListCallback());
         StartCoroutine(UpdateFpsCounter());
+
+        SelectScenarioFromCommandLineArgs();
     }
 
     public void SetFullscreenCallback(bool isFullscreen)
@@ -338,16 +344,46 @@ public class UiManager : MonoBehaviour
     void RemoteScenarioSelectionCallback(StringMsg msg)
     {
         Debug.Log($"Received remote scenario selection: {msg.data}");
-        if (scenarioIndex.ContainsKey(msg.data))
+        if (SelectScenarioFromDropdown(msg.data))
         {
-            scenarioDropdown.value = scenarioIndex[msg.data];
+            ShowHideSettingsPanelAndClearState(false);
+        }
+    }
+
+    void SelectScenarioFromCommandLineArgs()
+    {
+        string[] args = Environment.GetCommandLineArgs();
+        for (int i = 0; i < args.Length; i++)
+        {
+            if (args[i] != "--scenario")
+            {
+                continue;
+            }
+            if (i + 1 >= args.Length)
+            {
+                Debug.LogWarning("No scenario name provided after --scenario");
+                continue;
+            }
+            string scenarioName = args[i + 1];
+            Debug.Log($"Selecting scenario from command line args: {scenarioName}");
+            SelectScenarioFromDropdown(scenarioName);
+            break;
+        }
+    }
+
+    bool SelectScenarioFromDropdown(string scenarioName)
+    {
+        if (scenarioIndex.ContainsKey(scenarioName))
+        {
+            scenarioDropdown.value = scenarioIndex[scenarioName];
             scenarioDropdown.RefreshShownValue();
             SetScenario(scenarioDropdown.value);
-            ShowHideSettingsPanelAndClearState(false);
+            return true;
         }
         else
         {
-            Debug.LogWarning($"Scenario {msg.data} not found in scenario index");
+            Debug.LogWarning($"Scenario {scenarioName} not found in scenario index");
+            return false;
         }
     }
 

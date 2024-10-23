@@ -1,0 +1,26 @@
+#!/bin/bash
+BASE_DIR=$(realpath "$(dirname $0)")
+
+PROJECT_DIR=$(realpath "${BASE_DIR}/../../")
+
+cd ${BASE_DIR}/../resources
+
+IMAGE_VERSION=$(${BASE_DIR}/../get_image_tag)
+ORGANIZATION=$(${BASE_DIR}/../get_organization)
+PROJECT_NAME=$(${BASE_DIR}/../get_project_name)
+
+docker run \
+    --user ${ORGANIZATION} \
+    --name build_${PROJECT_NAME} \
+    --restart="no" \
+    --net="host" \
+    --privileged \
+    --stop-signal=SIGINT \
+    -e=IMAGE_VERSION=${IMAGE_VERSION} \
+    -v=${PROJECT_NAME}_ros_build:/home/${ORGANIZATION}/ros_ws:rw \
+    -v=${PROJECT_DIR}:/opt/${ORGANIZATION}/${PROJECT_NAME}:rw \
+    -v=${PROJECT_DIR}/scripts:/opt/${ORGANIZATION}/scripts:rw \
+    -v=/media/storage/true-battlebot-media:/data:rw \
+    --rm \
+    ${IMAGE_VERSION} \
+    /opt/${ORGANIZATION}/scripts/connect_sim

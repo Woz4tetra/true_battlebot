@@ -8,7 +8,7 @@ PROJECT_NAME = "TrueBattleBotSim"
 COMPANY_NAME = "DefaultCompany"
 
 
-def main() -> None:
+def copy_persistent_data() -> None:
     # Get the current platform
     current_platform = platform.system()
 
@@ -35,4 +35,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    copy_persistent_data()

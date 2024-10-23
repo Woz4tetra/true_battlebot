@@ -1,23 +1,16 @@
 target_tick_rate = 60.0
 
 [camera]
-type = "SimulatedCamera"
+type = "LightSimulatedCamera"
 
 [field_request]
 stale_image_timeout = 2.0
 
 [field_filter]
-type = "PointCloudFieldFilter"
+type = "SimulatedFieldFilter"
 
 [field_segmentation]
-type = "SemanticSegmentation"
-debug = true
-model_path = "field_deeplabv3_r50_2024-09-05.torchscript"
-metadata_path = "field_deeplabv3_r50_2024-09-05.json"
-
-[field_segmentation.model_to_system_labels.mapping]
-"field" = "field"
-"background" = "background"
+type = "NoopSegmentation"
 
 [ros]
 log = true
@@ -36,11 +29,8 @@ exclude_filters = [
 ]
 
 [robot_keypoint]
-type = "YoloKeypoint"
-debug_image = true
-threshold = 0.75
-model_path = "yolo11n-pose_2024-10-09.pt"
-metadata_path = "yolo11n-pose_2024-10-09.json"
+type = "SimulatedKeypoint"
+debug = false
 
 [robot_keypoint.model_to_system_labels.mapping]
 "mr_stabs_mk1" = "robot"

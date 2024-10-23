@@ -1,5 +1,6 @@
 import os
 import sys
+import time
 from typing import Any, cast
 
 import cv2
@@ -75,7 +76,7 @@ def load_from_topics(
         if camera_info is None and (info_msg := info_subscriber.receive()):
             camera_info = info_msg
             print("Received camera info")
-        rospy.sleep(0.1)
+        time.sleep(0.1)
         if rospy.is_shutdown():
             sys.exit(0)
     return CameraData(color_image=color_image, point_cloud=point_cloud, camera_info=camera_info)
@@ -127,7 +128,7 @@ class FieldLabelApp:
         info_subscriber = RosPollSubscriber(self.config.info_topic, CameraInfo)
         request_publisher = RosPublisher(self.config.field_request_topic, Empty)
 
-        rospy.sleep(2.0)  # Wait for subscribers to connect
+        time.sleep(2.0)  # Wait for subscribers to connect
 
         print("Requesting camera data")
         request_publisher.publish(Empty())

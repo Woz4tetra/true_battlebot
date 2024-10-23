@@ -24,6 +24,7 @@ class SimulatedKeypoint(KeypointInterface):
         self.keypoint_names = [KeypointName.FRONT, KeypointName.BACK]
         self.model_labels = tuple(ModelLabel)
         self.system_labels = tuple(Label)
+        self.prev_stamps = set()
 
         self.model_to_system_labels = self.config.model_to_system_labels.labels
         if len(self.model_to_system_labels) == 0:
@@ -35,6 +36,10 @@ class SimulatedKeypoint(KeypointInterface):
         self, camera_info: CameraInfo, rgb_image: Image
     ) -> tuple[KeypointInstanceArray | None, Image | None]:
         robots = self.ground_truth_manager.get_robots()
+        stamps = set([robot.header.stamp.to_sec() for robot in robots])
+        if stamps == self.prev_stamps:
+            return None, None
+        self.prev_stamps = stamps
         self.camera_info.header.stamp = camera_info.header.stamp
         self.camera_info.header.seq = camera_info.header.seq
         if self.camera_info != camera_info:

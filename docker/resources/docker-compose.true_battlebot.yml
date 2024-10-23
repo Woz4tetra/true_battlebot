@@ -1,5 +1,3 @@
-version: "3"
-
 volumes:
     true_battlebot_ros_build:
         name: ${PROJECT_NAME}_ros_build

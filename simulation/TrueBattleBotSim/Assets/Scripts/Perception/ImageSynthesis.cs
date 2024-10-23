@@ -91,6 +91,7 @@ public class ImageSynthesis : MonoBehaviour
     private Renderer[] prevRenderers = new Renderer[0];
 
     private Camera mainCamera;
+    bool skipFrameRender = false;
 
     void Start()
     {
@@ -100,6 +101,12 @@ public class ImageSynthesis : MonoBehaviour
 
         ros = ROSConnection.GetOrCreateInstance();
         List<CapturePass> passes = new List<CapturePass>();
+
+        skipFrameRender = isHeadless();
+        if (skipFrameRender)
+        {
+            Debug.LogWarning("Running in headless mode, disabling image synthesis");
+        }
 
         foreach (CapturePassConfig config in captureConfig)
         {
@@ -406,6 +413,15 @@ public class ImageSynthesis : MonoBehaviour
         };
         seq++;
 
+        if (skipFrameRender)
+        {
+            foreach (CapturePass pass in capturePasses)
+            {
+                PublishInfo(pass, cameraInfoMsg);
+            }
+            return;
+        }
+
         Dictionary<string, Texture2D> imagesToPublish = new Dictionary<string, Texture2D>();
 
         foreach (CapturePass pass in capturePasses)
@@ -433,6 +449,7 @@ public class ImageSynthesis : MonoBehaviour
             {
                 ImageMsg imageMsg = textureToImageMsg(pass, imagesToPublish[pass.name]);
                 PublishImage(pass, imageMsg, cameraInfoMsg.header);
+                PublishInfo(pass, cameraInfoMsg);
             }
         }
     }
@@ -562,6 +579,15 @@ public class ImageSynthesis : MonoBehaviour
     {
         imageMsg.header = header;
         pass.imageTopicState.Publish(imageMsg);
+    }
+
+    private void PublishInfo(CapturePass pass, CameraInfoMsg cameraInfoMsg)
+    {
         pass.infoTopicState.Publish(cameraInfoMsg);
+    }
+
+    private bool isHeadless()
+    {
+        return SystemInfo.graphicsDeviceType == GraphicsDeviceType.Null;
     }
 }

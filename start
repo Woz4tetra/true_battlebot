@@ -9,5 +9,5 @@ int_handler() {
 trap 'int_handler' SIGINT
 
 ${BASE_DIR}/docker/scripts/copy_project
-${BASE_DIR}/docker/scripts/run_container
+${BASE_DIR}/docker/scripts/run_container $@
 sleep infinity

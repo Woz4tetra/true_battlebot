@@ -1,6 +1,7 @@
 from typing import Union
 
 from app.config.camera_config.camera_types import CameraConfig
+from app.config.camera_config.light_simulated_camera_config import LightSimulatedCameraConfig
 from app.config.camera_config.noop_camera_config import NoopCameraConfig
 from app.config.camera_config.simulated_camera_config import SimulatedCameraConfig
 from app.config.camera_config.svo_playback_camera_config import SvoPlaybackCameraConfig
@@ -14,12 +15,19 @@ from rosgraph_msgs.msg import Clock
 from sensor_msgs.msg import CameraInfo, CompressedImage, Image, Imu
 from std_msgs.msg import Empty
 
+from .light_simulated_camera import LightSimulatedCamera
 from .noop_camera import NoopCamera
 from .simulated_camera import SimulatedCamera
 from .svo_playback_camera import SvoPlaybackCamera
 from .zed_camera import ZedCamera
 
-CameraImplementation = Union[ZedCamera, NoopCamera, SimulatedCamera, SvoPlaybackCamera]
+CameraImplementation = Union[
+    ZedCamera,
+    NoopCamera,
+    SimulatedCamera,
+    SvoPlaybackCamera,
+    LightSimulatedCamera,
+]
 
 
 def make_simulated_camera(camera_config: SimulatedCameraConfig, container: Container) -> CameraImplementation:
@@ -95,6 +103,21 @@ def make_svo_camera(camera_config: SvoPlaybackCameraConfig, container: Container
     )
 
 
+def make_light_simulated_camera(
+    camera_config: LightSimulatedCameraConfig, container: Container
+) -> CameraImplementation:
+    config = container.resolve(Config)
+    ns = config.camera_topic.namespace
+
+    camera_info_sub = RosPollSubscriber(ns + "/rgb/camera_info", CameraInfo)
+
+    return LightSimulatedCamera(
+        config=camera_config,
+        camera_topic_config=config.camera_topic,
+        camera_info_sub=camera_info_sub,
+    )
+
+
 def load_camera(config: CameraConfig, container: Container) -> CameraImplementation:
     if isinstance(config, SimulatedCameraConfig):
         return make_simulated_camera(config, container)
@@ -104,5 +127,7 @@ def load_camera(config: CameraConfig, container: Container) -> CameraImplementat
         return make_svo_camera(config, container)
     elif isinstance(config, NoopCameraConfig):
         return NoopCamera(config)
+    elif isinstance(config, LightSimulatedCameraConfig):
+        return make_light_simulated_camera(config, container)
     else:
         raise ValueError(f"Unsupported camera config type: {type(config)}")
