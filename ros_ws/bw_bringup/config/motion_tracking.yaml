@@ -8,3 +8,7 @@ var_threshold: 16
 learning_rate: -1
 dilation_rate: 10
 post_contour_dilation: 5
+exclude_labels:
+    - "controlled_robot"
+    - "friendly_robot"
+    - "referee"

@@ -4,6 +4,30 @@ ComboTracker::ComboTracker(ros::NodeHandle *nodehandle) : BaseEstimation(nodehan
 {
     ros::param::param<double>("~z_limit", _z_limit, 0.2);
     ros::param::param<std::string>("~label", _label, "robot");
+    XmlRpc::XmlRpcValue exclude_labels_param;
+    std::string exclude_labels_key;
+    if (ros::param::search("exclude_labels", exclude_labels_key))
+    {
+        nh.getParam(exclude_labels_key, exclude_labels_param);
+        if (exclude_labels_param.getType() != XmlRpc::XmlRpcValue::Type::TypeArray ||
+            exclude_labels_param.size() == 0)
+        {
+            throw std::runtime_error("exclude_labels is the wrong type or size");
+        }
+        for (int i = 0; i < exclude_labels_param.size(); i++)
+        {
+            if (exclude_labels_param[i].getType() != XmlRpc::XmlRpcValue::Type::TypeString)
+            {
+                throw std::runtime_error("exclude_labels contains non-string values");
+            }
+            _exclude_labels.push_back(static_cast<std::string>(exclude_labels_param[i]));
+            ROS_INFO("Excluding label: %s", _exclude_labels.back().c_str());
+        }
+    }
+    else
+    {
+        _exclude_labels = std::vector<std::string>();
+    }
 
     int processing_width, processing_height;
     ros::param::param<bool>("~resize_image", _resize_image, true);
@@ -72,6 +96,11 @@ void ComboTracker::source_callback(const bw_interfaces::EstimatedObjectArrayCons
 
     for (size_t index = 0; index < _num_trackers; index++)
     {
+        if (std::find(_exclude_labels.begin(), _exclude_labels.end(), robots->robots[index].label) != _exclude_labels.end())
+        {
+            ROS_DEBUG("Excluding label %s", robots->robots[index].label.c_str());
+            continue;
+        }
         geometry_msgs::TransformStamped transform;
         try
         {

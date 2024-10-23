@@ -37,6 +37,7 @@ private:
 
     double _z_limit;
     std::string _label;
+    std::vector<std::string> _exclude_labels;
     bool _resize_image;
     cv::Size _processing_size;
     ros::Duration _reset_cooldown;

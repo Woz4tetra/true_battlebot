@@ -36,7 +36,7 @@ else
 fi
 
 EXTENSION=$(uname -i)
-${BASE_DIR}/../TrueBattleBotSim/Build/TrueBattleBotSim.${EXTENSION} ${SIMULATION_ARGS} ${SUPPLIMENTAL_ARGS} &
+${BASE_DIR}/../TrueBattleBotSim/Build/TrueBattleBotSim.${EXTENSION} ${SIMULATION_ARGS} ${SUPPLIMENTAL_ARGS[@]} &
 SIM_PID=$!
 ${BASE_DIR}/../../docker/scripts/connect_sim_container &
 DOCKER_PID=$!
