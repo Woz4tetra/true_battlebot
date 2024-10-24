@@ -14,3 +14,5 @@ ruff
 toml
 robotpy-wpimath==2022.3.1.1
 shapely
+depthai-sdk
+av
