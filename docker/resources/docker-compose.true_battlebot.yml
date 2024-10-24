@@ -56,7 +56,7 @@ services:
             - /tmp/.X11-unix:/tmp/.X11-unix
             - /home/${USER}/.Xauthority:/home/${ORGANIZATION}/.Xauthority:rw
             - /dev:/dev:rw
-        command: ["/opt/${ORGANIZATION}/perception.sh", "--profile"]
+        command: ["/opt/${ORGANIZATION}/perception.sh"]
     true_battlebot_webapp:
         image: nginx
         container_name: ${PROJECT_NAME}_webapp
