@@ -4,11 +4,11 @@ import shutil
 from pathlib import Path
 
 SCRIPT_DIR = Path(os.path.dirname(os.path.realpath(__file__)))
-PROJECT_NAME = "TrueBattleBotSim"
+PROJECT_NAME = "DillSim"
 COMPANY_NAME = "DefaultCompany"
 
 
-def copy_persistent_data() -> None:
+def main() -> None:
     # Get the current platform
     current_platform = platform.system()
 
@@ -28,11 +28,11 @@ def copy_persistent_data() -> None:
             shutil.copy(file, destination_path / file.name)
         elif file.is_dir():
             full_path = destination_path / file.name
-            shutil.rmtree(full_path)
+            shutil.rmtree(full_path, ignore_errors=True)
             shutil.copytree(file, full_path, dirs_exist_ok=True)
 
     print(f"File copied to {destination_path} successfully!")
 
 
 if __name__ == "__main__":
-    copy_persistent_data()
+    main()
