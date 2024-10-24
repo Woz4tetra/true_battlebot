@@ -24,7 +24,7 @@ class MockContainer(Container):
         self.corner_manager = CornerManager(self.config.corner_offset)
         self.corner_manager.field_sub.side_effect = lambda *args, **kwargs: None  # type: ignore
 
-        self.go_to_goal_manager = GoToGoalManager()
+        self.go_to_goal_manager = GoToGoalManager(self.config.go_to_goal)
 
 
 @pytest.fixture

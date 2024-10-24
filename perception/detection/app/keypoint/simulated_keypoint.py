@@ -24,7 +24,7 @@ class SimulatedKeypoint(KeypointInterface):
         self.keypoint_names = [KeypointName.FRONT, KeypointName.BACK]
         self.model_labels = tuple(ModelLabel)
         self.system_labels = tuple(Label)
-        self.prev_stamps = set()
+        self.prev_stamps: set[float] = set()
 
         self.model_to_system_labels = self.config.model_to_system_labels.labels
         if len(self.model_to_system_labels) == 0:

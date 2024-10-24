@@ -49,7 +49,7 @@ class ImageRectifier:
         intrinsics = np.array(self.camera_info.K).reshape(3, 3)
         distortion = np.array(self.camera_info.D)
         dims = (new_width, new_height)
-        self.new_matrix, roi = cv2.getOptimalNewCameraMatrix(
+        new_matrix, roi = cv2.getOptimalNewCameraMatrix(
             intrinsics,
             distortion,
             dims,
@@ -59,6 +59,7 @@ class ImageRectifier:
         self.width = new_width
         self.height = new_height
         self.header = self.camera_info.header
+        self.new_matrix = np.array(new_matrix)
 
         # set aspect ratio to original image
         focal_length = max(self.new_matrix[0, 0], self.new_matrix[1, 1])

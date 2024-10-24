@@ -17,7 +17,9 @@ from bw_tracking_cam.tracking_camera_node import ImageSupplier, TrackingCameraNo
 
 
 class OakImageSupplier(ImageSupplier):
-    def __init__(self, camera_name: str, fps: float, exposure_time: int, iso: int, resolution_mode: Oak1ResolutionMode):
+    def __init__(
+        self, camera_name: str, fps: float, exposure_time: int, iso: int, resolution_mode: Oak1ResolutionMode
+    ) -> None:
         self.camera_name = camera_name
         self.fps = fps
         self.resolution_mode = resolution_mode

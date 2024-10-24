@@ -35,7 +35,7 @@ def compute_pose_ransac(
 
     pose = np.eye(4)
     pose[:3, :3] = orientation
-    pose[:3, 3] = tl_camera_to_bundle.flatten()
+    pose[:3, 3] = np.array(tl_camera_to_bundle).flatten()
     return Transform3D(pose)
 
 
@@ -53,7 +53,7 @@ def compute_pose_pnp(
 
     pose = np.eye(4)
     pose[:3, :3] = orientation
-    pose[:3, 3] = tl_camera_to_bundle.flatten()
+    pose[:3, 3] = np.array(tl_camera_to_bundle).flatten()
     return Transform3D(pose)
 
 
