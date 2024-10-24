@@ -38,7 +38,7 @@ class CrashTrajectoryPlanner(PlannerInterface):
         )
         self.trajectory_complete_time = None
         self.prev_move_time = rospy.Time.now()
-        self.prev_positions: list[tuple[float, XY]] = []
+        self.prev_positions: list[tuple[rospy.Time, XY]] = []
         self.prev_position_time_window = rospy.Duration.from_sec(self.config.move_timeout)
 
     def reset(self) -> None:
