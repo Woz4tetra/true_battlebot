@@ -151,6 +151,7 @@ class LocalPlannerEngine:
             twist.linear.x = chassis_speeds.vx
             twist.angular.z = chassis_speeds.omega
         else:
+            rospy.logdebug("Backing away from obstacle.")
             twist = self.backaway_engine.compute(desired_pose, robot_pose)
 
         total_time = trajectory.totalTime()

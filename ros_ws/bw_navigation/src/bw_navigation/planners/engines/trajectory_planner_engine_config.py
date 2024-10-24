@@ -1,3 +1,4 @@
+import math
 from dataclasses import dataclass, field
 from typing import Optional
 
@@ -17,14 +18,17 @@ class PidFollowerEngineConfig:
 class BackawayRecoverConfig:
     linear_velocity: float = 2.0  # m/s
     rotate_velocity: float = 10.0  # rad/s
-    angle_tolerance: float = 1.0
+    angle_tolerance_deg: float = 30.0  # degrees
+
+    def __post_init__(self):
+        self.angle_tolerance = math.radians(self.angle_tolerance_deg)
 
 
 @dataclass
 class ThrashRecoveryConfig:
     direction_change_interval: float = 0.5
-    linear_magnitude: float = 2.0
-    angular_magnitude: float = 10.0
+    linear_magnitude: float = 4.0
+    angular_magnitude: float = 25.0
 
 
 @dataclass
@@ -72,9 +76,7 @@ class RamseteConfig:
 
 @dataclass
 class LocalPlannerEngineConfig:
-    obstacle_buffer: float = 0.2  # meters
-    obstacle_lookahead: float = 0.5  # meters
-    goal_threshold: float = 0.1  # meters
+    obstacle_buffer: float = 0.05  # meters
 
 
 @dataclass

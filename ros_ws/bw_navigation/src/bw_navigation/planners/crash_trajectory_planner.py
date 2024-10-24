@@ -4,7 +4,6 @@ from typing import Optional, Tuple
 import rospy
 from bw_interfaces.msg import EstimatedObject, GoalEngineConfig
 from bw_shared.geometry.field_bounds import FieldBounds2D
-from bw_shared.geometry.in_plane import nearest_projected_point
 from bw_shared.geometry.pose2d import Pose2D
 from bw_shared.geometry.xy import XY
 from geometry_msgs.msg import Twist
@@ -39,14 +38,15 @@ class CrashTrajectoryPlanner(PlannerInterface):
         )
         self.trajectory_complete_time = None
         self.prev_move_time = rospy.Time.now()
-        self.prev_move_pose = Pose2D(0.0, 0.0, 0.0)
+        self.prev_positions = []
+        self.prev_position_time_window = rospy.Duration.from_sec(self.config.move_timeout)
 
     def reset(self) -> None:
         self.global_planner.reset()
         self.local_planner.reset()
         self.thrash_recover_engine.reset()
         self.prev_move_time = rospy.Time.now()
-        self.prev_move_pose = Pose2D(0.0, 0.0, 0.0)
+        self.prev_positions = []
         self.trajectory_complete_time = None
 
     def go_to_goal(
@@ -133,10 +133,16 @@ class CrashTrajectoryPlanner(PlannerInterface):
         return twist, goal_progress
 
     def did_controlled_robot_move(self, now: rospy.Time, match_state: MatchState) -> bool:
-        controlled_robot_pose = match_state.controlled_robot_pose
-        if controlled_robot_pose.relative_to(self.prev_move_pose).magnitude() > self.config.move_threshold:
+        self.prev_positions.append((now, match_state.controlled_robot_point))
+        while self.prev_positions[-1][0] - self.prev_positions[0][0] > self.prev_position_time_window:
+            self.prev_positions.pop(0)
+        earliest_position = self.prev_positions[0][1]
+        sum_position = XY(0.0, 0.0)
+        for timestamp, position in self.prev_positions[1:]:
+            sum_position += position - earliest_position
+        average_position = XY(sum_position.x / len(self.prev_positions), sum_position.y / len(self.prev_positions))
+        if average_position.magnitude() > self.config.move_threshold:
             self.prev_move_time = now
-            self.prev_move_pose = controlled_robot_pose
         return (now - self.prev_move_time).to_sec() < self.config.move_timeout
 
     def is_in_bounds(self, match_state: MatchState) -> bool:
@@ -146,11 +152,10 @@ class CrashTrajectoryPlanner(PlannerInterface):
         controlled_robot_size_half = controlled_robot_size / 2
         buffer = self.buffer_xy + XY(controlled_robot_size_half, controlled_robot_size_half)
         inset_field = (field[0] + buffer, field[1] - buffer)
-        nearest_point_on_bounds = nearest_projected_point(match_state.controlled_robot_pose, field)
+        goal_relative_to_controlled_bot = match_state.goal_pose.relative_to(match_state.controlled_robot_pose)
+        goal_heading = goal_relative_to_controlled_bot.heading()
         return inset_field[0] <= controlled_robot_point <= inset_field[1] or (
-            nearest_point_on_bounds is None
-            or nearest_point_on_bounds.magnitude(controlled_robot_point)
-            > controlled_robot_size_half + self.rotate_180_buffer
+            abs(goal_heading) < self.config.backaway_recover.angle_tolerance
         )
 
     def is_controlled_robot_in_danger(self, match_state: MatchState) -> bool:
