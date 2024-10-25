@@ -16,8 +16,8 @@ class PidFollowerEngineConfig:
 
 @dataclass
 class BackawayRecoverConfig:
-    linear_velocity: float = 2.0  # m/s
-    rotate_velocity: float = 10.0  # rad/s
+    linear_velocity: float = 1.0  # m/s
+    rotate_velocity: float = 8.0  # rad/s
     angle_tolerance_deg: float = 30.0  # degrees
 
     def __post_init__(self):

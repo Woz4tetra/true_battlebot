@@ -4,6 +4,7 @@
         required="false" respawn="true" clear_params="true">
         <param name="camera_name" value="$(arg camera_name)" />
         <param name="fps" value="60" />
+        <param name="resolution_mode" value="1080_p" />
         <param name="debug_image" value="false" />
         <param name="detect_params_path"
             value="$(find bw_tracking_cam)/config/tracking_detect_parameters.json" />
