@@ -11,11 +11,11 @@ from perception_tools.training.keypoints_config import load_keypoints_config
 from ultralytics import YOLO
 
 
-def copy_to_data(model_path: str, model_metadata_path: str) -> None:
+def copy_to_data(prefix: str, model_path: str, model_metadata_path: str) -> None:
     data_dir = get_data_directory()
     destination_dir = data_dir / "models"
     date_str = datetime.datetime.now().strftime("%Y-%m-%d")
-    model_base_name = f"yolov8-pose_{date_str}"
+    model_base_name = f"{prefix}_{date_str}"
     dest_model_path = destination_dir / (model_base_name + ".pt")
     dest_model_metadata_path = destination_dir / (model_base_name + ".json")
 
@@ -38,9 +38,15 @@ def main() -> None:
         type=str,
         help="Path to the configuration file. ex: ./keypoint_names_v1.toml",
     )
+    parser.add_argument(
+        "prefix",
+        type=str,
+        help="Model name prefix. ex: yolov8-pose",
+    )
     args = parser.parse_args()
     path = args.model
     config_path = args.config
+    prefix = args.prefix
     if not path.endswith(".pt"):
         raise ValueError("Model must be a .pt file")
 
@@ -66,7 +72,7 @@ def main() -> None:
     with open(model_metadata_path, "w") as f:
         json.dump(metadata.to_dict(), f)
 
-    copy_to_data(exported_path, model_metadata_path)
+    copy_to_data(prefix, exported_path, model_metadata_path)
 
 
 if __name__ == "__main__":

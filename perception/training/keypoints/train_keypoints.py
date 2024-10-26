@@ -53,9 +53,9 @@ def get_best_model(run_path: str) -> str:
 def main() -> None:
     configs = {
         "yolo11n-pose": {
-            "batch": 12,
+            "batch": 16,
             "epochs": 200,
-            "imgsz": 1280,
+            "imgsz": 960,
         },
         "yolo11x-pose": {
             "batch": 4,
