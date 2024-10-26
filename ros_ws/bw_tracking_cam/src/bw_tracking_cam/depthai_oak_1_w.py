@@ -53,6 +53,8 @@ class OakImageSupplier(ImageSupplier):
         xout_video.setStreamName("video")
 
         # Properties
+        resolution_mode = self.resolution_mode.to_dai()
+        rospy.loginfo(f"Using resolution mode: {resolution_mode}")
         cam_rgb.setBoardSocket(cam_key)
         cam_rgb.setResolution(self.resolution_mode.to_dai())
         cam_rgb.setFps(self.fps)

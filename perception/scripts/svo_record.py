@@ -7,7 +7,7 @@ import pyzed.sl as sl
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("-s", "--save-directory", default=".", type=str, help="Directory to save images")
+    parser.add_argument("-s", "--save-directory", default="/data/svo", type=str, help="Directory to save images")
     args = parser.parse_args()
 
     save_directory = args.save_directory
@@ -17,12 +17,15 @@ def main() -> None:
 
     # Create a ZED camera object
     zed = sl.Camera()
-    zed.open(init_params)
 
-    init_params.depth_mode = sl.DEPTH_MODE.PERFORMANCE
+    init_params.depth_mode = sl.DEPTH_MODE.NEURAL_PLUS
     init_params.camera_resolution = sl.RESOLUTION.HD1080
-    init_params.camera_fps = 15
+    init_params.camera_fps = 30
     init_params.coordinate_units = sl.UNIT.METER
+    runtime_parameters = sl.RuntimeParameters()
+    runtime_parameters.enable_depth = False
+
+    zed.open(init_params)
 
     # Enable recording with the filename specified in argument
     recording_params = sl.RecordingParameters()
@@ -36,7 +39,7 @@ def main() -> None:
     try:
         while True:
             # Each new frame is added to the SVO file
-            zed.grab()
+            zed.grab(runtime_parameters)
 
             zed.retrieve_image(color_image, sl.VIEW.LEFT)
             color_image_data = color_image.get_data()[..., 0:3]
