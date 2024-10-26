@@ -49,7 +49,7 @@ exclude_filters = [
 [robot_keypoint]
 type = "YoloKeypoint"
 debug_image = true
-threshold = 0.75
+threshold = 0.65
 model_path = "yolo11x-pose_2024-10-26.pt"
 metadata_path = "yolo11x-pose_2024-10-26.json"
 

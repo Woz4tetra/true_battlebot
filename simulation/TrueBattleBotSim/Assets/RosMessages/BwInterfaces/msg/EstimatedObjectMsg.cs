@@ -21,6 +21,7 @@ namespace RosMessageTypes.BwInterfaces
         public string label;
         public Geometry.PoseMsg[] keypoints;
         public string[] keypoint_names;
+        public double score;
 
         public EstimatedObjectMsg()
         {
@@ -32,9 +33,10 @@ namespace RosMessageTypes.BwInterfaces
             this.label = "";
             this.keypoints = new Geometry.PoseMsg[0];
             this.keypoint_names = new string[0];
+            this.score = 0.0;
         }
 
-        public EstimatedObjectMsg(Std.HeaderMsg header, string child_frame_id, Geometry.PoseWithCovarianceMsg pose, Geometry.TwistWithCovarianceMsg twist, Geometry.Vector3Msg size, string label, Geometry.PoseMsg[] keypoints, string[] keypoint_names)
+        public EstimatedObjectMsg(Std.HeaderMsg header, string child_frame_id, Geometry.PoseWithCovarianceMsg pose, Geometry.TwistWithCovarianceMsg twist, Geometry.Vector3Msg size, string label, Geometry.PoseMsg[] keypoints, string[] keypoint_names, double score)
         {
             this.header = header;
             this.child_frame_id = child_frame_id;
@@ -44,6 +46,7 @@ namespace RosMessageTypes.BwInterfaces
             this.label = label;
             this.keypoints = keypoints;
             this.keypoint_names = keypoint_names;
+            this.score = score;
         }
 
         public static EstimatedObjectMsg Deserialize(MessageDeserializer deserializer) => new EstimatedObjectMsg(deserializer);
@@ -58,6 +61,7 @@ namespace RosMessageTypes.BwInterfaces
             deserializer.Read(out this.label);
             deserializer.Read(out this.keypoints, Geometry.PoseMsg.Deserialize, deserializer.ReadLength());
             deserializer.Read(out this.keypoint_names, deserializer.ReadLength());
+            deserializer.Read(out this.score);
         }
 
         public override void SerializeTo(MessageSerializer serializer)
@@ -72,6 +76,7 @@ namespace RosMessageTypes.BwInterfaces
             serializer.Write(this.keypoints);
             serializer.WriteLength(this.keypoint_names);
             serializer.Write(this.keypoint_names);
+            serializer.Write(this.score);
         }
 
         public override string ToString()
@@ -84,7 +89,8 @@ namespace RosMessageTypes.BwInterfaces
             "\nsize: " + size.ToString() +
             "\nlabel: " + label.ToString() +
             "\nkeypoints: " + System.String.Join(", ", keypoints.ToList()) +
-            "\nkeypoint_names: " + System.String.Join(", ", keypoint_names.ToList());
+            "\nkeypoint_names: " + System.String.Join(", ", keypoint_names.ToList()) +
+            "\nscore: " + score.ToString();
         }
 
 #if UNITY_EDITOR

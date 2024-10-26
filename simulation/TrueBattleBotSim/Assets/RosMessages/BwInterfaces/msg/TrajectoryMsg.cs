@@ -15,17 +15,17 @@ namespace RosMessageTypes.BwInterfaces
         public override string RosMessageName => k_RosMessageName;
 
         public HeaderMsg header;
-        public Geometry.PoseMsg[] poses;
-        public Geometry.TwistMsg[] twists;
+        public Geometry.PoseStampedMsg[] poses;
+        public Geometry.TwistStampedMsg[] twists;
 
         public TrajectoryMsg()
         {
             this.header = new HeaderMsg();
-            this.poses = new Geometry.PoseMsg[0];
-            this.twists = new Geometry.TwistMsg[0];
+            this.poses = new Geometry.PoseStampedMsg[0];
+            this.twists = new Geometry.TwistStampedMsg[0];
         }
 
-        public TrajectoryMsg(HeaderMsg header, Geometry.PoseMsg[] poses, Geometry.TwistMsg[] twists)
+        public TrajectoryMsg(HeaderMsg header, Geometry.PoseStampedMsg[] poses, Geometry.TwistStampedMsg[] twists)
         {
             this.header = header;
             this.poses = poses;
@@ -37,8 +37,8 @@ namespace RosMessageTypes.BwInterfaces
         private TrajectoryMsg(MessageDeserializer deserializer)
         {
             this.header = HeaderMsg.Deserialize(deserializer);
-            deserializer.Read(out this.poses, Geometry.PoseMsg.Deserialize, deserializer.ReadLength());
-            deserializer.Read(out this.twists, Geometry.TwistMsg.Deserialize, deserializer.ReadLength());
+            deserializer.Read(out this.poses, Geometry.PoseStampedMsg.Deserialize, deserializer.ReadLength());
+            deserializer.Read(out this.twists, Geometry.TwistStampedMsg.Deserialize, deserializer.ReadLength());
         }
 
         public override void SerializeTo(MessageSerializer serializer)
