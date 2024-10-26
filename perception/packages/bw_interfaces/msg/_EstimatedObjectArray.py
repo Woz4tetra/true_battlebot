@@ -18,7 +18,7 @@ from geometry_msgs.msg._Vector3 import Vector3 as geometry_msgs_msg_Vector3
 from std_msgs.msg._Header import Header as std_msgs_msg_Header
 
 class EstimatedObjectArray(genpy.Message):
-  _md5sum: str = "7f680e22b9e0accfe73c739435d7f94f"
+  _md5sum: str = "80de586de9416cd2b6e67a380556ce78"
   _type: str = "bw_interfaces/EstimatedObjectArray"
   _has_header: bool = False  # flag to mark the presence of a Header object
   _full_text: str = """bw_interfaces/EstimatedObject[] robots
@@ -33,6 +33,7 @@ geometry_msgs/Vector3 size
 string label
 geometry_msgs/Pose[] keypoints
 string[] keypoint_names
+float64 score
 
 ================================================================================
 MSG: std_msgs/Header
@@ -214,6 +215,8 @@ float64 z"""
             val2 = val2.encode('utf-8')
             length = len(val2)
           buff.write(struct.Struct('<I%ss'%length).pack(length, val2))
+        _x = val1.score
+        buff.write(_get_struct_d().pack(_x))
     except struct.error as se: self._check_types(struct.error("%s: '%s' when writing '%s'" % (type(se), str(se), str(locals().get('_x', self)))))
     except TypeError as te: self._check_types(ValueError("%s: '%s' when writing '%s'" % (type(te), str(te), str(locals().get('_x', self)))))
 
@@ -337,6 +340,9 @@ float64 z"""
           else:
             val2 = bytes_[start:end]
           val1.keypoint_names.append(val2)
+        start = end
+        end += 8
+        (val1.score,) = _get_struct_d().unpack(bytes_[start:end])
         self.robots.append(val1)
       return self
     except struct.error as e:
@@ -415,6 +421,8 @@ float64 z"""
             val2 = val2.encode('utf-8')
             length = len(val2)
           buff.write(struct.Struct('<I%ss'%length).pack(length, val2))
+        _x = val1.score
+        buff.write(_get_struct_d().pack(_x))
     except struct.error as se: self._check_types(struct.error("%s: '%s' when writing '%s'" % (type(se), str(se), str(locals().get('_x', self)))))
     except TypeError as te: self._check_types(ValueError("%s: '%s' when writing '%s'" % (type(te), str(te), str(locals().get('_x', self)))))
 
@@ -539,6 +547,9 @@ float64 z"""
           else:
             val2 = bytes_[start:end]
           val1.keypoint_names.append(val2)
+        start = end
+        end += 8
+        (val1.score,) = _get_struct_d().unpack(bytes_[start:end])
         self.robots.append(val1)
       return self
     except struct.error as e:
@@ -572,3 +583,9 @@ def _get_struct_4d():
     if _struct_4d is None:
         _struct_4d = struct.Struct("<4d")
     return _struct_4d
+_struct_d = None
+def _get_struct_d():
+    global _struct_d
+    if _struct_d is None:
+        _struct_d = struct.Struct("<d")
+    return _struct_d

@@ -6,3 +6,4 @@ geometry_msgs/Vector3 size
 string label
 geometry_msgs/Pose[] keypoints
 string[] keypoint_names
+float64 score

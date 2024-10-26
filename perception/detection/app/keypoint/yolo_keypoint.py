@@ -54,7 +54,9 @@ class YoloKeypoint(KeypointInterface):
             )[0]
 
         with ContextTimer("YoloKeypoint.copy"):
-            ids = result.boxes.cpu().cls.int().numpy()  # get the class ids
+            boxes = result.boxes.cpu()
+            confidences = boxes.conf.float().numpy()
+            ids = boxes.cls.int().numpy()  # get the class ids
             keypoints = result.keypoints.cpu().xy.int().numpy()  # get the keypoints
             labels = [ModelLabel(result.names[index]) for index in ids]
 
@@ -68,7 +70,7 @@ class YoloKeypoint(KeypointInterface):
         with ContextTimer("YoloKeypoint.message"):
             keypoint_instances = []
             object_counts = {label: 0 for label in Label}
-            for keypoint, model_label in zip(keypoints, labels):
+            for keypoint, model_label, confidence in zip(keypoints, labels, confidences):
                 if model_label == ModelLabel.BACKGROUND:
                     continue
                 keypoint_names = self.keypoint_names[model_label]
@@ -89,6 +91,7 @@ class YoloKeypoint(KeypointInterface):
                         label=label.value,
                         class_index=system_label_class_idx,
                         object_index=object_counts[label],
+                        score=confidence,
                     )
                 )
                 object_counts[label] += 1

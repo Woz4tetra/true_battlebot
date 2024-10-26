@@ -17,7 +17,7 @@ from geometry_msgs.msg._Vector3 import Vector3 as geometry_msgs_msg_Vector3
 from std_msgs.msg._Header import Header as std_msgs_msg_Header
 
 class EstimatedObject(genpy.Message):
-  _md5sum: str = "e174c0d2a01251d7d2647e3b468b4d22"
+  _md5sum: str = "87327b38e0fe30cf66c2119bc3f0cb43"
   _type: str = "bw_interfaces/EstimatedObject"
   _has_header: bool = True  # flag to mark the presence of a Header object
   _full_text: str = """std_msgs/Header header
@@ -28,6 +28,7 @@ geometry_msgs/Vector3 size
 string label
 geometry_msgs/Pose[] keypoints
 string[] keypoint_names
+float64 score
 
 ================================================================================
 MSG: std_msgs/Header
@@ -109,8 +110,8 @@ MSG: geometry_msgs/Vector3
 float64 x
 float64 y
 float64 z"""
-  __slots__: List[str] = ['header','child_frame_id','pose','twist','size','label','keypoints','keypoint_names']
-  _slot_types: List[str] = ['std_msgs/Header','string','geometry_msgs/PoseWithCovariance','geometry_msgs/TwistWithCovariance','geometry_msgs/Vector3','string','geometry_msgs/Pose[]','string[]']
+  __slots__: List[str] = ['header','child_frame_id','pose','twist','size','label','keypoints','keypoint_names','score']
+  _slot_types: List[str] = ['std_msgs/Header','string','geometry_msgs/PoseWithCovariance','geometry_msgs/TwistWithCovariance','geometry_msgs/Vector3','string','geometry_msgs/Pose[]','string[]','float64']
 
   def __init__(self, header: std_msgs_msg_Header = None,
     child_frame_id: str = None,
@@ -119,7 +120,8 @@ float64 z"""
     size: geometry_msgs_msg_Vector3 = None,
     label: str = None,
     keypoints: List[geometry_msgs_msg_Pose] = None,
-    keypoint_names: List[str] = None):
+    keypoint_names: List[str] = None,
+    score: float = None):
     """
     Constructor. Any message fields that are implicitly/explicitly
     set to None will be assigned a default value. The recommend
@@ -127,13 +129,13 @@ float64 z"""
     changes.  You cannot mix in-order arguments and keyword arguments.
 
     The available fields are:
-      header,child_frame_id,pose,twist,size,label,keypoints,keypoint_names
+      header,child_frame_id,pose,twist,size,label,keypoints,keypoint_names,score
 
     :param args: complete set of field values, in .msg order
     :param kwds: use keyword arguments corresponding to message field names
     to set specific fields.
     """
-    super(EstimatedObject, self).__init__(**{'header': header, 'child_frame_id': child_frame_id, 'pose': pose, 'twist': twist, 'size': size, 'label': label, 'keypoints': keypoints, 'keypoint_names': keypoint_names})
+    super(EstimatedObject, self).__init__(**{'header': header, 'child_frame_id': child_frame_id, 'pose': pose, 'twist': twist, 'size': size, 'label': label, 'keypoints': keypoints, 'keypoint_names': keypoint_names, 'score': score})
     if self.header is None:
       self.header: std_msgs_msg_Header = std_msgs_msg_Header()
     else:
@@ -166,6 +168,10 @@ float64 z"""
       self.keypoint_names: List[str] = []
     else:
       self.keypoint_names = keypoint_names
+    if self.score is None:
+      self.score: float = 0.
+    else:
+      self.score = score
 
   def _get_types(self):
     """
@@ -224,6 +230,8 @@ float64 z"""
           val1 = val1.encode('utf-8')
           length = len(val1)
         buff.write(struct.Struct('<I%ss'%length).pack(length, val1))
+      _x = self.score
+      buff.write(_get_struct_d().pack(_x))
     except struct.error as se: self._check_types(struct.error("%s: '%s' when writing '%s'" % (type(se), str(se), str(locals().get('_x', self)))))
     except TypeError as te: self._check_types(ValueError("%s: '%s' when writing '%s'" % (type(te), str(te), str(locals().get('_x', self)))))
 
@@ -327,6 +335,9 @@ float64 z"""
         else:
           val1 = bytes_[start:end]
         self.keypoint_names.append(val1)
+      start = end
+      end += 8
+      (self.score,) = _get_struct_d().unpack(bytes_[start:end])
       return self
     except struct.error as e:
       raise genpy.DeserializationError(e)  # most likely buffer underfill
@@ -384,6 +395,8 @@ float64 z"""
           val1 = val1.encode('utf-8')
           length = len(val1)
         buff.write(struct.Struct('<I%ss'%length).pack(length, val1))
+      _x = self.score
+      buff.write(_get_struct_d().pack(_x))
     except struct.error as se: self._check_types(struct.error("%s: '%s' when writing '%s'" % (type(se), str(se), str(locals().get('_x', self)))))
     except TypeError as te: self._check_types(ValueError("%s: '%s' when writing '%s'" % (type(te), str(te), str(locals().get('_x', self)))))
 
@@ -488,6 +501,9 @@ float64 z"""
         else:
           val1 = bytes_[start:end]
         self.keypoint_names.append(val1)
+      start = end
+      end += 8
+      (self.score,) = _get_struct_d().unpack(bytes_[start:end])
       return self
     except struct.error as e:
       raise genpy.DeserializationError(e)  # most likely buffer underfill
@@ -532,3 +548,9 @@ def _get_struct_7d():
     if _struct_7d is None:
         _struct_7d = struct.Struct("<7d")
     return _struct_7d
+_struct_d = None
+def _get_struct_d():
+    global _struct_d
+    if _struct_d is None:
+        _struct_d = struct.Struct("<d")
+    return _struct_d

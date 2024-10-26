@@ -261,6 +261,12 @@ class RobotFilter:
             if all([c == 0 for c in robot.pose.covariance]):
                 robot.pose.covariance = self.robot_heuristics[metadata.topic].compute_covariance(robot)  # type: ignore
             measurements[label].append(robot)
+        for label in measurements.keys():
+            measurements[label].sort(key=lambda x: x.score, reverse=True)
+            filtered_measurements = measurements[label][: len(self.label_to_filter[label])]
+            culled_measurements = measurements[label][len(self.label_to_filter[label]) :]
+            measurements[Label.ROBOT].extend(culled_measurements)
+            measurements[label] = filtered_measurements
         with self.filter_lock:
             for label, robot_filters in self.label_to_filter_initialization.items():
                 for robot_filter in robot_filters:

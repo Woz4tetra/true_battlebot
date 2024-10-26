@@ -90,6 +90,7 @@ void KeypointToObject::keypoint_callback(const bw_interfaces::KeypointInstanceAr
         robot_msg.size.x = length;
         robot_msg.size.y = length;
         robot_msg.size.z = get_label_height(instance.label);
+        robot_msg.score = instance.score;
         robot_array.robots.push_back(robot_msg);
 
         fill_marker_array(instance.object_index, robot_msg, front_point, back_point, robot_markers);
