@@ -264,8 +264,8 @@ class RobotFilter:
         for label in measurements.keys():
             measurements[label].sort(key=lambda x: x.score, reverse=True)
             filtered_measurements = measurements[label][: len(self.label_to_filter[label])]
-            culled_measurements = measurements[label][len(self.label_to_filter[label]) :]
-            measurements[Label.ROBOT].extend(culled_measurements)
+            # culled_measurements = measurements[label][len(self.label_to_filter[label]) :]
+            # measurements[Label.ROBOT].extend(culled_measurements)
             measurements[label] = filtered_measurements
         with self.filter_lock:
             for label, robot_filters in self.label_to_filter_initialization.items():
