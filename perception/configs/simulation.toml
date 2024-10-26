@@ -13,7 +13,6 @@ type = "PointCloudFieldFilter"
 type = "SemanticSegmentation"
 debug = true
 model_path = "field_deeplabv3_r50_2024-09-05.torchscript"
-metadata_path = "field_deeplabv3_r50_2024-09-05.json"
 
 [field_segmentation.model_to_system_labels.mapping]
 "field" = "field"
@@ -40,7 +39,6 @@ type = "YoloKeypoint"
 debug_image = true
 threshold = 0.75
 model_path = "yolo11n-pose_2024-10-09.pt"
-metadata_path = "yolo11n-pose_2024-10-09.json"
 
 [robot_keypoint.model_to_system_labels.mapping]
 "mr_stabs_mk1" = "robot"

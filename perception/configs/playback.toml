@@ -2,9 +2,10 @@ target_tick_rate = 60.0
 
 [camera]
 type = "SvoPlaybackCamera"
-svo_name = "mini_bot_2024-10-25T12-25-28"
+# svo_name = "mini_bot_2024-10-25T12-25-28"
 # svo_name = "mini_bot_2024-10-25T12-41-20"
 # svo_name = "mini_bot_2024-10-25T13-51-16"
+svo_name = "mini_bot_2024-10-26T11-30-53"
 start_time = 0.0
 
 [field_filter]
@@ -17,7 +18,6 @@ stale_image_timeout = 2.0
 type = "SemanticSegmentation"
 debug = true
 model_path = "field_deeplabv3_r50_2024-09-05.torchscript"
-metadata_path = "field_deeplabv3_r50_2024-09-05.json"
 
 [field_segmentation.model_to_system_labels.mapping]
 "field" = "field"
@@ -41,7 +41,6 @@ type = "YoloKeypoint"
 debug_image = true
 threshold = 0.75
 model_path = "yolo11x-pose_2024-10-26.pt"
-metadata_path = "yolo11x-pose_2024-10-26.json"
 
 [robot_keypoint.model_to_system_labels.mapping]
 "mr_stabs_mk1" = ""

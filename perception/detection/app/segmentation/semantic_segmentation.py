@@ -21,10 +21,17 @@ class SemanticSegmentation(SegmentationInterface):
         self.config = config
         self.device = get_default_device()
         data_dir = get_data_directory()
-        self.model = torch.jit.load(data_dir / "models" / self.config.model_path, map_location=self.device)
-        self.inference = DeepLabV3Inference(self.model, self.device)
 
-        self.metadata = load_metadata(data_dir / "models" / self.config.metadata_path)
+        model_path = data_dir / "models" / self.config.model_path
+        if self.config.metadata_path:
+            metadata_path = data_dir / "models" / self.config.metadata_path
+        else:
+            metadata_path = data_dir / "models" / (model_path.stem + ".json")
+
+        self.model = torch.jit.load(model_path, map_location=self.device)
+        self.inference = DeepLabV3Inference(self.model, self.device)
+        self.metadata = load_metadata(metadata_path)
+
         self.model_to_system_labels = self.config.model_to_system_labels.labels
         self.class_indices = self.config.model_to_system_labels.get_class_indices(self.metadata.labels)
 

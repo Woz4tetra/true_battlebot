@@ -11,7 +11,6 @@ from ultralytics import YOLO
 
 
 def draw_keypoints(result, metadata: ModelMetadata) -> np.ndarray:
-    breakpoint()
     ids = result.boxes.cpu().cls.int().numpy()  # get the class ids
     keypoints = result.keypoints.cpu().xy.int().numpy()  # get the keypoints
     labels = [result.names[index] for index in ids]

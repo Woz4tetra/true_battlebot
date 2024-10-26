@@ -21,8 +21,12 @@ class YoloKeypoint(KeypointInterface):
         self.logger = logging.getLogger("perception")
         self.config = config
         data_dir = get_data_directory()
-        model_path = data_dir / "models" / config.model_path
-        self.model_metadata = load_metadata(data_dir / "models" / self.config.metadata_path)
+        model_path = data_dir / "models" / self.config.model_path
+        if self.config.metadata_path:
+            metadata_path = data_dir / "models" / self.config.metadata_path
+        else:
+            metadata_path = data_dir / "models" / (model_path.stem + ".json")
+        self.model_metadata = load_metadata(metadata_path)
 
         self.model_to_system_labels = self.config.model_to_system_labels.labels
         self.class_indices = self.config.model_to_system_labels.get_class_indices(self.model_metadata.labels)
