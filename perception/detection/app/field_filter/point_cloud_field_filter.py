@@ -49,7 +49,7 @@ class PointCloudFieldFilter(FieldFilterInterface):
         # Rotation about the normal is computed using the edge of the rectangle closest to the camera.
 
         # rotate points so they face the camera. This transform also normalizes with respect to the plane center
-        flattened_points = points_transform_by(inlier_points, plane_transform.inverse().tfmat)
+        flattened_points = points_transform_by(filtered_points, plane_transform.inverse().tfmat)
         flattened_points2d = flattened_points[:, :2]  # remove z component
         min_rect = find_minimum_rectangle(flattened_points2d)  # find minimum rectangle around 2D points
         extents = get_rectangle_extents(min_rect)  # get the 2D bounds of the rectangle
