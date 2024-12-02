@@ -1,0 +1,9 @@
+texture_size = 1024
+board_size = 0.08
+num_rows = 1
+start_id = 76
+marker_size = 0.064
+border_bits = 1
+board_type = "grid"
+tag_type = "apriltag_36h11"
+num_90_rotations = 2

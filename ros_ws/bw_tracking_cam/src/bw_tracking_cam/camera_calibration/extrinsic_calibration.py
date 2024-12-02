@@ -30,6 +30,7 @@ from sensor_msgs.msg import CameraInfo, Image
 
 SCRIPT_DIR = Path(os.path.dirname(os.path.realpath(__file__)))
 CV_BRIDGE = CvBridge()
+os.chdir(SCRIPT_DIR)
 
 
 @dataclass(frozen=True, eq=True)

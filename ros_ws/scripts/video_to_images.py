@@ -3,6 +3,7 @@ import argparse
 import os
 
 import cv2
+import tqdm
 
 
 def main():
@@ -34,23 +35,25 @@ def main():
         video = cv2.VideoCapture(video_path)
         frame_count = 0
         total_frames = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
-        while True:
-            if frame_skip > 0:
-                frame_count += frame_skip
-                video.set(cv2.CAP_PROP_POS_FRAMES, frame_count)
-            else:
-                frame_count += 1
-            success, frame = video.read()
-            if not success or frame_count > total_frames:
-                print("Video finished")
-                break
-            if split_left:
-                frame = frame[:, : frame.shape[1] // 2]
-            image_name = f"{video_name}-{frame_count:06d}.jpg"
-            image_path = os.path.join(output_dir, image_name)
-            print(f"Writing to {image_path}")
-            cv2.imwrite(image_path, frame)
-        video.release()
+        print(f"Writing to {output_dir}")
+        with tqdm.tqdm(total=total_frames) as pbar:
+            while True:
+                pbar.update(max(frame_skip, 1))
+                if frame_skip > 0:
+                    frame_count += frame_skip
+                    video.set(cv2.CAP_PROP_POS_FRAMES, frame_count)
+                else:
+                    frame_count += 1
+                success, frame = video.read()
+                if not success or frame_count > total_frames:
+                    print("Video finished")
+                    break
+                if split_left:
+                    frame = frame[:, : frame.shape[1] // 2]
+                image_name = f"{video_name}-{frame_count:06d}.jpg"
+                image_path = os.path.join(output_dir, image_name)
+                cv2.imwrite(image_path, frame)
+            video.release()
 
 
 main()

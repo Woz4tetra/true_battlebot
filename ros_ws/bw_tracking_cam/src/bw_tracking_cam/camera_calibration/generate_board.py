@@ -1,18 +1,25 @@
+#!/usr/bin/env python
+# PYTHON_ARGCOMPLETE_OK
 import argparse
 import os
 
+import argcomplete
 import cv2
 from bw_shared.camera_calibration.board_config import BoardConfig
 from PIL import Image
 
+SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
+os.chdir(SCRIPT_DIR)
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("board_config", type=str, help="path to config")
+    argcomplete.autocomplete(parser)
     args = parser.parse_args()
 
     board_config_path = args.board_config
-    image_path = os.path.splitext(board_config_path)[0] + ".png"
-    pdf_path = os.path.splitext(board_config_path)[0] + ".pdf"
+    image_path = os.path.abspath(os.path.splitext(board_config_path)[0] + ".png")
+    pdf_path = os.path.abspath(os.path.splitext(board_config_path)[0] + ".pdf")
 
     config = BoardConfig.from_file(board_config_path)
 
