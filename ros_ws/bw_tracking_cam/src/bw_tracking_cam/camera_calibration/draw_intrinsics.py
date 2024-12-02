@@ -10,7 +10,6 @@ import toml
 from bw_shared.camera_calibration.board_config import BoardConfig
 from bw_shared.geometry.camera.camera_info_loader import CameraInfoData
 from bw_shared.geometry.camera.image_rectifier import ImageRectifier
-from bw_tools.tag_detection.draw_helpers import project_point_array_to_pixel
 from sensor_msgs.msg import CameraInfo
 
 from bw_tracking_cam.camera_calibration.load_images import load_images
