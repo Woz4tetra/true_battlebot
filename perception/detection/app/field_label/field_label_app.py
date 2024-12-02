@@ -58,7 +58,7 @@ def load_from_bag(bag_file: str, cloud_topic: str, image_topic: str, info_topic:
     with Bag(bag_file, "r") as bag:
         start_time = rospy.Time(bag.get_start_time())
         for topic, msg, timestamp in bag.read_messages(  # type: ignore
-            topics=[cloud_topic, image_topic, info_topic, "/tf", "/tf_static", "/filter/field"]
+            topics=[cloud_topic, image_topic, info_topic, "/tf", "/tf_static"]
         ):
             point_cloud_found = point_cloud is not None
             color_image_found = color_image is not None
@@ -80,8 +80,6 @@ def load_from_bag(bag_file: str, cloud_topic: str, image_topic: str, info_topic:
                 update_buffer(msg)
             elif topic == "/tf_static":
                 update_buffer(msg)
-            elif topic == "/filter/field":
-                print(msg)
 
             if point_cloud_found and camera_info_found:
                 break
