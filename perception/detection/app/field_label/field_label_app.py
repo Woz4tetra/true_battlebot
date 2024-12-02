@@ -1,145 +1,21 @@
 import os
-import sys
-import time
-from typing import Any, cast
+from typing import Any
 
 import cv2
 import numpy as np
-import open3d as o3d
-import open3d.visualization
-import rospy
-import tf2_py  # type: ignore
-from app.field_label.command_line_args import BagCommandLineArgs, CommandLineArgs, TopicCommandLineArgs
+import open3d
+from app.field_label.cloud_to_open3d import cloud_to_open3d
+from app.field_label.command_line_args import CommandLineArgs
 from app.field_label.field_label_config import FieldLabelConfig
 from app.field_label.label_state import ClickState, HighlightedPointType, LabelState
+from app.field_label.transform_estimated_object import transform_estimated_object
 from bw_interfaces.msg import EstimatedObject
 from bw_shared.geometry.camera.image_rectifier import ImageRectifier
 from bw_shared.geometry.transform3d import Transform3D
-from bw_shared.messages.header import Header
+from open3d.visualization import Visualizer  # type: ignore
 from perception_tools.messages.camera_data import CameraData
-from perception_tools.messages.image import Image
 from perception_tools.messages.point_cloud import PointCloud
 from perception_tools.messages.transform_point_cloud import transform_point_cloud
-from perception_tools.rosbridge.ros_poll_subscriber import RosPollSubscriber
-from perception_tools.rosbridge.ros_publisher import RosPublisher
-from rosbag.bag import Bag
-from sensor_msgs.msg import CameraInfo
-from sensor_msgs.msg import Image as RosImage
-from sensor_msgs.msg import PointCloud2 as RosPointCloud
-from std_msgs.msg import Empty
-from tf2_msgs.msg import TFMessage
-from tf2_ros import Buffer, TransformListener
-
-
-def cloud_to_open3d(cloud: PointCloud, max_value: float) -> o3d.geometry.PointCloud:
-    delete_points = np.isnan(cloud.points) | ((cloud.points > max_value) | (cloud.points < -max_value))
-    keep_rows = ~np.any(delete_points, axis=1)
-    points = cloud.points[keep_rows]
-
-    cloud_o3d = o3d.geometry.PointCloud()
-    cloud_o3d.points = o3d.utility.Vector3dVector(points)
-    if cloud.colors.size > 0:
-        colors = cloud.colors[keep_rows]
-        cloud_o3d.colors = o3d.utility.Vector3dVector(colors)
-
-    return cloud_o3d
-
-
-def load_from_bag(bag_file: str, cloud_topic: str, image_topic: str, info_topic: str) -> tuple[CameraData, Transform3D]:
-    tf_buffer = tf2_py.BufferCore(cache_time=rospy.Duration.from_sec(1000000))  # type: ignore
-
-    def update_buffer(msg: TFMessage) -> None:
-        for msg_tf in msg.transforms:  # type: ignore
-            tf_buffer.set_transform_static(msg_tf, "default_authority")
-
-    point_cloud: PointCloud | None = None
-    color_image: Image | None = None
-    camera_info: CameraInfo | None = None
-    with Bag(bag_file, "r") as bag:
-        start_time = rospy.Time(bag.get_start_time())
-        for topic, msg, timestamp in bag.read_messages(  # type: ignore
-            topics=[cloud_topic, image_topic, info_topic, "/tf", "/tf_static"]
-        ):
-            point_cloud_found = point_cloud is not None
-            color_image_found = color_image is not None
-            camera_info_found = camera_info is not None
-            if timestamp - start_time > rospy.Duration.from_sec(100.0):
-                raise RuntimeError(
-                    "Not all topics found in bag\n"
-                    f"Cloud found: {point_cloud_found}\n"
-                    f"Image found: {color_image_found}.\n"
-                    f"Info found {camera_info_found}"
-                )
-            if topic == cloud_topic:
-                point_cloud = PointCloud.from_msg(msg)
-            elif topic == image_topic:
-                color_image = Image.from_msg(msg)
-            elif topic == info_topic:
-                camera_info = msg
-            elif topic == "/tf":
-                update_buffer(msg)
-            elif topic == "/tf_static":
-                update_buffer(msg)
-
-            if point_cloud_found and camera_info_found:
-                break
-    assert point_cloud is not None and camera_info is not None
-    if color_image is None:
-        color_image = Image(
-            Header.from_msg(camera_info.header), np.zeros((camera_info.height, camera_info.width, 3), dtype=np.uint8)
-        )
-        print("No color image found in bag, using blank image")
-    assert color_image is not None
-    assert camera_info.header.frame_id == color_image.header.frame_id
-
-    transform = tf_buffer.lookup_transform_core(point_cloud.header.frame_id, color_image.header.frame_id, rospy.Time(0))
-    tf_pointcloud_from_camera = Transform3D.from_msg(transform.transform)
-
-    return CameraData(
-        color_image=color_image, point_cloud=point_cloud, camera_info=camera_info
-    ), tf_pointcloud_from_camera
-
-
-def load_from_topics(
-    cloud_subscriber: RosPollSubscriber[RosPointCloud],
-    image_subscriber: RosPollSubscriber[RosImage],
-    info_subscriber: RosPollSubscriber[CameraInfo],
-    tf_buffer: Buffer,
-) -> tuple[CameraData, Transform3D]:
-    point_cloud = None
-    color_image = None
-    camera_info = None
-    while point_cloud is None or color_image is None or camera_info is None:
-        if point_cloud is None and (cloud_msg := cloud_subscriber.receive()):
-            point_cloud = PointCloud.from_msg(cloud_msg)
-            print("Received point cloud")
-        if color_image is None and (image_msg := image_subscriber.receive()):
-            color_image = Image.from_msg(image_msg)
-            print("Received color image")
-        if camera_info is None and (info_msg := info_subscriber.receive()):
-            camera_info = info_msg
-            print("Received camera info")
-        time.sleep(0.1)
-        if rospy.is_shutdown():
-            sys.exit(0)
-    transform = tf_buffer.lookup_transform(point_cloud.header.frame_id, color_image.header.frame_id, rospy.Time(0))
-    tf_pointcloud_from_camera = Transform3D.from_msg(transform.transform)
-    return CameraData(
-        color_image=color_image, point_cloud=point_cloud, camera_info=camera_info
-    ), tf_pointcloud_from_camera
-
-
-def transform_estimated_object(
-    estimated_object: EstimatedObject, transform: Transform3D, header: Header
-) -> EstimatedObject:
-    transformed_object = Transform3D.from_pose_msg(estimated_object.pose.pose).forward_by(transform)
-    new_object = EstimatedObject()
-    new_object.header = header.to_msg()
-    new_object.child_frame_id = estimated_object.child_frame_id
-    new_object.pose.pose = transformed_object.to_pose_msg()
-    new_object.size = estimated_object.size
-    new_object.label = estimated_object.label
-    return new_object
 
 
 class FieldLabelApp:
@@ -149,12 +25,6 @@ class FieldLabelApp:
         self.labels = LabelState()
         self.cloud = PointCloud()
         self.image_size = (0, 0)
-
-    def run_bag(self, args: BagCommandLineArgs) -> None:
-        camera_data, tf_pointcloud_from_camera = load_from_bag(
-            args.bag_file, self.config.cloud_topic, self.config.image_topic, self.config.info_topic
-        )
-        self.label_camera_data(camera_data, tf_pointcloud_from_camera)
 
     def on_mouse(self, event: int, x: int, y: int, flags: int, param: Any):
         clipped_x = np.clip(x, 0, self.image_size[0] - 1)
@@ -181,27 +51,6 @@ class FieldLabelApp:
                 self.labels.did_click = False
                 self.labels.update_cloud_points(self.cloud)
                 self.labels.save_label_state(self.config.label_state_path)
-
-    def run_topic(self, args: TopicCommandLineArgs) -> None:
-        cloud_subscriber = RosPollSubscriber(self.config.cloud_topic, RosPointCloud)
-        image_subscriber = RosPollSubscriber(self.config.image_topic, RosImage)
-        info_subscriber = RosPollSubscriber(self.config.info_topic, CameraInfo)
-        request_publisher = RosPublisher(self.config.field_request_topic, Empty)
-        response_publisher = RosPublisher(self.config.field_response_topic, EstimatedObject)
-        tf_buffer = Buffer()
-        TransformListener(tf_buffer)
-
-        time.sleep(2.0)  # Wait for subscribers to connect
-
-        print("Requesting camera data")
-        request_publisher.publish(Empty())
-
-        camera_data, tf_pointcloud_from_camera = load_from_topics(
-            cloud_subscriber, image_subscriber, info_subscriber, tf_buffer
-        )
-        response = self.label_camera_data(camera_data, tf_pointcloud_from_camera)
-        if response is not None:
-            response_publisher.publish(response)
 
     def initialize_default_image_points(self, new_image_width: int, new_image_height: int) -> None:
         border = 0.3
@@ -231,9 +80,9 @@ class FieldLabelApp:
         image_extent_points = anchor_points * np.array([new_image_width, new_image_height])
         self.labels.image_extent_points = image_extent_points.astype(np.int32)
 
-    def label_camera_data(
+    def initialize_app(
         self, camera_data: CameraData, tf_pointcloud_from_camera: Transform3D
-    ) -> EstimatedObject | None:
+    ) -> tuple[np.ndarray, Visualizer]:
         pointcloud_in_camera = transform_point_cloud(
             camera_data.point_cloud, tf_pointcloud_from_camera, camera_data.color_image.header
         )
@@ -269,7 +118,7 @@ class FieldLabelApp:
         self.labels.update_cloud_points(self.cloud)
         self.labels.create_markers()
 
-        vis = open3d.visualization.Visualizer()  # type: ignore
+        vis = Visualizer()
         vis.create_window(width=window_height, height=window_height)
         vis.add_geometry(o3d_downsample_cloud)
         for marker in self.labels.plane_point_markers:
@@ -287,57 +136,68 @@ class FieldLabelApp:
         cv2.moveWindow(cv_window_name, window_height, 0)
         cv2.setMouseCallback(cv_window_name, self.on_mouse)
 
+        return rectified_image, vis
+
+    def update_3d_visualization(self, vis: Visualizer) -> bool:
+        if not vis.poll_events():
+            return False
+        vis.update_renderer()
+        for marker in self.labels.plane_point_markers:
+            vis.update_geometry(marker)
+        for marker in self.labels.extent_point_markers:
+            vis.update_geometry(marker)
+        vis.update_geometry(self.labels.plane_marker)
+        vis.update_geometry(self.labels.origin_vis)
+        return True
+
+    def update_image_visualization(self, show_image: np.ndarray) -> None:
+        cv2.polylines(show_image, [self.labels.image_plane_points], isClosed=True, color=(0, 255, 0), thickness=1)
+        for index, point in enumerate(self.labels.image_plane_points):
+            if (
+                index == self.labels.highlighted_index
+                and self.labels.highlighted_point_type == HighlightedPointType.PLANE
+            ):
+                color = (0, 0, 255)
+                if self.labels.click_state == ClickState.MOVE:
+                    radius = 0
+                else:
+                    radius = self.labels.highlighted_radius
+            else:
+                radius = self.labels.unhighlighted_radius
+                color = (0, 255, 0)
+            if radius > 0:
+                cv2.circle(show_image, tuple(point), radius, color, -1)
+
+        cv2.polylines(show_image, [self.labels.image_extent_points], isClosed=True, color=(0, 255, 128), thickness=1)
+        for index, point in enumerate(self.labels.image_extent_points):
+            if (
+                index == self.labels.highlighted_index
+                and self.labels.highlighted_point_type == HighlightedPointType.EXTENT
+            ):
+                color = (0, 0, 255)
+                if self.labels.click_state == ClickState.MOVE:
+                    radius = 0
+                else:
+                    radius = self.labels.highlighted_radius
+            elif index == 0:
+                color = (255, 0, 128)
+                radius = self.labels.unhighlighted_radius
+            else:
+                color = (0, 255, 128)
+                radius = self.labels.unhighlighted_radius
+            if radius > 0:
+                cv2.circle(show_image, tuple(point), radius, color, -1)
+
+    def label_camera_data(
+        self, camera_data: CameraData, tf_pointcloud_from_camera: Transform3D
+    ) -> EstimatedObject | None:
+        rectified_image, vis = self.initialize_app(camera_data, tf_pointcloud_from_camera)
+
         while True:
-            if not vis.poll_events():
+            if not self.update_3d_visualization(vis):
                 break
-            vis.update_renderer()
-            for marker in self.labels.plane_point_markers:
-                vis.update_geometry(marker)
-            for marker in self.labels.extent_point_markers:
-                vis.update_geometry(marker)
-            vis.update_geometry(self.labels.plane_marker)
-            vis.update_geometry(self.labels.origin_vis)
-
             show_image = np.copy(rectified_image)
-            cv2.polylines(show_image, [self.labels.image_plane_points], isClosed=True, color=(0, 255, 0), thickness=1)
-            for index, point in enumerate(self.labels.image_plane_points):
-                if (
-                    index == self.labels.highlighted_index
-                    and self.labels.highlighted_point_type == HighlightedPointType.PLANE
-                ):
-                    color = (0, 0, 255)
-                    if self.labels.click_state == ClickState.MOVE:
-                        radius = 0
-                    else:
-                        radius = self.labels.highlighted_radius
-                else:
-                    radius = self.labels.unhighlighted_radius
-                    color = (0, 255, 0)
-                if radius > 0:
-                    cv2.circle(show_image, tuple(point), radius, color, -1)
-
-            cv2.polylines(
-                show_image, [self.labels.image_extent_points], isClosed=True, color=(0, 255, 128), thickness=1
-            )
-            for index, point in enumerate(self.labels.image_extent_points):
-                if (
-                    index == self.labels.highlighted_index
-                    and self.labels.highlighted_point_type == HighlightedPointType.EXTENT
-                ):
-                    color = (0, 0, 255)
-                    if self.labels.click_state == ClickState.MOVE:
-                        radius = 0
-                    else:
-                        radius = self.labels.highlighted_radius
-                elif index == 0:
-                    color = (255, 0, 128)
-                    radius = self.labels.unhighlighted_radius
-                else:
-                    color = (0, 255, 128)
-                    radius = self.labels.unhighlighted_radius
-                if radius > 0:
-                    cv2.circle(show_image, tuple(point), radius, color, -1)
-
+            self.update_image_visualization(show_image)
             cv2.imshow("Image", show_image)
             keycode = cv2.waitKeyEx(1)
             key = chr(keycode & 0xFF)
@@ -351,13 +211,3 @@ class FieldLabelApp:
                 print(field_estimate_in_pointcloud)
                 return field_estimate_in_pointcloud
         return None
-
-    def run(self) -> None:
-        match self.args.command:
-            case "bag":
-                self.run_bag(cast(BagCommandLineArgs, self.args))
-            case "topic":
-                rospy.init_node("field_label_app", disable_signals=True)
-                self.run_topic(cast(TopicCommandLineArgs, self.args))
-            case _:
-                raise RuntimeError(f"Unknown command: {self.args.command}")
