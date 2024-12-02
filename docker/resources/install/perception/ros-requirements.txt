@@ -13,6 +13,8 @@ cv-bridge
 image_geometry
 rosbag
 roslz4
+tf2-py
+tf2-ros
 
 genmsg @ git+https://github.com/ros/genmsg.git/@4e70df6851d37885a10fb5bc9c48e7f08f5e4339
 genpy @ git+https://github.com/Woz4tetra/genpy.git/@7ba2cfabaf6a9954a5c7db6118579d35f090207e

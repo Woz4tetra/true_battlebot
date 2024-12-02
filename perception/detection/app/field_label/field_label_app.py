@@ -8,14 +8,18 @@ import numpy as np
 import open3d as o3d
 import open3d.visualization
 import rospy
+import tf2_py  # type: ignore
 from app.field_label.command_line_args import BagCommandLineArgs, CommandLineArgs, TopicCommandLineArgs
 from app.field_label.field_label_config import FieldLabelConfig
 from app.field_label.label_state import ClickState, HighlightedPointType, LabelState
 from bw_interfaces.msg import EstimatedObject
 from bw_shared.geometry.camera.image_rectifier import ImageRectifier
+from bw_shared.geometry.transform3d import Transform3D
+from bw_shared.messages.header import Header
 from perception_tools.messages.camera_data import CameraData
 from perception_tools.messages.image import Image
 from perception_tools.messages.point_cloud import PointCloud
+from perception_tools.messages.transform_point_cloud import transform_point_cloud
 from perception_tools.rosbridge.ros_poll_subscriber import RosPollSubscriber
 from perception_tools.rosbridge.ros_publisher import RosPublisher
 from rosbag.bag import Bag
@@ -23,6 +27,8 @@ from sensor_msgs.msg import CameraInfo
 from sensor_msgs.msg import Image as RosImage
 from sensor_msgs.msg import PointCloud2 as RosPointCloud
 from std_msgs.msg import Empty
+from tf2_msgs.msg import TFMessage
+from tf2_ros import Buffer, TransformListener
 
 
 def cloud_to_open3d(cloud: PointCloud, max_value: float) -> o3d.geometry.PointCloud:
@@ -39,30 +45,69 @@ def cloud_to_open3d(cloud: PointCloud, max_value: float) -> o3d.geometry.PointCl
     return cloud_o3d
 
 
-def load_from_bag(bag_file: str, cloud_topic: str, image_topic: str, info_topic: str) -> CameraData:
-    point_cloud = None
-    color_image = None
-    camera_info = None
+def load_from_bag(bag_file: str, cloud_topic: str, image_topic: str, info_topic: str) -> tuple[CameraData, Transform3D]:
+    tf_buffer = tf2_py.BufferCore(cache_time=rospy.Duration.from_sec(1000000))  # type: ignore
+
+    def update_buffer(msg: TFMessage) -> None:
+        for msg_tf in msg.transforms:  # type: ignore
+            tf_buffer.set_transform_static(msg_tf, "default_authority")
+
+    point_cloud: PointCloud | None = None
+    color_image: Image | None = None
+    camera_info: CameraInfo | None = None
     with Bag(bag_file, "r") as bag:
-        for topic, msg, timestamp in bag.read_messages(topics=[cloud_topic, image_topic, info_topic]):  # type: ignore
+        start_time = rospy.Time(bag.get_start_time())
+        for topic, msg, timestamp in bag.read_messages(  # type: ignore
+            topics=[cloud_topic, image_topic, info_topic, "/tf", "/tf_static", "/filter/field"]
+        ):
+            point_cloud_found = point_cloud is not None
+            color_image_found = color_image is not None
+            camera_info_found = camera_info is not None
+            if timestamp - start_time > rospy.Duration.from_sec(100.0):
+                raise RuntimeError(
+                    "Not all topics found in bag\n"
+                    f"Cloud found: {point_cloud_found}\n"
+                    f"Image found: {color_image_found}.\n"
+                    f"Info found {camera_info_found}"
+                )
             if topic == cloud_topic:
                 point_cloud = PointCloud.from_msg(msg)
             elif topic == image_topic:
                 color_image = Image.from_msg(msg)
             elif topic == info_topic:
                 camera_info = msg
+            elif topic == "/tf":
+                update_buffer(msg)
+            elif topic == "/tf_static":
+                update_buffer(msg)
+            elif topic == "/filter/field":
+                print(msg)
 
-            if point_cloud is not None and color_image is not None and camera_info is not None:
+            if point_cloud_found and camera_info_found:
                 break
-    assert point_cloud is not None and color_image is not None and camera_info is not None
-    return CameraData(color_image=color_image, point_cloud=point_cloud, camera_info=camera_info)
+    assert point_cloud is not None and camera_info is not None
+    if color_image is None:
+        color_image = Image(
+            Header.from_msg(camera_info.header), np.zeros((camera_info.height, camera_info.width, 3), dtype=np.uint8)
+        )
+        print("No color image found in bag, using blank image")
+    assert color_image is not None
+    assert camera_info.header.frame_id == color_image.header.frame_id
+
+    transform = tf_buffer.lookup_transform_core(point_cloud.header.frame_id, color_image.header.frame_id, rospy.Time(0))
+    tf_pointcloud_from_camera = Transform3D.from_msg(transform.transform)
+
+    return CameraData(
+        color_image=color_image, point_cloud=point_cloud, camera_info=camera_info
+    ), tf_pointcloud_from_camera
 
 
 def load_from_topics(
     cloud_subscriber: RosPollSubscriber[RosPointCloud],
     image_subscriber: RosPollSubscriber[RosImage],
     info_subscriber: RosPollSubscriber[CameraInfo],
-) -> CameraData:
+    tf_buffer: Buffer,
+) -> tuple[CameraData, Transform3D]:
     point_cloud = None
     color_image = None
     camera_info = None
@@ -79,7 +124,24 @@ def load_from_topics(
         time.sleep(0.1)
         if rospy.is_shutdown():
             sys.exit(0)
-    return CameraData(color_image=color_image, point_cloud=point_cloud, camera_info=camera_info)
+    transform = tf_buffer.lookup_transform(point_cloud.header.frame_id, color_image.header.frame_id, rospy.Time(0))
+    tf_pointcloud_from_camera = Transform3D.from_msg(transform.transform)
+    return CameraData(
+        color_image=color_image, point_cloud=point_cloud, camera_info=camera_info
+    ), tf_pointcloud_from_camera
+
+
+def transform_estimated_object(
+    estimated_object: EstimatedObject, transform: Transform3D, header: Header
+) -> EstimatedObject:
+    transformed_object = Transform3D.from_pose_msg(estimated_object.pose.pose).forward_by(transform)
+    new_object = EstimatedObject()
+    new_object.header = header.to_msg()
+    new_object.child_frame_id = estimated_object.child_frame_id
+    new_object.pose.pose = transformed_object.to_pose_msg()
+    new_object.size = estimated_object.size
+    new_object.label = estimated_object.label
+    return new_object
 
 
 class FieldLabelApp:
@@ -91,10 +153,10 @@ class FieldLabelApp:
         self.image_size = (0, 0)
 
     def run_bag(self, args: BagCommandLineArgs) -> None:
-        camera_data = load_from_bag(
+        camera_data, tf_pointcloud_from_camera = load_from_bag(
             args.bag_file, self.config.cloud_topic, self.config.image_topic, self.config.info_topic
         )
-        self.label_camera_data(camera_data)
+        self.label_camera_data(camera_data, tf_pointcloud_from_camera)
 
     def on_mouse(self, event: int, x: int, y: int, flags: int, param: Any):
         clipped_x = np.clip(x, 0, self.image_size[0] - 1)
@@ -127,14 +189,21 @@ class FieldLabelApp:
         image_subscriber = RosPollSubscriber(self.config.image_topic, RosImage)
         info_subscriber = RosPollSubscriber(self.config.info_topic, CameraInfo)
         request_publisher = RosPublisher(self.config.field_request_topic, Empty)
+        response_publisher = RosPublisher(self.config.field_response_topic, EstimatedObject)
+        tf_buffer = Buffer()
+        TransformListener(tf_buffer)
 
         time.sleep(2.0)  # Wait for subscribers to connect
 
         print("Requesting camera data")
         request_publisher.publish(Empty())
 
-        camera_data = load_from_topics(cloud_subscriber, image_subscriber, info_subscriber)
-        self.label_camera_data(camera_data)
+        camera_data, tf_pointcloud_from_camera = load_from_topics(
+            cloud_subscriber, image_subscriber, info_subscriber, tf_buffer
+        )
+        response = self.label_camera_data(camera_data, tf_pointcloud_from_camera)
+        if response is not None:
+            response_publisher.publish(response)
 
     def initialize_default_image_points(self, new_image_width: int, new_image_height: int) -> None:
         border = 0.3
@@ -164,10 +233,14 @@ class FieldLabelApp:
         image_extent_points = anchor_points * np.array([new_image_width, new_image_height])
         self.labels.image_extent_points = image_extent_points.astype(np.int32)
 
-    def label_camera_data(self, camera_data: CameraData) -> None:
-        response_publisher = RosPublisher(self.config.field_response_topic, EstimatedObject)
+    def label_camera_data(
+        self, camera_data: CameraData, tf_pointcloud_from_camera: Transform3D
+    ) -> EstimatedObject | None:
+        pointcloud_in_camera = transform_point_cloud(
+            camera_data.point_cloud, tf_pointcloud_from_camera, camera_data.color_image.header
+        )
 
-        point_cloud = cloud_to_open3d(camera_data.point_cloud, max_value=self.config.max_cloud_distance)
+        point_cloud = cloud_to_open3d(pointcloud_in_camera, max_value=self.config.max_cloud_distance)
         o3d_downsample_cloud = point_cloud.voxel_down_sample(voxel_size=0.02)
 
         min_bound = np.array([-5, -5, -5])
@@ -175,22 +248,22 @@ class FieldLabelApp:
         o3d_downsample_cloud = o3d_downsample_cloud.crop(
             open3d.geometry.AxisAlignedBoundingBox(min_bound=min_bound, max_bound=max_bound)
         )
-        self.cloud = PointCloud(
-            camera_data.point_cloud.header, o3d_downsample_cloud.points, o3d_downsample_cloud.colors
-        )
+        self.cloud = PointCloud(pointcloud_in_camera.header, o3d_downsample_cloud.points, o3d_downsample_cloud.colors)
 
         cv_window_name = "Image"
         window_height = 800
         ratio = window_height / camera_data.color_image.data.shape[1]
         new_image_width = int(camera_data.color_image.data.shape[1] * ratio)
         new_image_height = int(camera_data.color_image.data.shape[0] * ratio)
-        self.image_size = (new_image_width, new_image_height)
-        rectifier = ImageRectifier(camera_data.camera_info, new_size=self.image_size)
+        rectifier = ImageRectifier(
+            camera_data.camera_info, new_size=(new_image_width, new_image_height), padding=self.config.image_padding
+        )
 
         if os.path.isfile(self.config.label_state_path):
             self.labels.load_label_state(self.config.label_state_path)
         else:
-            self.initialize_default_image_points(new_image_width, new_image_height)
+            self.initialize_default_image_points(rectifier.width, rectifier.height)
+        self.image_size = (rectifier.width, rectifier.height)
 
         self.labels.camera_model.fromCameraInfo(rectifier.get_rectified_info())
         rectified_image = rectifier.rectify(camera_data.color_image.data)
@@ -274,15 +347,19 @@ class FieldLabelApp:
                 break
             elif key == "\n" or key == "\r":
                 print("Computed field estimate")
-                print(self.labels.field_estimate)
-                response_publisher.publish(self.labels.field_estimate)
+                field_estimate_in_pointcloud = transform_estimated_object(
+                    self.labels.field_estimate, tf_pointcloud_from_camera, camera_data.point_cloud.header
+                )
+                print(field_estimate_in_pointcloud)
+                return field_estimate_in_pointcloud
+        return None
 
     def run(self) -> None:
-        rospy.init_node("field_label_app", disable_signals=True)
         match self.args.command:
             case "bag":
                 self.run_bag(cast(BagCommandLineArgs, self.args))
             case "topic":
+                rospy.init_node("field_label_app", disable_signals=True)
                 self.run_topic(cast(TopicCommandLineArgs, self.args))
             case _:
                 raise RuntimeError(f"Unknown command: {self.args.command}")
