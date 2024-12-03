@@ -4,10 +4,11 @@ from typing import Any
 import cv2
 import numpy as np
 import open3d
+from app.field_label.click_state import ClickState
 from app.field_label.cloud_to_open3d import cloud_to_open3d
 from app.field_label.command_line_args import CommandLineArgs
 from app.field_label.field_label_config import FieldLabelConfig
-from app.field_label.label_state import ClickState, HighlightedPointType, LabelState
+from app.field_label.field_label_state import FieldLabelState, HighlightedPointType
 from app.field_label.transform_estimated_object import transform_estimated_object
 from bw_interfaces.msg import EstimatedObject
 from bw_shared.geometry.camera.image_rectifier import ImageRectifier
@@ -19,52 +20,65 @@ from perception_tools.messages.transform_point_cloud import transform_point_clou
 
 
 class FieldLabelApp:
-    def __init__(self, config: FieldLabelConfig, args: CommandLineArgs) -> None:
+    def __init__(
+        self,
+        config: FieldLabelConfig,
+        args: CommandLineArgs,
+        camera_data: CameraData,
+        tf_pointcloud_from_camera: Transform3D,
+    ) -> None:
         self.args = args
         self.config = config
-        self.labels = LabelState()
+        self.camera_data = camera_data
+        self.tf_pointcloud_from_camera = tf_pointcloud_from_camera
+        self.label_state = FieldLabelState()
         self.cloud = PointCloud()
         self.image_size = (0, 0)
+        self.field_estimate_in_pointcloud: EstimatedObject | None = None
+        self.cv_window_name = "Image"
+        self.update_pending = False
 
-    def on_mouse(self, event: int, x: int, y: int, flags: int, param: Any):
+    def on_mouse(self, event: int, x: int, y: int, flags: int, param: Any) -> None:
         clipped_x = np.clip(x, 0, self.image_size[0] - 1)
         clipped_y = np.clip(y, 0, self.image_size[1] - 1)
         clipped = clipped_x, clipped_y
         if event == cv2.EVENT_MOUSEMOVE:
-            if self.labels.did_click:
-                self.labels.click_state = ClickState.MOVE
+            if self.label_state.did_click:
+                self.label_state.click_state = ClickState.MOVE
                 point_array = (
-                    self.labels.image_plane_points
-                    if self.labels.highlighted_point_type == HighlightedPointType.PLANE
-                    else self.labels.image_extent_points
+                    self.label_state.image_plane_points
+                    if self.label_state.highlighted_point_type == HighlightedPointType.PLANE
+                    else self.label_state.image_extent_points
                 )
-                point_array[self.labels.highlighted_index] = np.array(clipped)
+                point_array[self.label_state.highlighted_index] = np.array(clipped)
             else:
-                self.labels.update_highlighted_index(clipped)
+                self.label_state.update_highlighted_index(clipped)
         elif event == cv2.EVENT_LBUTTONDOWN:
-            self.labels.click_state = ClickState.DOWN
-            if self.labels.highlighted_index != -1:
-                self.labels.did_click = True
+            self.label_state.click_state = ClickState.DOWN
+            if self.label_state.highlighted_index != -1:
+                self.label_state.did_click = True
         elif event == cv2.EVENT_LBUTTONUP:
-            self.labels.click_state = ClickState.UP
-            if self.labels.did_click:
-                self.labels.did_click = False
-                self.labels.update_cloud_points(self.cloud)
-                self.labels.save_label_state(self.config.label_state_path)
+            self.label_state.click_state = ClickState.UP
+            if self.label_state.did_click:
+                self.label_state.did_click = False
+                self.update_pending = True
+                self.label_state.save_label_state(self.config.label_state_path)
 
     def initialize_default_image_points(self, new_image_width: int, new_image_height: int) -> None:
         border = 0.3
-        anchor_points = np.array(
-            [
-                [-border, border],
-                [-border, -border],
-                [border, -border],
-            ]
-        )
+        anchor_points_list = [
+            [-border, border],
+            [-border, -border],
+            [border, -border],
+        ]
+        for _ in range(self.config.num_extra_points):
+            anchor_points_list.append([np.random.random() * border, np.random.random() * border])
+
+        anchor_points = np.array(anchor_points_list)
         anchor_points[:] += 1.0
         anchor_points[:] *= 0.5
         image_plane_points = anchor_points * np.array([new_image_width, new_image_height])
-        self.labels.image_plane_points = image_plane_points.astype(np.int32)
+        self.label_state.image_plane_points = image_plane_points.astype(np.int32)
 
         border = 0.4
         anchor_points = np.array(
@@ -78,13 +92,11 @@ class FieldLabelApp:
         anchor_points[:] += 1.0
         anchor_points[:] *= 0.5
         image_extent_points = anchor_points * np.array([new_image_width, new_image_height])
-        self.labels.image_extent_points = image_extent_points.astype(np.int32)
+        self.label_state.image_extent_points = image_extent_points.astype(np.int32)
 
-    def initialize_app(
-        self, camera_data: CameraData, tf_pointcloud_from_camera: Transform3D
-    ) -> tuple[np.ndarray, Visualizer]:
+    def initialize_app(self) -> tuple[np.ndarray, Visualizer]:
         pointcloud_in_camera = transform_point_cloud(
-            camera_data.point_cloud, tf_pointcloud_from_camera, camera_data.color_image.header
+            self.camera_data.point_cloud, self.tf_pointcloud_from_camera, self.camera_data.color_image.header
         )
 
         point_cloud = cloud_to_open3d(pointcloud_in_camera, max_value=self.config.max_cloud_distance)
@@ -97,44 +109,45 @@ class FieldLabelApp:
         )
         self.cloud = PointCloud(pointcloud_in_camera.header, o3d_downsample_cloud.points, o3d_downsample_cloud.colors)
 
-        cv_window_name = "Image"
         window_height = 800
-        ratio = window_height / camera_data.color_image.data.shape[1]
-        new_image_width = int(camera_data.color_image.data.shape[1] * ratio)
-        new_image_height = int(camera_data.color_image.data.shape[0] * ratio)
+        ratio = window_height / self.camera_data.color_image.data.shape[1]
+        new_image_width = int(self.camera_data.color_image.data.shape[1] * ratio)
+        new_image_height = int(self.camera_data.color_image.data.shape[0] * ratio)
         rectifier = ImageRectifier(
-            camera_data.camera_info, new_size=(new_image_width, new_image_height), padding=self.config.image_padding
+            self.camera_data.camera_info,
+            new_size=(new_image_width, new_image_height),
+            padding=self.config.image_padding,
         )
 
         if os.path.isfile(self.config.label_state_path):
-            self.labels.load_label_state(self.config.label_state_path)
+            self.label_state.load_label_state(self.config.label_state_path)
         else:
             self.initialize_default_image_points(rectifier.width, rectifier.height)
         self.image_size = (rectifier.width, rectifier.height)
 
-        self.labels.camera_model.fromCameraInfo(rectifier.get_rectified_info())
-        rectified_image = rectifier.rectify(camera_data.color_image.data)
+        self.label_state.camera_model.fromCameraInfo(rectifier.get_rectified_info())
+        rectified_image = rectifier.rectify(self.camera_data.color_image.data)
 
-        self.labels.update_cloud_points(self.cloud)
-        self.labels.create_markers()
+        self.label_state.update_cloud_points(self.cloud)
+        self.label_state.create_markers()
 
         vis = Visualizer()
         vis.create_window(width=window_height, height=window_height)
         vis.add_geometry(o3d_downsample_cloud)
-        for marker in self.labels.plane_point_markers:
+        for marker in self.label_state.plane_point_markers:
             vis.add_geometry(marker)
-        for marker in self.labels.extent_point_markers:
+        for marker in self.label_state.extent_point_markers:
             vis.add_geometry(marker)
-        vis.add_geometry(self.labels.plane_marker)
-        vis.add_geometry(self.labels.origin_vis)
+        vis.add_geometry(self.label_state.plane_marker)
+        vis.add_geometry(self.label_state.origin_vis)
 
         view_control = vis.get_view_control()
         view_control.set_front([0, 0, -1])
         view_control.set_up([0, -1, 0])
 
-        cv2.namedWindow(cv_window_name)
-        cv2.moveWindow(cv_window_name, window_height, 0)
-        cv2.setMouseCallback(cv_window_name, self.on_mouse)
+        cv2.namedWindow(self.cv_window_name)
+        cv2.moveWindow(self.cv_window_name, 1000, 0)
+        cv2.setMouseCallback(self.cv_window_name, self.on_mouse)
 
         return rectified_image, vis
 
@@ -142,72 +155,85 @@ class FieldLabelApp:
         if not vis.poll_events():
             return False
         vis.update_renderer()
-        for marker in self.labels.plane_point_markers:
+        for marker in self.label_state.plane_point_markers:
             vis.update_geometry(marker)
-        for marker in self.labels.extent_point_markers:
+        for marker in self.label_state.extent_point_markers:
             vis.update_geometry(marker)
-        vis.update_geometry(self.labels.plane_marker)
-        vis.update_geometry(self.labels.origin_vis)
+        vis.update_geometry(self.label_state.plane_marker)
+        vis.update_geometry(self.label_state.origin_vis)
         return True
 
     def update_image_visualization(self, show_image: np.ndarray) -> None:
-        cv2.polylines(show_image, [self.labels.image_plane_points], isClosed=True, color=(0, 255, 0), thickness=1)
-        for index, point in enumerate(self.labels.image_plane_points):
+        cv2.polylines(show_image, [self.label_state.image_plane_points], isClosed=True, color=(0, 255, 0), thickness=1)
+        for index, point in enumerate(self.label_state.image_plane_points):
             if (
-                index == self.labels.highlighted_index
-                and self.labels.highlighted_point_type == HighlightedPointType.PLANE
+                index == self.label_state.highlighted_index
+                and self.label_state.highlighted_point_type == HighlightedPointType.PLANE
             ):
                 color = (0, 0, 255)
-                if self.labels.click_state == ClickState.MOVE:
+                if self.label_state.click_state == ClickState.MOVE:
                     radius = 0
                 else:
-                    radius = self.labels.highlighted_radius
+                    radius = self.label_state.highlighted_radius
             else:
-                radius = self.labels.unhighlighted_radius
-                color = (0, 255, 0)
+                radius = self.label_state.unhighlighted_radius
+                if index <= 2:
+                    color = (0, 255, 0)
+                else:
+                    color = (200, 200, 200)
             if radius > 0:
                 cv2.circle(show_image, tuple(point), radius, color, -1)
 
-        cv2.polylines(show_image, [self.labels.image_extent_points], isClosed=True, color=(0, 255, 128), thickness=1)
-        for index, point in enumerate(self.labels.image_extent_points):
+        cv2.polylines(
+            show_image, [self.label_state.image_extent_points], isClosed=True, color=(0, 255, 128), thickness=1
+        )
+        for index, point in enumerate(self.label_state.image_extent_points):
             if (
-                index == self.labels.highlighted_index
-                and self.labels.highlighted_point_type == HighlightedPointType.EXTENT
+                index == self.label_state.highlighted_index
+                and self.label_state.highlighted_point_type == HighlightedPointType.EXTENT
             ):
                 color = (0, 0, 255)
-                if self.labels.click_state == ClickState.MOVE:
+                if self.label_state.click_state == ClickState.MOVE:
                     radius = 0
                 else:
-                    radius = self.labels.highlighted_radius
+                    radius = self.label_state.highlighted_radius
             elif index == 0:
                 color = (255, 0, 128)
-                radius = self.labels.unhighlighted_radius
+                radius = self.label_state.unhighlighted_radius
             else:
                 color = (0, 255, 128)
-                radius = self.labels.unhighlighted_radius
+                radius = self.label_state.unhighlighted_radius
             if radius > 0:
                 cv2.circle(show_image, tuple(point), radius, color, -1)
 
-    def label_camera_data(
-        self, camera_data: CameraData, tf_pointcloud_from_camera: Transform3D
-    ) -> EstimatedObject | None:
-        rectified_image, vis = self.initialize_app(camera_data, tf_pointcloud_from_camera)
+    def compute_result(self) -> None:
+        self.label_state.update_cloud_points(self.cloud)
 
-        while True:
-            if not self.update_3d_visualization(vis):
-                break
-            show_image = np.copy(rectified_image)
-            self.update_image_visualization(show_image)
-            cv2.imshow("Image", show_image)
-            keycode = cv2.waitKeyEx(1)
-            key = chr(keycode & 0xFF)
-            if key == "q":
-                break
-            elif key == "\n" or key == "\r":
-                print("Computed field estimate")
-                field_estimate_in_pointcloud = transform_estimated_object(
-                    self.labels.field_estimate, tf_pointcloud_from_camera, camera_data.point_cloud.header
-                )
-                print(field_estimate_in_pointcloud)
-                return field_estimate_in_pointcloud
+    def tick_labeling(self, rectified_image: np.ndarray, vis: Visualizer) -> bool:
+        if not self.update_3d_visualization(vis):
+            return False
+        show_image = np.copy(rectified_image)
+        self.update_image_visualization(show_image)
+        cv2.imshow(self.cv_window_name, show_image)
+        keycode = cv2.waitKeyEx(1)
+        key = chr(keycode & 0xFF)
+        if key == "q":
+            return False
+        elif key == "\n" or key == "\r":
+            print("Computed field estimate")
+            self.field_estimate_in_pointcloud = transform_estimated_object(
+                self.label_state.field_estimate, self.tf_pointcloud_from_camera, self.camera_data.point_cloud.header
+            )
+            print(self.field_estimate_in_pointcloud)
+        return True
+
+    def label_camera_data(self) -> EstimatedObject | None:
+        rectified_image, vis = self.initialize_app()
+
+        while self.tick_labeling(rectified_image, vis):
+            if self.update_pending:
+                self.compute_result()
+                self.update_pending = False
+            if self.field_estimate_in_pointcloud is not None:
+                return self.field_estimate_in_pointcloud
         return None

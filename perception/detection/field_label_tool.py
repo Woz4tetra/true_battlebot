@@ -65,6 +65,10 @@ def parse_args() -> CommandLineArgs:
 
     args = parser.parse_args()
 
+    if not args.command:
+        parser.print_help()
+        raise RuntimeError("No command specified")
+
     match args.command:
         case "bag":
             args.bag_file = bag_files[args.bag_file]

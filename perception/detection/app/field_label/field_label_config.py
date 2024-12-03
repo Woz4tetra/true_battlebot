@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import TypeVar
 
 from bw_shared.messages.dataclass_utils import from_dict, to_dict
+
+T = TypeVar("T")
 
 
 @dataclass
@@ -15,10 +18,11 @@ class FieldLabelConfig:
     max_cloud_distance: float = 1000.0
     label_state_path: str = "/data/label_state.json"
     image_padding: int = 0
+    num_extra_points: int = 0
 
     def to_dict(self):
         return to_dict(self)
 
     @classmethod
-    def from_dict(cls, data: dict) -> FieldLabelConfig:
+    def from_dict(cls: type[T], data: dict) -> T:
         return from_dict(cls, data)

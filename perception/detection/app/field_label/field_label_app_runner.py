@@ -14,6 +14,8 @@ from app.field_label.field_label_config import FieldLabelConfig
 from app.field_label.load_from_bag import load_from_bag
 from app.field_label.load_from_topics import load_from_topics
 from app.field_label.load_from_video import load_from_video
+from app.field_label.nhrl_cam_label_app import NhrlCamLabelApp
+from app.field_label.nhrl_cam_label_config import NhrlCamLabelConfig
 from bw_interfaces.msg import EstimatedObject
 from perception_tools.rosbridge.ros_poll_subscriber import RosPollSubscriber
 from perception_tools.rosbridge.ros_publisher import RosPublisher
@@ -32,17 +34,16 @@ def load_field_label_config(path: str) -> FieldLabelConfig:
 
 def run_bag(args: BagCommandLineArgs) -> None:
     config = load_field_label_config(args.config)
-    app = FieldLabelApp(config, args)
     camera_data, tf_pointcloud_from_camera = load_from_bag(
         args.bag_file, config.cloud_topic, config.image_topic, config.info_topic
     )
-    app.label_camera_data(camera_data, tf_pointcloud_from_camera)
+    app = FieldLabelApp(config, args, camera_data, tf_pointcloud_from_camera)
+    app.label_camera_data()
 
 
 def run_topic(args: TopicCommandLineArgs) -> None:
     rospy.init_node("field_label_app", disable_signals=True)
     config = load_field_label_config(args.config)
-    app = FieldLabelApp(config, args)
     cloud_subscriber = RosPollSubscriber(config.cloud_topic, RosPointCloud)
     image_subscriber = RosPollSubscriber(config.image_topic, RosImage)
     info_subscriber = RosPollSubscriber(config.info_topic, CameraInfo)
@@ -59,19 +60,26 @@ def run_topic(args: TopicCommandLineArgs) -> None:
     camera_data, tf_pointcloud_from_camera = load_from_topics(
         cloud_subscriber, image_subscriber, info_subscriber, tf_buffer
     )
-    response = app.label_camera_data(camera_data, tf_pointcloud_from_camera)
+    app = FieldLabelApp(config, args, camera_data, tf_pointcloud_from_camera)
+    response = app.label_camera_data()
     if response is not None:
         response_publisher.publish(response)
 
 
+def load_nhrl_label_config(path: str) -> NhrlCamLabelConfig:
+    with open(path, "r") as file:
+        data = toml.load(file)
+        return NhrlCamLabelConfig.from_dict(data)
+
+
 def run_video(args: VideoCommandLineArgs) -> None:
-    config = load_field_label_config(args.config)
-    app = FieldLabelApp(config, args)
+    config = load_nhrl_label_config(args.config)
     video_frame = load_from_video(args.video_file)
     camera_data, tf_pointcloud_from_camera = load_from_bag(
         args.bag_file, config.cloud_topic, config.image_topic, config.info_topic
     )
-    app.label_camera_data(camera_data, tf_pointcloud_from_camera)
+    app = NhrlCamLabelApp(config, args, camera_data, tf_pointcloud_from_camera, video_frame)
+    app.label_camera_data()
 
 
 def run_app(args: CommandLineArgs) -> None:

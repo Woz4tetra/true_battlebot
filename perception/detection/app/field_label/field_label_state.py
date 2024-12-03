@@ -3,7 +3,7 @@ from enum import Enum
 
 import numpy as np
 import open3d
-import open3d as o3d
+from app.field_label.click_state import ClickState
 from bw_interfaces.msg import EstimatedObject
 from bw_shared.enums.label import Label
 from bw_shared.geometry.projection_math.plane_from_3_points import plane_from_3_points
@@ -23,20 +23,14 @@ class HighlightedPointType(Enum):
     EXTENT = 1
 
 
-class ClickState(Enum):
-    UP = 0
-    MOVE = 1
-    DOWN = 2
-
-
-def nearest_point_in_cloud(cloud: o3d.geometry.PointCloud, point: np.ndarray) -> np.ndarray:
+def nearest_point_in_cloud(cloud: open3d.geometry.PointCloud, point: np.ndarray) -> np.ndarray:
     points = np.asarray(cloud.points)
     distances = np.linalg.norm(points - point, axis=1)
     return points[np.argmin(distances)]
 
 
 def compute_plane(plane_points: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-    point1, point2, point3 = plane_points
+    point1, point2, point3 = plane_points[0:3]
     plane_tri_points = np.array([point1, point2, point3])
     plane_normal = -1 * plane_from_3_points(point1, point2, point3)
     plane_center = np.mean(plane_tri_points, axis=0)
@@ -64,7 +58,7 @@ def compute_field_estimate(
     return field_centered_plane, extents
 
 
-class LabelState:
+class FieldLabelState:
     def __init__(self) -> None:
         self.unhighlighted_radius = 3
         self.highlighted_radius = 10
@@ -142,7 +136,7 @@ class LabelState:
                 raise RuntimeError("Failed to project pixel to 3D ray")
             nearest_distance = None
             nearest_cloud_point = None
-            for distance in np.linspace(0.01, max_distance, 100):
+            for distance in np.linspace(0.01, max_distance, 10):
                 point = ray * distance
                 nearest_point_to_ray = nearest_point_in_cloud(cloud, point)
                 distance = np.linalg.norm(nearest_point_to_ray - point)
