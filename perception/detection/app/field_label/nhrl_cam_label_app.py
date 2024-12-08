@@ -8,9 +8,46 @@ from app.field_label.command_line_args import CommandLineArgs
 from app.field_label.field_label_app import FieldLabelApp
 from app.field_label.nhrl_cam_label_config import NhrlCamLabelConfig
 from app.field_label.nhrl_cam_label_state import NhrlCamLabelState
+from bw_shared.geometry.projection_math.points_transform import points_transform_by
+from bw_shared.geometry.projection_math.project_segmentation import project_segmentation
 from bw_shared.geometry.transform3d import Transform3D
+from numba import njit
 from open3d.visualization import Visualizer  # type: ignore
+from perception_tools.geometry.project_pixel_to_3d_ray import project_pixel_to_3d_ray
+from perception_tools.geometry.transform_to_plane import transform_to_plane
+from perception_tools.geometry.xyzquat_to_matrix import xyzquat_to_matrix
 from perception_tools.messages.camera_data import CameraData
+
+
+# @njit
+def cost_function(
+    known_camera_points: np.ndarray,
+    known_nhrl_pixels: np.ndarray,
+    tf_knowncamera_from_map: np.ndarray,
+    nhrl_cx: float,
+    nhrl_cy: float,
+    nhrl_fx: float,
+    nhrl_fy: float,
+    map_nhrl_x: float,
+    map_nhrl_y: float,
+    map_nhrl_z: float,
+    map_nhrl_qx: float,
+    map_nhrl_qy: float,
+    map_nhrl_qz: float,
+    map_nhrl_qw: float,
+) -> float:
+    tf_map_from_nhrl = xyzquat_to_matrix(
+        map_nhrl_x, map_nhrl_y, map_nhrl_z, map_nhrl_qx, map_nhrl_qy, map_nhrl_qz, map_nhrl_qw
+    )
+    tf_camera_from_nhrl = np.dot(tf_knowncamera_from_map, tf_map_from_nhrl)
+    predicted_plane_center, predicted_plane_normal = transform_to_plane(tf_map_from_nhrl)
+    rays = np.empty((0, 3))
+    for u, v in known_nhrl_pixels:
+        ray = project_pixel_to_3d_ray(u, v, nhrl_cx, nhrl_cy, nhrl_fx, nhrl_fy)
+        rays = np.append(rays, ray)
+    predicted_points_nhrl = project_segmentation(rays, predicted_plane_center, predicted_plane_normal)
+    predicted_points_camera = points_transform_by(predicted_points_nhrl, tf_camera_from_nhrl)
+    return float(np.sum(np.linalg.norm(known_camera_points - predicted_points_camera)))
 
 
 class NhrlCamLabelApp(FieldLabelApp):
@@ -101,15 +138,30 @@ class NhrlCamLabelApp(FieldLabelApp):
                 cv2.circle(show_image, tuple(point), radius, color, -1)
 
     def compute_camera_geometry(self) -> None:
-        print(self.label_state.camera_model)
-        print(self.video_label_state.image_points)
-        print(self.label_state.image_plane_points)
-        print(self.label_state.cloud_plane_points)
-        print(self.label_state.field_estimate)
+        print("camera_model", self.label_state.camera_model)
+        print("image_points", self.video_label_state.image_points)
+        print("image_plane_points", self.label_state.image_plane_points)
+        print("cloud_plane_points", self.label_state.cloud_plane_points)
+        print("field_estimate", self.label_state.field_estimate)
 
-    def compute_result(self) -> None:
-        super().compute_result()
+        print(self.label_state.camera_model.cx())
+        print(self.label_state.camera_model.cy())
+        print(self.label_state.camera_model.fx())
+        print(self.label_state.camera_model.fy())
+
+        all_image_points = self.video_label_state.image_points
+
+        # ret, camera_matrix, distortion, rvecs, tvecs = cv2.calibrateCamera(
+        #     all_object_points,
+        #     all_image_points,
+        #     image_size,
+        #     None,  # type: ignore
+        #     None,  # type: ignore
+        # )
+
+    def compute_result_before_exit(self) -> None:
         self.compute_camera_geometry()
+        super().compute_result_before_exit()
 
     def tick_labeling(self, rectified_image: np.ndarray, vis: Visualizer) -> bool:
         is_running = super().tick_labeling(rectified_image, vis)

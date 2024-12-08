@@ -2,13 +2,14 @@ import numpy as np
 import pytest
 from bw_shared.geometry.projection_math.rotation_matrix_from_vectors import rotation_matrix_from_vectors
 from bw_shared.geometry.rotation_transforms import euler_from_matrix, euler_matrix
+from bw_shared.geometry.rpy import RPY
 
 
 def euler_matrix_3x3(roll: float, pitch: float, yaw: float) -> np.ndarray:
     """
     Return rotation matrix from Euler angles.
     """
-    return euler_matrix(roll, pitch, yaw)[:3, :3]
+    return euler_matrix(RPY((roll, pitch, yaw)))[:3, :3]
 
 
 @pytest.mark.parametrize(

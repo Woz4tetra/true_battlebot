@@ -209,6 +209,14 @@ class FieldLabelApp:
     def compute_result(self) -> None:
         self.label_state.update_cloud_points(self.cloud)
 
+    def compute_result_before_exit(self) -> None:
+        self.compute_result()
+        print("Computed field estimate")
+        self.field_estimate_in_pointcloud = transform_estimated_object(
+            self.label_state.field_estimate, self.tf_pointcloud_from_camera, self.camera_data.point_cloud.header
+        )
+        print(self.field_estimate_in_pointcloud)
+
     def tick_labeling(self, rectified_image: np.ndarray, vis: Visualizer) -> bool:
         if not self.update_3d_visualization(vis):
             return False
@@ -220,11 +228,7 @@ class FieldLabelApp:
         if key == "q":
             return False
         elif key == "\n" or key == "\r":
-            print("Computed field estimate")
-            self.field_estimate_in_pointcloud = transform_estimated_object(
-                self.label_state.field_estimate, self.tf_pointcloud_from_camera, self.camera_data.point_cloud.header
-            )
-            print(self.field_estimate_in_pointcloud)
+            self.compute_result_before_exit()
         return True
 
     def label_camera_data(self) -> EstimatedObject | None:

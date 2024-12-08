@@ -5,11 +5,11 @@ from typing import Iterable, Tuple, Union, cast
 import numpy as np
 from geometry_msgs.msg import Quaternion
 
-from bw_shared.geometry.rotation_transforms import (
-    euler_from_matrix,
-    euler_from_quaternion,
-    euler_matrix,
-    quaternion_from_euler,
+from bw_shared.geometry.rotation_transforms_core import (
+    euler_from_matrix_core,
+    euler_from_quaternion_core,
+    euler_matrix_core,
+    quaternion_from_euler_core,
 )
 
 
@@ -52,15 +52,15 @@ class RPY(Tuple[float, float, float]):
         return self[2]
 
     def to_matrix(self) -> np.ndarray:
-        return euler_matrix(self.roll, self.pitch, self.yaw)
+        return euler_matrix_core(self.roll, self.pitch, self.yaw)
 
     @classmethod
     def from_matrix(cls, matrix: np.ndarray) -> RPY:
-        angles = euler_from_matrix(matrix)
+        angles = euler_from_matrix_core(matrix)
         return cls(angles)
 
     def to_quaternion(self) -> Quaternion:
-        return quaternion_from_euler(self.roll, self.pitch, self.yaw)
+        return Quaternion(*quaternion_from_euler_core(self.roll, self.pitch, self.yaw))
 
     @classmethod
     def from_degrees(cls, iterable: Iterable[float]) -> RPY:
@@ -68,7 +68,7 @@ class RPY(Tuple[float, float, float]):
 
     @classmethod
     def from_quaternion(cls, quat: Quaternion) -> RPY:
-        angles = euler_from_quaternion(quat)
+        angles = euler_from_quaternion_core((quat.x, quat.y, quat.z, quat.w))
         return cls(angles)
 
     def __add__(self, other: Union[RPY, Tuple]) -> RPY:

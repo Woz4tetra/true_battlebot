@@ -6,7 +6,6 @@ import open3d
 from app.field_label.click_state import ClickState
 from bw_interfaces.msg import EstimatedObject
 from bw_shared.enums.label import Label
-from bw_shared.geometry.projection_math.plane_from_3_points import plane_from_3_points
 from bw_shared.geometry.projection_math.points_transform import points_transform_by
 from bw_shared.geometry.projection_math.project_segmentation import project_segmentation
 from bw_shared.geometry.projection_math.rotation_matrix_from_vectors import transform_matrix_from_vectors
@@ -15,6 +14,7 @@ from bw_shared.geometry.transform3d import Transform3D
 from bw_shared.geometry.xy import XY
 from geometry_msgs.msg import Vector3
 from image_geometry import PinholeCameraModel
+from perception_tools.geometry.points_to_plane import points_to_plane
 from perception_tools.messages.point_cloud import PointCloud
 
 
@@ -27,14 +27,6 @@ def nearest_point_in_cloud(cloud: open3d.geometry.PointCloud, point: np.ndarray)
     points = np.asarray(cloud.points)
     distances = np.linalg.norm(points - point, axis=1)
     return points[np.argmin(distances)]
-
-
-def compute_plane(plane_points: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-    point1, point2, point3 = plane_points[0:3]
-    plane_tri_points = np.array([point1, point2, point3])
-    plane_normal = -1 * plane_from_3_points(point1, point2, point3)
-    plane_center = np.mean(plane_tri_points, axis=0)
-    return plane_center, plane_normal
 
 
 def compute_field_estimate(
@@ -145,7 +137,8 @@ class FieldLabelState:
                     nearest_cloud_point = nearest_point_to_ray
             self.cloud_plane_points[index] = nearest_cloud_point
 
-        plane_center, plane_normal = compute_plane(self.cloud_plane_points)
+        plane_center, plane_normal = points_to_plane(self.cloud_plane_points)
+        plane_normal *= -1
         extent_rays = []
         for index, uv_point in enumerate(self.image_extent_points):
             ray = np.array(self.camera_model.projectPixelTo3dRay(uv_point))
