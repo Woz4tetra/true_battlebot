@@ -141,9 +141,7 @@ class FieldLabelApp:
         vis.add_geometry(self.label_state.plane_marker)
         vis.add_geometry(self.label_state.origin_vis)
 
-        view_control = vis.get_view_control()
-        view_control.set_front([0, 0, -1])
-        view_control.set_up([0, -1, 0])
+        self.set_camera_view(vis)
 
         cv2.namedWindow(self.cv_window_name)
         cv2.moveWindow(self.cv_window_name, 1000, 0)
@@ -162,6 +160,11 @@ class FieldLabelApp:
         vis.update_geometry(self.label_state.plane_marker)
         vis.update_geometry(self.label_state.origin_vis)
         return True
+
+    def set_camera_view(self, vis: Visualizer) -> None:
+        view_control = vis.get_view_control()
+        view_control.set_front([0, 0, -1])
+        view_control.set_up([0, -1, 0])
 
     def update_image_visualization(self, show_image: np.ndarray) -> None:
         cv2.polylines(show_image, [self.label_state.image_plane_points], isClosed=True, color=(0, 255, 0), thickness=1)
@@ -217,6 +220,9 @@ class FieldLabelApp:
         )
         print(self.field_estimate_in_pointcloud)
 
+    def key_callback(self, vis: Visualizer, key: str) -> None:
+        pass
+
     def tick_labeling(self, rectified_image: np.ndarray, vis: Visualizer) -> bool:
         if not self.update_3d_visualization(vis):
             return False
@@ -229,6 +235,8 @@ class FieldLabelApp:
             return False
         elif key == "\n" or key == "\r":
             self.compute_result_before_exit()
+        else:
+            self.key_callback(vis, key)
         return True
 
     def label_camera_data(self) -> EstimatedObject | None:

@@ -10,16 +10,17 @@ from app.field_label.nhrl_cam_label_config import NhrlCamLabelConfig
 from app.field_label.nhrl_cam_label_state import NhrlCamLabelState
 from bw_shared.geometry.projection_math.points_transform import points_transform_by
 from bw_shared.geometry.projection_math.project_segmentation import project_segmentation
+from bw_shared.geometry.rpy import RPY
 from bw_shared.geometry.transform3d import Transform3D
-from numba import njit
+from geometry_msgs.msg import Vector3
 from open3d.visualization import Visualizer  # type: ignore
 from perception_tools.geometry.project_pixel_to_3d_ray import project_pixel_to_3d_ray
 from perception_tools.geometry.transform_to_plane import transform_to_plane
 from perception_tools.geometry.xyzquat_to_matrix import xyzquat_to_matrix
 from perception_tools.messages.camera_data import CameraData
+from sensor_msgs.msg import CameraInfo
 
 
-# @njit
 def cost_function(
     known_camera_points: np.ndarray,
     known_nhrl_pixels: np.ndarray,
@@ -41,10 +42,10 @@ def cost_function(
     )
     tf_camera_from_nhrl = np.dot(tf_knowncamera_from_map, tf_map_from_nhrl)
     predicted_plane_center, predicted_plane_normal = transform_to_plane(tf_map_from_nhrl)
-    rays = np.empty((0, 3))
+    rays = np.zeros((0, 3))
     for u, v in known_nhrl_pixels:
         ray = project_pixel_to_3d_ray(u, v, nhrl_cx, nhrl_cy, nhrl_fx, nhrl_fy)
-        rays = np.append(rays, ray)
+        rays = np.append(rays, [ray], axis=0)
     predicted_points_nhrl = project_segmentation(rays, predicted_plane_center, predicted_plane_normal)
     predicted_points_camera = points_transform_by(predicted_points_nhrl, tf_camera_from_nhrl)
     return float(np.sum(np.linalg.norm(known_camera_points - predicted_points_camera)))
@@ -108,6 +109,7 @@ class NhrlCamLabelApp(FieldLabelApp):
         self.video_label_state.image_points = image_points.astype(np.int32)
 
     def initialize_app(self) -> tuple[np.ndarray, Visualizer]:
+        rectified_image, vis = super().initialize_app()
         cv2.namedWindow(self.nhrl_window_name)
         cv2.moveWindow(self.nhrl_window_name, 1600, 0)
         cv2.setMouseCallback(self.nhrl_window_name, self.on_nhrl_mouse)
@@ -116,8 +118,16 @@ class NhrlCamLabelApp(FieldLabelApp):
             self.video_label_state.load_label_state(self.config.video_state_path)
         else:
             self.initialize_default_video_points()
+        self.video_label_state.create_markers()
 
-        return super().initialize_app()
+        for marker in self.video_label_state.plane_point_markers:
+            vis.add_geometry(marker)
+
+        view_control = vis.get_view_control()
+        view_control.set_front([0, 0, -1])
+        view_control.set_up([0, -1, 0])
+
+        return rectified_image, vis
 
     def update_video_visualization(self, show_image: np.ndarray) -> None:
         cv2.polylines(show_image, [self.video_label_state.image_points], isClosed=True, color=(0, 255, 0), thickness=1)
@@ -137,27 +147,66 @@ class NhrlCamLabelApp(FieldLabelApp):
             if radius > 0:
                 cv2.circle(show_image, tuple(point), radius, color, -1)
 
+    def update_3d_visualization(self, vis: Visualizer) -> bool:
+        should_exit = super().update_3d_visualization(vis)
+        for marker in self.video_label_state.plane_point_markers:
+            vis.update_geometry(marker)
+        vis.update_geometry(self.video_label_state.camera_coordinate_frame)
+        return should_exit
+
     def compute_camera_geometry(self) -> None:
-        print("camera_model", self.label_state.camera_model)
-        print("image_points", self.video_label_state.image_points)
-        print("image_plane_points", self.label_state.image_plane_points)
-        print("cloud_plane_points", self.label_state.cloud_plane_points)
-        print("field_estimate", self.label_state.field_estimate)
+        nhrl_camera_pixels = self.video_label_state.image_points
 
-        print(self.label_state.camera_model.cx())
-        print(self.label_state.camera_model.cy())
-        print(self.label_state.camera_model.fx())
-        print(self.label_state.camera_model.fy())
+        tf_map_from_camera0 = Transform3D.from_pose_msg(self.label_state.field_estimate.pose.pose)
+        tf_camera0_from_map = tf_map_from_camera0.inverse()
+        camera_0_plane_center, camera_0_plane_normal = transform_to_plane(tf_map_from_camera0.tfmat)
+        camera_0_plane_points = project_segmentation(
+            self.label_state.cloud_plane_points, camera_0_plane_center, camera_0_plane_normal
+        )
 
-        all_image_points = self.video_label_state.image_points
+        nhrl_cx_guess = 796.5824560505099
+        nhrl_cy_guess = 611.9271068019821
+        nhrl_fx_guess = 455.86940156857224
+        nhrl_fy_guess = 455.86940156857224
+        tf_map_from_nhrl_guess = Transform3D.from_position_and_rpy(Vector3(1.0, 0.0, 1.0), RPY((0.0, 0.0, 90.0)))
 
-        # ret, camera_matrix, distortion, rvecs, tvecs = cv2.calibrateCamera(
-        #     all_object_points,
-        #     all_image_points,
-        #     image_size,
-        #     None,  # type: ignore
-        #     None,  # type: ignore
-        # )
+        nhrl_cx = nhrl_cx_guess
+        nhrl_cy = nhrl_cy_guess
+        nhrl_fx = nhrl_fx_guess
+        nhrl_fy = nhrl_fy_guess
+        tf_map_from_nhrl = tf_map_from_nhrl_guess
+
+        rays = np.zeros((0, 3))
+        for u, v in nhrl_camera_pixels:
+            ray = project_pixel_to_3d_ray(u, v, nhrl_cx, nhrl_cy, nhrl_fx, nhrl_fy)
+            rays = np.append(rays, [ray], axis=0)
+        nhrl_plane_center, nhrl_plane_normal = transform_to_plane(tf_map_from_nhrl.tfmat)
+        plane_points_nhrl = project_segmentation(rays, nhrl_plane_center, nhrl_plane_normal)
+        tf_camera0_from_nhrl = tf_camera0_from_map.forward_by(tf_map_from_nhrl)
+        plane_points_nhrl_in_camera0 = points_transform_by(plane_points_nhrl, tf_camera0_from_nhrl.tfmat)
+
+        nhrl_camera_info = CameraInfo()
+        nhrl_camera_info.width = self.frame_width
+        nhrl_camera_info.height = self.frame_height
+        # fmt: off
+        nhrl_camera_info.K = [
+            nhrl_fx, 0.0, nhrl_cx,
+            0.0, nhrl_fy, nhrl_cy,
+            0.0, 0.0, 1.0,
+        ]
+        # fmt: on
+        nhrl_camera_info.D = [0.0, 0.0, 0.0, 0.0, 0.0]
+        nhrl_camera_info.distortion_model = "plumb_bob"
+        nhrl_camera_info.header.frame_id = "nhrl_camera"
+
+        print("\nCamera info:")
+        print(nhrl_camera_info)
+
+        print("\nTF map from NHRL:")
+        print(tf_map_from_nhrl)
+
+        self.video_label_state.set_plane_points(plane_points_nhrl_in_camera0)
+        self.video_label_state.set_camera_coordinate_frame(tf_camera0_from_nhrl)
 
     def compute_result_before_exit(self) -> None:
         self.compute_camera_geometry()
@@ -169,3 +218,7 @@ class NhrlCamLabelApp(FieldLabelApp):
         self.update_video_visualization(show_frame)
         cv2.imshow(self.nhrl_window_name, show_frame)
         return is_running
+
+    def key_callback(self, vis: Visualizer, key: str) -> None:
+        if key == "j":
+            self.compute_camera_geometry()
