@@ -4,34 +4,15 @@ from dataclasses import dataclass
 
 import numpy as np
 import toml
-from cv2 import aruco
 
+from bw_shared.enums.enum_auto_lower import EnumAutoLowerStr, auto
 from bw_shared.messages.dataclass_utils import from_dict, to_dict
 
-DICT_MAPPING = {
-    "4x4_50": aruco.DICT_4X4_50,
-    "4x4_100": aruco.DICT_4X4_100,
-    "4x4_250": aruco.DICT_4X4_250,
-    "4x4_1000": aruco.DICT_4X4_1000,
-    "5x5_50": aruco.DICT_5X5_50,
-    "5x5_100": aruco.DICT_5X5_100,
-    "5x5_250": aruco.DICT_5X5_250,
-    "5x5_1000": aruco.DICT_5X5_1000,
-    "6x6_50": aruco.DICT_6X6_50,
-    "6x6_100": aruco.DICT_6X6_100,
-    "6x6_250": aruco.DICT_6X6_250,
-    "6x6_1000": aruco.DICT_6X6_1000,
-    "7x7_50": aruco.DICT_7X7_50,
-    "7x7_100": aruco.DICT_7X7_100,
-    "7x7_250": aruco.DICT_7X7_250,
-    "7x7_1000": aruco.DICT_7X7_1000,
-    "aruco_original": aruco.DICT_ARUCO_ORIGINAL,
-    "apriltag_16h5": aruco.DICT_APRILTAG_16h5,
-    "apriltag_25h9": aruco.DICT_APRILTAG_25h9,
-    "apriltag_36h10": aruco.DICT_APRILTAG_36h10,
-    "apriltag_36h11": aruco.DICT_APRILTAG_36h11,
-    "aruco_mip_36h12": aruco.DICT_ARUCO_MIP_36h12,
-}
+
+class BoardType(EnumAutoLowerStr):
+    CHARUCO = auto()
+    ARUCO_GRID = auto()
+    APRIL_GRID = auto()
 
 
 @dataclass
@@ -43,42 +24,14 @@ class BoardConfig:
     marker_size: float = 0.16
     square_size: float = 0.24
     border_bits: int = 1
-    board_type: str = "charuco"
-    tag_type: str = "6x6_250"
+    board_type: BoardType = BoardType.CHARUCO
+    tag_family: str = "6x6_250"
     num_90_rotations: int = 0
 
     def __post_init__(self) -> None:
         self.px_per_meter = self.texture_size / self.board_size
-        aruco_dict = DICT_MAPPING[self.tag_type]
-        self.aruco_dict = aruco.getPredefinedDictionary(aruco_dict)
-
-        if self.board_type == "charuco":
-            self.ids = self.start_id + np.arange(0, self.num_rows * self.num_rows // 2)
-            self.board = aruco.CharucoBoard(
-                (self.num_rows, self.num_rows), self.square_size, self.marker_size, self.aruco_dict, ids=self.ids
-            )
-        elif self.board_type == "grid":
-            self.ids = self.start_id + np.arange(0, self.num_rows * self.num_rows)
-            self.square_size = 0.0
-            marker_separation = (self.board_size / self.num_rows - self.marker_size) / 2
-            self.board = aruco.GridBoard(
-                (self.num_rows, self.num_rows), self.marker_size, marker_separation, self.aruco_dict, ids=self.ids
-            )
-        else:
-            raise ValueError(f"Unknown board type: {self.board_type}")
         self.all_tag_width = self.num_rows * self.square_size
         self.grid_points = self.get_grid_points()
-
-    def generate_image(self) -> np.ndarray:
-        all_marker_size_px = self.num_rows * max(self.square_size, self.marker_size) * self.px_per_meter
-        margin_size = int(self.texture_size - all_marker_size_px) // 2
-        if margin_size < 0:
-            raise ValueError("Texture size is too small for the given board size")
-        image = self.board.generateImage(
-            (self.texture_size, self.texture_size), borderBits=self.border_bits, marginSize=margin_size
-        )
-        image = np.rot90(image, self.num_90_rotations)
-        return image
 
     def get_grid_points(self, anchor: tuple[int, int] = (0, 0)) -> np.ndarray:
         grid_size = self.num_rows + 1

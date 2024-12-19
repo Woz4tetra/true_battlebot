@@ -42,7 +42,7 @@ def compute_camera_info(
             raise ValueError("Unsupported detector type")
     marker_ids = np.sort(marker_ids.flatten())
     assert np.all(
-        np.sort(config.ids) == np.sort(marker_ids)
+        np.sort(config.board.getIds()) == np.sort(marker_ids)
     ), f"IDs do not match. Expected: {config.ids}, got: {marker_ids}"
 
     all_object_points = []

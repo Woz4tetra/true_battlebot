@@ -1,0 +1,7 @@
+texture_size = 4096
+board_size = 0.20662
+num_rows = 8
+start_id = 0
+marker_size = 0.0165296
+square_size = 0.0247944
+border_bits = 1
