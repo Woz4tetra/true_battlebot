@@ -1,0 +1,15 @@
+from abc import ABC, abstractmethod
+
+import numpy as np
+
+from bw_shared.camera_calibration.board.board import Board
+from bw_shared.camera_calibration.detector.detection_results import DetectionResults
+
+
+class Detector(ABC):
+    def __init__(self, board: Board) -> None:
+        self.board = board
+        self.config = board.config
+
+    @abstractmethod
+    def detect(self, image: np.ndarray) -> DetectionResults: ...

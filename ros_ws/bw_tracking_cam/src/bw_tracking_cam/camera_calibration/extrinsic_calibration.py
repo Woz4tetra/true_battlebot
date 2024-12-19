@@ -15,6 +15,7 @@ import numpy as np
 import rospy
 from apriltag_ros.msg import AprilTagDetectionArray
 from bw_shared.camera_calibration.board_config import BoardConfig
+from bw_shared.camera_calibration.load_detector import load_detector
 from bw_shared.geometry.camera.image_rectifier import ImageRectifier
 from bw_shared.geometry.projection_math.points_transform import points_transform_by
 from bw_shared.geometry.transform3d import Transform3D
@@ -65,20 +66,10 @@ CameraCalibrationData = dict[CameraTopic, CameraData]
 
 
 @dataclass
-class ExstrinsicCalibrationConfig:
-    detector_params: aruco.DetectorParameters = field(default_factory=aruco.DetectorParameters)
-    charuco_params: aruco.CharucoParameters = field(default_factory=aruco.CharucoParameters)
-    refine_params: aruco.RefineParameters = field(default_factory=aruco.RefineParameters)
-
-    board: BoardConfig = field(default_factory=BoardConfig)
-
-
-@dataclass
 class AppData:
     camera_0: CameraTopic
     camera_1: CameraTopic
-    detector: aruco.CharucoDetector
-    config: ExstrinsicCalibrationConfig
+    detector
 
 
 def load_images(topics: list[CameraTopic], bag: Bag) -> CameraCalibrationData:
@@ -123,16 +114,14 @@ def make_ransac_params() -> cv2.UsacParams:
     return microsac_params
 
 
-def compute_board_pose(
-    camera_data: CameraData, detector: aruco.CharucoDetector, config: ExstrinsicCalibrationConfig
-) -> Optional[Transform3D]:
+def compute_board_pose(camera_data: CameraData, detector) -> Optional[Transform3D]:
     rectified = camera_data.get_rectified()
-    charuco_corners, charuco_ids, marker_corners, marker_ids = detector.detectBoard(rectified.image)
+    detection_results = detector.detect(rectified.image)
 
-    if charuco_corners is None or charuco_ids is None:
-        raise RuntimeError("No charuco corners found")
-    object_points, image_points = config.board.board.matchImagePoints(charuco_corners, charuco_ids)  # type: ignore
-
+    if detection_results is None:
+        raise RuntimeError("No detections found")
+    object_points = detection_results.get_object_points()
+    image_points = detection_results.get_image_points()
     return compute_pose_ransac(rectified.camera_info, make_ransac_params(), image_points, object_points)
 
 
@@ -156,12 +145,12 @@ def compute_extrinsic_calibration(app: AppData, camera_data: CameraCalibrationDa
     grid_center_in_tag = Transform3D.from_position_and_rpy(
         Vector3(config.board.all_tag_width / 2, config.board.all_tag_width / 2, 0)
     )
-    tf_board_from_camera0 = compute_board_pose(camera_data[camera_0], detector, config)
+    tf_board_from_camera0 = compute_board_pose(camera_data[camera_0], detector)
     if tf_board_from_camera0 is None:
         raise RuntimeError("Failed to compute pose for origin camera")
     tf_boardcenter_from_camera0 = grid_center_in_tag.forward_by(tf_board_from_camera0)
 
-    tf_board_from_camera1 = compute_board_pose(camera_data[camera_1], detector, config)
+    tf_board_from_camera1 = compute_board_pose(camera_data[camera_1], detector)
     if tf_board_from_camera1 is None:
         raise RuntimeError("Failed to compute pose for relative camera")
     tf_boardcenter_from_camera1 = grid_center_in_tag.forward_by(tf_board_from_camera1)
@@ -346,10 +335,9 @@ def main() -> None:
     )
 
     board_config = BoardConfig.from_file(str(board_config_path))
-    config = ExstrinsicCalibrationConfig(detector_params=detector_params, board=board_config)
-    detector = aruco.CharucoDetector(board_config.board, config.charuco_params, detector_params, config.refine_params)
+    detector = load_detector(board_config, parameter_path)
 
-    app = AppData(camera_0=camera_0, camera_1=camera_1, detector=detector, config=config)
+    app = AppData(camera_0=camera_0, camera_1=camera_1, detector=detector)
 
     if not is_live and bag_path is None:
         raise ValueError("Must provide either a bag file or the live flag")

@@ -5,8 +5,8 @@ import os
 
 import argcomplete
 import cv2
-from bw_shared.camera_calibration import aruco_board
-from bw_shared.camera_calibration.board_config import BoardConfig, BoardType
+from bw_shared.camera_calibration.board.load_board import load_board
+from bw_shared.camera_calibration.board_config import BoardConfig
 from PIL import Image
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
@@ -23,11 +23,9 @@ if __name__ == "__main__":
     pdf_path = os.path.abspath(os.path.splitext(board_config_path)[0] + ".pdf")
 
     config = BoardConfig.from_file(board_config_path)
+    board = load_board(config)
 
-    if config.board_type in (BoardType.ARUCO_GRID, BoardType.CHARUCO):
-        board_image = aruco_board.generate_image(config, aruco_board.make_aruco_board(config))
-    else:
-        raise NotImplementedError(f"Board type '{config.board_type}' not supported for image generation.")
+    board_image = board.generate_image()
     pil_image = Image.fromarray(board_image)
 
     cv2.imwrite(image_path, board_image)

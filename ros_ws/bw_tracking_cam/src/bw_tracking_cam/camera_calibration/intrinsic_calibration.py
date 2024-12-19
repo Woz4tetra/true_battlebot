@@ -12,7 +12,6 @@ import toml
 from bw_shared.camera_calibration.board_config import BoardConfig
 from bw_shared.camera_calibration.load_detector import load_detector
 from bw_shared.geometry.camera.camera_info_loader import CameraInfoData
-from cv2 import aruco
 from sensor_msgs.msg import CameraInfo
 
 from bw_tracking_cam.camera_calibration.load_images import load_images
@@ -31,25 +30,24 @@ def compute_camera_info(
 ) -> CameraInfo:
     detectors = [load_detector(config, parameter_path) for config in configs]
 
-    for detector, config in zip(detectors, configs):
-        board_image = config.generate_image()
-        if isinstance(detector, aruco.CharucoDetector):
-            corners, tag_ids, marker_corners, marker_ids = detector.detectBoard(board_image)
-        elif isinstance(detector, aruco.ArucoDetector):
-            corners, tag_ids, rejected = detector.detectMarkers(board_image)
-            marker_ids = np.array([tag_ids])
-        else:
-            raise ValueError("Unsupported detector type")
-    marker_ids = np.sort(marker_ids.flatten())
-    assert np.all(
-        np.sort(config.board.getIds()) == np.sort(marker_ids)
-    ), f"IDs do not match. Expected: {config.ids}, got: {marker_ids}"
+    marker_ids = []
+    expected_ids = []
+    for detector in detectors:
+        board = detector.get_board()
+        board_image = board.generate_image()
+        detection_results = detector.detect(board_image)
+        assert detection_results is not None, f"Failed to detect tags in perfect image for {board}"
+        marker_ids.extend(detection_results.get_ids())
+        expected_ids.extend(board.get_ids())
+    marker_ids.sort()
+    expected_ids.sort()
+    assert np.all(expected_ids == marker_ids), f"IDs do not match. Expected: {expected_ids}, got: {marker_ids}"
 
     all_object_points = []
     all_image_points = []
     image_size: Optional[tuple[int, int]] = None
 
-    window_name = "aruco"
+    window_name = "calibration"
     if debug:
         cv2.namedWindow(window_name)
     max_height = 1080
@@ -72,38 +70,24 @@ def compute_camera_info(
         else:
             assert image_size == (image.shape[1], image.shape[0]), "All images must have the same size"
 
+        debug_image = np.copy(image)
         for detector in detectors:
-            if isinstance(detector, aruco.CharucoDetector):
-                corners, tag_ids, marker_corners, marker_ids = detector.detectBoard(image)
-            elif isinstance(detector, aruco.ArucoDetector):
-                corners, tag_ids, rejected = detector.detectMarkers(image)
-            else:
-                raise ValueError("Unsupported detector type")
+            detection_results = detector.detect(board_image)
 
-            if corners is None or tag_ids is None:
+            if detection_results is None:
                 draw_image(image)
                 continue
-            object_points, image_points = config.board.matchImagePoints(corners, tag_ids)  # type: ignore
-            if object_points is None or image_points is None:
-                draw_image(image)
-                continue
+            object_points = detection_results.get_object_points()
+            image_points = detection_results.get_image_points()
             all_image_points.append(image_points)
             all_object_points.append(object_points)
+            detector.draw_detections(debug_image, detection_results)
 
-        debug_image = np.copy(image)
-        debug_corners = np.array(corners, dtype=np.float64)
         # resize image if it is too large
         if debug_image.shape[1] > max_height:
             scale = max_height / debug_image.shape[1]
             debug_image = cv2.resize(debug_image, (0, 0), fx=scale, fy=scale)
-            debug_corners = debug_corners * scale
 
-        if isinstance(detector, aruco.CharucoDetector):
-            debug_image = aruco.drawDetectedCornersCharuco(debug_image, debug_corners, tag_ids, (0, 255, 0))
-        elif isinstance(detector, aruco.ArucoDetector):
-            debug_image = aruco.drawDetectedMarkers(debug_image, debug_corners, tag_ids, (0, 255, 0))  # type: ignore
-        else:
-            raise ValueError("Unsupported detector type")
         draw_image(debug_image)
 
     print(f"Object points: {len(all_object_points)}")
