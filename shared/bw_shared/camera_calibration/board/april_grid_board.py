@@ -1,4 +1,3 @@
-import aprilgrid
 import numpy as np
 
 from bw_shared.camera_calibration.board.board import Board

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-import numpy as np
 import toml
 
 from bw_shared.enums.enum_auto_lower import EnumAutoLowerStr, auto

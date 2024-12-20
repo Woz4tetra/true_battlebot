@@ -34,8 +34,9 @@ def container() -> Container:
 
 @pytest.fixture
 def node(container: Container) -> TreesNode:
-    with mock.patch("rospy.rostime.get_rostime", side_effect=lambda: rospy.Time.from_sec(time.time())), mock.patch(
-        "rospy.Publisher"
+    with (
+        mock.patch("rospy.rostime.get_rostime", side_effect=lambda: rospy.Time.from_sec(time.time())),
+        mock.patch("rospy.Publisher"),
     ):
         return TreesNode(container)
 
