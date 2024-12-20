@@ -33,3 +33,6 @@ class Board(ABC):
         grid_in_tag = np.vstack([mesh_x.ravel(), mesh_y.ravel()]).reshape(2, -1).T
         zeros = np.zeros((grid_size * grid_size, 1))
         return np.concatenate((grid_in_tag, zeros), axis=1)
+
+    @abstractmethod
+    def get_ids(self) -> list[int]: ...

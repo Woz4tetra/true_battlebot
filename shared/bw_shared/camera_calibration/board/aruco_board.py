@@ -63,7 +63,11 @@ class CharucoBoard(ArucoBoard):
             aruco_dict,
             ids=ids,
         )
+        self.ids = ids.tolist()
         super().__init__(config, aruco_board, aruco_dict)
+
+    def get_ids(self) -> list[int]:
+        return self.ids
 
 
 class ArucoGridBoard(ArucoBoard):
@@ -73,6 +77,14 @@ class ArucoGridBoard(ArucoBoard):
         config.square_size = 0.0
         marker_separation = (config.board_size / config.num_rows - config.marker_size) / 2
         aruco_board = aruco.GridBoard(
-            (config.num_rows, config.num_rows), config.marker_size, marker_separation, aruco_dict, ids=ids
+            (config.num_rows, config.num_rows),
+            config.marker_size,
+            marker_separation,
+            aruco_dict,
+            ids=ids,
         )
+        self.ids = ids.tolist()
         super().__init__(config, aruco_board, aruco_dict)
+
+    def get_ids(self) -> list[int]:
+        return self.ids

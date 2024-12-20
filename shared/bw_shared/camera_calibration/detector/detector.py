@@ -13,3 +13,9 @@ class Detector(ABC):
 
     @abstractmethod
     def detect(self, image: np.ndarray) -> DetectionResults: ...
+
+    @abstractmethod
+    def draw_detections(self, debug_image: np.ndarray, results: DetectionResults) -> np.ndarray: ...
+
+    def get_board(self) -> Board:
+        return self.board

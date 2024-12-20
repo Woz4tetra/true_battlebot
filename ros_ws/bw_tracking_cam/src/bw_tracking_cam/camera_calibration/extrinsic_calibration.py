@@ -5,7 +5,7 @@ from __future__ import annotations
 import argparse
 import os
 import sys
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional, Union
 
@@ -15,7 +15,8 @@ import numpy as np
 import rospy
 from apriltag_ros.msg import AprilTagDetectionArray
 from bw_shared.camera_calibration.board_config import BoardConfig
-from bw_shared.camera_calibration.load_detector import load_detector
+from bw_shared.camera_calibration.detector.detector import Detector
+from bw_shared.camera_calibration.detector.load_detector import load_detector
 from bw_shared.geometry.camera.image_rectifier import ImageRectifier
 from bw_shared.geometry.projection_math.points_transform import points_transform_by
 from bw_shared.geometry.transform3d import Transform3D
@@ -69,7 +70,7 @@ CameraCalibrationData = dict[CameraTopic, CameraData]
 class AppData:
     camera_0: CameraTopic
     camera_1: CameraTopic
-    detector
+    detector: Detector
 
 
 def load_images(topics: list[CameraTopic], bag: Bag) -> CameraCalibrationData:
@@ -141,9 +142,8 @@ def compute_extrinsic_calibration(app: AppData, camera_data: CameraCalibrationDa
     camera_0 = app.camera_0
     camera_1 = app.camera_1
     detector = app.detector
-    config = app.config
     grid_center_in_tag = Transform3D.from_position_and_rpy(
-        Vector3(config.board.all_tag_width / 2, config.board.all_tag_width / 2, 0)
+        Vector3(detector.config.all_tag_width / 2, detector.config.all_tag_width / 2, 0)
     )
     tf_board_from_camera0 = compute_board_pose(camera_data[camera_0], detector)
     if tf_board_from_camera0 is None:
@@ -176,7 +176,7 @@ def compute_extrinsic_calibration(app: AppData, camera_data: CameraCalibrationDa
 
     show_image = np.copy(camera_data[camera_1].image)
     show_info = camera_data[camera_1].camera_info
-    grid_in_tag = config.board.grid_points
+    grid_in_tag = detector.get_board().get_grid_points()
 
     ground_truth_camera0 = camera_data[camera_0].ground_truth
     ground_truth_camera1 = camera_data[camera_1].ground_truth
@@ -201,7 +201,7 @@ def compute_extrinsic_calibration(app: AppData, camera_data: CameraCalibrationDa
         print(f"Ground truth camera_1 pose from camera_0 camera: {ground_tf_camera1_from_camera0}")
 
         grid_points_in_camera1_ground = points_transform_by(
-            config.board.get_grid_points(anchor=(-1, -1)), ground_tf_camera1_from_board.tfmat
+            detector.get_board().get_grid_points(anchor=(-1, -1)), ground_tf_camera1_from_board.tfmat
         )
         draw_points_in_image(show_image, show_info, grid_points_in_camera1_ground, (255, 0, 0))
 

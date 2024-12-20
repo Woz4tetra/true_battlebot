@@ -20,6 +20,7 @@ class BoardConfig:
     texture_size: int = 4096
     board_size: float = 2.0  # meters
     num_rows: int = 8
+    num_columns: int = 8
     start_id: int = 1
     marker_size: float = 0.16
     square_size: float = 0.24

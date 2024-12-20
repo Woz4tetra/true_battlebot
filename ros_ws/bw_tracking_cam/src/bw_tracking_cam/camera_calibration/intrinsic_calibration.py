@@ -10,7 +10,7 @@ import cv2
 import numpy as np
 import toml
 from bw_shared.camera_calibration.board_config import BoardConfig
-from bw_shared.camera_calibration.load_detector import load_detector
+from bw_shared.camera_calibration.detector.load_detector import load_detector
 from bw_shared.geometry.camera.camera_info_loader import CameraInfoData
 from sensor_msgs.msg import CameraInfo
 
@@ -37,7 +37,7 @@ def compute_camera_info(
         board_image = board.generate_image()
         detection_results = detector.detect(board_image)
         assert detection_results is not None, f"Failed to detect tags in perfect image for {board}"
-        marker_ids.extend(detection_results.get_ids())
+        marker_ids.extend(detection_results.get_tag_ids())
         expected_ids.extend(board.get_ids())
     marker_ids.sort()
     expected_ids.sort()
@@ -77,11 +77,11 @@ def compute_camera_info(
             if detection_results is None:
                 draw_image(image)
                 continue
-            object_points = detection_results.get_object_points()
-            image_points = detection_results.get_image_points()
+            object_points = detection_results.object_points
+            image_points = detection_results.image_points
             all_image_points.append(image_points)
             all_object_points.append(object_points)
-            detector.draw_detections(debug_image, detection_results)
+            debug_image = detector.draw_detections(debug_image, detection_results)
 
         # resize image if it is too large
         if debug_image.shape[1] > max_height:
@@ -140,6 +140,14 @@ def main() -> None:
         help="path to board config",
     )
     parser.add_argument(
+        "-f",
+        "--filters",
+        type=str,
+        nargs="*",
+        default="",
+        help="Filters to apply to images. For bags, this is the topics to use.",
+    )
+    parser.add_argument(
         "-p",
         "--parameters",
         type=str,
@@ -159,13 +167,14 @@ def main() -> None:
     board_config_paths = args.board_configs
     skip_interval = args.skip_seconds
     debug = args.debug
+    filters = args.filters
 
     if len(calibration_path) == 0:
         calibration_path = os.path.splitext(image_source)[0] + ".toml"
 
     configs = [BoardConfig.from_file(path) for path in board_config_paths]
 
-    info = compute_camera_info(configs, parameter_path, load_images(image_source, skip_interval), debug)
+    info = compute_camera_info(configs, parameter_path, load_images(image_source, skip_interval, filters), debug)
     write_calibration(info, calibration_path)
     print(info)
     print(f"Calibration saved to {calibration_path}")
