@@ -40,6 +40,8 @@ class AprilGridBoard(Board):
         self.image_width = self.all_tag_width + self.margin_size * 2
         self.image_height = self.all_tag_height + self.margin_size * 2
 
+        self.grid_size_px = int(self.config.marker_size * self.config.px_per_meter)
+
     def get_width(self) -> float:
         return self.image_width
 
@@ -60,6 +62,8 @@ class AprilGridBoard(Board):
         tags_image = np.rot90(tags_image, self.config.num_90_rotations)
         if self.config.flip_grid_vertical:
             tags_image = self._flip_image_along_vertical(tags_image)
+        if self.config.flip_grid_horizontal:
+            tags_image = self._flip_image_along_horizontal(tags_image)
         image_width_px = math.ceil(self.get_width() * self.config.px_per_meter)
         image_height_px = math.ceil(self.get_height() * self.config.px_per_meter)
         margin_size_px = math.ceil(self.margin_size * self.config.px_per_meter)
@@ -69,6 +73,7 @@ class AprilGridBoard(Board):
             margin_size_px : margin_size_px + tags_image.shape[0],
             margin_size_px : margin_size_px + tags_image.shape[1],
         ] = tags_image
+        self._draw_corner_markers(image)
 
         return image
 
@@ -76,18 +81,41 @@ class AprilGridBoard(Board):
         return self.ids
 
     def _flip_image_along_vertical(self, image: np.ndarray) -> np.ndarray:
-        column_size_px = int(self.config.marker_size * self.config.px_per_meter)
         flipped_image = np.zeros_like(image)
         flipped_image.fill(255)
-        for column_num in range(0, self.config.num_columns):
+        for column_num in range(self.config.num_columns):
             flip_column_num = (self.config.num_columns - 1) - column_num
-            column_start_orig = int(column_size_px * column_num + self.corner_square_size_px * column_num)
-            column_end_orig = column_start_orig + column_size_px
-            column_start_flip = int(column_size_px * flip_column_num + self.corner_square_size_px * flip_column_num)
-            column_end_flip = column_start_flip + column_size_px
+            column_start_orig = int(self.grid_size_px * column_num + self.corner_square_size_px * column_num)
+            column_end_orig = column_start_orig + self.grid_size_px
+            column_start_flip = int(self.grid_size_px * flip_column_num + self.corner_square_size_px * flip_column_num)
+            column_end_flip = column_start_flip + self.grid_size_px
             if column_end_orig > image.shape[0]:
                 raise ValueError(
                     f"Computed column size exceeds original image size: {column_end_orig} > {image.shape[0]}"
                 )
             flipped_image[:, column_start_flip:column_end_flip] = image[:, column_start_orig:column_end_orig]
         return flipped_image
+
+    def _flip_image_along_horizontal(self, image: np.ndarray) -> np.ndarray:
+        flipped_image = np.zeros_like(image)
+        flipped_image.fill(255)
+        for row_num in range(self.config.num_rows):
+            flip_row_num = (self.config.num_rows - 1) - row_num
+            row_start_orig = int(self.grid_size_px * row_num + self.corner_square_size_px * row_num)
+            row_end_orig = row_start_orig + self.grid_size_px
+            row_start_flip = int(self.grid_size_px * flip_row_num + self.corner_square_size_px * flip_row_num)
+            row_end_flip = row_start_flip + self.grid_size_px
+            if row_end_orig > image.shape[0]:
+                raise ValueError(f"Computed row size exceeds original image size: {row_end_orig} > {image.shape[1]}")
+            flipped_image[row_start_flip:row_end_flip, :] = image[row_start_orig:row_end_orig, :]
+        return flipped_image
+
+    def _draw_corner_markers(self, image: np.ndarray) -> None:
+        margin_size_px = math.ceil((self.margin_size - self.corner_square_size) * self.config.px_per_meter)
+        for row_num in range(self.config.num_rows + 1):
+            for column_num in range(self.config.num_columns + 1):
+                square_start_x_px = margin_size_px + (self.grid_size_px + self.corner_square_size_px) * column_num
+                square_end_x_px = square_start_x_px + self.corner_square_size_px
+                square_start_y_px = margin_size_px + (self.grid_size_px + self.corner_square_size_px) * row_num
+                square_end_y_px = square_start_y_px + self.corner_square_size_px
+                image[square_start_y_px:square_end_y_px, square_start_x_px:square_end_x_px] = 0
