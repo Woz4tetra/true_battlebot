@@ -12,11 +12,18 @@ class Board(ABC):
     @abstractmethod
     def generate_image(self) -> np.ndarray: ...
 
+    @abstractmethod
+    def get_width(self) -> float: ...
+
+    @abstractmethod
+    def get_height(self) -> float: ...
+
     def get_grid_points(self, anchor: tuple[int, int] = (0, 0)) -> np.ndarray:
         grid_size = self.config.num_rows + 1
-        length = self.config.all_tag_width
-        x_range = ((anchor[0]) * (length / 2), (anchor[0] + 2) * (length / 2))
-        y_range = ((anchor[1]) * (length / 2), (anchor[1] + 2) * (length / 2))
+        width = self.get_width()
+        height = self.get_height()
+        x_range = ((anchor[0]) * (width / 2), (anchor[0] + 2) * (width / 2))
+        y_range = ((anchor[1]) * (height / 2), (anchor[1] + 2) * (height / 2))
         num_90_rotations = self.config.num_90_rotations % 4
         if num_90_rotations == 1:
             x_range, y_range = y_range, x_range

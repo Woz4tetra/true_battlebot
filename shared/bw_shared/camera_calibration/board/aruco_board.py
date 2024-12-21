@@ -1,3 +1,5 @@
+import math
+
 import numpy as np
 from cv2 import aruco
 
@@ -36,55 +38,30 @@ class ArucoBoard(Board):
         self.aruco_dict = aruco_dict
         super().__init__(config)
 
-    def generate_image(self) -> np.ndarray:
         all_marker_size_px = (
-            self.config.num_rows * max(self.config.square_size, self.config.marker_size) * self.config.px_per_meter
+            self.config.num_columns * max(self.config.square_size, self.config.marker_size) * self.config.px_per_meter
         )
-        margin_size = int(self.config.texture_size - all_marker_size_px) // 2
-        if margin_size < 0:
+        self.margin_size_px = int(self.config.image_width_px - all_marker_size_px) // 2
+        if self.margin_size_px < 0:
             raise ValueError("Texture size is too small for the given board size")
+
+        all_tag_width = self.get_width()
+        all_tag_height = self.get_height()
+
+        self.image_width_px = math.ceil(all_tag_width * self.config.px_per_meter) + self.margin_size_px * 2
+        self.image_height_px = math.ceil(all_tag_height * self.config.px_per_meter) + self.margin_size_px * 2
+
+    def get_width(self) -> float:
+        return self.config.num_columns * self.config.square_size
+
+    def get_height(self) -> float:
+        return self.config.num_rows * self.config.square_size
+
+    def generate_image(self) -> np.ndarray:
         image: np.ndarray = self.aruco_board.generateImage(
-            (self.config.texture_size, self.config.texture_size),
+            (self.image_width_px, self.image_height_px),
             borderBits=self.config.border_bits,
-            marginSize=margin_size,
+            marginSize=self.margin_size_px,
         )
         image = np.rot90(image, self.config.num_90_rotations)
         return image
-
-
-class CharucoBoard(ArucoBoard):
-    def __init__(self, config: BoardConfig) -> None:
-        aruco_dict = aruco.getPredefinedDictionary(DICT_MAPPING[config.tag_family])
-        ids = config.start_id + np.arange(0, config.num_rows * config.num_rows // 2)
-        aruco_board = aruco.CharucoBoard(
-            (config.num_rows, config.num_rows),
-            config.square_size,
-            config.marker_size,
-            aruco_dict,
-            ids=ids,
-        )
-        self.ids = ids.tolist()
-        super().__init__(config, aruco_board, aruco_dict)
-
-    def get_ids(self) -> list[int]:
-        return self.ids
-
-
-class ArucoGridBoard(ArucoBoard):
-    def __init__(self, config: BoardConfig) -> None:
-        aruco_dict = aruco.getPredefinedDictionary(DICT_MAPPING[config.tag_family])
-        ids = config.start_id + np.arange(0, config.num_rows * config.num_rows)
-        config.square_size = 0.0
-        marker_separation = (config.board_size / config.num_rows - config.marker_size) / 2
-        aruco_board = aruco.GridBoard(
-            (config.num_rows, config.num_rows),
-            config.marker_size,
-            marker_separation,
-            aruco_dict,
-            ids=ids,
-        )
-        self.ids = ids.tolist()
-        super().__init__(config, aruco_board, aruco_dict)
-
-    def get_ids(self) -> list[int]:
-        return self.ids

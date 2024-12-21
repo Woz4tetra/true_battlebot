@@ -123,7 +123,7 @@ def compute_extrinsic_calibration(app: AppData, camera_data: CameraCalibrationDa
     camera_1 = app.camera_1
     detector = app.detector
     grid_center_in_tag = Transform3D.from_position_and_rpy(
-        Vector3(detector.config.all_tag_width / 2, detector.config.all_tag_width / 2, 0)
+        Vector3(detector.board.get_width() / 2, detector.board.get_height() / 2, 0)
     )
     tf_board_from_camera0 = compute_board_pose_from_rectified(camera_data[camera_0], detector)
     if tf_board_from_camera0 is None:

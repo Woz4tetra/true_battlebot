@@ -1,7 +1,12 @@
-texture_size = 4096
-board_size = 0.20662
-num_rows = 8
+image_width_px = 4096
+board_width = 0.6096
+num_rows = 9
+num_columns = 5
 start_id = 0
-marker_size = 0.0165296
-square_size = 0.0247944
+marker_size = 0.08
+square_size = 0.1
 border_bits = 1
+board_type = "april_grid"
+tag_family = "apriltag_36h11"
+num_90_rotations = 2
+flip_grid_vertical = true

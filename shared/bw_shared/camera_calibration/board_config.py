@@ -16,8 +16,8 @@ class BoardType(EnumAutoLowerStr):
 
 @dataclass
 class BoardConfig:
-    texture_size: int = 4096
-    board_size: float = 2.0  # meters
+    image_width_px: int = 4096
+    board_width: float = 2.0  # meters
     num_rows: int = 8
     num_columns: int = 8
     start_id: int = 1
@@ -27,10 +27,11 @@ class BoardConfig:
     board_type: BoardType = BoardType.CHARUCO
     tag_family: str = "6x6_250"
     num_90_rotations: int = 0
+    flip_grid_vertical: bool = False
+    flip_grid_horizontal: bool = False
 
     def __post_init__(self) -> None:
-        self.px_per_meter = self.texture_size / self.board_size
-        self.all_tag_width = self.num_rows * self.square_size
+        self.px_per_meter = self.image_width_px / self.board_width
 
     @classmethod
     def from_dict(cls, data: dict) -> BoardConfig:
