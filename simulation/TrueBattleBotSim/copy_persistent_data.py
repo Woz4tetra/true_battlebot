@@ -4,7 +4,7 @@ import shutil
 from pathlib import Path
 
 SCRIPT_DIR = Path(os.path.dirname(os.path.realpath(__file__)))
-PROJECT_NAME = "DillSim"
+PROJECT_NAME = "TrueBattleBotSim"
 COMPANY_NAME = "DefaultCompany"
 
 

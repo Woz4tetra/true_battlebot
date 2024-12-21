@@ -2,7 +2,7 @@ from typing import Iterable
 
 from apriltag_ros.msg import AprilTagDetection, AprilTagDetectionArray
 from bw_interfaces.msg import EstimatedObject, EstimatedObjectArray
-from bw_tools.tag_detection.bundle_detector import BundleResult
+from bw_shared.camera_calibration.bundles.bundle_detector import BundleResult
 from std_msgs.msg import Header
 
 

@@ -19,16 +19,17 @@ from bw_shared.camera_calibration.detector.detector import Detector
 from bw_shared.camera_calibration.detector.load_detector import load_detector
 from bw_shared.geometry.camera.image_rectifier import ImageRectifier
 from bw_shared.geometry.projection_math.points_transform import points_transform_by
+from bw_shared.geometry.projection_math.project_point_array_to_pixel import project_point_array_to_pixel
 from bw_shared.geometry.transform3d import Transform3D
 from bw_shared.script_tools.directories import BAGS_DIR
 from bw_shared.script_tools.list_files import list_files
-from bw_tools.tag_detection.bundle_detector import compute_pose_ransac
-from bw_tools.tag_detection.draw_helpers import project_point_array_to_pixel
 from cv2 import aruco
 from cv_bridge import CvBridge
 from geometry_msgs.msg import Vector3
 from rosbag.bag import Bag
 from sensor_msgs.msg import CameraInfo, Image
+
+from bw_camera_calibration.compute_board_pose import compute_board_pose
 
 SCRIPT_DIR = Path(os.path.dirname(os.path.realpath(__file__)))
 CV_BRIDGE = CvBridge()
@@ -100,32 +101,6 @@ def load_images(topics: list[CameraTopic], bag: Bag) -> CameraCalibrationData:
     return data
 
 
-def make_ransac_params() -> cv2.UsacParams:
-    microsac_params = cv2.UsacParams()
-    microsac_params.threshold = 5.0
-    microsac_params.confidence = 0.99999
-    microsac_params.score = cv2.SCORE_METHOD_MSAC
-    microsac_params.maxIterations = 10_000
-    microsac_params.loIterations = 100
-    microsac_params.loMethod = cv2.LOCAL_OPTIM_GC
-
-    microsac_params.final_polisher = cv2.LSQ_POLISHER
-    microsac_params.final_polisher_iterations = 10_000
-
-    return microsac_params
-
-
-def compute_board_pose(camera_data: CameraData, detector) -> Optional[Transform3D]:
-    rectified = camera_data.get_rectified()
-    detection_results = detector.detect(rectified.image)
-
-    if detection_results is None:
-        raise RuntimeError("No detections found")
-    object_points = detection_results.get_object_points()
-    image_points = detection_results.get_image_points()
-    return compute_pose_ransac(rectified.camera_info, make_ransac_params(), image_points, object_points)
-
-
 def draw_points_in_image(
     image: np.ndarray, camera_info: CameraInfo, points: np.ndarray, color: tuple[int, int, int]
 ) -> None:
@@ -133,6 +108,11 @@ def draw_points_in_image(
     tag_pixels = tag_pixels.astype(int)
     for tag_pixel in tag_pixels:
         cv2.circle(image, tag_pixel, 3, color, -1)
+
+
+def compute_board_pose_from_rectified(camera_data: CameraData, detector: Detector) -> Optional[Transform3D]:
+    rectified = camera_data.get_rectified()
+    return compute_board_pose(rectified.image, rectified.camera_info, detector)
 
 
 def compute_extrinsic_calibration(app: AppData, camera_data: CameraCalibrationData) -> None:
@@ -145,12 +125,12 @@ def compute_extrinsic_calibration(app: AppData, camera_data: CameraCalibrationDa
     grid_center_in_tag = Transform3D.from_position_and_rpy(
         Vector3(detector.config.all_tag_width / 2, detector.config.all_tag_width / 2, 0)
     )
-    tf_board_from_camera0 = compute_board_pose(camera_data[camera_0], detector)
+    tf_board_from_camera0 = compute_board_pose_from_rectified(camera_data[camera_0], detector)
     if tf_board_from_camera0 is None:
         raise RuntimeError("Failed to compute pose for origin camera")
     tf_boardcenter_from_camera0 = grid_center_in_tag.forward_by(tf_board_from_camera0)
 
-    tf_board_from_camera1 = compute_board_pose(camera_data[camera_1], detector)
+    tf_board_from_camera1 = compute_board_pose_from_rectified(camera_data[camera_1], detector)
     if tf_board_from_camera1 is None:
         raise RuntimeError("Failed to compute pose for relative camera")
     tf_boardcenter_from_camera1 = grid_center_in_tag.forward_by(tf_board_from_camera1)

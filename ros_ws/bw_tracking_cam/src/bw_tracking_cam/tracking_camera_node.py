@@ -11,15 +11,15 @@ from bw_interfaces.msg import EstimatedObjectArray
 from bw_shared.geometry.camera.image_rectifier import ImageRectifier
 from bw_tools.configs.rosparam_client import get_shared_config
 from bw_tools.get_param import get_param
-from bw_tools.tag_detection.apriltag_detector import ApriltagDetector, ApriltagDetectorConfig
-from bw_tools.tag_detection.bundle_detector import BundleDetectorInterface, RansacBundleDetector
-from bw_tools.tag_detection.draw_helpers import draw_bundle
-from bw_tools.tag_detection.tag_family import TagFamily
 from cv_bridge import CvBridge, CvBridgeError
 from sensor_msgs.msg import CameraInfo, CompressedImage, Image
 from std_msgs.msg import Header
 
 from bw_tracking_cam.bundle_result_helpers import bundle_result_to_apriltag_ros, bundle_result_to_object
+from bw_tracking_cam.tag_detection.apriltag_detector import ApriltagDetector, ApriltagDetectorConfig
+from bw_tracking_cam.tag_detection.bundle_detector import BundleDetectorInterface, RansacBundleDetector
+from bw_tracking_cam.tag_detection.draw_helpers import draw_bundle
+from bw_tracking_cam.tag_detection.tag_family import TagFamily
 
 
 class ImageSupplier(ABC):
@@ -129,7 +129,7 @@ class TrackingCameraNode:
         return ImageRectifier(camera_info, (self.width, self.height), alpha=self.camera_matrix_alpha)
 
     def make_bundle_detectors(self, rectified_info: CameraInfo) -> dict[str, BundleDetectorInterface]:
-        bundle_detectors = {}
+        bundle_detectors: dict[str, BundleDetectorInterface] = {}
         params = self.make_ransac_params()
         for name, bundle_config in self.bundle_configs.items():
             detector = RansacBundleDetector(bundle_config, params, rectified_info)

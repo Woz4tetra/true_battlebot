@@ -14,7 +14,7 @@ from bw_shared.camera_calibration.detector.load_detector import load_detector
 from bw_shared.geometry.camera.camera_info_loader import CameraInfoData
 from sensor_msgs.msg import CameraInfo
 
-from bw_tracking_cam.camera_calibration.load_images import load_images
+from bw_camera_calibration.load_images import load_images
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 os.chdir(SCRIPT_DIR)
@@ -60,7 +60,7 @@ def compute_camera_info(
             scale = max_height / image_to_draw.shape[1]
             image_to_draw = cv2.resize(image_to_draw, (0, 0), fx=scale, fy=scale)
         cv2.imshow(window_name, image_to_draw)
-        key = chr(cv2.waitKey(-1) & 0xFF)
+        key = chr(cv2.waitKey(1) & 0xFF)
         if key == "q":
             quit()
 
@@ -72,9 +72,10 @@ def compute_camera_info(
 
         debug_image = np.copy(image)
         for detector in detectors:
-            detection_results = detector.detect(board_image)
+            detection_results = detector.detect(image)
 
             if detection_results is None:
+                print("Not detections found")
                 draw_image(image)
                 continue
             object_points = detection_results.object_points
@@ -94,6 +95,8 @@ def compute_camera_info(
     print(f"Image points: {len(all_image_points)}")
     print(f"Image size: {image_size}")
     assert image_size is not None, "No images found."
+    distortion: np.ndarray
+    camera_matrix: np.ndarray
     ret, camera_matrix, distortion, rvecs, tvecs = cv2.calibrateCamera(
         all_object_points,
         all_image_points,
@@ -151,7 +154,6 @@ def main() -> None:
         "-p",
         "--parameters",
         type=str,
-        choices=glob("*.json"),
         default="calibration_parameters.json",
         help="calibration parameter file",
     )

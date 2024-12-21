@@ -33,7 +33,7 @@ class CharucoDetector(ArucoDetector):
 
     def detect(self, image: np.ndarray) -> DetectionResults:
         charuco_corners, tag_ids, marker_corners, marker_ids = self.aruco_detector.detectBoard(image)
-        corners = [row for row in charuco_corners]
+        corners = [row for row in np.array(charuco_corners)]
         object_points, image_points = self.aruco_board.matchImagePoints(corners, tag_ids)
         return DetectionResults(object_points, image_points, corners, tag_ids, marker_ids)
 

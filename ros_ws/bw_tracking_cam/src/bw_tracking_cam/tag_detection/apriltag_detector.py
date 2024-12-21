@@ -2,10 +2,9 @@ from dataclasses import dataclass
 
 import cv2
 import numpy as np
-from cv2 import aruco
-
 from bw_tools.tag_detection.tag_detection import TagDetection
 from bw_tools.tag_detection.tag_family import TagFamily
+from cv2 import aruco
 
 
 @dataclass

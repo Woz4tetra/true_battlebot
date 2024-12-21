@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 
 import numpy as np
-
 from bw_tools.tag_detection.tag_family import TagFamily
 
 

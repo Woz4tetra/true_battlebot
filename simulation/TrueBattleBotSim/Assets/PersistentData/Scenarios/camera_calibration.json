@@ -17,14 +17,9 @@
     },
     "actors": [
         {
-            "name": "slow_camera",
-            "model": "ZED 2i",
-            "objective": "blue_slow_camera"
-        },
-        {
             "name": "tracking_camera",
             "model": "OAK-1",
-            "objective": "blue_tracking_camera"
+            "objective": "follow_mouse_tracking_camera"
         },
         {
             "name": "calibration_target",

@@ -204,11 +204,12 @@ public class MainSceneManager : MonoBehaviour
         {
             if (actor_config.objective.Length == 0)
             {
+                Debug.LogWarning($"No objective defined for {actor_config.name}. Defaulting to idle.");
                 actor_config.objective = "idle";
             }
             ObjectiveConfig objective_config = ConfigManager.LoadObjective(actor_config.objective);
             objectives[actor_config.name] = objective_config;
-            Debug.Log($"Loading actor: {actor_config.name}");
+            Debug.Log($"Loading actor: {actor_config.name} with objective {actor_config.objective}");
             GameObject actorPrefab = actorPrefabs[actor_config.model];
             Transform spawnHere = actorPrefab.transform.Find("SpawnHere");
             Matrix4x4 actor_pose = GetActorPoseFromConfig(
@@ -285,6 +286,7 @@ public class MainSceneManager : MonoBehaviour
 
     void ActivateActorType(ScenarioConfig scenario, ActorConfig actor_config, GameObject actor, ObjectiveConfig objective_config, Dictionary<string, GameObject> actors)
     {
+        Debug.Log($"Actor {actor.name} has objective {objective_config.type}");
         KeyboardInput keyboard_input = actor.GetComponent<KeyboardInput>();
         RosControllerConnector controller = actor.GetComponent<RosControllerConnector>();
         WaypointFollower waypoint_follower = actor.GetComponent<WaypointFollower>();

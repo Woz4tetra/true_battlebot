@@ -43,7 +43,7 @@ class ArucoBoard(Board):
         margin_size = int(self.config.texture_size - all_marker_size_px) // 2
         if margin_size < 0:
             raise ValueError("Texture size is too small for the given board size")
-        image = self.aruco_board.generateImage(
+        image: np.ndarray = self.aruco_board.generateImage(
             (self.config.texture_size, self.config.texture_size),
             borderBits=self.config.border_bits,
             marginSize=margin_size,
