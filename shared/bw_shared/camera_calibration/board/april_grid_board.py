@@ -40,8 +40,6 @@ class AprilGridBoard(Board):
         self.image_width = self.all_tag_width + self.margin_size * 2
         self.image_height = self.all_tag_height + self.margin_size * 2
 
-        self.grid_size_px = math.ceil(self.config.marker_size * self.config.px_per_meter)
-
     def get_width(self) -> float:
         return self.image_width
 
@@ -71,7 +69,6 @@ class AprilGridBoard(Board):
             margin_size_px : margin_size_px + tags_image.shape[0],
             margin_size_px : margin_size_px + tags_image.shape[1],
         ] = tags_image
-        self._draw_corner_markers(image)
 
         return image
 
@@ -94,13 +91,3 @@ class AprilGridBoard(Board):
                 )
             flipped_image[:, column_start_flip:column_end_flip] = image[:, column_start_orig:column_end_orig]
         return flipped_image
-
-    def _draw_corner_markers(self, image: np.ndarray) -> None:
-        margin_size_px = math.ceil((self.margin_size - self.corner_square_size) * self.config.px_per_meter)
-        for row_num in range(self.config.num_rows + 1):
-            for column_num in range(self.config.num_columns + 1):
-                square_start_x_px = margin_size_px + self.grid_size_px * column_num
-                square_end_x_px = square_start_x_px + self.corner_square_size_px
-                square_start_y_px = margin_size_px + self.grid_size_px * row_num
-                square_end_y_px = square_start_y_px + self.corner_square_size_px
-                image[square_start_x_px:square_end_x_px, square_start_y_px:square_end_y_px] = 0
