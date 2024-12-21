@@ -8,7 +8,6 @@ import argcomplete
 import cv2
 import numpy as np
 import toml
-from bw_shared.camera_calibration.board.load_board import load_board
 from bw_shared.camera_calibration.board_config import BoardConfig
 from bw_shared.camera_calibration.detector.load_detector import load_detector
 from bw_shared.geometry.camera.camera_info_loader import CameraInfoData
