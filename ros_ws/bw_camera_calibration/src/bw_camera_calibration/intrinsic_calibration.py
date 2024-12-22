@@ -26,7 +26,10 @@ def write_calibration(info: CameraInfo, calibration_path: str) -> None:
 
 
 def compute_camera_info(
-    configs: list[BoardConfig], parameter_path: str, images: Generator[np.ndarray, None, None], debug: bool = False
+    configs: list[BoardConfig],
+    parameter_path: str,
+    images: Generator[np.ndarray, None, None],
+    debug: bool = False,
 ) -> CameraInfo:
     detectors = [load_detector(config, parameter_path) for config in configs]
 
@@ -72,10 +75,14 @@ def compute_camera_info(
 
         debug_image = np.copy(image)
         for detector in detectors:
-            detection_results = detector.detect(image)
+            try:
+                detection_results = detector.detect(image)
+            except cv2.error as e:
+                print(f"Error encountered while running detection: {str(e)}")
+                continue
 
             if detection_results is None:
-                print("Not detections found")
+                print("No detections found")
                 draw_image(image)
                 continue
             object_points = detection_results.object_points
