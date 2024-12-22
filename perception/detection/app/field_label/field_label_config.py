@@ -19,6 +19,7 @@ class FieldLabelConfig:
     label_state_path: str = "/data/label_state.json"
     image_padding: int = 0
     num_extra_points: int = 0
+    start_time: float = 0.0
 
     def to_dict(self):
         return to_dict(self)

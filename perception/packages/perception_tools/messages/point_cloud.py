@@ -273,3 +273,9 @@ class PointCloud:
             is_bigendian=msg.is_bigendian,
             is_dense=msg.is_dense,
         )
+
+    def flatten(self, color_format: str = "bgra") -> PointCloud:
+        points = np.copy(self.points.reshape(-1, 3))
+        colors = np.copy(self.colors.reshape(-1))
+        colors = from_uint32_color(colors.view(np.uint32), color_format)
+        return PointCloud(header=self.header, points=points, colors=colors, color_encoding=self.color_encoding)

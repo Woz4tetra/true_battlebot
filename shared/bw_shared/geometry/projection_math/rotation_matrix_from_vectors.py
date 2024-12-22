@@ -22,6 +22,8 @@ def rotation_matrix_from_vectors(vec1: np.ndarray, vec2: np.ndarray, epsilon: fl
     v = np.cross(a, b)
     c = np.dot(a, b)
     s = np.linalg.norm(v)
+    if s < epsilon:
+        return np.eye(3)
     kmat = np.array(
         [
             [0, -v[2], v[1]],

@@ -7,26 +7,18 @@ from glob import glob
 import argcomplete
 import cv2
 import numpy as np
-import toml
 from bw_shared.camera_calibration.board_config import BoardConfig
 from bw_shared.camera_calibration.detector.load_detector import load_detector
-from bw_shared.geometry.camera.camera_info_loader import CameraInfoData
+from bw_shared.geometry.camera.camera_info_loader import read_calibration
 from bw_shared.geometry.camera.image_rectifier import ImageRectifier
 from bw_shared.geometry.projection_math.points_transform import points_transform_by
 from bw_shared.geometry.projection_math.project_point_array_to_pixel import project_point_array_to_pixel
-from sensor_msgs.msg import CameraInfo
 
 from bw_camera_calibration.compute_board_pose import compute_board_pose
 from bw_camera_calibration.load_images import load_images
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 os.chdir(SCRIPT_DIR)
-
-
-def read_calibration(calibration_path: str) -> CameraInfo:
-    with open(calibration_path, "r") as file:
-        data = toml.load(file)
-        return CameraInfoData.from_dict(data).to_msg()
 
 
 def main() -> None:

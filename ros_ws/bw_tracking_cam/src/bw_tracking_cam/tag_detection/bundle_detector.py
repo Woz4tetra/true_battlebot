@@ -6,8 +6,9 @@ import cv2
 import numpy as np
 from bw_shared.configs.tag_config import BundleConfig
 from bw_shared.geometry.transform3d import Transform3D
-from bw_tools.tag_detection.tag_detection import TagDetection
 from sensor_msgs.msg import CameraInfo
+
+from bw_tracking_cam.tag_detection.tag_detection import TagDetection
 
 
 def compute_pose_ransac(

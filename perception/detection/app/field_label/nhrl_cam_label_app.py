@@ -8,45 +8,27 @@ from app.field_label.command_line_args import CommandLineArgs
 from app.field_label.field_label_app import FieldLabelApp
 from app.field_label.nhrl_cam_label_config import NhrlCamLabelConfig
 from app.field_label.nhrl_cam_label_state import NhrlCamLabelState
+from bw_shared.geometry.camera.camera_info_loader import read_calibration
 from bw_shared.geometry.projection_math.points_transform import points_transform_by
 from bw_shared.geometry.projection_math.project_segmentation import project_segmentation
 from bw_shared.geometry.rpy import RPY
 from bw_shared.geometry.transform3d import Transform3D
 from geometry_msgs.msg import Vector3
+from image_geometry import PinholeCameraModel
 from open3d.visualization import Visualizer  # type: ignore
-from perception_tools.geometry.project_pixel_to_3d_ray import project_pixel_to_3d_ray
 from perception_tools.geometry.transform_to_plane import transform_to_plane
-from perception_tools.geometry.xyzquat_to_matrix import xyzquat_to_matrix
 from perception_tools.messages.camera_data import CameraData
-from sensor_msgs.msg import CameraInfo
 
 
 def cost_function(
     known_camera_points: np.ndarray,
-    known_nhrl_pixels: np.ndarray,
+    known_nhrl_rays: np.ndarray,
     tf_knowncamera_from_map: np.ndarray,
-    nhrl_cx: float,
-    nhrl_cy: float,
-    nhrl_fx: float,
-    nhrl_fy: float,
-    map_nhrl_x: float,
-    map_nhrl_y: float,
-    map_nhrl_z: float,
-    map_nhrl_qx: float,
-    map_nhrl_qy: float,
-    map_nhrl_qz: float,
-    map_nhrl_qw: float,
+    tf_map_from_nhrl: np.ndarray,
 ) -> float:
-    tf_map_from_nhrl = xyzquat_to_matrix(
-        map_nhrl_x, map_nhrl_y, map_nhrl_z, map_nhrl_qx, map_nhrl_qy, map_nhrl_qz, map_nhrl_qw
-    )
     tf_camera_from_nhrl = np.dot(tf_knowncamera_from_map, tf_map_from_nhrl)
     predicted_plane_center, predicted_plane_normal = transform_to_plane(tf_map_from_nhrl)
-    rays = np.zeros((0, 3))
-    for u, v in known_nhrl_pixels:
-        ray = project_pixel_to_3d_ray(u, v, nhrl_cx, nhrl_cy, nhrl_fx, nhrl_fy)
-        rays = np.append(rays, [ray], axis=0)
-    predicted_points_nhrl = project_segmentation(rays, predicted_plane_center, predicted_plane_normal)
+    predicted_points_nhrl = project_segmentation(known_nhrl_rays, predicted_plane_center, predicted_plane_normal)
     predicted_points_camera = points_transform_by(predicted_points_nhrl, tf_camera_from_nhrl)
     return float(np.sum(np.linalg.norm(known_camera_points - predicted_points_camera)))
 
@@ -62,6 +44,8 @@ class NhrlCamLabelApp(FieldLabelApp):
     ) -> None:
         super().__init__(config, args, camera_data, tf_pointcloud_from_camera)
         self.video_label_state = NhrlCamLabelState()
+        self.nhrl_camera_model = PinholeCameraModel()
+        self.nhrl_camera_model.fromCameraInfo(read_calibration(config.nhrl_camera_calibration_path))
         self.config = config
         self.frame_height = self.config.video_frame_height
         self.video_frame = video_frame
@@ -164,43 +148,20 @@ class NhrlCamLabelApp(FieldLabelApp):
             self.label_state.cloud_plane_points, camera_0_plane_center, camera_0_plane_normal
         )
 
-        nhrl_cx_guess = 796.5824560505099
-        nhrl_cy_guess = 611.9271068019821
-        nhrl_fx_guess = 455.86940156857224
-        nhrl_fy_guess = 455.86940156857224
         tf_map_from_nhrl_guess = Transform3D.from_position_and_rpy(Vector3(1.0, 0.0, 1.0), RPY((0.0, 0.0, 90.0)))
-
-        nhrl_cx = nhrl_cx_guess
-        nhrl_cy = nhrl_cy_guess
-        nhrl_fx = nhrl_fx_guess
-        nhrl_fy = nhrl_fy_guess
         tf_map_from_nhrl = tf_map_from_nhrl_guess
 
-        rays = np.zeros((0, 3))
+        known_nhrl_rays = np.zeros((0, 3))
         for u, v in nhrl_camera_pixels:
-            ray = project_pixel_to_3d_ray(u, v, nhrl_cx, nhrl_cy, nhrl_fx, nhrl_fy)
-            rays = np.append(rays, [ray], axis=0)
+            ray = self.nhrl_camera_model.projectPixelTo3dRay((u, v))
+            known_nhrl_rays = np.append(known_nhrl_rays, [ray], axis=0)
         nhrl_plane_center, nhrl_plane_normal = transform_to_plane(tf_map_from_nhrl.tfmat)
-        plane_points_nhrl = project_segmentation(rays, nhrl_plane_center, nhrl_plane_normal)
+        plane_points_nhrl = project_segmentation(known_nhrl_rays, nhrl_plane_center, nhrl_plane_normal)
         tf_camera0_from_nhrl = tf_camera0_from_map.forward_by(tf_map_from_nhrl)
         plane_points_nhrl_in_camera0 = points_transform_by(plane_points_nhrl, tf_camera0_from_nhrl.tfmat)
 
-        nhrl_camera_info = CameraInfo()
-        nhrl_camera_info.width = self.frame_width
-        nhrl_camera_info.height = self.frame_height
-        # fmt: off
-        nhrl_camera_info.K = [
-            nhrl_fx, 0.0, nhrl_cx,
-            0.0, nhrl_fy, nhrl_cy,
-            0.0, 0.0, 1.0,
-        ]
-        # fmt: on
-        nhrl_camera_info.D = [0.0, 0.0, 0.0, 0.0, 0.0]
-        nhrl_camera_info.distortion_model = "plumb_bob"
-        nhrl_camera_info.header.frame_id = "nhrl_camera"
-
-        print("\nCamera info:")
-        print(nhrl_camera_info)
+        print("\nGuess cost:")
+        print(cost_function(camera_0_plane_points, known_nhrl_rays, tf_camera0_from_map.tfmat, tf_map_from_nhrl.tfmat))
 
         print("\nTF map from NHRL:")
         print(tf_map_from_nhrl)

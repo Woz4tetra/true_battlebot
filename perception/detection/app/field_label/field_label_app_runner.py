@@ -6,17 +6,20 @@ import toml
 from app.field_label.command_line_args import (
     BagCommandLineArgs,
     CommandLineArgs,
+    NhrlCamCommandLineArgs,
+    SvoCommandLineArgs,
     TopicCommandLineArgs,
-    VideoCommandLineArgs,
 )
 from app.field_label.field_label_app import FieldLabelApp
 from app.field_label.field_label_config import FieldLabelConfig
 from app.field_label.load_from_bag import load_from_bag
+from app.field_label.load_from_svo import load_from_svo
 from app.field_label.load_from_topics import load_from_topics
 from app.field_label.load_from_video import load_from_video
 from app.field_label.nhrl_cam_label_app import NhrlCamLabelApp
 from app.field_label.nhrl_cam_label_config import NhrlCamLabelConfig
 from bw_interfaces.msg import EstimatedObject
+from bw_shared.geometry.transform3d import Transform3D
 from perception_tools.rosbridge.ros_poll_subscriber import RosPollSubscriber
 from perception_tools.rosbridge.ros_publisher import RosPublisher
 from sensor_msgs.msg import CameraInfo
@@ -72,13 +75,20 @@ def load_nhrl_label_config(path: str) -> NhrlCamLabelConfig:
         return NhrlCamLabelConfig.from_dict(data)
 
 
-def run_video(args: VideoCommandLineArgs) -> None:
+def run_video(args: NhrlCamCommandLineArgs) -> None:
     config = load_nhrl_label_config(args.config)
     video_frame = load_from_video(args.video_file)
-    camera_data, tf_pointcloud_from_camera = load_from_bag(
-        args.bag_file, config.cloud_topic, config.image_topic, config.info_topic
-    )
+    tf_pointcloud_from_camera = Transform3D.identity()
+    camera_data = load_from_svo(args.svo_file, config.svo_start_time)
     app = NhrlCamLabelApp(config, args, camera_data, tf_pointcloud_from_camera, video_frame)
+    app.label_camera_data()
+
+
+def run_svo(args: SvoCommandLineArgs) -> None:
+    config = load_field_label_config(args.config)
+    camera_data = load_from_svo(args.svo_file, config.start_time)
+    tf_pointcloud_from_camera = Transform3D.identity()
+    app = FieldLabelApp(config, args, camera_data, tf_pointcloud_from_camera)
     app.label_camera_data()
 
 
@@ -88,7 +98,9 @@ def run_app(args: CommandLineArgs) -> None:
             run_bag(cast(BagCommandLineArgs, args))
         case "topic":
             run_topic(cast(TopicCommandLineArgs, args))
-        case "video":
-            run_video(cast(VideoCommandLineArgs, args))
+        case "svo":
+            run_svo(cast(SvoCommandLineArgs, args))
+        case "nhrl":
+            run_video(cast(NhrlCamCommandLineArgs, args))
         case _:
             raise RuntimeError(f"Unknown command: {args.command}")

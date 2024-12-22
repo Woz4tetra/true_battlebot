@@ -1,3 +1,3 @@
 image_topic = "/camera_1/image_rect"
 info_topic = "/camera_1/camera_info"
-image_padding = 400
+image_padding = 200

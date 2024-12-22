@@ -138,8 +138,8 @@ class AprilGridBoard(Board):
             x_range = (-x_range[1], -x_range[0])
             y_range = (-y_range[1], -y_range[0])
         mesh_x, mesh_y = np.meshgrid(
-            np.linspace(x_range[0], x_range[1], x_size, endpoint=True),
-            np.linspace(y_range[0], y_range[1], y_size, endpoint=True),
+            np.linspace(x_range[0], x_range[1], x_size),
+            np.linspace(y_range[0], y_range[1], y_size),
         )
         grid_in_tag = np.vstack([mesh_x.ravel(), mesh_y.ravel()]).reshape(2, -1).T
         zeros = np.zeros((x_size * y_size, 1))

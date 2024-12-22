@@ -8,6 +8,7 @@ from app.field_label.command_line_args import CommandLineArgs
 
 BAGS_DIR = "/data/bags"
 VIDEOS_DIR = "/data/videos"
+SVO_DIR = "/data/svo"
 CONFIGS_DIR = os.path.join(os.path.dirname(__file__), "..", "configs", "field_label_tool")
 
 
@@ -29,6 +30,7 @@ def parse_args() -> CommandLineArgs:
     bag_files = find_files(BAGS_DIR, "*.bag")
     video_files = find_files(VIDEOS_DIR, "*.mp4", "*.avi")
     config_files = find_files(CONFIGS_DIR, "*.toml")
+    svo_files = find_files(SVO_DIR, "*.svo2")
 
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -49,16 +51,23 @@ def parse_args() -> CommandLineArgs:
     )
 
     subparsers.add_parser("topic")
-    video_parser = subparsers.add_parser("video")
-    video_parser.add_argument(
-        "bag_file",
+    nhrl_video_parser = subparsers.add_parser("nhrl")
+    nhrl_video_parser.add_argument(
+        "svo_file",
         type=str,
-        choices=bag_files.keys(),
+        choices=svo_files.keys(),
     )
-    video_parser.add_argument(
+    nhrl_video_parser.add_argument(
         "video_file",
         type=str,
         choices=video_files.keys(),
+    )
+
+    svo_parser = subparsers.add_parser("svo")
+    svo_parser.add_argument(
+        "svo_file",
+        type=str,
+        choices=svo_files.keys(),
     )
 
     argcomplete.autocomplete(parser)
@@ -72,8 +81,10 @@ def parse_args() -> CommandLineArgs:
     match args.command:
         case "bag":
             args.bag_file = bag_files[args.bag_file]
-        case "video":
-            args.bag_file = bag_files[args.bag_file]
+        case "svo":
+            args.svo_file = svo_files[args.svo_file]
+        case "nhrl":
+            args.svo_file = svo_files[args.svo_file]
             args.video_file = video_files[args.video_file]
 
     if not args.config:

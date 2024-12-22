@@ -1,7 +1,8 @@
 from dataclasses import dataclass
 
 import numpy as np
-from bw_tools.tag_detection.tag_family import TagFamily
+
+from bw_tracking_cam.tag_detection.tag_family import TagFamily
 
 
 @dataclass

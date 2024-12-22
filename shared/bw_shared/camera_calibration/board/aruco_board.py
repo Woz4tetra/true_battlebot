@@ -67,6 +67,8 @@ class ArucoBoard(Board):
         return image
 
     def get_grid_points(self, anchor: tuple[int, int] = (0, 0)) -> np.ndarray:
+        x_size = self.config.num_columns + 1
+        y_size = self.config.num_rows + 1
         width = self.get_width()
         height = self.get_height()
         x_range = ((anchor[0]) * (width / 2), (anchor[0] + 2) * (width / 2))
@@ -82,9 +84,9 @@ class ArucoBoard(Board):
             x_range = (-x_range[1], -x_range[0])
             y_range = (-y_range[1], -y_range[0])
         mesh_x, mesh_y = np.meshgrid(
-            np.linspace(x_range[0], x_range[1], self.config.num_columns + 1),
-            np.linspace(y_range[0], y_range[1], self.config.num_rows + 1),
+            np.linspace(x_range[0], x_range[1], x_size),
+            np.linspace(y_range[0], y_range[1], y_size),
         )
         grid_in_tag = np.vstack([mesh_x.ravel(), mesh_y.ravel()]).reshape(2, -1).T
-        zeros = np.zeros((grid_size * grid_size, 1))
+        zeros = np.zeros((x_size * y_size, 1))
         return np.concatenate((grid_in_tag, zeros), axis=1)
