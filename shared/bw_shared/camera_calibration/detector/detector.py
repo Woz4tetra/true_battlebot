@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from typing import Optional
 
 import numpy as np
 
@@ -12,7 +13,7 @@ class Detector(ABC):
         self.config = board.config
 
     @abstractmethod
-    def detect(self, image: np.ndarray) -> DetectionResults: ...
+    def detect(self, image: np.ndarray) -> Optional[DetectionResults]: ...
 
     @abstractmethod
     def draw_detections(self, debug_image: np.ndarray, results: DetectionResults) -> np.ndarray: ...

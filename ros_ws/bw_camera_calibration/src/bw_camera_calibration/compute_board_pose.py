@@ -27,7 +27,8 @@ def compute_board_pose(image: np.ndarray, camera_info: CameraInfo, detector: Det
     detection_results = detector.detect(image)
 
     if detection_results is None:
-        raise RuntimeError("No detections found")
+        print("No detections found")
+        return None
     object_points = detection_results.object_points
     image_points = detection_results.image_points
     return compute_pose_ransac(camera_info, make_ransac_params(), image_points, object_points)

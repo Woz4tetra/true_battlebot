@@ -1,3 +1,5 @@
+from typing import Optional
+
 import cv2
 import numpy as np
 from cv2 import aruco
@@ -31,8 +33,10 @@ class CharucoDetector(ArucoDetector):
             self.aruco_board, charuco_params, self.detector_params, refine_params
         )
 
-    def detect(self, image: np.ndarray) -> DetectionResults:
+    def detect(self, image: np.ndarray) -> Optional[DetectionResults]:
         charuco_corners, tag_ids, marker_corners, marker_ids = self.aruco_detector.detectBoard(image)
+        if len(charuco_corners) == 0:
+            return None
         corners = [row for row in np.array(charuco_corners)]
         object_points, image_points = self.aruco_board.matchImagePoints(corners, tag_ids)
         return DetectionResults(object_points, image_points, corners, tag_ids, marker_ids)
@@ -52,8 +56,10 @@ class ArucoGridDetector(ArucoDetector):
             raise ValueError(f"Supplied board type is not GridBoard: {type(self.aruco_board)}")
         self.aruco_detector = aruco.ArucoDetector(board.aruco_dict, self.detector_params, refine_params)
 
-    def detect(self, image: np.ndarray) -> DetectionResults:
+    def detect(self, image: np.ndarray) -> Optional[DetectionResults]:
         corners, tag_ids, rejected = self.aruco_detector.detectMarkers(image)
+        if len(corners) == 0:
+            return None
         object_points, image_points = self.aruco_board.matchImagePoints(corners, tag_ids)
         return DetectionResults(object_points, image_points, corners, tag_ids, tag_ids)
 

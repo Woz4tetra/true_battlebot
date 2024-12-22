@@ -1,3 +1,5 @@
+from typing import Optional
+
 import aprilgrid
 import cv2
 import numpy as np
@@ -28,7 +30,7 @@ class AprilGridDetector(Detector):
             raise ValueError(f"Unsupported number of border bits: {self.config.border_bits}")
         self.grid_detector = aprilgrid.Detector(tag_family)
 
-    def detect(self, image: ndarray) -> DetectionResults:
+    def detect(self, image: ndarray) -> Optional[DetectionResults]:
         if len(image.shape) > 2:
             image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         detections = self.grid_detector.detect(image)
@@ -37,6 +39,8 @@ class AprilGridDetector(Detector):
         for detection in detections:
             corners.append(np.array(detection.corners))
             tag_ids.append(detection.tag_id)
+        if len(corners) == 0:
+            return None
         tag_ids_array = np.array(tag_ids)
         object_points, image_points = self.aruco_board.matchImagePoints(corners, tag_ids_array)
         return DetectionResults(object_points, image_points, corners, tag_ids_array, tag_ids_array)
