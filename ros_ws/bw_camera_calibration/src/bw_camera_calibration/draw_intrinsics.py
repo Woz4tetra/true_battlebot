@@ -87,7 +87,10 @@ def main() -> None:
             tag_pixels = tag_pixels.astype(np.int32)
             for tag_pixel in tag_pixels:
                 cv2.circle(rectified_image, tag_pixel, 3, (0, 255, 0), -1)
-        cv2.imshow("reproject", rectified_image)
+        # combined = np.concatenate((rectified_image, image), axis=1)
+        # combined = cv2.addWeighted(rectified_image, 0.5, image, 0.5, 0.0)
+        combined = rectified_image
+        cv2.imshow("reproject", combined)
         key = chr(cv2.waitKey(-1) & 0xFF)
         if key == "q":
             break

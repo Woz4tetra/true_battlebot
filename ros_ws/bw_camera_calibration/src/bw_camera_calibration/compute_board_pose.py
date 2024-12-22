@@ -24,7 +24,11 @@ def make_ransac_params() -> cv2.UsacParams:
 
 
 def compute_board_pose(image: np.ndarray, camera_info: CameraInfo, detector: Detector) -> Optional[Transform3D]:
-    detection_results = detector.detect(image)
+    try:
+        detection_results = detector.detect(image)
+    except cv2.error as e:
+        print(f"Error encountered while running detection: {str(e)}")
+        return None
 
     if detection_results is None:
         print("No detections found")

@@ -23,6 +23,8 @@ def main():
         if len(args.output) == 0:
             filename = os.path.basename(video_path)
             output_dir = os.path.join(os.path.dirname(video_path), os.path.splitext(filename)[0])
+        else:
+            output_dir = args.output
         print(f"Output directory: {output_dir}")
 
         if os.path.isfile(output_dir):
