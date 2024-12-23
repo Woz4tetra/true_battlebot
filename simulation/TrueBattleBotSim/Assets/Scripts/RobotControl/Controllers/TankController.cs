@@ -124,7 +124,7 @@ class TankController : MonoBehaviour, ControllerInterface
     private Vector3 GetRelativeVelocity()
     {
         // Get the velocity of the body in world space
-        Vector3 worldVelocity = Quaternion.Euler(0, -90, 0) * body.velocity;
+        Vector3 worldVelocity = Quaternion.Euler(0, -90, 0) * body.linearVelocity;
 
         // Convert the velocity to the body's local space
         Vector3 localVelocity = body.transform.InverseTransformDirection(worldVelocity);

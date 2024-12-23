@@ -56,7 +56,7 @@ class ImuSensor : MonoBehaviour
         imuMsg.header.stamp = RosUtil.GetTimeMsg();
         imuMsg.header.seq = messageCount;
 
-        Vector3 velocity = transform.InverseTransformDirection(sensorBody.velocity);
+        Vector3 velocity = transform.InverseTransformDirection(sensorBody.linearVelocity);
         float dt = Time.fixedDeltaTime;
         Vector3 accel = new Vector3(
             (velocity.x - prevVelocity.x) / dt,

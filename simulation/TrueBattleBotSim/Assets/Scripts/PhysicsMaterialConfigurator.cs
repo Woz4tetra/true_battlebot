@@ -3,12 +3,12 @@ using UnityEngine;
 
 public class PhysicsMaterialConfigurator : MonoBehaviour
 {
-    [SerializeField] List<PhysicMaterial> materials;
+    [SerializeField] List<PhysicsMaterial> materials;
     List<PhysicsMaterialsConfig> defaultConfigs = new List<PhysicsMaterialsConfig>();
 
     void Start()
     {
-        foreach (PhysicMaterial material in materials)
+        foreach (PhysicsMaterial material in materials)
         {
             PhysicsMaterialsConfig config = new PhysicsMaterialsConfig
             {
@@ -33,7 +33,7 @@ public class PhysicsMaterialConfigurator : MonoBehaviour
 
     public void ConfigureMaterial(PhysicsMaterialsConfig config)
     {
-        PhysicMaterial material = materials.Find(m => m.name == config.name);
+        PhysicsMaterial material = materials.Find(m => m.name == config.name);
         if (material == null)
         {
             Debug.LogError("Material not found: " + config.name);
@@ -42,7 +42,7 @@ public class PhysicsMaterialConfigurator : MonoBehaviour
         material.dynamicFriction = config.dynamic_friction;
         material.staticFriction = config.static_friction;
         material.bounciness = config.bounciness;
-        material.frictionCombine = (PhysicMaterialCombine)config.friction_combine;
-        material.bounceCombine = (PhysicMaterialCombine)config.bounce_combine;
+        material.frictionCombine = (PhysicsMaterialCombine)config.friction_combine;
+        material.bounceCombine = (PhysicsMaterialCombine)config.bounce_combine;
     }
 }
