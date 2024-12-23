@@ -13,6 +13,7 @@ from app.field_label.transform_estimated_object import transform_estimated_objec
 from bw_interfaces.msg import EstimatedObject
 from bw_shared.geometry.camera.image_rectifier import ImageRectifier
 from bw_shared.geometry.transform3d import Transform3D
+from bw_shared.math.nearest_square import nearest_square
 from open3d.visualization import Visualizer  # type: ignore
 from perception_tools.messages.camera_data import CameraData
 from perception_tools.messages.point_cloud import PointCloud
@@ -64,24 +65,32 @@ class FieldLabelApp:
                 self.update_pending = True
                 self.label_state.save_label_state(self.config.label_state_path)
 
-    def initialize_default_image_points(self, new_image_width: int, new_image_height: int) -> None:
+    def make_anchor_points(self) -> np.ndarray:
         border = 0.3
         anchor_points_list = [
             [-border, border],
             [-border, -border],
             [border, -border],
         ]
-        for _ in range(self.config.num_extra_points):
-            anchor_points_list.append([np.random.random() * border, np.random.random() * border])
-
+        square_size = nearest_square(self.config.num_extra_points + len(anchor_points_list))
+        square_length = int(np.ceil(np.sqrt(square_size)))
+        grid = np.meshgrid(np.linspace(0, border, square_length), np.linspace(0, border, square_length))
+        x_grid = grid[0].flatten()
+        y_grid = grid[1].flatten()
+        for index in range(self.config.num_extra_points):
+            anchor_points_list.append([x_grid[index], y_grid[index]])
         anchor_points = np.array(anchor_points_list)
         anchor_points[:] += 1.0
         anchor_points[:] *= 0.5
+        return anchor_points
+
+    def initialize_default_image_points(self, new_image_width: int, new_image_height: int) -> None:
+        anchor_points = self.make_anchor_points()
         image_plane_points = anchor_points * np.array([new_image_width, new_image_height])
         self.label_state.image_plane_points = image_plane_points.astype(np.int32)
 
         border = 0.4
-        anchor_points = np.array(
+        extent_anchor_points = np.array(
             [
                 [border, border],
                 [-border, border],
@@ -89,9 +98,9 @@ class FieldLabelApp:
                 [border, -border],
             ]
         )
-        anchor_points[:] += 1.0
-        anchor_points[:] *= 0.5
-        image_extent_points = anchor_points * np.array([new_image_width, new_image_height])
+        extent_anchor_points[:] += 1.0
+        extent_anchor_points[:] *= 0.5
+        image_extent_points = extent_anchor_points * np.array([new_image_width, new_image_height])
         self.label_state.image_extent_points = image_extent_points.astype(np.int32)
 
     def initialize_app(self) -> tuple[np.ndarray, Visualizer]:
@@ -139,7 +148,8 @@ class FieldLabelApp:
         for marker in self.label_state.extent_point_markers:
             vis.add_geometry(marker)
         vis.add_geometry(self.label_state.plane_marker)
-        vis.add_geometry(self.label_state.origin_vis)
+        vis.add_geometry(self.label_state.map_origin_vis)
+        vis.add_geometry(self.label_state.camera_origin_vis)
 
         self.set_camera_view(vis)
 
@@ -158,7 +168,7 @@ class FieldLabelApp:
         for marker in self.label_state.extent_point_markers:
             vis.update_geometry(marker)
         vis.update_geometry(self.label_state.plane_marker)
-        vis.update_geometry(self.label_state.origin_vis)
+        vis.update_geometry(self.label_state.map_origin_vis)
         return True
 
     def set_camera_view(self, vis: Visualizer) -> None:

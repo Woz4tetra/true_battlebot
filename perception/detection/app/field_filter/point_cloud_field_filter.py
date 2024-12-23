@@ -60,7 +60,7 @@ class PointCloudFieldFilter(FieldFilterInterface):
         centroid = np.mean(min_rect, axis=0)  # compute 2D centroid
         # transform the flattened 2D pose back to 3D
         flat_transform = Transform3D.from_position_and_rpy(Vector3(centroid[0], centroid[1], 0.0), RPY((0, 0, angle)))
-        field_centered_plane = flat_transform.forward_by(plane_transform)
+        field_centered_plane = flat_transform.transform_by(plane_transform)
         self.logger.debug(f"Flat transform: {field_centered_plane}")
         self.logger.debug(f"Field centered plane transform: {field_centered_plane}")
         self.logger.debug(

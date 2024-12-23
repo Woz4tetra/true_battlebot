@@ -113,7 +113,7 @@ class FieldFilter:
 
         tf_map_from_relativemap = self.get_cage_aligned_transform()
         aligned_field = copy.deepcopy(self.estimated_field)
-        aligned_field.pose.pose = tf_map_from_relativemap.forward_by(tf_camera_from_relativemap).to_pose_msg()
+        aligned_field.pose.pose = tf_map_from_relativemap.transform_by(tf_camera_from_relativemap).to_pose_msg()
         aligned_field.header.frame_id = self.map_frame
 
         rospy.loginfo("Publishing field")

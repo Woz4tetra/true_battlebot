@@ -128,14 +128,14 @@ def compute_extrinsic_calibration(app: AppData, camera_data: CameraCalibrationDa
     tf_board_from_camera0 = compute_board_pose_from_rectified(camera_data[camera_0], detector)
     if tf_board_from_camera0 is None:
         raise RuntimeError("Failed to compute pose for origin camera")
-    tf_boardcenter_from_camera0 = grid_center_in_tag.forward_by(tf_board_from_camera0)
+    tf_boardcenter_from_camera0 = grid_center_in_tag.transform_by(tf_board_from_camera0)
 
     tf_board_from_camera1 = compute_board_pose_from_rectified(camera_data[camera_1], detector)
     if tf_board_from_camera1 is None:
         raise RuntimeError("Failed to compute pose for relative camera")
-    tf_boardcenter_from_camera1 = grid_center_in_tag.forward_by(tf_board_from_camera1)
+    tf_boardcenter_from_camera1 = grid_center_in_tag.transform_by(tf_board_from_camera1)
 
-    tf_camera0_from_camera1 = tf_board_from_camera0.inverse().forward_by(tf_board_from_camera1)
+    tf_camera0_from_camera1 = tf_board_from_camera0.inverse().transform_by(tf_board_from_camera1)
 
     tf_camera1_from_camera0 = tf_camera0_from_camera1.inverse()
     transform_properties = (
@@ -173,7 +173,9 @@ def compute_extrinsic_calibration(app: AppData, camera_data: CameraCalibrationDa
         ground_truth_camera1_detection = ground_truth_camera1.detections[0]
         ground_tf_camera0_from_board = Transform3D.from_pose_msg(ground_truth_camera0_detection.pose.pose.pose)
         ground_tf_camera1_from_board = Transform3D.from_pose_msg(ground_truth_camera1_detection.pose.pose.pose)
-        ground_tf_camera0_from_camera1 = ground_tf_camera0_from_board.inverse().forward_by(ground_tf_camera1_from_board)
+        ground_tf_camera0_from_camera1 = ground_tf_camera0_from_board.inverse().transform_by(
+            ground_tf_camera1_from_board
+        )
         ground_tf_camera1_from_camera0 = ground_tf_camera0_from_camera1.inverse()
 
         print(f"Ground truth camera_0 pose: {ground_tf_camera0_from_board}")

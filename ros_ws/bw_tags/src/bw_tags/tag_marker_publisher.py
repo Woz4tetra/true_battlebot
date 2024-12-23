@@ -108,7 +108,7 @@ class TagMarkerPublisher:
     ) -> Quaternion:
         rotate_tf = Transform3D.from_position_and_quaternion(Vector3(), Quaternion(*rotate_quat))
         tag_tf = Transform3D.from_position_and_quaternion(Vector3(), tag_orientation)
-        rotated_tag = tag_tf.transform_by(rotate_tf)
+        rotated_tag = tag_tf.forward_by(rotate_tf)
         return rotated_tag.quaternion
 
     def publish_marker(self, msg: AprilTagDetectionArray):

@@ -150,9 +150,9 @@ def main():
     field_rotate_tf = Transform3D.from_position_and_rpy(rpy=RPY((0, -np.pi / 2, 0)))
 
     plane_transform = Transform3D.from_position_and_quaternion(plane.pose.translation, plane.pose.rotation)
-    plane_transform = plane_transform.transform_by(field_rotate_tf)
+    plane_transform = plane_transform.forward_by(field_rotate_tf)
     ray_projection_transform = Transform3D.from_position_and_rpy(rpy=RPY((0, -np.pi / 2, np.pi / 2)))
-    plane_transform = plane_transform.forward_by(ray_projection_transform)
+    plane_transform = plane_transform.transform_by(ray_projection_transform)
 
     plane_center = plane_transform.position_array
     plane_normal = plane_transform.rotation_matrix @ np.array((0, 0, 1))
@@ -197,7 +197,7 @@ def main():
     print("extents:", extents)
 
     field_center_projected = Transform3D.from_position_and_rpy(Vector3(centroid[0], centroid[1], 0.0), RPY((0, 0, 0)))
-    field_centered_plane = field_center_projected.transform_by(plane_transform)
+    field_centered_plane = field_center_projected.forward_by(plane_transform)
 
     plot_plane(axes[2], field_centered_plane.position_array, field_centered_plane.rotation_matrix @ np.array((0, 0, 1)))
 

@@ -132,7 +132,7 @@ class OccupancyGrid:
         height = px_height * resolution
         origin = Pose2D(-width / 2.0, -height / 2.0, 0.0)
         if center is not None:
-            origin = Transform3D.from_pose2d(origin).transform_by(center).to_pose2d()
+            origin = Transform3D.from_pose2d(origin).forward_by(center).to_pose2d()
         metadata = MapMetaData(
             map_load_time=0.0,
             resolution=resolution,

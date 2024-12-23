@@ -407,7 +407,7 @@ class RobotFilter:
         rotate_tf: Transform3D,
     ) -> Quaternion:
         tag_tf = Transform3D.from_position_and_quaternion(Vector3(), tag_orientation)
-        rotated_tag = tag_tf.transform_by(rotate_tf)
+        rotated_tag = tag_tf.forward_by(rotate_tf)
         return rotated_tag.quaternion
 
     def cmd_vel_callback(self, msg: Twist, robot_filter: ModelBase) -> None:

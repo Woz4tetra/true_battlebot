@@ -23,7 +23,7 @@ class BumpState:
 def compute_delta_rpy(new_quat: Quaternion, old_quat: Quaternion) -> RPY:
     new_transform = Transform3D.from_position_and_quaternion(Vector3(0, 0, 0), new_quat)
     old_transform = Transform3D.from_position_and_quaternion(Vector3(0, 0, 0), old_quat)
-    delta_transform = new_transform.transform_by(old_transform.inverse())
+    delta_transform = new_transform.forward_by(old_transform.inverse())
     return delta_transform.rpy
 
 

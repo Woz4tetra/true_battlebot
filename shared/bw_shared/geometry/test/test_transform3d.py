@@ -169,7 +169,7 @@ def test_properties() -> None:
     ),
 )
 def test_forward_by(pose: Transform3D, transform: Transform3D, expected: Transform3D) -> None:
-    transformed_pose = pose.forward_by(transform)
+    transformed_pose = pose.transform_by(transform)
     assert transformed_pose.almost_equal(expected), f"{transformed_pose} != {expected}"
 
 
@@ -204,5 +204,5 @@ def test_forward_by(pose: Transform3D, transform: Transform3D, expected: Transfo
     ),
 )
 def test_transform_by(pose: Transform3D, transform: Transform3D, expected: Transform3D) -> None:
-    transformed_pose = pose.transform_by(transform)
+    transformed_pose = pose.forward_by(transform)
     assert transformed_pose.almost_equal(expected), f"{transformed_pose} != {expected}"

@@ -97,15 +97,15 @@ class Transform3D:
     def z(self) -> float:
         return self.tfmat[2, 3]
 
-    def transform_by(self, transform: Transform3D) -> Transform3D:
+    def forward_by(self, transform: Transform3D) -> Transform3D:
         """
         Apply a second transform in series
         """
         return Transform3D(np.dot(self.tfmat, transform.tfmat))
 
-    def forward_by(self, transform: Transform3D) -> Transform3D:
+    def transform_by(self, transform: Transform3D) -> Transform3D:
         """
-        Forward this transform by the other transform in series
+        Transform by the other transform in series
         """
         return Transform3D(np.dot(transform.tfmat, self.tfmat))
 
@@ -181,6 +181,11 @@ class Transform3D:
     def to_pose2d(self) -> Pose2D:
         return Pose2D(self.x, self.y, self.rpy[2])
 
+    def to_xyzquat(self) -> tuple[float, float, float, float, float, float, float]:
+        position = self.position
+        orientation = self.quaternion
+        return position.x, position.y, position.z, orientation.x, orientation.y, orientation.z, orientation.w
+
     def almost_equal(self, other: Transform3D, atol: float = 1e-6, rtol: float = 1e-6) -> bool:
         return np.allclose(self.tfmat, other.tfmat, atol=atol, rtol=rtol)
 
@@ -188,7 +193,11 @@ class Transform3D:
         return hash(tuple([tuple(row) for row in self.tfmat]))
 
     def __str__(self) -> str:
-        return f"{self.__class__.__name__}.from_position_and_rpy(Vector3({self.x, self.y, self.z}), RPY({self.rpy}))"
+        rpy_deg = tuple(np.rad2deg(self.rpy).tolist())
+        return (
+            f"{self.__class__.__name__}.from_position_and_rpy(Vector3({self.x}, {self.y}, {self.z}), "
+            f"RPY.from_degrees({rpy_deg}))"
+        )
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.tfmat.tolist()})"

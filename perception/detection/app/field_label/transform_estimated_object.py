@@ -6,7 +6,7 @@ from bw_shared.messages.header import Header
 def transform_estimated_object(
     estimated_object: EstimatedObject, transform: Transform3D, header: Header
 ) -> EstimatedObject:
-    transformed_object = Transform3D.from_pose_msg(estimated_object.pose.pose).forward_by(transform)
+    transformed_object = Transform3D.from_pose_msg(estimated_object.pose.pose).transform_by(transform)
     new_object = EstimatedObject()
     new_object.header = header.to_msg()
     new_object.child_frame_id = estimated_object.child_frame_id

@@ -32,7 +32,7 @@ class NhrlCamLabelState:
 
     def create_markers(self) -> None:
         for _ in self.image_points:
-            marker = open3d.geometry.TriangleMesh.create_sphere(radius=0.01)
+            marker = open3d.geometry.TriangleMesh.create_sphere(radius=0.03)
             marker.compute_vertex_normals()
             marker.paint_uniform_color([0.7, 0.0, 0.7])
             self.plane_point_markers.append(marker)
@@ -56,4 +56,4 @@ class NhrlCamLabelState:
     def set_camera_coordinate_frame(self, transform: Transform3D) -> open3d.geometry.TriangleMesh:
         vis_tf = np.dot(transform.tfmat, np.linalg.inv(self.prev_camera_tf))
         self.prev_camera_tf = transform.tfmat
-        # self.camera_coordinate_frame.transform(vis_tf)
+        self.camera_coordinate_frame.transform(vis_tf)

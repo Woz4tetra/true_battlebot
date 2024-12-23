@@ -41,7 +41,7 @@ def compute_field_estimate(
     angle_1_2 = np.arctan2(flat_point2[1] - flat_point1[1], flat_point2[0] - flat_point1[0])
     angle_1_2 += np.pi
     flat_transform = Transform3D.from_position_and_rpy(Vector3(centeroid[0], centeroid[1], 0.0), RPY((0, 0, angle_1_2)))
-    field_centered_plane = flat_transform.forward_by(plane_transform)
+    field_centered_plane = flat_transform.transform_by(plane_transform)
 
     length_1_2 = float(np.linalg.norm(flattened_points[1] - flattened_points[0]))
     length_2_3 = float(np.linalg.norm(flattened_points[2] - flattened_points[1]))
@@ -68,7 +68,8 @@ class FieldLabelState:
         self.plane_marker = open3d.geometry.TriangleMesh.create_box(1, 1, 0.001)
         self.plane_marker.translate([-0.5, -0.5, 0.0])
         self.prev_plane_tf = np.eye(4)
-        self.origin_vis = open3d.geometry.TriangleMesh.create_coordinate_frame()
+        self.map_origin_vis = open3d.geometry.TriangleMesh.create_coordinate_frame()
+        self.camera_origin_vis = open3d.geometry.TriangleMesh.create_coordinate_frame()
         self.field_estimate = EstimatedObject()
 
     def save_label_state(self, save_path: str) -> None:
@@ -162,4 +163,4 @@ class FieldLabelState:
         vis_tf = np.dot(h_tf, np.linalg.inv(self.prev_plane_tf))
         self.prev_plane_tf = h_tf
         self.plane_marker.transform(vis_tf)
-        self.origin_vis.transform(vis_tf)
+        self.map_origin_vis.transform(vis_tf)

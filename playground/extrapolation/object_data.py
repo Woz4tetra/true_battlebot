@@ -20,7 +20,7 @@ class ObjectData:
                 sensor_transform = self.sensor_transforms[pose.header.frame_id]
                 map_to_sensor = Transform3D.from_msg(sensor_transform.transform)
                 pose_in_sensor = Transform3D.from_pose_msg(pose.pose)
-                pose_in_map = map_to_sensor.transform_by(pose_in_sensor)
+                pose_in_map = map_to_sensor.forward_by(pose_in_sensor)
                 if label not in measurements_in_map:
                     measurements_in_map[label] = []
                 map_header = Header(pose.header.seq, pose.header.stamp, sensor_transform.header.frame_id)

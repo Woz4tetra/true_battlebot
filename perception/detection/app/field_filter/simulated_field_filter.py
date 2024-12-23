@@ -69,7 +69,7 @@ class SimulatedFieldFilter(FieldFilterInterface):
         else:
             rotate_field = -1 * math.pi / 2
 
-        tf_fieldrotated_from_camera = tf_field_from_camera.forward_by(
+        tf_fieldrotated_from_camera = tf_field_from_camera.transform_by(
             Transform3D.from_position_and_rpy(Vector3(), RPY((0, 0, rotate_field)))
         )
         tf_camera_from_fieldrotated = tf_fieldrotated_from_camera.inverse()
