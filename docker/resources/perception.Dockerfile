@@ -102,6 +102,11 @@ COPY --chown=1000:1000 \
 RUN bash /opt/${ORGANIZATION}/install/install_python_perception_ros.sh
 
 COPY --chown=1000:1000 \
+    ./install/perception/install_sam2.sh \
+    /opt/${ORGANIZATION}/install/
+RUN bash /opt/${ORGANIZATION}/install/install_sam2.sh
+
+COPY --chown=1000:1000 \
     ./install/perception/perception-extra-requirements.txt \
     ./install/perception/install_perception_python_extras.sh \
     /opt/${ORGANIZATION}/install/

@@ -4,10 +4,10 @@ from typing import Any
 import cv2
 import numpy as np
 import scipy.optimize as opt
+from app.config.field_label_tool_config.nhrl_cam_label_config import NhrlCamLabelConfig
 from app.field_label.click_state import ClickState
 from app.field_label.command_line_args import CommandLineArgs
 from app.field_label.field_label_app import FieldLabelApp
-from app.field_label.nhrl_cam_label_config import NhrlCamLabelConfig
 from app.field_label.nhrl_cam_label_state import NhrlCamLabelState
 from bw_shared.geometry.camera.camera_info_loader import read_calibration
 from bw_shared.geometry.projection_math.points_transform import points_transform_by

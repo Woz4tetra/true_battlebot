@@ -4,12 +4,12 @@ from typing import Any
 import cv2
 import numpy as np
 import open3d
+from app.config.field_label_tool_config.field_label_config import FieldLabelConfig
 from app.field_label.click_state import ClickState
-from app.field_label.cloud_to_open3d import cloud_to_open3d
 from app.field_label.command_line_args import CommandLineArgs
-from app.field_label.field_label_config import FieldLabelConfig
 from app.field_label.field_label_state import FieldLabelState, HighlightedPointType
-from app.field_label.transform_estimated_object import transform_estimated_object
+from app.field_label.util.cloud_to_open3d import cloud_to_open3d
+from app.field_label.util.transform_estimated_object import transform_estimated_object
 from bw_interfaces.msg import EstimatedObject
 from bw_shared.geometry.camera.image_rectifier import ImageRectifier
 from bw_shared.geometry.transform3d import Transform3D

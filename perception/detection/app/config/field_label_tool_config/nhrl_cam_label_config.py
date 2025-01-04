@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from app.field_label.field_label_config import FieldLabelConfig
+from app.config.field_label_tool_config.field_label_config import FieldLabelConfig
 
 
 @dataclass
