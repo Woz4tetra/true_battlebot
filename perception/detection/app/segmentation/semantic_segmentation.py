@@ -4,7 +4,7 @@ import time
 import cv2
 import numpy as np
 import torch
-from app.config.segmentation_config.semantic_segmentation_config import SemanticSegmentationConfig
+from app.config.segmentation.semantic_segmentation_config import SemanticSegmentationConfig
 from app.segmentation.segmentation_interface import SegmentationInterface
 from bw_interfaces.msg import LabelMap, SegmentationInstance, SegmentationInstanceArray
 from bw_shared.enums.label import Label

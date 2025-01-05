@@ -4,7 +4,7 @@ import time
 from typing import Protocol
 
 import numpy as np
-from app.config.segmentation_config.simulated_segmentation_config import SimulatedSegmentationConfig
+from app.config.segmentation.simulated_segmentation_config import SimulatedSegmentationConfig
 from app.segmentation.segmentation_interface import SegmentationInterface
 from app.segmentation.simulated_segmentation_manager import SimulatedSegmentationManager
 from bw_interfaces.msg import Contour, LabelMap, SegmentationInstance, SegmentationInstanceArray

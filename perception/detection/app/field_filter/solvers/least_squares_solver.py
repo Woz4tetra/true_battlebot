@@ -1,6 +1,6 @@
 import numpy as np
 import scipy.linalg
-from app.config.field_filter_config.point_cloud_field_filter_config import LeastSquaresPlaneSolverConfig
+from app.config.field_filter.point_cloud_field_filter_config import LeastSquaresPlaneSolverConfig
 from app.field_filter.solvers.base_plane_solver import BasePlaneSolver
 from bw_shared.geometry.projection_math.rotation_matrix_from_vectors import rotation_matrix_from_vectors
 from numba import njit

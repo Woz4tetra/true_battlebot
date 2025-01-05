@@ -2,7 +2,7 @@ import logging
 import math
 import time
 
-from app.config.field_filter_config.simulated_field_filter_config import SimulatedFieldFilterConfig
+from app.config.field_filter.simulated_field_filter_config import SimulatedFieldFilterConfig
 from app.field_filter.field_filter_interface import FieldFilterInterface
 from app.field_filter.helpers import get_field
 from bw_interfaces.msg import EstimatedObject, SegmentationInstanceArray

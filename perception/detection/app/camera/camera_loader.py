@@ -1,11 +1,11 @@
 from typing import Union
 
-from app.config.camera_config.camera_types import CameraConfig
-from app.config.camera_config.light_simulated_camera_config import LightSimulatedCameraConfig
-from app.config.camera_config.noop_camera_config import NoopCameraConfig
-from app.config.camera_config.simulated_camera_config import SimulatedCameraConfig
-from app.config.camera_config.svo_playback_camera_config import SvoPlaybackCameraConfig
-from app.config.camera_config.zed_camera_config import ZedCameraConfig
+from app.config.camera.camera_types import CameraConfig
+from app.config.camera.light_simulated_camera_config import LightSimulatedCameraConfig
+from app.config.camera.noop_camera_config import NoopCameraConfig
+from app.config.camera.simulated_camera_config import SimulatedCameraConfig
+from app.config.camera.svo_playback_camera_config import SvoPlaybackCameraConfig
+from app.config.camera.zed_camera_config import ZedCameraConfig
 from app.config.config import Config
 from app.container import Container
 from bw_interfaces.msg import CageCorner, ControlRecording

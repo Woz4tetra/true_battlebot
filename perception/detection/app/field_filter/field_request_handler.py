@@ -1,6 +1,6 @@
 import logging
 
-from app.config.field_filter_config.field_request_config import FieldRequestConfig
+from app.config.field_filter.field_request_config import FieldRequestConfig
 from bw_interfaces.msg import EstimatedObject
 from perception_tools.rosbridge.ros_poll_subscriber import RosPollSubscriber
 from perception_tools.rosbridge.ros_publisher import RosPublisher

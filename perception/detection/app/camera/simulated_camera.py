@@ -3,7 +3,7 @@ import time
 
 import numpy as np
 from app.camera.camera_interface import CameraInterface, CameraMode
-from app.config.camera_config.simulated_camera_config import SimulatedCameraConfig
+from app.config.camera.simulated_camera_config import SimulatedCameraConfig
 from app.config.camera_topic_config import CameraTopicConfig
 from perception_tools.messages.camera_data import CameraData
 from perception_tools.messages.image import Image

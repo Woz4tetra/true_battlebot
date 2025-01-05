@@ -1,11 +1,11 @@
 from app.config.config import Config
-from app.config.field_filter_config.field_filter_types import FieldFilterConfig
-from app.config.field_filter_config.point_cloud_field_filter_config import (
+from app.config.field_filter.field_filter_types import FieldFilterConfig
+from app.config.field_filter.point_cloud_field_filter_config import (
     LeastSquaresPlaneSolverConfig,
     PointCloudFieldFilterConfig,
     RansacPlaneSolverConfig,
 )
-from app.config.field_filter_config.simulated_field_filter_config import SimulatedFieldFilterConfig
+from app.config.field_filter.simulated_field_filter_config import SimulatedFieldFilterConfig
 from app.container import Container
 from app.field_filter.field_filter_interface import FieldFilterInterface
 from app.field_filter.point_cloud_field_filter import PointCloudFieldFilter

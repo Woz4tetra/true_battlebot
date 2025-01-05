@@ -4,7 +4,7 @@ from typing import Any
 import cv2
 import numpy as np
 import scipy.optimize as opt
-from app.config.field_label_tool_config.nhrl_cam_label_config import NhrlCamLabelConfig
+from app.config.field_label_tool.nhrl_cam_label_config import NhrlCamLabelConfig
 from app.field_label.click_state import ClickState
 from app.field_label.command_line_args import CommandLineArgs
 from app.field_label.field_label_app import FieldLabelApp

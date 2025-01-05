@@ -1,4 +1,4 @@
-from app.config.segmentation_config.noop_segmentation_config import NoopSegmentationConfig
+from app.config.segmentation.noop_segmentation_config import NoopSegmentationConfig
 from app.segmentation.segmentation_interface import SegmentationInterface
 from bw_interfaces.msg import LabelMap, SegmentationInstanceArray
 from perception_tools.messages.image import Image

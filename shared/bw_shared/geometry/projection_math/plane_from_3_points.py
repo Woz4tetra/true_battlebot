@@ -7,7 +7,7 @@ def plane_from_3_points(point1: np.ndarray, point2: np.ndarray, point3: np.ndarr
     :param point1: 3D point
     :param point2: 3D point
     :param point3: 3D point
-    :return: 3D point and normal vector of the plane
+    :return: normal vector of the plane
     """
     normal = np.cross(point2 - point1, point3 - point1)
     magnitude = np.linalg.norm(normal)

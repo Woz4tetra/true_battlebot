@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from app.config.field_filter_config.point_cloud_field_filter_config import (
+from app.config.field_filter.point_cloud_field_filter_config import (
     LeastSquaresPlaneSolverConfig,
     PointCloudFieldFilterConfig,
     RansacPlaneSolverConfig,

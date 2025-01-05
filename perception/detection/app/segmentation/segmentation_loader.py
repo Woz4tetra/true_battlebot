@@ -1,11 +1,11 @@
 from typing import Union
 
 from app.config.config import Config
-from app.config.segmentation_config.instance_segmentation_config import InstanceSegmentationConfig
-from app.config.segmentation_config.noop_segmentation_config import NoopSegmentationConfig
-from app.config.segmentation_config.segmentation_types import SegmentationConfig
-from app.config.segmentation_config.semantic_segmentation_config import SemanticSegmentationConfig
-from app.config.segmentation_config.simulated_segmentation_config import SimulatedSegmentationConfig
+from app.config.segmentation.instance_segmentation_config import InstanceSegmentationConfig
+from app.config.segmentation.noop_segmentation_config import NoopSegmentationConfig
+from app.config.segmentation.segmentation_types import SegmentationConfig
+from app.config.segmentation.semantic_segmentation_config import SemanticSegmentationConfig
+from app.config.segmentation.simulated_segmentation_config import SimulatedSegmentationConfig
 from app.container import Container
 from app.segmentation.semantic_segmentation import SemanticSegmentation
 from app.segmentation.simulated_segmentation_manager import SimulatedSegmentationManager

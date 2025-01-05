@@ -1,5 +1,5 @@
 import pytest
-from app.config.segmentation_config.semantic_segmentation_config import SemanticSegmentationConfig
+from app.config.segmentation.semantic_segmentation_config import SemanticSegmentationConfig
 from app.segmentation.semantic_segmentation import SemanticSegmentation
 from bw_shared.configs.model_to_system_labels_map import ModelToSystemLabelsMap
 from bw_shared.enums.label import Label, ModelLabel

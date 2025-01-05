@@ -2,10 +2,10 @@
 
 set -e
 
-mkdir -p /tmp
-sudo chown -R 1000:1000 /tmp
+sudo mkdir -p /opt/facebookresearch
+sudo chown -R 1000:1000 /opt/facebookresearch
 
-cd /tmp
+cd /opt/facebookresearch
 git clone https://github.com/facebookresearch/sam2.git
 cd sam2
 sudo -H pip install -e .

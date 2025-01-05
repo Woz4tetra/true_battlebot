@@ -1,5 +1,5 @@
 import numpy as np
-from app.config.field_filter_config.point_cloud_field_filter_config import RansacPlaneSolverConfig
+from app.config.field_filter.point_cloud_field_filter_config import RansacPlaneSolverConfig
 from app.field_filter.solvers.base_plane_solver import BasePlaneSolver
 from sklearn.linear_model import RANSACRegressor
 

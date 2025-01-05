@@ -1,6 +1,6 @@
 import numpy as np
 from app.camera.camera_interface import CameraInterface, CameraMode
-from app.config.camera_config.noop_camera_config import NoopCameraConfig
+from app.config.camera.noop_camera_config import NoopCameraConfig
 from bw_shared.messages.header import Header
 from perception_tools.messages.camera_data import CameraData
 from perception_tools.messages.image import Image

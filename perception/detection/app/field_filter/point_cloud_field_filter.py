@@ -1,7 +1,7 @@
 import logging
 
 import numpy as np
-from app.config.field_filter_config.point_cloud_field_filter_config import PointCloudFieldFilterConfig
+from app.config.field_filter.point_cloud_field_filter_config import PointCloudFieldFilterConfig
 from app.field_filter.field_filter_interface import FieldFilterInterface
 from app.field_filter.helpers import get_field
 from app.field_filter.solvers.base_plane_solver import BasePlaneSolver

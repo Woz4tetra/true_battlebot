@@ -6,7 +6,7 @@ import cv2
 import numpy as np
 import torch
 import torchvision
-from app.config.segmentation_config.instance_segmentation_config import InstanceSegmentationConfig
+from app.config.segmentation.instance_segmentation_config import InstanceSegmentationConfig
 from app.segmentation.segmentation_interface import SegmentationInterface
 from bw_interfaces.msg import LabelMap, SegmentationInstance, SegmentationInstanceArray
 from bw_shared.enums.label import Label

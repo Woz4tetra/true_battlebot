@@ -17,5 +17,5 @@ class Container:
     def resolve(self, cls: type[T]) -> T:
         return self._object_registry[cls]
 
-    def resolve_by_name(self, cls: str) -> Any:
-        return self._object_registry[cls]
+    def resolve_by_name(self, name: str) -> Any:
+        return self._object_registry[name]

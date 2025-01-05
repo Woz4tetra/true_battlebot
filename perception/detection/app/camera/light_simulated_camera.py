@@ -2,7 +2,7 @@ import logging
 
 import numpy as np
 from app.camera.camera_interface import CameraInterface, CameraMode
-from app.config.camera_config.light_simulated_camera_config import LightSimulatedCameraConfig
+from app.config.camera.light_simulated_camera_config import LightSimulatedCameraConfig
 from app.config.camera_topic_config import CameraTopicConfig
 from bw_shared.messages.header import Header
 from perception_tools.messages.camera_data import CameraData

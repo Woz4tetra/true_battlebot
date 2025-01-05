@@ -3,8 +3,8 @@ from typing import cast
 
 import rospy
 import toml
-from app.config.field_label_tool_config.field_label_config import FieldLabelConfig
-from app.config.field_label_tool_config.nhrl_cam_label_config import NhrlCamLabelConfig
+from app.config.field_label_tool.field_label_config import FieldLabelConfig
+from app.config.field_label_tool.nhrl_cam_label_config import NhrlCamLabelConfig
 from app.field_label.command_line_args import (
     BagCommandLineArgs,
     CommandLineArgs,

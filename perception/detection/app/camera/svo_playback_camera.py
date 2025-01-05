@@ -8,7 +8,7 @@ import rospy
 from app.camera.camera_interface import CameraInterface, CameraMode
 from app.camera.zed.helpers import zed_status_to_str
 from app.camera.zed.svo_camera import SvoCamera
-from app.config.camera_config.svo_playback_camera_config import SvoPlaybackCameraConfig
+from app.config.camera.svo_playback_camera_config import SvoPlaybackCameraConfig
 from app.config.camera_topic_config import CameraTopicConfig
 from bw_interfaces.msg import ControlRecording
 from perception_tools.messages.camera_data import CameraData

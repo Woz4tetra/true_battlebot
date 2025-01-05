@@ -4,7 +4,7 @@ from typing import Any
 import cv2
 import numpy as np
 import open3d
-from app.config.field_label_tool_config.field_label_config import FieldLabelConfig
+from app.config.field_label_tool.field_label_config import FieldLabelConfig
 from app.field_label.click_state import ClickState
 from app.field_label.command_line_args import CommandLineArgs
 from app.field_label.field_label_state import FieldLabelState, HighlightedPointType

@@ -7,7 +7,7 @@ import rospy
 from app.camera.camera_interface import CameraInterface, CameraMode
 from app.camera.zed.helpers import zed_status_to_str, zed_to_ros_camera_info, zed_to_ros_imu
 from app.camera.zed.video_settings import Zed2iVideoSettings, ZedParameterError
-from app.config.camera_config.zed_camera_config import ZedCameraConfig
+from app.config.camera.zed_camera_config import ZedCameraConfig
 from app.config.camera_topic_config import CameraTopicConfig
 from bw_interfaces.msg import ControlRecording
 from bw_shared.messages.header import Header
