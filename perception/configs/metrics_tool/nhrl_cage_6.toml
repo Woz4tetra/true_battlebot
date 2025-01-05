@@ -2,9 +2,10 @@
 intrinsics = "nhrl_camera_intrinsics.toml"
 
 [camera.position]
-x = -1.184855518272759
-y = -0.07252587538164751
+x = -0.07252587538164751
+y = -1.184855518272759
 z = 1.2333746404414991
+
 [camera.rotation]
 roll = -146.90637867154308
 pitch = 2.8647889756541165

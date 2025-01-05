@@ -29,33 +29,15 @@ def parse_args() -> CommandLineArgs:
     config_files = find_files(CONFIGS_DIR, "*.toml")
 
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "video_file",
-        type=str,
-        choices=video_files.keys(),
-    )
-    parser.add_argument(
-        "-c",
-        "--config",
-        type=str,
-        choices=config_files.keys(),
-        default="",
-    )
+    parser.add_argument("video_file", type=str, choices=video_files.keys())
+    parser.add_argument("config", type=str, choices=config_files.keys())
 
     argcomplete.autocomplete(parser)
 
     args = parser.parse_args()
 
-    if not args.command:
-        parser.print_help()
-        raise RuntimeError("No command specified")
-
     args.video_file = video_files[args.video_file]
-
-    if not args.config:
-        args.config = config_files[args.command + ".toml"]
-    else:
-        args.config = config_files[args.config]
+    args.config = config_files[args.config]
 
     return cast(CommandLineArgs, args)
 

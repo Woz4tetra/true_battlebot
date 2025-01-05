@@ -16,7 +16,7 @@ class FieldLabelConfig:
     field_request_topic: str = "/perception/field/request"
     field_response_topic: str = "/perception/field/response"
     max_cloud_distance: float = 1000.0
-    label_state_path: str = "/data/label_state.json"
+    label_state_path: str = "/data/cache/label_state.json"
     image_padding: int = 0
     num_extra_points: int = 0
     start_time: float = 0.0

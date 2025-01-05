@@ -1,7 +1,12 @@
-[camera_pose]
-x = -1.1420656714611033
-y = -0.02459425712256962
+[camera]
+intrinsics = "nhrl_camera_intrinsics.toml"
+
+[camera.position]
+x = -0.02459425712256962
+y = -1.1420656714611033
 z = 1.661672800534553
+
+[camera.rotation]
 roll = -150.57330856038035
 pitch = 0.5156620156177408
 yaw = 0.38940084153924204
