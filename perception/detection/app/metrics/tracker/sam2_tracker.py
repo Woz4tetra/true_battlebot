@@ -84,6 +84,9 @@ class Sam2Tracker(TrackerInterface):
     def get_tracking(self, frame_num: int) -> TrackingData | None:
         return self.tracking_data.get(frame_num)
 
+    def set_tracking(self, frame_num: int, tracking_data: TrackingData) -> None:
+        self.tracking_data[frame_num] = tracking_data
+
     def get_tracked_points(self) -> TrackedPoints:
         return self.tracked_points
 

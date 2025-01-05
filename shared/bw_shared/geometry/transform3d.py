@@ -15,6 +15,7 @@ from bw_shared.geometry.rotation_transforms import (
     quaternion_matrix,
 )
 from bw_shared.geometry.rpy import RPY
+from bw_shared.geometry.xyz import XYZ
 
 
 @dataclass
@@ -121,6 +122,13 @@ class Transform3D:
         inv_tfmat[0:3, 0:3] = self.tfmat[0:3, 0:3].T
         inv_tfmat[0:3, 3] = -inv_tfmat[0:3, 0:3] @ self.tfmat[0:3, 3]
         return Transform3D(inv_tfmat)
+
+    def transform_point(self, point: XYZ) -> XYZ:
+        """
+        Transform a point from the base frame to the transform's frame
+        """
+        transformed_point = self.tfmat @ np.append(point, 1)
+        return XYZ(*transformed_point[0:3])
 
     @classmethod
     def from_position_and_quaternion(

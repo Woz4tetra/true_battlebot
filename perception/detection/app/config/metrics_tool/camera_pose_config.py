@@ -1,4 +1,3 @@
-import math
 from dataclasses import dataclass, field
 
 from bw_shared.geometry.rpy import RPY
@@ -11,7 +10,7 @@ class CameraRotationConfig:
     yaw: float = 0.0  # degrees
 
     def to_rpy(self) -> RPY:
-        return RPY((math.radians(self.roll), math.radians(self.pitch), math.radians(self.yaw)))
+        return RPY.from_degrees((self.roll, self.pitch, self.yaw))
 
 
 @dataclass

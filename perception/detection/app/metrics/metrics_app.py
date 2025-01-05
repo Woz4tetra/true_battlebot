@@ -1,3 +1,5 @@
+import csv
+import pickle
 from pathlib import Path
 from typing import Any, Generator
 
@@ -9,12 +11,14 @@ from app.metrics.load_interesting_video_frames import load_interesting_video_fra
 from app.metrics.tracker.tracker import TrackerInterface
 from bw_shared.configs.maps_config import MapConfig
 from bw_shared.geometry.camera.camera_info_loader import read_calibration
+from bw_shared.geometry.projection_math.find_ray_plane_insection import find_ray_plane_insection
 from bw_shared.geometry.transform3d import Transform3D
 from bw_shared.geometry.xyz import XYZ
 from bw_shared.messages.header import Header
 from geometry_msgs.msg import Vector3
 from image_geometry import PinholeCameraModel
 from matplotlib import pyplot as plt
+from perception_tools.geometry.transform_to_plane import transform_to_plane
 from perception_tools.messages.image import Image
 
 
@@ -61,12 +65,16 @@ class MetricsApp:
         self.tf_map_from_camera = Transform3D.from_position_and_rpy(
             Vector3(*self.config.camera.position.to_tuple()), self.config.camera.rotation.to_rpy()
         )
+        self.field_plane_center_in_camera, self.field_plane_normal_in_camera = transform_to_plane(
+            self.tf_map_from_camera.inverse().tfmat
+        )
 
         self.current_object_id = 0
         self.current_frame = Image(data=np.zeros((300, 300, 3), dtype=np.uint8))
 
         self.window_name = "metrics"
         cv2.namedWindow(self.window_name)
+        self.did_initialize = False
 
     def _load_interesting_images(self) -> None:
         if self.cached_image_dir.exists():
@@ -98,6 +106,9 @@ class MetricsApp:
 
     def _on_mouse(self, event: int, x: int, y: int, flags: int, param: Any) -> None:
         if event == cv2.EVENT_LBUTTONDOWN:
+            if not self.did_initialize:
+                self.tracker.initialize(self.cached_image_dir)
+                self.did_initialize = True
             if flags & cv2.EVENT_FLAG_SHIFTKEY:
                 print(f"Rejecting point at {x}, {y}")
                 self.tracker.add_reject_point(self.current_frame.header.seq, self.current_object_id, (x, y))
@@ -126,19 +137,26 @@ class MetricsApp:
             draw_frame = frame
         return draw_frame
 
-    def _get_world_points(self, image: Image) -> dict[int, XYZ]:
-        frame_num = image.header.seq
+    def _get_world_points(self, frame_num: int) -> dict[int, XYZ]:
         if tracking_data := self.tracker.get_tracking(frame_num):
             world_points = {}
             for obj_id, contours in tracking_data.contours.items():
+                if len(contours) == 0:
+                    continue
                 world_points[obj_id] = self._contour_to_world_point(contours[0])
             return world_points
         else:
             return {}
 
     def _contour_to_world_point(self, contour: np.ndarray) -> XYZ:
-        centroid = np.mean(contour, axis=0).astype(np.int32)
-        ray = self.camera_model.projectPixelTo3dRay(centroid)
+        centroid = np.mean(contour, axis=0).astype(np.int32)[0]
+        ray = np.array(self.camera_model.projectPixelTo3dRay(centroid))
+        intersection_in_camera = XYZ(
+            *find_ray_plane_insection(ray, self.field_plane_center_in_camera, self.field_plane_normal_in_camera)
+        )
+        intersection_in_map = self.tf_map_from_camera.transform_point(intersection_in_camera)
+        print(intersection_in_map)
+        return intersection_in_map
 
     def _draw_tracked_points(self, frame_num: int, frame: np.ndarray) -> None:
         for points in self.tracker.get_tracked_points().get((frame_num, 1), {}).values():
@@ -173,13 +191,15 @@ class MetricsApp:
                 print("Resetting tracker")
                 self.tracker.reset()
             elif key == "s":
-                print("Saving tracking data as video")
-                self._save_video()
+                self._save_tracking_data()
+                self._save_world_points()
+                # self._save_video()
             elif key.isdigit():
                 self.current_object_id = (int(key) - 1) % 10
                 print(f"Selected object ID {self.current_object_id}")
 
     def _save_video(self) -> None:
+        print("Saving tracking data as video")
         height, width = self.current_frame.data.shape[0:2]
         out_video_path = self.cached_image_dir.parent / f"{self.cached_image_dir.name}_tracked.avi"
         timestamps = list_image_timestamps(self.cached_image_dir)
@@ -191,10 +211,50 @@ class MetricsApp:
             out_video.write(self._draw_tracking(image))
         out_video.release()
 
+    def _save_tracking_data(self) -> None:
+        out_pkl_path = self.cached_image_dir.parent / f"{self.cached_image_dir.name}_tracked.pkl"
+        print(f"Saving tracking data to {out_pkl_path}")
+        timestamps = list_image_timestamps(self.cached_image_dir)
+        with open(out_pkl_path, "wb") as file:
+            all_data = {}
+            for frame_num in range(len(timestamps)):
+                frame_tracking = self.tracker.get_tracking(frame_num)
+                if frame_tracking is None:
+                    continue
+                all_data[frame_num] = frame_tracking
+            pickle.dump(all_data, file)
+
+    def _save_world_points(self) -> None:
+        csv_path = self.cached_image_dir.parent / f"{self.cached_image_dir.name}_world_points.csv"
+        print(f"Saving world points to {csv_path}")
+        timestamps = list_image_timestamps(self.cached_image_dir)
+        with open(csv_path, "w") as file:
+            csv_writer = csv.DictWriter(file, fieldnames=["timestamp", "object_id", "x", "y"])
+            csv_writer.writeheader()
+            for frame_num in range(len(timestamps)):
+                world_points = self._get_world_points(frame_num)
+                for obj_id, point in world_points.items():
+                    csv_writer.writerow(
+                        {
+                            "timestamp": timestamps[frame_num],
+                            "object_id": obj_id,
+                            "x": point.x,
+                            "y": point.y,
+                        }
+                    )
+
+    def _load_tracking_data(self) -> None:
+        pkl_path = self.cached_image_dir.parent / f"{self.cached_image_dir.name}_tracked.pkl"
+        if not pkl_path.exists():
+            print(f"Tracking data file {pkl_path} does not exist")
+            return
+        with open(pkl_path, "rb") as file:
+            all_data = pickle.load(file)
+            for frame_num, frame_tracking in all_data.items():
+                self.tracker.set_tracking(frame_num, frame_tracking)
+
     def run(self) -> None:
         self._load_interesting_images()
-
-        self.tracker.initialize(self.cached_image_dir)
-
+        self._load_tracking_data()
         self._track_selection_loop()
         cv2.destroyAllWindows()
