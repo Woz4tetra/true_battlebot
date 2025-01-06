@@ -7,11 +7,11 @@ import cv2
 import numpy as np
 from app.config.metrics_tool.metrics_tool_config import MetricsToolConfig
 from app.metrics.list_cache_image_paths import list_cache_image_paths, list_image_timestamps
-from app.metrics.load_interesting_video_frames import load_interesting_video_frames
 from app.metrics.tracker.tracker import TrackerInterface
+from app.metrics.video_prefilters import compute_static_background, find_blobs_with_background, iter_masked_images
 from bw_shared.configs.maps_config import MapConfig
 from bw_shared.geometry.camera.camera_info_loader import read_calibration
-from bw_shared.geometry.projection_math.find_ray_plane_insection import find_ray_plane_insection
+from bw_shared.geometry.projection_math.find_ray_plane_intersection import find_ray_plane_intersection
 from bw_shared.geometry.transform3d import Transform3D
 from bw_shared.geometry.xyz import XYZ
 from bw_shared.messages.header import Header
@@ -71,6 +71,7 @@ class MetricsApp:
 
         self.current_object_id = 0
         self.current_frame = Image(data=np.zeros((300, 300, 3), dtype=np.uint8))
+        self.background = np.array([], dtype=np.uint8)
 
         self.window_name = "metrics"
         cv2.namedWindow(self.window_name)
@@ -81,7 +82,7 @@ class MetricsApp:
             return
         print(f"Caching video frames to {self.cached_image_dir}")
         self.cached_image_dir.mkdir()
-        for image in load_interesting_video_frames(
+        for image in iter_masked_images(
             self.video_path,
             self.config.video_filter,
             self.config.field,
@@ -111,13 +112,20 @@ class MetricsApp:
                 self.did_initialize = True
             if flags & cv2.EVENT_FLAG_SHIFTKEY:
                 print(f"Rejecting point at {x}, {y}")
-                self.tracker.add_reject_point(self.current_frame.header.seq, self.current_object_id, (x, y))
+                self.tracker.add_reject_points(self.current_frame.header.seq, self.current_object_id, [(x, y)])
             else:
                 print(f"Tracking point at {x}, {y}")
-                self.tracker.add_track_point(self.current_frame.header.seq, self.current_object_id, (x, y))
-
+                self.tracker.add_track_points(self.current_frame.header.seq, self.current_object_id, [(x, y)])
         else:
             return
+
+    def _auto_init_tracker(self, first_image: Image) -> None:
+        points = find_blobs_with_background(self.background, first_image.data, self.config.video_filter)
+        if not self.did_initialize:
+            self.tracker.initialize(self.cached_image_dir)
+            self.did_initialize = True
+        for object_id, points in points.items():
+            self.tracker.add_track_points(first_image.header.seq, object_id, points)
 
     def _update_tracking(self) -> None:
         self.tracker.compute()
@@ -137,7 +145,7 @@ class MetricsApp:
             draw_frame = frame
         return draw_frame
 
-    def _get_world_points(self, frame_num: int) -> dict[int, XYZ]:
+    def _get_map_points(self, frame_num: int) -> dict[int, XYZ]:
         if tracking_data := self.tracker.get_tracking(frame_num):
             world_points = {}
             for obj_id, contours in tracking_data.contours.items():
@@ -152,10 +160,9 @@ class MetricsApp:
         centroid = np.mean(contour, axis=0).astype(np.int32)[0]
         ray = np.array(self.camera_model.projectPixelTo3dRay(centroid))
         intersection_in_camera = XYZ(
-            *find_ray_plane_insection(ray, self.field_plane_center_in_camera, self.field_plane_normal_in_camera)
+            *find_ray_plane_intersection(ray, self.field_plane_center_in_camera, -1 * self.field_plane_normal_in_camera)
         )
         intersection_in_map = self.tf_map_from_camera.transform_point(intersection_in_camera)
-        print(intersection_in_map)
         return intersection_in_map
 
     def _draw_tracked_points(self, frame_num: int, frame: np.ndarray) -> None:
@@ -170,6 +177,7 @@ class MetricsApp:
         self.current_frame = load_image_near_time(self.cached_image_dir, 0.0)
         cv2.imshow(self.window_name, self.current_frame.data)
         cv2.setMouseCallback(self.window_name, self._on_mouse)
+        self._save_world_points()
         while True:
             cv2.imshow(self.window_name, self._draw_tracking(self.current_frame))
             key = chr(cv2.waitKey(50) & 0xFF)
@@ -187,13 +195,15 @@ class MetricsApp:
             elif key == "t":
                 print("Updating tracking")
                 self._update_tracking()
+                self._save_tracking_data()
+                self._save_world_points()
             elif key == "r":
                 print("Resetting tracker")
                 self.tracker.reset()
             elif key == "s":
-                self._save_tracking_data()
-                self._save_world_points()
-                # self._save_video()
+                self._save_video()
+            elif key == "a":
+                self._auto_init_tracker(self.current_frame)
             elif key.isdigit():
                 self.current_object_id = (int(key) - 1) % 10
                 print(f"Selected object ID {self.current_object_id}")
@@ -205,7 +215,10 @@ class MetricsApp:
         timestamps = list_image_timestamps(self.cached_image_dir)
         average_frame_rate = float(1 / np.mean(np.diff(timestamps)))
         out_video = cv2.VideoWriter(
-            str(out_video_path), cv2.VideoWriter_fourcc(*"XVID"), average_frame_rate, (width, height)
+            str(out_video_path),
+            cv2.VideoWriter_fourcc(*"XVID"),  # type: ignore
+            average_frame_rate,
+            (width, height),
         )
         for image in iterate_cached_frames(self.cached_image_dir):
             out_video.write(self._draw_tracking(image))
@@ -232,7 +245,7 @@ class MetricsApp:
             csv_writer = csv.DictWriter(file, fieldnames=["timestamp", "object_id", "x", "y"])
             csv_writer.writeheader()
             for frame_num in range(len(timestamps)):
-                world_points = self._get_world_points(frame_num)
+                world_points = self._get_map_points(frame_num)
                 for obj_id, point in world_points.items():
                     csv_writer.writerow(
                         {
@@ -253,8 +266,23 @@ class MetricsApp:
             for frame_num, frame_tracking in all_data.items():
                 self.tracker.set_tracking(frame_num, frame_tracking)
 
+    def _compute_tracker_initialization(self) -> np.ndarray:
+        saved_background_path = self.cached_image_dir.parent / f"{self.cached_image_dir.name}_background.jpg"
+        if saved_background_path.exists():
+            background = cv2.imread(str(saved_background_path))
+            print(f"Loaded background from {saved_background_path}")
+        else:
+            print("Computing static background")
+            background = compute_static_background(
+                iterate_cached_frames(self.cached_image_dir), self.config.video_filter
+            ).data
+            cv2.imwrite(str(saved_background_path), background)
+            print(f"Saved background to {saved_background_path}")
+        return background
+
     def run(self) -> None:
         self._load_interesting_images()
+        self.background = self._compute_tracker_initialization()
         self._load_tracking_data()
         self._track_selection_loop()
         cv2.destroyAllWindows()

@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from bw_shared.geometry.projection_math.find_ray_plane_insection import find_ray_plane_insection
+from bw_shared.geometry.projection_math.find_ray_plane_intersection import find_ray_plane_intersection
 
 
 @pytest.mark.parametrize(
@@ -14,6 +14,6 @@ from bw_shared.geometry.projection_math.find_ray_plane_insection import find_ray
 def test_find_ray_plane_insection(
     ray: np.ndarray, plane_normal: np.ndarray, plane_point: np.ndarray, expected_intersection: np.ndarray
 ) -> None:
-    result = find_ray_plane_insection(ray, plane_normal, plane_point)
+    result = find_ray_plane_intersection(ray, plane_normal, plane_point)
     print(result, expected_intersection)
     assert pytest.approx(result) == expected_intersection

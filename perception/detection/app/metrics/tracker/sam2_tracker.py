@@ -31,27 +31,27 @@ class Sam2Tracker(TrackerInterface):
         self.images_dir = images_dir
         self.inference_state = self.predictor.init_state(video_path=str(images_dir))
 
-    def add_track_point(self, frame_num: int, object_id: int, point: tuple[int, int]) -> None:
-        self._add_points(frame_num, object_id, point, 1)
+    def add_track_points(self, frame_num: int, object_id: int, points: list[tuple[int, int]]) -> None:
+        self._add_points(frame_num, object_id, points, 1)
 
-    def add_reject_point(self, frame_num: int, object_id: int, point: tuple[int, int]) -> None:
-        self._add_points(frame_num, object_id, point, 0)
+    def add_reject_points(self, frame_num: int, object_id: int, points: list[tuple[int, int]]) -> None:
+        self._add_points(frame_num, object_id, points, 0)
 
-    def _add_points(self, frame_num: int, object_id: int, point: tuple[int, int], label: int) -> None:
+    def _add_points(self, frame_num: int, object_id: int, points: list[tuple[int, int]], label: int) -> None:
         if not self.is_initialized:
             raise RuntimeError("Tracker is not initialized")
         assert self.predictor is not None
         key = (frame_num, label)
-        self.tracked_points.setdefault(key, {}).setdefault(object_id, []).append(point)
-        points = np.array([[point[0], point[1]]], dtype=np.float32)
+        self.tracked_points.setdefault(key, {}).setdefault(object_id, []).extend(points)
+        points_array = np.array(points, dtype=np.float32)
 
         # for labels, `1` means positive click and `0` means negative click
-        labels = np.array([label], np.int32)
+        labels = np.array([label for _ in range(len(points))], np.int32)
         _, out_obj_ids, out_mask_logits = self.predictor.add_new_points_or_box(
             inference_state=self.inference_state,
             frame_idx=frame_num,
             obj_id=object_id,
-            points=points,
+            points=points_array,
             labels=labels,
         )
         self._set_tracking_data(frame_num, out_obj_ids, out_mask_logits)
