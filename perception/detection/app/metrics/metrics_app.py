@@ -8,6 +8,7 @@ import numpy as np
 from app.config.metrics_tool.metrics_tool_config import MetricsToolConfig
 from app.metrics.list_cache_image_paths import list_cache_image_paths, list_image_timestamps
 from app.metrics.tracker.tracker import TrackerInterface
+from app.metrics.tracker.tracking_data import TrackingData
 from app.metrics.video_prefilters import compute_static_background, find_blobs_with_background, iter_masked_images
 from bw_shared.configs.maps_config import MapConfig
 from bw_shared.geometry.camera.camera_info_loader import read_calibration
@@ -76,6 +77,7 @@ class MetricsApp:
         self.window_name = "metrics"
         cv2.namedWindow(self.window_name)
         self.did_initialize = False
+        self.color_cache = {}
 
     def _load_interesting_images(self) -> None:
         if self.cached_image_dir.exists():
@@ -136,32 +138,64 @@ class MetricsApp:
         if tracking_data := self.tracker.get_tracking(frame_num):
             draw_frame = frame.copy()
             self._draw_tracked_points(frame_num, draw_frame)
-            cmap = plt.get_cmap("tab10")
             for obj_id, contours in tracking_data.contours.items():
-                color = tuple((np.array([*cmap(obj_id)[:3], 0.6]) * 255).astype(np.uint8).tolist())
                 for contour in contours:
-                    cv2.drawContours(draw_frame, [contour], -1, color, 2)
+                    cv2.drawContours(draw_frame, [contour], -1, self._get_color(obj_id), 2)
+            historic_data = self._get_historic_tracking_data(frame_num, look_behind_window=20)
+            self._draw_historic_tracking_data(draw_frame, historic_data)
         else:
             draw_frame = frame
         return draw_frame
 
-    def _get_map_points(self, frame_num: int) -> dict[int, XYZ]:
+    def _get_color(self, obj_id: int) -> tuple[int, ...]:
+        if obj_id not in self.color_cache:
+            cmap = plt.get_cmap("tab10")
+            color = tuple((np.array([*cmap(obj_id)[:3], 0.6]) * 255).astype(np.uint8).tolist())
+            self.color_cache[obj_id] = color
+        return self.color_cache[obj_id]
+
+    def _get_historic_tracking_data(self, end_frame: int, look_behind_window: int) -> list[TrackingData]:
+        start_frame = max(0, end_frame - look_behind_window)
+        all_data = []
+        for frame_num in range(start_frame, end_frame):
+            if tracking_data := self.tracker.get_tracking(frame_num):
+                all_data.append(tracking_data)
+        return all_data
+
+    def _draw_historic_tracking_data(self, frame: np.ndarray, all_data: list[TrackingData]) -> None:
+        points = {}
+        for tracking_data in all_data:
+            for obj_id, contours in tracking_data.contours.items():
+                for contour in contours:
+                    centroid = np.mean(contour, axis=0).astype(np.int32)[0]
+                    points.setdefault(obj_id, []).append(centroid)
+        for obj_id, obj_points in points.items():
+            color = self._get_color(obj_id)
+            cv2.polylines(frame, [np.array(obj_points)], False, color, 2)
+
+    def _get_map_points(self, frame_num: int) -> tuple[dict[int, XYZ], dict[int, XYZ]]:
         if tracking_data := self.tracker.get_tracking(frame_num):
-            world_points = {}
+            map_points = {}
+            camera_pixels = {}
             for obj_id, contours in tracking_data.contours.items():
                 if len(contours) == 0:
                     continue
-                world_points[obj_id] = self._contour_to_world_point(contours[0])
-            return world_points
+                camera_point, centroid = self._contour_to_camera_point(contours[0])
+                camera_pixels[obj_id] = centroid
+                map_points[obj_id] = self._camera_to_map_point(camera_point)
+            return map_points, camera_pixels
         else:
-            return {}
+            return {}, {}
 
-    def _contour_to_world_point(self, contour: np.ndarray) -> XYZ:
+    def _contour_to_camera_point(self, contour: np.ndarray) -> tuple[XYZ, np.ndarray]:
         centroid = np.mean(contour, axis=0).astype(np.int32)[0]
         ray = np.array(self.camera_model.projectPixelTo3dRay(centroid))
         intersection_in_camera = XYZ(
             *find_ray_plane_intersection(ray, self.field_plane_center_in_camera, -1 * self.field_plane_normal_in_camera)
         )
+        return intersection_in_camera, centroid
+
+    def _camera_to_map_point(self, intersection_in_camera: XYZ) -> XYZ:
         intersection_in_map = self.tf_map_from_camera.transform_point(intersection_in_camera)
         return intersection_in_map
 
@@ -177,7 +211,7 @@ class MetricsApp:
         self.current_frame = load_image_near_time(self.cached_image_dir, 0.0)
         cv2.imshow(self.window_name, self.current_frame.data)
         cv2.setMouseCallback(self.window_name, self._on_mouse)
-        self._save_world_points()
+        self._save_map_points()
         while True:
             cv2.imshow(self.window_name, self._draw_tracking(self.current_frame))
             key = chr(cv2.waitKey(50) & 0xFF)
@@ -196,7 +230,7 @@ class MetricsApp:
                 print("Updating tracking")
                 self._update_tracking()
                 self._save_tracking_data()
-                self._save_world_points()
+                self._save_map_points()
             elif key == "r":
                 print("Resetting tracker")
                 self.tracker.reset()
@@ -237,22 +271,27 @@ class MetricsApp:
                 all_data[frame_num] = frame_tracking
             pickle.dump(all_data, file)
 
-    def _save_world_points(self) -> None:
-        csv_path = self.cached_image_dir.parent / f"{self.cached_image_dir.name}_world_points.csv"
-        print(f"Saving world points to {csv_path}")
+    def _save_map_points(self) -> None:
+        csv_path = self.cached_image_dir.parent / f"{self.cached_image_dir.name}_map_points.csv"
+        print(f"Saving map points to {csv_path}")
         timestamps = list_image_timestamps(self.cached_image_dir)
         with open(csv_path, "w") as file:
-            csv_writer = csv.DictWriter(file, fieldnames=["timestamp", "object_id", "x", "y"])
+            csv_writer = csv.DictWriter(
+                file, fieldnames=["timestamp", "object_id", "map_x", "map_y", "camera_x", "camera_y"]
+            )
             csv_writer.writeheader()
             for frame_num in range(len(timestamps)):
-                world_points = self._get_map_points(frame_num)
-                for obj_id, point in world_points.items():
+                map_points, camera_pixels = self._get_map_points(frame_num)
+                for obj_id, map_point in map_points.items():
+                    camera_px = camera_pixels[obj_id]
                     csv_writer.writerow(
                         {
                             "timestamp": timestamps[frame_num],
                             "object_id": obj_id,
-                            "x": point.x,
-                            "y": point.y,
+                            "map_x": map_point.x,
+                            "map_y": map_point.y,
+                            "camera_x": camera_px[0],
+                            "camera_y": camera_px[1],
                         }
                     )
 

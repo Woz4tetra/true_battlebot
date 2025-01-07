@@ -90,10 +90,9 @@ def iter_masked_images(
 def find_blobs_with_background(
     background: np.ndarray, image: np.ndarray, video_filter_config: VideoFilterConfig
 ) -> dict[int, list[tuple[int, int]]]:
-    image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    background = cv2.cvtColor(background, cv2.COLOR_BGR2GRAY)
     diff_image = np.abs(image.astype(np.float32) - background.astype(np.float32))
-    diff_mask = (diff_image > video_filter_config.blobs_mask_threshold).astype(np.uint8) * 255
+    diff_color_mask = (diff_image > video_filter_config.blobs_mask_threshold).astype(np.uint8) * 255
+    diff_mask = np.bitwise_or.reduce(diff_color_mask, axis=2)
 
     kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
     diff_mask = cv2.dilate(diff_mask, kernel, iterations=3)
@@ -113,7 +112,7 @@ def find_blobs_with_background(
     contours_to_track = [data[0] for data in contour_data[: video_filter_config.max_number_of_blobs]]
     points_to_track = {}
     for object_id, contour in enumerate(contours_to_track):
-        contour_image = np.zeros_like(image)
+        contour_image = np.zeros(image.shape[:2])
         cv2.drawContours(contour_image, [contour], -1, (255,), -1)
         blob_points = np.array(np.where(contour_image > 0)).T
         selected_indices = np.round(
