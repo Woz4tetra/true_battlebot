@@ -1,4 +1,3 @@
-import os
 import time
 
 import board
@@ -73,11 +72,6 @@ def read_pwm(pwm_in):
     return frequency, duty_cycle
 
 
-# import wifi
-
-# wifi.radio.connect(ssid=os.getenv("CIRCUITPY_WIFI_SSID"), password=os.getenv("CIRCUITPY_WIFI_PASSWORD"))
-# print("my IP addr:", wifi.radio.ipv4_address)
-
 led = digitalio.DigitalInOut(board.LED)
 led.direction = digitalio.Direction.OUTPUT
 
@@ -99,13 +93,11 @@ right_servo.angle = 0
 
 time.sleep(3)
 
-print("1")
 left_servo.angle = 0
 right_servo.angle = 0
 
 time.sleep(0.01)
 
-print("2")
 left_servo.angle = 90
 right_servo.angle = 90
 
@@ -134,42 +126,19 @@ def scale_cycle_to_percent(duty_cycle):
 up_down = 0
 left_right = 0
 
-max_up_down = None
-max_left_right = None
-min_up_down = None
-min_left_right = None
 while True:
     next_left_right, next_up_down = get_sticks()
     if next_up_down is not None:
         up_down = next_up_down
-        max_up_down = max(max_up_down, up_down) if max_up_down is not None else up_down
-        max_left_right = max(max_left_right, left_right) if max_left_right is not None else left_right
     if next_left_right is not None:
         left_right = next_left_right
-        min_up_down = min(min_up_down, up_down) if min_up_down is not None else up_down
-        min_left_right = min(min_left_right, left_right) if min_left_right is not None else left_right
 
-    # print("\t".join([str(x) for x in (max_up_down, max_left_right, min_up_down, min_left_right)]))
     up_down_percent = -1 * scale_cycle_to_percent(up_down)
     left_right_percent = scale_cycle_to_percent(left_right)
+
+    print(f"{up_down_percent}\t{left_right_percent}")
 
     left = up_down_percent - left_right_percent
     right = up_down_percent + left_right_percent
     left_servo.angle = scale_percent_to_angle(left)
     right_servo.angle = scale_percent_to_angle(right)
-
-    # for angle in arange(neutral_val, max_val, increment):
-    #     left_servo.angle = angle
-    #     right_servo.angle = angle
-    #     time.sleep(delay)
-    #     print_analog()
-    # for angle in arange(max_val, min_val, -increment):
-    #     left_servo.angle = angle
-    #     right_servo.angle = angle
-    #     time.sleep(delay)
-    #     print_analog()
-    # for angle in arange(min_val, neutral_val, increment):
-    #     left_servo.angle = angle
-    #     right_servo.angle = angle
-    #     time.sleep(delay)
-    #     print_analog()
