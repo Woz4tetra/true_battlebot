@@ -48,9 +48,9 @@
         "/home/bwbots/base_ws/install/lib/python3.9/site-packages"
     ],
     "python.analysis.extraPaths": [
-        "/home/bwbots/ros_ws/devel/lib/python3/dist-packages",
-        "/home/bwbots/dep_ws/install/lib/python3.9/site-packages",
-        "/home/bwbots/base_ws/install/lib/python3.9/site-packages"
+        "/home/ben/.vscode/extensions/wmerkens.vscode-circuitpython-v2-0.3.2/boards/0x239A/0x8162",
+        "/home/ben/.vscode/extensions/wmerkens.vscode-circuitpython-v2-0.3.2/stubs",
+        "/home/ben/.config/Code/User/globalStorage/wmerkens.vscode-circuitpython-v2/bundle/20250214/adafruit-circuitpython-bundle-py-20250214/lib"
     ],
     "files.associations": {
         "iosfwd": "cpp",
@@ -142,5 +142,12 @@
     "files.exclude": {
         "**/*.csproj": true
     },
-    "ros.rosSetupScript": "${HOME}/base_ws/devel/setup.bash"
+    "ros.rosSetupScript": "${HOME}/base_ws/devel/setup.bash",
+    "python.analysis.diagnosticSeverityOverrides": {
+        "reportMissingModuleSource": "none",
+        "reportShadowedImports": "none"
+    },
+    "circuitpython.board.version": null,
+    "circuitpython.board.vid": "0x239A",
+    "circuitpython.board.pid": "0x8162"
 }
