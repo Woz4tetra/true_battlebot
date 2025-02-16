@@ -1,0 +1,3 @@
+#!/bin/bash
+PORT=${1:-/dev/ttyACM0}
+platformio device monitor --baud 115200 --port ${PORT}
