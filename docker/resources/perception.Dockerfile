@@ -79,6 +79,11 @@ COPY --chown=1000:1000 \
     /opt/${ORGANIZATION}/install/
 RUN bash /opt/${ORGANIZATION}/install/install_apriltag.sh
 
+COPY --chown=1000:1000 \
+    ./install/ros/install_depthai.sh \
+    /opt/${ORGANIZATION}/install/
+RUN bash /opt/${ORGANIZATION}/install/install_depthai.sh
+
 RUN sudo mkdir -p ${HOME}/.local && sudo chown -R 1000:1000 ${HOME}/.local
 
 # ---

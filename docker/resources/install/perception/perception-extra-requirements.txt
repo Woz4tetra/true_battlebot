@@ -9,3 +9,5 @@ python-json-logger
 shapely
 apriltag
 aprilgrid
+pyserial
+blobconverter
