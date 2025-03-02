@@ -13,3 +13,6 @@ roboflow
 
 PyQt5
 livelossplot
+
+onnx
+onnxscript

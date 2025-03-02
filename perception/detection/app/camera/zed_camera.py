@@ -28,8 +28,8 @@ class ZedCamera(CameraInterface):
         color_image_pub: RosPublisher[RosImage] | None,
         camera_info_pub: RosPublisher[CameraInfo] | None,
         compressed_image_pub: RosPublisher[CompressedImage] | None,
-        imu_pub: RosPublisher[Imu],
-        record_svo_sub: RosPollSubscriber[ControlRecording],
+        imu_pub: RosPublisher[Imu] | None,
+        record_svo_sub: RosPollSubscriber[ControlRecording] | None,
     ) -> None:
         self.logger = logging.getLogger("perception")
 
@@ -128,6 +128,8 @@ class ZedCamera(CameraInterface):
         return self.header
 
     def _poll_recording(self) -> None:
+        if not self.record_svo_sub:
+            return
         if not (control_msg := self.record_svo_sub.receive()):
             return
         command = control_msg.command
@@ -174,12 +176,12 @@ class ZedCamera(CameraInterface):
             point_cloud=point_cloud,
             camera_info=self.camera_info,
         )
-
         sensors_data = sl.SensorsData()
         imu_status = self.camera.get_sensors_data(sensors_data, sl.TIME_REFERENCE.CURRENT)
         if imu_status == sl.ERROR_CODE.SUCCESS:
             imu_data = sensors_data.get_imu_data()
-            self.imu_pub.publish(zed_to_ros_imu(self.camera_info.header, imu_data))
+            camera_data.imu = zed_to_ros_imu(self.camera_info.header, imu_data)
+
         else:
             self.logger.warning(f"Failed to get IMU data: {zed_status_to_str(imu_status)}")
         if self.color_image_pub:
@@ -188,6 +190,8 @@ class ZedCamera(CameraInterface):
             self.camera_info_pub.publish(self.camera_info)
         if self.compressed_image_pub:
             self.compressed_image_pub.publish(image.to_compressed_msg())
+        if self.imu_pub:
+            self.imu_pub.publish(camera_data.imu)
 
         return camera_data
 

@@ -7,30 +7,24 @@ from typing import Any, Callable
 
 import rospkg
 import rospy
-import serial
 from bw_interfaces.msg import TelemetryStatus
 from bw_shared.enums.enum_auto_lower import EnumAutoLowerStr, auto
 from bw_shared.geometry.rpy import RPY
+from bw_shared.radio.crsf.crsf_attitude import CrsfAttitude
+from bw_shared.radio.crsf.crsf_battery import CrsfBattery
+from bw_shared.radio.crsf.crsf_flight_mode import CrsfFlightMode
+from bw_shared.radio.crsf.crsf_frame_type import FrameType
+from bw_shared.radio.crsf.crsf_link_statistics import CrsfLinkStatistics
+from bw_shared.radio.transmitter.frsky import FrSkyTransmitter
 from bw_tools.get_param import get_param
 from geometry_msgs.msg import Quaternion, Twist
 from sensor_msgs.msg import Imu
-from serial.tools.list_ports import comports
-from std_msgs.msg import Bool, Header, String
+from std_msgs.msg import Bool, Header
 
 from bw_teleop.lookup_table_config import LookupTableConfig
 from bw_teleop.parameters import load_rosparam_robot_config
-from bw_teleop.parse_crsf import CrsfAttitude, CrsfBattery, CrsfFlightMode, CrsfLinkStatistics, CrsfParser, FrameType
 
 rospack = rospkg.RosPack()
-
-
-def find_transmitter() -> serial.Serial:
-    rospy.logdebug("Searching for transmitter")
-    for port in comports():
-        if port.pid == 22336 and port.vid == 1155:
-            rospy.logdebug(f"Transmitter found: {port.device}")
-            return serial.Serial(port.device, 115200)
-    raise RuntimeError("Transmitter not found")
 
 
 def calculate_cos_tilt_angle(quat: Quaternion) -> float:
@@ -109,7 +103,6 @@ class MiniBotBridge:
             ),
         }[self.lookup_table_key]
 
-        self.parser = CrsfParser()
         self.packet_callbacks: dict[FrameType, Callable[[Any], None]] = {
             FrameType.BATTERY: self.battery_callback,
             FrameType.LINK_STATISTICS: self.link_statistics_callback,
@@ -126,22 +119,18 @@ class MiniBotBridge:
         self.imu_pub = rospy.Publisher("imu", Imu, queue_size=1)
         self.is_upside_down_pub = rospy.Publisher("is_upside_down", Bool, queue_size=1)
         self.telemetry_pub = rospy.Publisher("telemetry_status", TelemetryStatus, queue_size=1, latch=True)
-        self.trainer_port_pub = rospy.Publisher("trainer_port", String, queue_size=1)
 
         self.telemetry_pub.publish(self.telemetry_status)
 
-        self.device = find_transmitter()
+        self.transmitter = FrSkyTransmitter()
+        self.transmitter.open()
         self.set_telemetry(True)
 
         self.twist_sub = rospy.Subscriber("cmd_vel", Twist, self.twist_callback, queue_size=1)
 
     def set_telemetry(self, telemetry: bool) -> None:
-        if telemetry:
-            self.device.write(b"telemetry on\r\n")
-            self.telemetry_status.controller_connected = True
-        else:
-            self.device.write(b"telemetry off\r\n")
-            self.telemetry_status.controller_connected = False
+        self.transmitter.set_telemetry(telemetry)
+        self.telemetry_status.controller_connected = telemetry
         self.telemetry_pub.publish(self.telemetry_status)
 
     def twist_callback(self, msg: Twist) -> None:
@@ -159,13 +148,7 @@ class MiniBotBridge:
         linear_x = self.apply_deadband(linear_x, self.linear_deadband, self.epsilon)
         angular_z = self.apply_deadband(angular_z, self.angular_deadband, self.epsilon)
         linear_x, angular_z = self.lookup_table.lookup(linear_x, -1 * angular_z)
-        linear_value = int(self.neutral_command * linear_x)
-        angular_value = int(self.neutral_command * angular_z)
-        linear_value = max(self.min_command, min(self.max_command, linear_value))
-        angular_value = max(self.min_command, min(self.max_command, angular_value))
-        linear_command = f"trainer 3 {linear_value}\r\n"
-        rotate_command = f"trainer 0 {angular_value}\r\n"
-        self.command = [linear_command.encode(), rotate_command.encode()]
+        self.transmitter.set_command(linear_x, angular_z)
 
     def apply_deadband(self, velocity: float, deadband: float, epsilon: float) -> float:
         abs_velocity = abs(velocity)
@@ -176,12 +159,12 @@ class MiniBotBridge:
         return velocity
 
     def get_telemetry(self) -> None:
-        response = self.device.read_all()
+        response = self.transmitter.read()
         if not response:
             return
 
         self.header.stamp = rospy.Time.now()
-        for packet, error_msg in self.parser.parse(response):
+        for packet, error_msg in response:
             if error_msg:
                 rospy.logwarn(f"Failed to parse packet: {error_msg}")
                 continue
@@ -229,17 +212,13 @@ class MiniBotBridge:
     def run(self) -> None:
         rate = rospy.Rate(self.poll_rate)
         while not rospy.is_shutdown():
-            for cmd in self.command:
-                if not cmd:
-                    continue
-                self.trainer_port_pub.publish(cmd.decode())
-                self.device.write(cmd)
+            self.transmitter.write()
             self.get_telemetry()
             rate.sleep()
 
     def shutdown(self) -> None:
         self.set_telemetry(False)
-        self.device.close()
+        self.transmitter.close()
 
 
 def main() -> None:
