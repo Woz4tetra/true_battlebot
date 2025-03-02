@@ -8,8 +8,8 @@ float led_intensity = 0.0;
 int led_cycle_index = 0;
 int led_cycle_direction = 1;
 
-#define CHANNEL_A 0
-#define CHANNEL_B 1
+#define CHANNEL_A 1
+#define CHANNEL_B 0
 
 const unsigned long LOW_PERIOD = 19000;  // 19 millisecond (nominally 50 Hz)
 const unsigned long HIGH_PERIOD = 21000; // 21 millisecond (nominally 50 Hz)
@@ -23,7 +23,7 @@ const float min_cycle = 5.0;
 const float max_cycle = 10.0;
 
 #define SERVO_LEFT 9
-#define SERVO_RIGHT 10
+#define SERVO_RIGHT 11
 
 Servo servo_left;
 Servo servo_right;
@@ -35,12 +35,29 @@ const int min_pulse = neutral_pulse - spread_pulse;
 
 const float deadzone_percent = 10.0;
 
-float right_side_up_threshold = 70.0;
-float upside_down_threshold = 140.0;
+typedef struct
+{
+    float x;
+    float y;
+    float z;
+} vector3_t;
+vector3_t *accel_vec;
+float right_side_up_threshold = -2.0;
+float upside_down_threshold = -15.0;
 bool is_upside_down = false;
 
 Adafruit_ADXL375 accel = Adafruit_ADXL375(12345);
 bool accel_initialized = false;
+
+vector3_t *make_unit_vector(float x, float y, float z)
+{
+    float magnitude = sqrt(x * x + y * y + z * z);
+    vector3_t *unit_vector = (vector3_t *)malloc(sizeof(vector3_t));
+    unit_vector->x = x / magnitude;
+    unit_vector->y = y / magnitude;
+    unit_vector->z = z / magnitude;
+    return unit_vector;
+}
 
 float scale_cycle_to_percent(float duty_cycle)
 {
@@ -130,10 +147,7 @@ void write_escs(int left_pulse, int right_pulse)
 
 void initialize_escs()
 {
-    write_escs(MIN_PULSE_WIDTH, MIN_PULSE_WIDTH);
-    delay(3000);
     write_escs(neutral_pulse, neutral_pulse);
-    delay(500);
 }
 
 void set_builtin_led(int value)
@@ -169,6 +183,8 @@ void pulse_led()
 void setup()
 {
     Serial.begin(115200);
+    Serial.println("Starting setup");
+    accel_vec = make_unit_vector(0.0, 0.0, -1.0);
     pinMode(LED_BUILTIN, OUTPUT);
     for (int count = 0; count < 2; count++)
         pulse_led();
@@ -185,30 +201,41 @@ void setup()
     accel_initialized = accel.begin();
     if (!accel_initialized)
     {
+        Serial.println("Could not initialize accelerometer");
         for (int count = 0; count < 10; count++)
             pulse_led();
     }
+    accel.setTrimOffsets(0, 0, 0);
 
     set_builtin_led(255);
     Serial.println("Setup complete");
 }
 
-float angle_from_vertical()
+bool get_accel(vector3_t *accel_vec)
 {
     if (!accel_initialized)
-        return 0.0;
+        return false;
     sensors_event_t event;
     accel.getEvent(&event);
 
-    float x = event.acceleration.x;
-    float y = event.acceleration.y;
-    float z = event.acceleration.z;
+    accel_vec->x = event.acceleration.x;
+    accel_vec->y = event.acceleration.y;
+    accel_vec->z = event.acceleration.z;
+    return true;
+}
 
-    float magnitude = sqrt(x * x + y * y + z * z);
-    z = z / magnitude;
+bool get_is_upside_down(vector3_t *accel_vec)
+{
+    if (!get_accel(accel_vec))
+        return is_upside_down;
 
-    float clipped_z = min(1.0, max(-1.0, z));
-    return acos(clipped_z) * 180.0 / PI;
+    float z = accel_vec->z;
+
+    if (z > right_side_up_threshold)
+        is_upside_down = false;
+    else if (z < upside_down_threshold)
+        is_upside_down = true;
+    return is_upside_down;
 }
 
 void loop()
@@ -224,11 +251,6 @@ void loop()
         read_pwm(high_duration_b, low_duration_b, next_duty_cycle_b))
         duty_cycle_b = next_duty_cycle_b;
 
-    Serial.print("A: ");
-    Serial.print(duty_cycle_a);
-    Serial.print(" B: ");
-    Serial.println(duty_cycle_b);
-
     float a_percent, b_percent;
     if (duty_cycle_a == 0.0)
         a_percent = 0.0;
@@ -242,11 +264,7 @@ void loop()
 
     led_intensity = (abs(a_percent) + abs(b_percent)) / 2.0;
 
-    float angle = angle_from_vertical();
-    if (angle < right_side_up_threshold)
-        is_upside_down = false;
-    else if (angle > upside_down_threshold)
-        is_upside_down = true;
+    is_upside_down = get_is_upside_down(accel_vec);
 
     if (is_upside_down)
         a_percent *= -1;
@@ -264,6 +282,19 @@ void loop()
     int right_pulse = scale_percent_to_pulse(right_command);
 
     write_escs(left_pulse, right_pulse);
+
+    Serial.print("A: ");
+    Serial.print(duty_cycle_a, 3);
+    Serial.print("\tB: ");
+    Serial.print(duty_cycle_b, 3);
+    Serial.print("\tX: ");
+    Serial.print(accel_vec->x, 3);
+    Serial.print("\tY: ");
+    Serial.print(accel_vec->y, 3);
+    Serial.print("\tZ: ");
+    Serial.print(accel_vec->z, 3);
+    Serial.print("\tUpside down: ");
+    Serial.println(is_upside_down);
 
     delay(10);
     cycle_led(led_intensity);
