@@ -269,8 +269,8 @@ void loop()
     if (is_upside_down)
         a_percent *= -1;
 
-    float left_command = a_percent + b_percent;
-    float right_command = a_percent - b_percent;
+    float left_command = a_percent - b_percent;
+    float right_command = a_percent + b_percent;
     float max_command = max(abs(left_command), abs(right_command));
     if (max_command > 100.0)
     {
