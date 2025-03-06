@@ -8,8 +8,8 @@ float led_intensity = 0.0;
 int led_cycle_index = 0;
 int led_cycle_direction = 1;
 
-#define CHANNEL_A 1
-#define CHANNEL_B 0
+#define CHANNEL_A 0
+#define CHANNEL_B 1
 
 const unsigned long LOW_PERIOD = 19000;  // 19 millisecond (nominally 50 Hz)
 const unsigned long HIGH_PERIOD = 21000; // 21 millisecond (nominally 50 Hz)
