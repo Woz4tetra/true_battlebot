@@ -3,14 +3,15 @@
 #include <Wire.h>
 #include <Adafruit_Sensor.h>
 #include <Adafruit_ADXL375.h>
-#include <AlfredoCRSF.h>
+// #include <AlfredoCRSF.h>
 
 float led_intensity = 0.0;
 int led_cycle_index = 0;
 int led_cycle_direction = 1;
 
 #define CRSF_SERIAL Serial1
-AlfredoCRSF crsf;
+#define CRSF_BAUDRATE 420000
+// AlfredoCRSF crsf;
 
 const float min_cycle = 1000.0;
 const float max_cycle = 2000.0;
@@ -113,7 +114,7 @@ void setup()
     Serial.println("Starting setup");
 
     CRSF_SERIAL.begin(CRSF_BAUDRATE, SERIAL_8N1);
-    crsf.begin(CRSF_SERIAL);
+    // crsf.begin(CRSF_SERIAL);
 
     accel_vec = make_unit_vector(0.0, 0.0, -1.0);
     pinMode(LED_BUILTIN, OUTPUT);
@@ -163,22 +164,27 @@ bool get_is_upside_down(vector3_t *accel_vec)
         is_upside_down = true;
     return is_upside_down;
 }
-void printChannels()
-{
-    for (int ChannelNum = 1; ChannelNum <= 16; ChannelNum++)
-    {
-        Serial.print(crsf.getChannel(ChannelNum));
-        Serial.print(", ");
-    }
-    Serial.println(" ");
-}
+
 void loop()
 {
-    crsf.update();
+    if (CRSF_SERIAL.available())
+    {
+        while (CRSF_SERIAL.available())
+        {
+            // crsf.update();
+            unsigned char c = CRSF_SERIAL.read();
+            if (c == 0xC8)
+            {
+                Serial.print('\n');
+            }
+            Serial.print(c, HEX);
+            Serial.print(' ');
+        }
+    }
 
     float channel_a, channel_b;
-    printChannels();
-    if (crsf.isLinkUp())
+    // if (crsf.isLinkUp())
+    if (false)
     {
         Serial.println("Link up");
         channel_a = 0.0;
@@ -222,18 +228,18 @@ void loop()
 
     write_escs(left_pulse, right_pulse);
 
-    Serial.print("A: ");
-    Serial.print(channel_a, 3);
-    Serial.print("\tB: ");
-    Serial.print(channel_b, 3);
-    Serial.print("\tX: ");
-    Serial.print(accel_vec->x, 3);
-    Serial.print("\tY: ");
-    Serial.print(accel_vec->y, 3);
-    Serial.print("\tZ: ");
-    Serial.print(accel_vec->z, 3);
-    Serial.print("\tUpside down: ");
-    Serial.println(is_upside_down);
+    // Serial.print("A: ");
+    // Serial.print(channel_a, 3);
+    // Serial.print("\tB: ");
+    // Serial.print(channel_b, 3);
+    // Serial.print("\tX: ");
+    // Serial.print(accel_vec->x, 3);
+    // Serial.print("\tY: ");
+    // Serial.print(accel_vec->y, 3);
+    // Serial.print("\tZ: ");
+    // Serial.print(accel_vec->z, 3);
+    // Serial.print("\tUpside down: ");
+    // Serial.println(is_upside_down);
 
     delay(10);
     cycle_led(led_intensity);

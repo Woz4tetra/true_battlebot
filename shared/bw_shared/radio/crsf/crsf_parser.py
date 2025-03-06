@@ -5,7 +5,9 @@ from bw_shared.radio.crsf.crsf_packet import CrsfPacket
 
 class CrsfParser:
     def __init__(self) -> None:
+        self.start_bytes = (0x00, 0xEE, 0xEA)
         self.buffer = b""
+        self.packet_classes = {packet_cls.type: packet_cls for packet_cls in get_args(CrsfPacket)}
 
     def _parse_single_packet(self, packet: bytes) -> tuple[Optional[CrsfPacket], str]:
         crc = packet[-1]
@@ -15,16 +17,17 @@ class CrsfParser:
         command = packet[2]
         payload = packet[3:-1]
 
-        for packet_cls in get_args(CrsfPacket):
-            if packet_cls.type == command:
-                return packet_cls.from_bytes(payload), ""
-        return None, f"Unsupported command {command}"
+        packet_cls = self.packet_classes.get(command, None)
+        if packet_cls is None:
+            return None, f"Unsupported command {command}"
+        result = packet_cls.from_bytes(payload)
+        return result, ""
 
-    def parse(self, buffer: bytes) -> list[tuple[CrsfPacket, str]]:
+    def parse(self, buffer: bytes) -> list[tuple[Optional[CrsfPacket], str]]:
         buffer = self.buffer + buffer
-        results: list[tuple[CrsfPacket, str]] = []
+        results: list[tuple[Optional[CrsfPacket], str]] = []
         while len(buffer) > 4:
-            if buffer[0] not in CRSF_RC_START_BYTES:
+            if buffer[0] not in self.start_bytes:
                 buffer = buffer[1:]
                 continue
             frame_length = buffer[1]
@@ -34,16 +37,12 @@ class CrsfParser:
             frame_length += 2  # Add 2 bytes for CRC
             if len(buffer) < frame_length:
                 break
-            if result := self._parse_single_packet(buffer[:frame_length]):
-                packet, error_msg = result
-                if packet:
-                    results.append((packet, error_msg))
+            result = self._parse_single_packet(buffer[:frame_length])
+            packet, error_msg = result
+            results.append((packet, error_msg))
             buffer = buffer[frame_length:]
         self.buffer = buffer
         return results
-
-
-CRSF_RC_START_BYTES = (0x00, 0xEE, 0xEA)
 
 
 # CRC8 implementation with polynom = x^8+x^7+x^6+x^4+x^2+1 (0xD5)
