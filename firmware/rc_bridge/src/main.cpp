@@ -3,24 +3,17 @@
 #include <Wire.h>
 #include <Adafruit_Sensor.h>
 #include <Adafruit_ADXL375.h>
+#include <AlfredoCRSF.h>
 
 float led_intensity = 0.0;
 int led_cycle_index = 0;
 int led_cycle_direction = 1;
 
-#define CHANNEL_A 1
-#define CHANNEL_B 0
+#define CRSF_SERIAL Serial1
+AlfredoCRSF crsf;
 
-const unsigned long LOW_PERIOD = 19000;  // 19 millisecond (nominally 50 Hz)
-const unsigned long HIGH_PERIOD = 21000; // 21 millisecond (nominally 50 Hz)
-volatile unsigned long pulse_in_begin_a = 0, pulse_in_begin_b = 0;
-volatile unsigned long pulse_in_end_a = 0, pulse_in_end_b = 0;
-volatile unsigned long pulse_duration_a = 0, pulse_duration_b = 0;
-volatile bool pulse_in_available_a = false, pulse_in_available_b = false;
-float duty_cycle_a = 0.0, duty_cycle_b = 0.0;
-
-const float min_cycle = 5.0;
-const float max_cycle = 10.0;
+const float min_cycle = 1000.0;
+const float max_cycle = 2000.0;
 
 #define SERVO_LEFT 9
 #define SERVO_RIGHT 11
@@ -59,7 +52,7 @@ vector3_t *make_unit_vector(float x, float y, float z)
     return unit_vector;
 }
 
-float scale_cycle_to_percent(float duty_cycle)
+float scale_channel_to_percent(float duty_cycle)
 {
     float percent = -200.0 / (max_cycle - min_cycle) * (duty_cycle - min_cycle) + 100.0;
     return min(100.0, max(-100.0, percent));
@@ -71,72 +64,6 @@ int scale_percent_to_pulse(float signed_percent)
         return neutral_pulse;
     float angle = (max_pulse - min_pulse) / 200.0 * (signed_percent + 100.0) + min_pulse;
     return (int)min(MAX_PULSE_WIDTH, max(MIN_PULSE_WIDTH, angle));
-}
-
-void channel_a_interrupt()
-{
-    if (digitalRead(CHANNEL_A) == HIGH)
-    {
-        unsigned long now_a = micros();
-        pulse_duration_a = now_a - pulse_in_begin_a;
-        pulse_in_begin_a = now_a;
-    }
-    else
-    {
-        pulse_in_end_a = micros();
-        pulse_in_available_a = true;
-    }
-}
-
-void channel_b_interrupt()
-{
-    if (digitalRead(CHANNEL_B) == HIGH)
-    {
-        unsigned long now_b = micros();
-        pulse_duration_b = now_b - pulse_in_begin_b;
-        pulse_in_begin_b = now_b;
-    }
-    else
-    {
-        pulse_in_end_b = micros();
-        pulse_in_available_b = true;
-    }
-}
-
-bool read_durations_channel_a(unsigned long &high_duration, unsigned long &low_duration)
-{
-    if (!pulse_in_available_a)
-        return false;
-    noInterrupts();
-    high_duration = pulse_in_end_a - pulse_in_begin_a;
-    low_duration = pulse_duration_a - high_duration;
-    pulse_in_available_a = false;
-    interrupts();
-    return true;
-}
-
-bool read_durations_channel_b(unsigned long &high_duration, unsigned long &low_duration)
-{
-    if (!pulse_in_available_b)
-        return false;
-    noInterrupts();
-    high_duration = pulse_in_end_b - pulse_in_begin_b;
-    low_duration = pulse_duration_b - high_duration;
-    pulse_in_available_b = false;
-    interrupts();
-    return true;
-}
-
-bool read_pwm(unsigned long high_duration, unsigned long low_duration, float &duty_cycle)
-{
-    unsigned long period = high_duration + low_duration;
-    if (period < LOW_PERIOD || period > HIGH_PERIOD)
-    {
-        return false;
-    }
-
-    duty_cycle = (float)high_duration / (float)period * 100;
-    return true;
 }
 
 void write_escs(int left_pulse, int right_pulse)
@@ -184,6 +111,10 @@ void setup()
 {
     Serial.begin(115200);
     Serial.println("Starting setup");
+
+    CRSF_SERIAL.begin(CRSF_BAUDRATE, SERIAL_8N1);
+    crsf.begin(CRSF_SERIAL);
+
     accel_vec = make_unit_vector(0.0, 0.0, -1.0);
     pinMode(LED_BUILTIN, OUTPUT);
     for (int count = 0; count < 2; count++)
@@ -192,11 +123,6 @@ void setup()
     servo_left.attach(SERVO_LEFT);
     servo_right.attach(SERVO_RIGHT);
     initialize_escs();
-
-    pinMode(CHANNEL_A, INPUT);
-    pinMode(CHANNEL_B, INPUT);
-    attachInterrupt(digitalPinToInterrupt(CHANNEL_A), channel_a_interrupt, CHANGE);
-    attachInterrupt(digitalPinToInterrupt(CHANNEL_B), channel_b_interrupt, CHANGE);
 
     accel_initialized = accel.begin();
     if (!accel_initialized)
@@ -237,30 +163,43 @@ bool get_is_upside_down(vector3_t *accel_vec)
         is_upside_down = true;
     return is_upside_down;
 }
-
+void printChannels()
+{
+    for (int ChannelNum = 1; ChannelNum <= 16; ChannelNum++)
+    {
+        Serial.print(crsf.getChannel(ChannelNum));
+        Serial.print(", ");
+    }
+    Serial.println(" ");
+}
 void loop()
 {
-    unsigned long high_duration_a, low_duration_a;
-    unsigned long high_duration_b, low_duration_b;
-    float next_duty_cycle_a, next_duty_cycle_b;
+    crsf.update();
 
-    if (read_durations_channel_a(high_duration_a, low_duration_a) &&
-        read_pwm(high_duration_a, low_duration_a, next_duty_cycle_a))
-        duty_cycle_a = next_duty_cycle_a;
-    if (read_durations_channel_b(high_duration_b, low_duration_b) &&
-        read_pwm(high_duration_b, low_duration_b, next_duty_cycle_b))
-        duty_cycle_b = next_duty_cycle_b;
+    float channel_a, channel_b;
+    printChannels();
+    if (crsf.isLinkUp())
+    {
+        Serial.println("Link up");
+        channel_a = 0.0;
+        channel_b = 0.0;
+    }
+    else
+    {
+        channel_a = 0.0;
+        channel_b = 0.0;
+    }
 
     float a_percent, b_percent;
-    if (duty_cycle_a == 0.0)
+    if (channel_a == 0.0)
         a_percent = 0.0;
     else
-        a_percent = scale_cycle_to_percent(duty_cycle_a);
+        a_percent = scale_channel_to_percent(channel_a);
 
-    if (duty_cycle_b == 0.0)
+    if (channel_b == 0.0)
         b_percent = 0.0;
     else
-        b_percent = -1 * scale_cycle_to_percent(duty_cycle_b);
+        b_percent = -1 * scale_channel_to_percent(channel_b);
 
     led_intensity = (abs(a_percent) + abs(b_percent)) / 2.0;
 
@@ -284,9 +223,9 @@ void loop()
     write_escs(left_pulse, right_pulse);
 
     Serial.print("A: ");
-    Serial.print(duty_cycle_a, 3);
+    Serial.print(channel_a, 3);
     Serial.print("\tB: ");
-    Serial.print(duty_cycle_b, 3);
+    Serial.print(channel_b, 3);
     Serial.print("\tX: ");
     Serial.print(accel_vec->x, 3);
     Serial.print("\tY: ");
