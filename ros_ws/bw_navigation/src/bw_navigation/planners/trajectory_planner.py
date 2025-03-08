@@ -4,9 +4,11 @@ from typing import Optional, Tuple
 import rospy
 from bw_interfaces.msg import EstimatedObject, GoalEngineConfig
 from bw_shared.geometry.field_bounds import FieldBounds2D
+from bw_shared.geometry.polar import Polar
 from bw_shared.geometry.pose2d import Pose2D
 from bw_shared.geometry.xy import XY
-from geometry_msgs.msg import Twist
+from bw_tools.messages.goal_strategy import GoalStrategy
+from geometry_msgs.msg import PoseWithCovariance, Twist
 from visualization_msgs.msg import Marker, MarkerArray
 
 from bw_navigation.planners.engines.backaway_from_wall_engine import BackawayFromWallEngine
@@ -20,11 +22,14 @@ from bw_navigation.planners.match_state import MatchState
 from bw_navigation.planners.planner_interface import PlannerInterface
 
 
-class CrashTrajectoryPlanner(PlannerInterface):
-    def __init__(self, controlled_robot: str, avoid_robot_names: list[str], config: PlannerConfig) -> None:
+class TrajectoryPlanner(PlannerInterface):
+    def __init__(
+        self, controlled_robot_name: str, friendly_robot_name: str, avoid_robot_names: list[str], config: PlannerConfig
+    ) -> None:
         self.config = config
         self.traj_config = config.global_planner
-        self.controlled_robot = controlled_robot
+        self.controlled_robot_name = controlled_robot_name
+        self.friendly_robot_name = friendly_robot_name
         self.avoid_robot_names = avoid_robot_names
         self.rotate_180_buffer = self.config.rotate_180_buffer
         self.buffer_xy = XY(self.config.rotate_180_buffer, self.config.rotate_180_buffer)
@@ -57,22 +62,34 @@ class CrashTrajectoryPlanner(PlannerInterface):
         field: FieldBounds2D,
         engine_config: Optional[GoalEngineConfig],
         xy_tolerance: float,
+        goal_strategy: GoalStrategy,
     ) -> Tuple[Twist, GoalProgress]:
         now = rospy.Time.now()
-        if self.controlled_robot not in robot_states:
-            rospy.logwarn_throttle(1, f"Robot {self.controlled_robot} not found in robot states")
+        if self.controlled_robot_name not in robot_states:
+            rospy.logwarn_throttle(1, f"Robot {self.controlled_robot_name} not found in robot states")
             return Twist(), GoalProgress(is_done=False)
 
         match_state = MatchState(
             goal_target=goal_target,
             robot_states=robot_states,
             field_bounds=field,
-            controlled_robot_name=self.controlled_robot,
+            controlled_robot_name=self.controlled_robot_name,
+            friendly_robot_name=self.friendly_robot_name,
             avoid_robot_names=self.avoid_robot_names,
         )
+        if goal_strategy == GoalStrategy.MIRROR_FRIENDLY:
+            match_state = MatchState(
+                goal_target=self.compute_mirrored_goal(match_state),
+                robot_states=robot_states,
+                field_bounds=field,
+                controlled_robot_name=self.controlled_robot_name,
+                friendly_robot_name=self.friendly_robot_name,
+                avoid_robot_names=self.avoid_robot_names,
+            )
 
         markers: list[Marker] = []
         controlled_robot = match_state.controlled_robot
+        goal_target = match_state.goal_target
         rotate_at_end = False if engine_config is None else engine_config.rotate_at_end
         goal_progress = GoalProgress(is_done=False)
         twist = Twist()
@@ -109,7 +126,7 @@ class CrashTrajectoryPlanner(PlannerInterface):
                 rospy.logdebug("Replanned trajectory.")
                 markers.extend(self.global_planner.visualize_trajectory())
             twist, goal_progress = self.local_planner.compute(
-                trajectory, start_time, controlled_robot, match_state.friendly_robot_states
+                trajectory, start_time, controlled_robot, match_state.avoid_robot_states
             )
             if goal_progress.is_done and match_state.distance_to_goal < xy_tolerance:
                 self.trajectory_complete_time = now
@@ -176,3 +193,25 @@ class CrashTrajectoryPlanner(PlannerInterface):
             ):
                 return True
         return False
+
+    def compute_mirrored_goal(self, match_state: MatchState) -> EstimatedObject:
+        goal_point = match_state.goal_point
+        friendly_point = match_state.friendly_robot_point
+        goal_target = match_state.goal_target
+        relative_friendly_point = friendly_point - goal_point
+        relative_friendly_polar = Polar.from_xy(relative_friendly_point)
+        mirrored_polar = Polar(-1 * relative_friendly_polar.radius, relative_friendly_polar.theta)
+        mirrored_point = mirrored_polar.to_xy() + goal_point
+        mirrored_theta = match_state.friendly_robot_pose.theta + math.pi
+        mirrored_pose = Pose2D(mirrored_point.x, mirrored_point.y, mirrored_theta)
+        return EstimatedObject(
+            header=goal_target.header,
+            child_frame_id=goal_target.child_frame_id,
+            pose=PoseWithCovariance(pose=mirrored_pose.to_msg(), covariance=goal_target.pose.covariance),
+            twist=goal_target.twist,
+            size=goal_target.size,
+            label=goal_target.label,
+            keypoints=goal_target.keypoints,
+            keypoint_names=goal_target.keypoint_names,
+            score=goal_target.score,
+        )

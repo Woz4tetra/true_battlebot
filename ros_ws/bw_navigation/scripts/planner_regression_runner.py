@@ -139,7 +139,7 @@ def send_action_goal(app: AppData, go_to_goal_client: SimpleActionClient, run_co
 
     goal = GoToGoalGoal()
     goal.goal = goal_pose
-    goal.strategy = GoalStrategy.CRASH_TRAJECTORY_PLANNER.value
+    goal.strategy = GoalStrategy.CRASH_OPPONENT.value
     goal.goal_type = GoalType.FIXED_POSE.value
     go_to_goal_client.send_goal(goal, feedback_cb=lambda feedback: feedback_cb(app, feedback))
 

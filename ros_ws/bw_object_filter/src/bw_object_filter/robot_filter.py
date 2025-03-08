@@ -38,6 +38,7 @@ from bw_object_filter.cmd_vel_tracker import CmdVelTracker
 from bw_object_filter.covariances import ApriltagHeuristics, CmdVelHeuristics, RobotStaticHeuristics
 from bw_object_filter.estimation_topic_metadata import EstimationTopicMetadata
 from bw_object_filter.extrapolation.extrapolator_interface import ExtrapolatorInterface
+from bw_object_filter.extrapolation.simple_extrapolator import SimpleExtrapolator
 from bw_object_filter.extrapolation.spline_extrapolator import SplineExtrapolator
 from bw_object_filter.filter_models import DriveKalmanModel, TrackingModel
 from bw_object_filter.filter_models.drive_kf_impl import NUM_STATES
@@ -253,9 +254,10 @@ class RobotFilter:
         }
 
     def _init_extrapolators(self, robot_fleet: list[RobotConfig]) -> None:
-        self.extrapolators = {
-            robot.name: SplineExtrapolator(lookahead_time=0.1, lookback_window=0.5) for robot in robot_fleet
-        }
+        # self.extrapolators = {
+        #     robot.name: SplineExtrapolator(lookahead_time=0.2, lookback_window=1.0) for robot in robot_fleet
+        # }
+        self.extrapolators = {robot.name: SimpleExtrapolator(lookahead_time=0.2) for robot in robot_fleet}
 
     def robot_estimation_callback(self, metadata: EstimationTopicMetadata, msg: EstimatedObjectArray) -> None:
         if not self.field_received():

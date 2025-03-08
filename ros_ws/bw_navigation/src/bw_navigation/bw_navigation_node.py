@@ -27,7 +27,7 @@ from geometry_msgs.msg import PoseStamped, Twist
 
 from bw_navigation.exceptions import NavigationError
 from bw_navigation.goal_supplier import FixedPoseSupplier, GoalSupplierInterface, TrackedTargetSupplier
-from bw_navigation.planners import CrashOpponent, CrashTrajectoryPlanner, PlannerInterface
+from bw_navigation.planners import PlannerInterface, TrajectoryPlanner
 from bw_navigation.planners.engines.trajectory_planner_engine_config import PlannerConfig
 
 
@@ -87,30 +87,25 @@ class BwNavigationNode:
         self.initialize_planners(robot_fleet)
 
     def initialize_planners(self, robots: list[RobotConfig]) -> None:
+        opponent_names = [robot.name for robot in robots if robot.team == RobotTeam.THEIR_TEAM]
+        avoid_robot_names = [robot.name for robot in robots if robot.team == RobotTeam.REFEREE]
+        friendly_robot_names = [
+            robot.name for robot in robots if robot.team == RobotTeam.OUR_TEAM and robot.name != self.controlled_robot
+        ]
         if self.friendly_fire:
             rospy.logwarn("!!! Friendly fire is enabled !!!")
-            opponent_names = [
-                robot.name
-                for robot in robots
-                if (robot.team == RobotTeam.OUR_TEAM and robot.name != self.controlled_robot)
-            ]
-        else:
-            opponent_names = [robot.name for robot in robots if robot.team == RobotTeam.THEIR_TEAM]
-
-        avoid_robot_names = [robot.name for robot in robots if robot.team == RobotTeam.REFEREE]
+            opponent_names += friendly_robot_names
 
         self.goal_suppliers: Dict[GoalType, GoalSupplierInterface] = {
             GoalType.FIXED_POSE: FixedPoseSupplier(),
             GoalType.TRACKED_TARGET: TrackedTargetSupplier(self.controlled_robot, opponent_names),
         }
-        self.planners: Dict[GoalStrategy, PlannerInterface] = {
-            GoalStrategy.CRASH_OPPONENT: CrashOpponent(self.controlled_robot),
-            GoalStrategy.CRASH_TRAJECTORY_PLANNER: CrashTrajectoryPlanner(
-                self.controlled_robot, avoid_robot_names, PlannerConfig()
-            ),
-        }
+        friendly_robot_name = friendly_robot_names[0]  # TODO: Support multiple friendly robots
+        self.planner: PlannerInterface = TrajectoryPlanner(
+            self.controlled_robot, friendly_robot_name, avoid_robot_names, PlannerConfig()
+        )
         self.should_cancel = True
-        rospy.loginfo(f"Initialized {len(self.goal_suppliers)} goal suppliers and {len(self.planners)} planners")
+        rospy.loginfo(f"Initialized {len(self.goal_suppliers)} goal suppliers")
 
     def estimated_field_callback(self, estimated_field: EstimatedObject) -> None:
         if not self.field.header.frame_id:
@@ -151,8 +146,7 @@ class BwNavigationNode:
 
         engine_config = goal.engine_config if goal.overwrite_engine_config else None
 
-        planner = self.planners[goal_strategy]
-        planner.reset()
+        self.planner.reset()
 
         goal_feedback = PoseStamped(header=self.field.header)
 
@@ -186,8 +180,8 @@ class BwNavigationNode:
             self.goal_pose_pub.publish(goal_feedback)
 
             try:
-                twist, goal_progress = planner.go_to_goal(
-                    dt, goal_target, self.robots, self.field_bounds_2d, engine_config, goal.xy_tolerance
+                twist, goal_progress = self.planner.go_to_goal(
+                    dt, goal_target, self.robots, self.field_bounds_2d, engine_config, goal.xy_tolerance, goal_strategy
                 )
             except NavigationError as e:
                 rospy.logerr(f"Error going to goal: {e}")
@@ -204,7 +198,7 @@ class BwNavigationNode:
                 is_success = goal_progress.distance_to_goal < goal.xy_tolerance
                 if not is_success and self.try_again_if_not_in_tolerance:
                     rospy.loginfo("Goal not reached, trying again")
-                    planner.reset()
+                    self.planner.reset()
                     continue
                 rospy.loginfo(f"Planner finished successfully: {is_success}")
                 self.goal_server.set_succeeded(GoToGoalResult(success=is_success))
