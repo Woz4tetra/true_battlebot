@@ -4,13 +4,13 @@
     <param name="/use_sim_time" value="false" />
 
     <include file="$(find bw_bringup)/launch/subsystems/common.launch" />
-    <include file="$(find bw_tracking_cam)/launch/depthai_oak_1_w.launch">
+    <!-- <include file="$(find bw_tracking_cam)/launch/depthai_oak_1_w.launch">
         <arg name="camera_name" value="camera_1" />
-    </include>
-    <!-- <group ns="mini_bot">
+    </include> -->
+    <group ns="mini_bot">
         <include file="$(find bw_teleop)/launch/mini_bot_bridge.launch" />
         <include file="$(find bw_teleop)/launch/simple_teleop.launch" />
         <include file="$(find bw_bringup)/launch/subsystems/twist_mux.launch" />
-    </group> -->
+    </group>
     <include file="$(find bw_bringup)/launch/subsystems/mini_bot_static_transforms.launch" />
 </launch>

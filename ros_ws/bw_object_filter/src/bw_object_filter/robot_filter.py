@@ -37,6 +37,8 @@ from bw_object_filter.absolute_imu_tracker import AbsoluteImuTracker
 from bw_object_filter.cmd_vel_tracker import CmdVelTracker
 from bw_object_filter.covariances import ApriltagHeuristics, CmdVelHeuristics, RobotStaticHeuristics
 from bw_object_filter.estimation_topic_metadata import EstimationTopicMetadata
+from bw_object_filter.extrapolation.extrapolator_interface import ExtrapolatorInterface
+from bw_object_filter.extrapolation.spline_extrapolator import SplineExtrapolator
 from bw_object_filter.filter_models import DriveKalmanModel, TrackingModel
 from bw_object_filter.filter_models.drive_kf_impl import NUM_STATES
 from bw_object_filter.filter_models.helpers import measurement_to_pose, measurement_to_twist
@@ -104,6 +106,7 @@ class RobotFilter:
         ]
 
         self.robot_filters: list[ModelBase] = []
+        self.extrapolators: dict[str, ExtrapolatorInterface] = {}
         self.label_to_filter: dict[Label, list[ModelBase]] = {}
         self.team_to_filter: dict[RobotTeam, list[ModelBase]] = {}
         self.label_to_filter_initialization: dict[Label, list[ModelBase]] = {}
@@ -118,6 +121,7 @@ class RobotFilter:
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer)
         self.tf_broadcaster = tf2_ros.TransformBroadcaster()
         self.filter_state_array_pub = rospy.Publisher("filtered_states", EstimatedObjectArray, queue_size=50)
+        self.nonextrapolate_array_pub = rospy.Publisher("nonextrapolated_states", EstimatedObjectArray, queue_size=50)
 
         self.initialize(self.all_robots_config.robots)
 
@@ -167,12 +171,13 @@ class RobotFilter:
             self._init_filter_state_pubs(robot_fleet)
             self._init_tag_filters(robot_fleet)
             self._init_cmd_vel_trackers(robot_fleet)
+            self._init_extrapolators(robot_fleet)
 
     def _init_filters(self, robot_fleet: list[RobotConfig]) -> list[ModelBase]:
-        self.filters: list[ModelBase] = []
+        filters: list[ModelBase] = []
         for robot_config in robot_fleet:
             if robot_config.is_controlled:
-                self.filters.append(
+                filters.append(
                     DriveKalmanModel(
                         robot_config,
                         self.update_delay,
@@ -183,7 +188,7 @@ class RobotFilter:
                     )
                 )
             else:
-                self.filters.append(
+                filters.append(
                     TrackingModel(
                         robot_config,
                         self.update_delay,
@@ -193,7 +198,7 @@ class RobotFilter:
                         self.robot_max_radius,
                     )
                 )
-        return self.filters
+        return filters
 
     def _init_label_to_filter(self, robot_filters: list[ModelBase]) -> None:
         self.label_to_filter = {
@@ -245,6 +250,11 @@ class RobotFilter:
     def _init_cmd_vel_trackers(self, robot_fleet: list[RobotConfig]) -> None:
         self.cmd_vel_trackers = {
             robot.name: CmdVelTracker(self.robot_cmd_vel_heuristics, self.command_timeout) for robot in robot_fleet
+        }
+
+    def _init_extrapolators(self, robot_fleet: list[RobotConfig]) -> None:
+        self.extrapolators = {
+            robot.name: SplineExtrapolator(lookahead_time=0.1, lookback_window=0.5) for robot in robot_fleet
         }
 
     def robot_estimation_callback(self, metadata: EstimationTopicMetadata, msg: EstimatedObjectArray) -> None:
@@ -522,6 +532,7 @@ class RobotFilter:
         transforms = []
         now = rospy.Time.now()
         filtered_states = EstimatedObjectArray()
+        unextrapolated_states = EstimatedObjectArray()
         with self.filter_lock:
             for robot_filter in self.robot_filters:
                 pose, twist = robot_filter.get_state()
@@ -536,12 +547,16 @@ class RobotFilter:
                     size=Vector3(diameter, diameter, diameter),
                     label=robot_name,
                 )
+                extrapolator = self.extrapolators[robot_name]
+                extrapolated_state = extrapolator.extrapolate(state_msg)
 
-                transforms.append(self.state_to_transform(state_msg))
-                self.filter_state_pubs[robot_name].publish(self.state_to_odom(state_msg))
+                transforms.append(self.state_to_transform(extrapolated_state))
+                self.filter_state_pubs[robot_name].publish(self.state_to_odom(extrapolated_state))
 
-                filtered_states.robots.append(state_msg)
+                filtered_states.robots.append(extrapolated_state)
+                unextrapolated_states.robots.append(state_msg)
         self.filter_state_array_pub.publish(filtered_states)
+        self.nonextrapolate_array_pub.publish(unextrapolated_states)
 
         self.tf_broadcaster.sendTransform(transforms)
 

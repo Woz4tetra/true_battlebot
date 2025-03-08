@@ -90,9 +90,6 @@ class MiniBotBridge:
         self.linear_deadband = get_param("~linear_deadband", 0.02)
         self.angular_deadband = get_param("~angular_deadband", 0.15)
         self.epsilon = get_param("~epsilon", 0.01)
-        self.neutral_command = 500
-        self.max_command = 1000
-        self.min_command = -1000
 
         package_path = Path(rospack.get_path("bw_teleop"))
 
@@ -136,14 +133,6 @@ class MiniBotBridge:
     def twist_callback(self, msg: Twist) -> None:
         linear_x = msg.linear.x
         angular_z = msg.angular.z
-
-        # abs_angular_z = abs(angular_z)
-        # if abs_angular_z > 1.0:
-        #     angular_z = math.copysign(abs_angular_z * math.log(abs_angular_z) + 1.0, angular_z)
-        # if abs(linear_x) > 1.0:
-        #     angular_z *= abs(linear_x)
-        # linear_x *= 0.75
-        angular_z *= 1.5
 
         linear_x = self.apply_deadband(linear_x, self.linear_deadband, self.epsilon)
         angular_z = self.apply_deadband(angular_z, self.angular_deadband, self.epsilon)
