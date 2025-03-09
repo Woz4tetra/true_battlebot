@@ -1,8 +1,12 @@
 #include <Arduino.h>
-#include <Servo.h>
 #include <Wire.h>
 #include <Adafruit_Sensor.h>
 #include <Adafruit_ADXL375.h>
+#include <s3servo.h>
+
+#define MIN_ANGLE 0
+#define MAX_ANGLE 180
+#define Servo s3servo
 
 float led_intensity = 0.0;
 int led_cycle_index = 0;
@@ -23,15 +27,15 @@ const float min_cycle = 5.0;
 const float max_cycle = 10.0;
 
 #define SERVO_LEFT 9
-#define SERVO_RIGHT 11
+#define SERVO_RIGHT 8
 
 Servo servo_left;
 Servo servo_right;
 
-const int neutral_pulse = 1500;
-const int spread_pulse = 500;
-const int max_pulse = neutral_pulse + spread_pulse;
-const int min_pulse = neutral_pulse - spread_pulse;
+const int neutral_angle = 90;
+const int spread_pulse = 90;
+const int max_pulse = neutral_angle + spread_pulse;
+const int min_pulse = neutral_angle - spread_pulse;
 
 const float deadzone_percent = 10.0;
 
@@ -62,15 +66,15 @@ vector3_t *make_unit_vector(float x, float y, float z)
 float scale_cycle_to_percent(float duty_cycle)
 {
     float percent = -200.0 / (max_cycle - min_cycle) * (duty_cycle - min_cycle) + 100.0;
-    return min(100.0, max(-100.0, percent));
+    return min(100.0f, max(-100.0f, percent));
 }
 
 int scale_percent_to_pulse(float signed_percent)
 {
     if (abs(signed_percent) < deadzone_percent)
-        return neutral_pulse;
+        return neutral_angle;
     float angle = (max_pulse - min_pulse) / 200.0 * (signed_percent + 100.0) + min_pulse;
-    return (int)min(MAX_PULSE_WIDTH, max(MIN_PULSE_WIDTH, angle));
+    return (int)min((float)MAX_ANGLE, max((float)MIN_ANGLE, angle));
 }
 
 void channel_a_interrupt()
@@ -139,15 +143,15 @@ bool read_pwm(unsigned long high_duration, unsigned long low_duration, float &du
     return true;
 }
 
-void write_escs(int left_pulse, int right_pulse)
+void write_escs(int left_angle, int right_angle)
 {
-    servo_left.writeMicroseconds(left_pulse);
-    servo_right.writeMicroseconds(right_pulse);
+    servo_left.write(left_angle);
+    servo_right.write(right_angle);
 }
 
 void initialize_escs()
 {
-    write_escs(neutral_pulse, neutral_pulse);
+    write_escs(neutral_angle, neutral_angle);
 }
 
 void set_builtin_led(int value)
@@ -269,8 +273,8 @@ void loop()
     if (is_upside_down)
         a_percent *= -1;
 
-    float left_command = a_percent + b_percent;
-    float right_command = a_percent - b_percent;
+    float left_command = a_percent - b_percent;
+    float right_command = a_percent + b_percent;
     float max_command = max(abs(left_command), abs(right_command));
     if (max_command > 100.0)
     {
