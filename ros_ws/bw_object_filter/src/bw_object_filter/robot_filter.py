@@ -177,7 +177,7 @@ class RobotFilter:
     def _init_filters(self, robot_fleet: list[RobotConfig]) -> list[ModelBase]:
         filters: list[ModelBase] = []
         for robot_config in robot_fleet:
-            if robot_config.is_controlled:
+            if robot_config.team == RobotTeam.OUR_TEAM:
                 filters.append(
                     DriveKalmanModel(
                         robot_config,
@@ -257,7 +257,7 @@ class RobotFilter:
         # self.extrapolators = {
         #     robot.name: SplineExtrapolator(lookahead_time=0.2, lookback_window=1.0) for robot in robot_fleet
         # }
-        self.extrapolators = {robot.name: SimpleExtrapolator(lookahead_time=0.2) for robot in robot_fleet}
+        self.extrapolators = {robot.name: SimpleExtrapolator(lookahead_time=0.0) for robot in robot_fleet}
 
     def robot_estimation_callback(self, metadata: EstimationTopicMetadata, msg: EstimatedObjectArray) -> None:
         if not self.field_received():

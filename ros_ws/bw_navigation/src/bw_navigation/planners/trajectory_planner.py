@@ -128,9 +128,9 @@ class TrajectoryPlanner(PlannerInterface):
             twist, goal_progress = self.local_planner.compute(
                 trajectory, start_time, controlled_robot, match_state.avoid_robot_states
             )
-            if goal_progress.is_done and match_state.distance_to_goal < xy_tolerance:
-                self.trajectory_complete_time = now
-                goal_progress.is_done = not rotate_at_end
+            # if goal_progress.is_done and match_state.distance_to_goal < xy_tolerance:
+            #     self.trajectory_complete_time = now
+            #     goal_progress.is_done = not rotate_at_end
         else:
             rospy.logdebug("Backing away from wall.")
             twist = self.backaway_engine.compute(match_state.goal_pose, match_state.controlled_robot_pose)

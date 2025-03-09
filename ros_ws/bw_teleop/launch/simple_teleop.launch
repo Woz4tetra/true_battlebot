@@ -2,7 +2,7 @@
     <node name="usb_joystick" pkg="joy" type="joy_node" output="screen" required="false"
         clear_params="true">
         <param name="dev"
-            value="/dev/input/by-id/usb-Microsoft_Controller_3032564C30323832373534313236-joystick"
+            value="/dev/input/js1"
             type="str" />
         <param name="deadzone" value="0.05" />
         <param name="autorepeat_rate" value="30.0" />
