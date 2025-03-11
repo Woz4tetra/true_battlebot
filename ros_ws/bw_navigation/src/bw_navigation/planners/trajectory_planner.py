@@ -86,6 +86,7 @@ class TrajectoryPlanner(PlannerInterface):
                 friendly_robot_name=self.friendly_robot_name,
                 avoid_robot_names=self.avoid_robot_names,
             )
+            return match_state.friendly_robot.twist.twist, GoalProgress(is_done=False)
 
         markers: list[Marker] = []
         controlled_robot = match_state.controlled_robot
