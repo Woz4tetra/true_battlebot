@@ -12,13 +12,14 @@ class SimpleExtrapolator(ExtrapolatorInterface):
 
     def extrapolate(self, state: EstimatedObject) -> EstimatedObject:
         prev_pose_2d = Pose2D.from_msg(state.pose.pose)
-        vx = state.twist.twist.linear.x
-        vt = state.twist.twist.angular.z
-        distance = vx * self.lookahead_time
-        delta_theta = vt * self.lookahead_time
-        transform = Pose2D(distance, 0, 0)
+        twist = state.twist.twist
+        vx = twist.linear.x
+        vt = twist.angular.z
+        dt = self.lookahead_time
+        distance = vx * dt
+        delta_theta = vt * dt
+        transform = Pose2D(distance, 0.0, delta_theta)
         new_pose_2d = prev_pose_2d.forward_by(transform)
-        new_pose_2d.theta += delta_theta
         new_pose = PoseWithCovariance(pose=new_pose_2d.to_msg(), covariance=state.pose.covariance)
         header = Header(state.header.stamp.to_sec() + self.lookahead_time, state.header.frame_id, state.header.seq)
 
