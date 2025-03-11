@@ -2,9 +2,9 @@
     "type": "auto",
     "init": {
         "type": "relative",
-        "x": 0.85,
-        "y": -0.5,
-        "yaw": 135.0
+        "x": -0.85,
+        "y": 0.0,
+        "yaw": 0.0
     },
     "sequence": []
 }

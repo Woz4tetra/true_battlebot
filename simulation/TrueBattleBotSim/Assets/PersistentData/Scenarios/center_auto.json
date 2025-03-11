@@ -12,24 +12,19 @@
             "objective": "blue_slow_camera"
         },
         {
-            "name": "tracking_camera",
-            "model": "OAK-1",
-            "objective": "blue_tracking_camera"
-        },
-        {
             "name": "mini_bot",
             "model": "MR STABS MK2",
-            "objective": "auto_blue_corner"
+            "objective": "auto_left"
         },
         {
             "name": "main_bot",
             "model": "MRS BUFF MK2",
-            "objective": "keyboard_blue_corner"
+            "objective": "auto_right"
         },
         {
             "name": "opponent_1",
             "model": "MRS BUFF B-03 Bizarro",
-            "objective": "target_main_bot_red_corner"
+            "objective": "idle_center"
         },
         {
             "name": "referee",

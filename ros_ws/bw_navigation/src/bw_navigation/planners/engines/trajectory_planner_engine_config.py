@@ -85,11 +85,19 @@ class LocalPlannerEngineConfig:
 
 
 @dataclass
+class NearGoalConfig:
+    linear_pid: PidConfig = field(default_factory=lambda: PidConfig(kp=3.0, ki=0.0, kd=0.0, kf=1.0))
+    angular_pid: PidConfig = field(default_factory=lambda: PidConfig(kp=5.0, ki=0.0, kd=0.0, kf=1.0))
+
+
+@dataclass
 class PlannerConfig:
     move_threshold: float = 0.1  # meters
     move_timeout: float = 1.0  # seconds
 
     rotate_180_buffer: float = 0.05
+    friendly_mirror_proximity: float = 1.0  # meters
+    friendly_mirror_magnify: float = 1.5
 
     backaway_recover: BackawayRecoverConfig = field(default_factory=BackawayRecoverConfig)
     global_planner: TrajectoryPlannerEngineConfig = field(default_factory=TrajectoryPlannerEngineConfig)
@@ -98,3 +106,4 @@ class PlannerConfig:
     thrash_recovery: ThrashRecoveryConfig = field(default_factory=ThrashRecoveryConfig)
     in_danger_recovery: InDangerRecoveryConfig = field(default_factory=InDangerRecoveryConfig)
     rotate_to_angle: RotateToAngleConfig = field(default_factory=RotateToAngleConfig)
+    near_goal: NearGoalConfig = field(default_factory=NearGoalConfig)

@@ -7,6 +7,7 @@ from bw_shared.geometry.field_bounds import FieldBounds2D
 from bw_shared.geometry.polar import Polar
 from bw_shared.geometry.pose2d import Pose2D
 from bw_shared.geometry.xy import XY
+from bw_shared.pid.pid import PID
 from bw_tools.messages.goal_strategy import GoalStrategy
 from geometry_msgs.msg import PoseWithCovariance, Twist
 from visualization_msgs.msg import Marker, MarkerArray
@@ -38,6 +39,8 @@ class TrajectoryPlanner(PlannerInterface):
         self.local_planner = LocalPlannerEngine(self.config.local_planner, self.config.ramsete, self.backaway_engine)
         self.rotate_to_angle_engine = RotateToAngleEngine(self.config.rotate_to_angle.pid)
         self.thrash_recover_engine = ThrashEngine(self.config.thrash_recovery)
+        self.near_goal_linear_pid = PID(self.config.near_goal.linear_pid)
+        self.near_goal_angular_pid = PID(self.config.near_goal.angular_pid)
         self.visualization_publisher = rospy.Publisher(
             "trajectory_visualization", MarkerArray, queue_size=1, latch=True
         )
@@ -86,7 +89,6 @@ class TrajectoryPlanner(PlannerInterface):
                 friendly_robot_name=self.friendly_robot_name,
                 avoid_robot_names=self.avoid_robot_names,
             )
-            return match_state.friendly_robot.twist.twist, GoalProgress(is_done=False)
 
         markers: list[Marker] = []
         controlled_robot = match_state.controlled_robot
@@ -94,6 +96,13 @@ class TrajectoryPlanner(PlannerInterface):
         rotate_at_end = False if engine_config is None else engine_config.rotate_at_end
         goal_progress = GoalProgress(is_done=False)
         twist = Twist()
+
+        if match_state.distance_to_goal < self.config.friendly_mirror_proximity:
+            relative_goal = match_state.goal_pose.relative_to(match_state.controlled_robot_pose)
+            twist.linear.x = self.near_goal_linear_pid.update(relative_goal.x, 0.0, dt)
+            twist.angular.z = self.near_goal_angular_pid.update(relative_goal.theta, 0.0, dt)
+            twist = self.overlay_friendly_twist(twist, match_state)
+            return twist, goal_progress
 
         if self.trajectory_complete_time is not None and rotate_at_end:
             rospy.logdebug("Rotating at end.")
@@ -142,6 +151,7 @@ class TrajectoryPlanner(PlannerInterface):
         else:
             max_velocity = self.traj_config.max_velocity
             max_angular_velocity = self.traj_config.max_angular_velocity
+
         twist.linear.x = max(-1 * max_velocity, min(max_velocity, twist.linear.x))
         twist.angular.z = max(-1 * max_angular_velocity, min(max_angular_velocity, twist.angular.z))
 
@@ -216,3 +226,13 @@ class TrajectoryPlanner(PlannerInterface):
             keypoint_names=goal_target.keypoint_names,
             score=goal_target.score,
         )
+
+    def overlay_friendly_twist(self, twist: Twist, match_state: MatchState) -> Twist:
+        friendly_twist = match_state.friendly_robot.twist.twist
+        distance_to_goal = match_state.distance_to_goal
+        ratio = 1 - distance_to_goal / self.config.friendly_mirror_proximity
+        magnify = self.config.friendly_mirror_magnify
+        new_twist = Twist()
+        new_twist.linear.x = twist.linear.x * (1 - ratio) + friendly_twist.linear.x * ratio * magnify
+        new_twist.angular.z = twist.angular.z * (1 - ratio) + friendly_twist.angular.z * ratio * magnify
+        return new_twist

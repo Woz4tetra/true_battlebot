@@ -3,8 +3,8 @@
     "init": {
         "type": "relative",
         "x": 0.85,
-        "y": -0.5,
-        "yaw": 135.0
+        "y": 0.0,
+        "yaw": 180.0
     },
     "sequence": []
 }

@@ -139,7 +139,6 @@ class LocalPlannerEngine:
         angle_magnitude = abs(error.theta)
         if angle_magnitude < self.config.slowdown_angle:
             scale_factor = angle_magnitude / self.config.slowdown_angle
-            rospy.loginfo(f"scale_factor: {scale_factor}")
             new_chassis_speeds.angular.z = chassis_speeds.angular.z * scale_factor
         else:
             new_chassis_speeds.angular.z = chassis_speeds.angular.z
