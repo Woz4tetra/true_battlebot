@@ -2,6 +2,7 @@
 #include <Wire.h>
 #include <Adafruit_Sensor.h>
 #include <Adafruit_ADXL375.h>
+#include <s3servo.h>
 #include <AlfredoCRSF.h>
 #include <Adafruit_NeoPixel.h>
 
@@ -11,19 +12,24 @@
 #define MAIN_SERIAL Serial
 AlfredoCRSF crsf;
 
-const float min_cycle = 0.0;
-const float max_cycle = 2000.0;
+const float MIN_CYCLE = 200.0;
+const float MID_CYCLE = 1000.0;
+const float MAX_CYCLE = 1700.0;
 
-const int ESC_LEFT = 9;
-const int ESC_LEFT_CHANNEL = 2;
-const int ESC_RIGHT = 8;
-const int ESC_RIGHT_CHANNEL = 3;
-const int PWM_FREQ = 50;
-const int PWM_RESOLUTION = 16;
+#define MIN_ANGLE 0
+#define MAX_ANGLE 180
+#define Servo s3servo
 
-const int neutral_pulse = 1250;
-const int max_pulse = 2000;
-const int min_pulse = 500;
+#define SERVO_LEFT A2
+#define SERVO_RIGHT A3
+
+Servo servo_left;
+Servo servo_right;
+
+const int neutral_angle = 90;
+const int spread_pulse = 90;
+const int max_pulse = neutral_angle + spread_pulse;
+const int min_pulse = neutral_angle - spread_pulse;
 
 const float deadzone_percent = 10.0;
 
@@ -45,7 +51,7 @@ const uint32_t RECONNECT_INTERVAL = 1000;
 
 const int NUM_PIXELS = 1;
 Adafruit_NeoPixel pixels(NUM_PIXELS, PIN_NEOPIXEL, NEO_GRB + NEO_KHZ800);
-int rainbow_tick = 0;
+int rainbow_tick = 0, led_intensity = 0;
 
 vector3_t *make_unit_vector(float x, float y, float z)
 {
@@ -57,36 +63,36 @@ vector3_t *make_unit_vector(float x, float y, float z)
     return unit_vector;
 }
 
-float scale_channel_to_percent(float duty_cycle)
+float scale_channel_to_percent(float channel_value)
 {
-    float percent = -200.0 / (max_cycle - min_cycle) * (duty_cycle - min_cycle) + 100.0;
+    float percent;
+    if (channel_value < MID_CYCLE)
+        percent = -100.0 / (MID_CYCLE - MIN_CYCLE) * (MID_CYCLE - channel_value);
+    else
+        percent = 100.0 / (MAX_CYCLE - MID_CYCLE) * (channel_value - MID_CYCLE);
     return min(100.0f, max(-100.0f, percent));
 }
 
 int scale_percent_to_pulse(float signed_percent)
 {
     if (abs(signed_percent) < deadzone_percent)
-        return neutral_pulse;
-    float pulse = (max_pulse - min_pulse) / 200.0 * (signed_percent + 100.0) + min_pulse;
-    return (int)min((float)max_pulse, max((float)min_pulse, pulse));
+        return neutral_angle;
+    float angle = (max_pulse - min_pulse) / 200.0 * (signed_percent + 100.0) + min_pulse;
+    return (int)min((float)MAX_ANGLE, max((float)MIN_ANGLE, angle));
 }
 
-void write_escs(int left_duty_cycle, int right_duty_cycle)
+void write_escs(int left_angle, int right_angle)
 {
-    ledcWrite(ESC_LEFT_CHANNEL, left_duty_cycle);
-    ledcWrite(ESC_RIGHT_CHANNEL, right_duty_cycle);
+    servo_left.write(left_angle);
+    servo_right.write(right_angle);
 }
 
 void initialize_escs()
 {
-    ledcSetup(ESC_LEFT, PWM_FREQ, PWM_RESOLUTION);
-    ledcSetup(ESC_RIGHT, PWM_FREQ, PWM_RESOLUTION);
-
-    ledcAttachPin(ESC_LEFT, ESC_LEFT_CHANNEL);
-    ledcAttachPin(ESC_RIGHT, ESC_RIGHT_CHANNEL);
-
+    servo_left.attach(SERVO_LEFT, 0);
+    servo_right.attach(SERVO_RIGHT, 1);
     delay(500);
-    write_escs(neutral_pulse, neutral_pulse);
+    write_escs(neutral_angle, neutral_angle);
 }
 
 void set_builtin_led(int value)
@@ -183,7 +189,6 @@ bool get_is_upside_down(vector3_t *accel_vec)
 void setup()
 {
     MAIN_SERIAL.begin(115200);
-    delay(1000);
     MAIN_SERIAL.println("Starting setup");
 
 #if defined(NEOPIXEL_POWER)
@@ -194,6 +199,7 @@ void setup()
     digitalWrite(NEOPIXEL_POWER, HIGH);
     MAIN_SERIAL.println("Set neopixel power");
 #endif
+    initialize_escs();
 
     pixels.begin();
     pixels.setBrightness(20);
@@ -202,7 +208,6 @@ void setup()
     for (int count = 0; count < 2; count++)
         pulse_led();
 
-    initialize_escs();
     connect_accelerometer();
     set_builtin_led(255);
     CRSF_SERIAL.begin(CRSF_BAUDRATE, SERIAL_8N1, RXD1, TXD1);
@@ -213,34 +218,48 @@ void setup()
 
 void loop()
 {
+    cycle_rainbow_led(rainbow_tick, led_intensity);
+    rainbow_tick = (rainbow_tick + 5) % 255;
+
     crsf.update();
 
     float channel_a, channel_b;
+    bool armed;
     if (crsf.isLinkUp())
     {
         const crsf_channels_t *channels = crsf.getChannelsPacked();
         channel_a = channels->ch0;
         channel_b = channels->ch3;
+        armed = channels->ch4 > MID_CYCLE;
     }
     else
     {
         MAIN_SERIAL.println("CRSF link down");
         channel_a = 0.0;
         channel_b = 0.0;
+        armed = false;
+    }
+
+    if (!armed)
+    {
+        MAIN_SERIAL.println("Disarmed");
+        write_escs(neutral_angle, neutral_angle);
+        delay(10);
+        return;
     }
 
     float a_percent, b_percent;
     if (channel_a == 0.0)
         a_percent = 0.0;
     else
-        a_percent = scale_channel_to_percent(channel_a);
+        a_percent = -1 * scale_channel_to_percent(channel_a);
 
     if (channel_b == 0.0)
         b_percent = 0.0;
     else
-        b_percent = -1 * scale_channel_to_percent(channel_b);
+        b_percent = scale_channel_to_percent(channel_b);
 
-    int led_intensity = (int)(2.35 * (abs(a_percent) + abs(b_percent)) / 2.0) + 20;
+    led_intensity = (int)(2.35 * (abs(a_percent) + abs(b_percent)) / 2.0) + 20;
 
     is_upside_down = get_is_upside_down(accel_vec);
 
@@ -279,6 +298,4 @@ void loop()
     MAIN_SERIAL.println(is_upside_down);
 
     delay(10);
-    cycle_rainbow_led(rainbow_tick, led_intensity);
-    rainbow_tick = (rainbow_tick + 5) % 255;
 }
