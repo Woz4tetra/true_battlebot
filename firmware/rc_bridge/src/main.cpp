@@ -2,35 +2,28 @@
 #include <Wire.h>
 #include <Adafruit_Sensor.h>
 #include <Adafruit_ADXL375.h>
-#include <s3servo.h>
 #include <AlfredoCRSF.h>
 #include <Adafruit_NeoPixel.h>
 
-#define MIN_ANGLE 0
-#define MAX_ANGLE 180
-#define Servo s3servo
-
-float led_intensity = 0.0;
-int led_cycle_index = 0;
-int led_cycle_direction = 1;
-
-#define CRSF_SERIAL Serial2
+#define RXD1 18
+#define TXD1 17
+#define CRSF_SERIAL Serial1
 #define MAIN_SERIAL Serial
-// AlfredoCRSF crsf;
+AlfredoCRSF crsf;
 
-const float min_cycle = 1000.0;
+const float min_cycle = 0.0;
 const float max_cycle = 2000.0;
 
-#define SERVO_LEFT A2
-#define SERVO_RIGHT A3
+const int ESC_LEFT = 9;
+const int ESC_LEFT_CHANNEL = 2;
+const int ESC_RIGHT = 8;
+const int ESC_RIGHT_CHANNEL = 3;
+const int PWM_FREQ = 50;
+const int PWM_RESOLUTION = 16;
 
-Servo servo_left;
-Servo servo_right;
-
-const int neutral_angle = 90;
-const int spread_pulse = 90;
-const int max_pulse = neutral_angle + spread_pulse;
-const int min_pulse = neutral_angle - spread_pulse;
+const int neutral_pulse = 1250;
+const int max_pulse = 2000;
+const int min_pulse = 500;
 
 const float deadzone_percent = 10.0;
 
@@ -47,9 +40,12 @@ bool is_upside_down = false;
 
 Adafruit_ADXL375 accel = Adafruit_ADXL375(12345);
 bool accel_initialized = false;
+uint32_t reconnect_timer = 0;
+const uint32_t RECONNECT_INTERVAL = 1000;
 
 const int NUM_PIXELS = 1;
 Adafruit_NeoPixel pixels(NUM_PIXELS, PIN_NEOPIXEL, NEO_GRB + NEO_KHZ800);
+int rainbow_tick = 0;
 
 vector3_t *make_unit_vector(float x, float y, float z)
 {
@@ -70,35 +66,33 @@ float scale_channel_to_percent(float duty_cycle)
 int scale_percent_to_pulse(float signed_percent)
 {
     if (abs(signed_percent) < deadzone_percent)
-        return neutral_angle;
-    float angle = (max_pulse - min_pulse) / 200.0 * (signed_percent + 100.0) + min_pulse;
-    return (int)min((float)MAX_ANGLE, max((float)MIN_ANGLE, angle));
+        return neutral_pulse;
+    float pulse = (max_pulse - min_pulse) / 200.0 * (signed_percent + 100.0) + min_pulse;
+    return (int)min((float)max_pulse, max((float)min_pulse, pulse));
 }
 
-void write_escs(int left_angle, int right_angle)
+void write_escs(int left_duty_cycle, int right_duty_cycle)
 {
-    servo_left.write(left_angle);
-    servo_right.write(right_angle);
+    ledcWrite(ESC_LEFT_CHANNEL, left_duty_cycle);
+    ledcWrite(ESC_RIGHT_CHANNEL, right_duty_cycle);
 }
 
 void initialize_escs()
 {
-    write_escs(neutral_angle, neutral_angle);
+    ledcSetup(ESC_LEFT, PWM_FREQ, PWM_RESOLUTION);
+    ledcSetup(ESC_RIGHT, PWM_FREQ, PWM_RESOLUTION);
+
+    ledcAttachPin(ESC_LEFT, ESC_LEFT_CHANNEL);
+    ledcAttachPin(ESC_RIGHT, ESC_RIGHT_CHANNEL);
+
+    delay(500);
+    write_escs(neutral_pulse, neutral_pulse);
 }
 
 void set_builtin_led(int value)
 {
     pixels.fill(pixels.Color(value, 0, 0));
-}
-
-void cycle_led(float intensity)
-{
-    led_cycle_index = min(255, max(0, led_cycle_direction + 1));
-    set_builtin_led(led_cycle_index);
-    if (led_cycle_index < 0 || led_cycle_index >= 255)
-    {
-        led_cycle_direction *= -1;
-    }
+    pixels.show();
 }
 
 void pulse_led()
@@ -114,6 +108,76 @@ void pulse_led()
         delay(1);
     }
     set_builtin_led(0);
+}
+
+void cycle_rainbow_led(int tick, int brightness)
+{
+    for (int i = 0; i < NUM_PIXELS; i++)
+    {
+        pixels.setPixelColor(i, pixels.ColorHSV(tick * 65536 / 255 + i * 65536 / NUM_PIXELS, 255, 255));
+    }
+    pixels.setBrightness(brightness);
+    pixels.show();
+}
+
+void connect_accelerometer()
+{
+    if (accel.begin())
+    {
+        MAIN_SERIAL.println("Accelerometer reconnected");
+        accel_initialized = true;
+        accel.setTrimOffsets(0, 0, 0);
+    }
+    else
+    {
+        MAIN_SERIAL.println("Could not reconnect accelerometer");
+        accel_initialized = false;
+        for (int count = 0; count < 10; count++)
+            pulse_led();
+    }
+}
+
+bool get_accel(vector3_t *accel_vec)
+{
+    if (!accel_initialized && !crsf.isLinkUp())
+    {
+        if (millis() - reconnect_timer > RECONNECT_INTERVAL)
+        {
+            connect_accelerometer();
+            reconnect_timer = millis();
+        }
+        return false;
+    }
+    sensors_event_t event;
+    uint32_t start_time = millis();
+    accel.getEvent(&event);
+    uint32_t end_time = millis();
+
+    if (end_time - start_time > 250)
+    {
+        accel_initialized = false;
+        MAIN_SERIAL.println("Could not get accelerometer event");
+        return false;
+    }
+
+    accel_vec->x = event.acceleration.x;
+    accel_vec->y = event.acceleration.y;
+    accel_vec->z = event.acceleration.z;
+    return true;
+}
+
+bool get_is_upside_down(vector3_t *accel_vec)
+{
+    if (!get_accel(accel_vec))
+        return is_upside_down;
+
+    float z = accel_vec->z;
+
+    if (z > right_side_up_threshold)
+        is_upside_down = false;
+    else if (z < upside_down_threshold)
+        is_upside_down = true;
+    return is_upside_down;
 }
 
 void setup()
@@ -138,81 +202,29 @@ void setup()
     for (int count = 0; count < 2; count++)
         pulse_led();
 
-    servo_left.attach(SERVO_LEFT);
-    servo_right.attach(SERVO_RIGHT);
     initialize_escs();
-
-    accel_initialized = accel.begin();
-    if (!accel_initialized)
-    {
-        MAIN_SERIAL.println("Could not initialize accelerometer");
-        for (int count = 0; count < 10; count++)
-            pulse_led();
-    }
-    accel.setTrimOffsets(0, 0, 0);
-
+    connect_accelerometer();
     set_builtin_led(255);
-
-    CRSF_SERIAL.begin(CRSF_BAUDRATE, SERIAL_8N1, RX1, TX1);
-    // crsf.begin(CRSF_SERIAL);
+    CRSF_SERIAL.begin(CRSF_BAUDRATE, SERIAL_8N1, RXD1, TXD1);
+    crsf.begin(CRSF_SERIAL);
 
     MAIN_SERIAL.println("Setup complete");
 }
 
-bool get_accel(vector3_t *accel_vec)
-{
-    if (!accel_initialized)
-        return false;
-    sensors_event_t event;
-    accel.getEvent(&event);
-
-    accel_vec->x = event.acceleration.x;
-    accel_vec->y = event.acceleration.y;
-    accel_vec->z = event.acceleration.z;
-    return true;
-}
-
-bool get_is_upside_down(vector3_t *accel_vec)
-{
-    if (!get_accel(accel_vec))
-        return is_upside_down;
-
-    float z = accel_vec->z;
-
-    if (z > right_side_up_threshold)
-        is_upside_down = false;
-    else if (z < upside_down_threshold)
-        is_upside_down = true;
-    return is_upside_down;
-}
-
 void loop()
 {
-    if (CRSF_SERIAL.available())
-    {
-        while (CRSF_SERIAL.available())
-        {
-            // crsf.update();
-            unsigned char c = CRSF_SERIAL.read();
-            if (c == 0xC8)
-            {
-                MAIN_SERIAL.print('\n');
-            }
-            MAIN_SERIAL.print(c, HEX);
-            MAIN_SERIAL.print(' ');
-        }
-    }
+    crsf.update();
 
     float channel_a, channel_b;
-    // if (crsf.isLinkUp())
-    if (false)
+    if (crsf.isLinkUp())
     {
-        MAIN_SERIAL.println("Link up");
-        channel_a = 0.0;
-        channel_b = 0.0;
+        const crsf_channels_t *channels = crsf.getChannelsPacked();
+        channel_a = channels->ch0;
+        channel_b = channels->ch3;
     }
     else
     {
+        MAIN_SERIAL.println("CRSF link down");
         channel_a = 0.0;
         channel_b = 0.0;
     }
@@ -228,7 +240,7 @@ void loop()
     else
         b_percent = -1 * scale_channel_to_percent(channel_b);
 
-    led_intensity = (abs(a_percent) + abs(b_percent)) / 2.0;
+    int led_intensity = (int)(2.35 * (abs(a_percent) + abs(b_percent)) / 2.0) + 20;
 
     is_upside_down = get_is_upside_down(accel_vec);
 
@@ -249,19 +261,24 @@ void loop()
 
     write_escs(left_pulse, right_pulse);
 
-    // MAIN_SERIAL.print("A: ");
-    // MAIN_SERIAL.print(channel_a, 3);
-    // MAIN_SERIAL.print("\tB: ");
-    // MAIN_SERIAL.print(channel_b, 3);
-    // MAIN_SERIAL.print("\tX: ");
-    // MAIN_SERIAL.print(accel_vec->x, 3);
-    // MAIN_SERIAL.print("\tY: ");
-    // MAIN_SERIAL.print(accel_vec->y, 3);
-    // MAIN_SERIAL.print("\tZ: ");
-    // MAIN_SERIAL.print(accel_vec->z, 3);
-    // MAIN_SERIAL.print("\tUpside down: ");
-    // MAIN_SERIAL.println(is_upside_down);
+    MAIN_SERIAL.print("A: ");
+    MAIN_SERIAL.print(channel_a, 3);
+    MAIN_SERIAL.print("\tB: ");
+    MAIN_SERIAL.print(channel_b, 3);
+    MAIN_SERIAL.print("\tLeft: ");
+    MAIN_SERIAL.print(left_pulse);
+    MAIN_SERIAL.print("\tRight: ");
+    MAIN_SERIAL.print(right_pulse);
+    MAIN_SERIAL.print("\tX: ");
+    MAIN_SERIAL.print(accel_vec->x, 3);
+    MAIN_SERIAL.print("\tY: ");
+    MAIN_SERIAL.print(accel_vec->y, 3);
+    MAIN_SERIAL.print("\tZ: ");
+    MAIN_SERIAL.print(accel_vec->z, 3);
+    MAIN_SERIAL.print("\tUpside down: ");
+    MAIN_SERIAL.println(is_upside_down);
 
     delay(10);
-    cycle_led(led_intensity);
+    cycle_rainbow_led(rainbow_tick, led_intensity);
+    rainbow_tick = (rainbow_tick + 5) % 255;
 }
