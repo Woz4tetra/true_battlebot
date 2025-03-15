@@ -1,3 +1,4 @@
+#include <WiFi.h>
 #include <Arduino.h>
 #include <Wire.h>
 #include <Adafruit_Sensor.h>
@@ -5,6 +6,7 @@
 #include <s3servo.h>
 #include <AlfredoCRSF.h>
 #include <Adafruit_NeoPixel.h>
+#include <ArduinoOTA.h>
 
 #define RXD1 18
 #define TXD1 17
@@ -13,7 +15,9 @@
 AlfredoCRSF crsf;
 
 const float MIN_CYCLE = 200.0;
+const float LOWER_CYCLE = 800.0;
 const float MID_CYCLE = 1000.0;
+const float UPPER_CYCLE = 1200.0;
 const float MAX_CYCLE = 1700.0;
 
 #define MIN_ANGLE 0
@@ -51,7 +55,15 @@ const uint32_t RECONNECT_INTERVAL = 1000;
 
 const int NUM_PIXELS = 1;
 Adafruit_NeoPixel pixels(NUM_PIXELS, PIN_NEOPIXEL, NEO_GRB + NEO_KHZ800);
-int rainbow_tick = 0, led_intensity = 0;
+int rainbow_tick = 0, led_intensity = 20;
+
+const char *ssid = "MR-STABS";
+const char *password = "havocbots";
+WiFiServer server(80);
+WiFiClient client;
+bool response_sent = false;
+bool is_setup = false;
+String current_line = "";
 
 vector3_t *make_unit_vector(float x, float y, float z)
 {
@@ -85,6 +97,11 @@ void write_escs(int left_angle, int right_angle)
 {
     servo_left.write(left_angle);
     servo_right.write(right_angle);
+}
+
+void stop_escs()
+{
+    write_escs(neutral_angle, neutral_angle);
 }
 
 void initialize_escs()
@@ -186,6 +203,116 @@ bool get_is_upside_down(vector3_t *accel_vec)
     return is_upside_down;
 }
 
+void setup_wifi()
+{
+    if (is_setup)
+        return;
+    stop_escs();
+    is_setup = true;
+    WiFi.softAP(ssid, password);
+
+    IPAddress IP = WiFi.softAPIP();
+    MAIN_SERIAL.print("AP IP address: ");
+    MAIN_SERIAL.println(IP);
+
+    server.begin();
+
+    ArduinoOTA
+        .onStart([]()
+                 {
+    String type;
+    if (ArduinoOTA.getCommand() == U_FLASH) {
+      type = "sketch";
+    } else {  // U_SPIFFS
+      type = "filesystem";
+    }
+
+    // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
+    Serial.println("Start updating " + type); })
+        .onEnd([]()
+               { Serial.println("\nEnd"); })
+        .onProgress([](unsigned int progress, unsigned int total)
+                    { Serial.printf("Progress: %u%%\r", (progress / (total / 100))); })
+        .onError([](ota_error_t error)
+                 {
+    Serial.printf("Error[%u]: ", error);
+    if (error == OTA_AUTH_ERROR) {
+      Serial.println("Auth Failed");
+    } else if (error == OTA_BEGIN_ERROR) {
+      Serial.println("Begin Failed");
+    } else if (error == OTA_CONNECT_ERROR) {
+      Serial.println("Connect Failed");
+    } else if (error == OTA_RECEIVE_ERROR) {
+      Serial.println("Receive Failed");
+    } else if (error == OTA_END_ERROR) {
+      Serial.println("End Failed");
+    } });
+
+    ArduinoOTA.begin();
+}
+
+void tick_wifi()
+{
+    if (!is_setup)
+        return;
+
+    ArduinoOTA.handle();
+    if (client.connected())
+    {
+        while (client.available())
+        {
+            char c = client.read(); // read a byte, then
+            MAIN_SERIAL.write(c);   // print it out the serial monitor
+            current_line += c;
+            if (c == '\n')
+            { // if the byte is a newline character
+                // if the current line is blank, you got two newline characters in a row.
+                // that's the end of the client HTTP request, so send a response:
+                if (current_line.length() == 2)
+                {
+                    // HTTP headers always start with a response code (e.g. HTTP/1.1 200 OK)
+                    // and a content-type so the client knows what's coming, then a blank line:
+                    client.println("HTTP/1.1 200 OK");
+                    client.println("Content-type:text/html");
+                    client.println("Connection: close");
+                    client.println();
+
+                    // Send your "Hello World" HTML response
+                    client.println("<html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"></head>");
+                    client.println("<body><h1>Hello World</h1></body></html>");
+
+                    // The HTTP response ends with another blank line
+                    client.println();
+                    MAIN_SERIAL.println("Sent response");
+                    response_sent = true;
+                    break;
+                }
+                else
+                { // if you got a newline, then clear currentLine
+                    current_line = "";
+                }
+            }
+            else if (c != '\r')
+            {                      // if you got anything else but a carriage return character,
+                current_line += c; // add it to the end of the currentLine
+            }
+        }
+        if (response_sent)
+        {
+            client.stop();
+            Serial.println("Client disconnected.");
+            Serial.println("");
+        }
+    }
+    else
+    {
+        client = server.available(); // Listen for incoming clients
+        if (!client)
+            return;
+        Serial.println("New Client."); // print a message out in the serial port
+    }
+}
+
 void setup()
 {
     MAIN_SERIAL.begin(115200);
@@ -218,19 +345,21 @@ void setup()
 
 void loop()
 {
+    delay(10);
     cycle_rainbow_led(rainbow_tick, led_intensity);
     rainbow_tick = (rainbow_tick + 5) % 255;
 
     crsf.update();
 
     float channel_a, channel_b;
-    bool armed;
+    bool armed, start_wifi;
     if (crsf.isLinkUp())
     {
         const crsf_channels_t *channels = crsf.getChannelsPacked();
         channel_a = channels->ch0;
         channel_b = channels->ch3;
         armed = channels->ch4 > MID_CYCLE;
+        start_wifi = channels->ch5 > UPPER_CYCLE;
     }
     else
     {
@@ -238,13 +367,21 @@ void loop()
         channel_a = 0.0;
         channel_b = 0.0;
         armed = false;
+        start_wifi = false;
     }
+
+    if (start_wifi)
+        setup_wifi();
+    tick_wifi();
 
     if (!armed)
     {
-        MAIN_SERIAL.println("Disarmed");
-        write_escs(neutral_angle, neutral_angle);
-        delay(10);
+        MAIN_SERIAL.print("Disarmed.\tWiFi: ");
+        MAIN_SERIAL.print(start_wifi);
+        MAIN_SERIAL.print("\tSetup: ");
+        MAIN_SERIAL.print(is_setup);
+        MAIN_SERIAL.print("\n");
+        stop_escs();
         return;
     }
 
@@ -295,7 +432,10 @@ void loop()
     MAIN_SERIAL.print("\tZ: ");
     MAIN_SERIAL.print(accel_vec->z, 3);
     MAIN_SERIAL.print("\tUpside down: ");
-    MAIN_SERIAL.println(is_upside_down);
-
-    delay(10);
+    MAIN_SERIAL.print(is_upside_down);
+    MAIN_SERIAL.print("\tWiFi: ");
+    MAIN_SERIAL.print(start_wifi);
+    MAIN_SERIAL.print("\tSetup: ");
+    MAIN_SERIAL.print(is_setup);
+    MAIN_SERIAL.print("\n");
 }
