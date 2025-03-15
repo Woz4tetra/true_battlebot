@@ -427,10 +427,10 @@ void loop()
         is_upside_down = true;
         break;
     case MIDDLE:
-        is_upside_down = get_is_upside_down(accel_vec);
+        is_upside_down = false;
         break;
     case DOWN:
-        is_upside_down = false;
+        is_upside_down = get_is_upside_down(accel_vec);
         break;
 
     default:
