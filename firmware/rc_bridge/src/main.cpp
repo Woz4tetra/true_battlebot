@@ -20,6 +20,13 @@ const float MID_CYCLE = 1000.0;
 const float UPPER_CYCLE = 1200.0;
 const float MAX_CYCLE = 1700.0;
 
+typedef enum three_state_switch
+{
+    DOWN = 0,
+    MIDDLE = 1,
+    UP = 2
+} three_state_switch_t;
+
 #define MIN_ANGLE 0
 #define MAX_ANGLE 180
 #define Servo s3servo
@@ -203,6 +210,16 @@ bool get_is_upside_down(vector3_t *accel_vec)
     return is_upside_down;
 }
 
+three_state_switch_t get_switch_state(float channel_value)
+{
+    if (channel_value < LOWER_CYCLE)
+        return DOWN;
+    else if (channel_value < UPPER_CYCLE)
+        return MIDDLE;
+    else
+        return UP;
+}
+
 void setup_wifi()
 {
     if (is_setup)
@@ -220,6 +237,7 @@ void setup_wifi()
     ArduinoOTA
         .onStart([]()
                  {
+    stop_escs();
     String type;
     if (ArduinoOTA.getCommand() == U_FLASH) {
       type = "sketch";
@@ -352,14 +370,17 @@ void loop()
     crsf.update();
 
     float channel_a, channel_b;
-    bool armed, start_wifi;
+    bool armed, start_wifi, lifter_command;
+    three_state_switch_t flip_switch_state;
     if (crsf.isLinkUp())
     {
         const crsf_channels_t *channels = crsf.getChannelsPacked();
         channel_a = channels->ch0;
         channel_b = channels->ch3;
         armed = channels->ch4 > MID_CYCLE;
-        start_wifi = channels->ch5 > UPPER_CYCLE;
+        flip_switch_state = get_switch_state(channels->ch5);
+        start_wifi = channels->ch6 > UPPER_CYCLE;
+        lifter_command = channels->ch7 > UPPER_CYCLE;
     }
     else
     {
@@ -368,6 +389,8 @@ void loop()
         channel_b = 0.0;
         armed = false;
         start_wifi = false;
+        flip_switch_state = MIDDLE;
+        lifter_command = false;
     }
 
     if (start_wifi)
@@ -398,7 +421,21 @@ void loop()
 
     led_intensity = (int)(2.35 * (abs(a_percent) + abs(b_percent)) / 2.0) + 20;
 
-    is_upside_down = get_is_upside_down(accel_vec);
+    switch (flip_switch_state)
+    {
+    case UP:
+        is_upside_down = true;
+        break;
+    case MIDDLE:
+        is_upside_down = get_is_upside_down(accel_vec);
+        break;
+    case DOWN:
+        is_upside_down = false;
+        break;
+
+    default:
+        break;
+    }
 
     if (is_upside_down)
         a_percent *= -1;
