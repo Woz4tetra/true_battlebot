@@ -29,6 +29,7 @@ void DiagnosticsServer::write_telemetry(telemetry_data_t *telemetry_data)
     doc["armed"] = telemetry_data->radio_data.armed;
     doc["lifter_command"] = telemetry_data->radio_data.lifter_command;
     doc["connected"] = telemetry_data->radio_data.connected;
+    doc["button_state"] = telemetry_data->radio_data.button_state;
     doc["flip_switch_state"] = telemetry_data->radio_data.flip_switch_state;
     doc["is_upside_down"] = telemetry_data->is_upside_down;
     doc["accel"]["x"] = telemetry_data->accel_vec.x;

@@ -192,7 +192,8 @@ void loop()
     cycle_rainbow_led(rainbow_tick, led_intensity);
     rainbow_tick = (rainbow_tick + 5) % 255;
 
-    ArduinoOTA.handle();
+    if (radio_data->button_state)
+        ArduinoOTA.handle();
 
     if (!crsf->update(radio_data))
     {
@@ -245,6 +246,7 @@ void loop()
     telemetry_data->left_command = left_command;
     telemetry_data->right_command = right_command;
 
-    diagnostics->write_telemetry(telemetry_data);
+    if (radio_data->button_state)
+        diagnostics->write_telemetry(telemetry_data);
     print_telemetry_data(telemetry_data);
 }
