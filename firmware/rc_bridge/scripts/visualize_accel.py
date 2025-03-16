@@ -1,4 +1,5 @@
 import argparse
+import json
 import socket
 
 from matplotlib import pyplot as plt
@@ -8,14 +9,15 @@ from mpl_toolkits.mplot3d import Axes3D
 def make_udp_server(ip: str, port: int) -> socket.socket:
     server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     server.bind((ip, port))
+    server.setblocking(False)
     return server
 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--ip", type=str, default="192.168.4.1")
+    parser.add_argument("--port", type=int, default=4176)
     args = parser.parse_args()
-    udp = make_udp_server(args.ip, 4176)
+    udp = make_udp_server("0.0.0.0", args.port)
     plt.ion()
 
     # make 3d interactive plot
@@ -24,29 +26,22 @@ def main() -> None:
     limit = 20
     ax.set_title("Accelerometer Data")
 
-    column_mapping = {"x": 0, "y": 1, "z": 2}
-
     while True:
         try:
-            data, _ = udp.recvfrom(1024)
-            if not data:
-                continue
-            data = data.decode("utf-8")
-            row = data.split("\t")
-            acceleration = [0.0, 0.0, 0.0]
-            for column in row:
-                elements = column.split(":")
-                if len(elements) != 2:
-                    continue
-                prefix = elements[0].lower()
-                value = elements[1]
-                if prefix not in column_mapping:
-                    continue
-                index = column_mapping[prefix]
+            counter = 0
+            packet = b""
+            while True:
                 try:
-                    acceleration[index] = float(value)
-                except ValueError:
-                    continue
+                    packet, _ = udp.recvfrom(1024)
+                    counter += 1
+                except BlockingIOError:
+                    break
+            if not packet:
+                continue
+            if counter > 1:
+                print(f"Skipped {counter - 1} packets")
+            data = json.loads(packet.decode("utf-8"))
+            acceleration = [data["accel_x"], data["accel_y"], data["accel_z"]]
             print("X: {:.2f}, Y: {:.2f}, Z: {:.2f}".format(*acceleration))
 
             # draw arrow
@@ -59,7 +54,7 @@ def main() -> None:
             ax.set_ylabel("Y")
             ax.set_zlabel("Z")
             plt.draw()
-            plt.pause(0.01)
+            plt.pause(0.001)
 
             # if exit, break
             if not plt.fignum_exists(fig.number):

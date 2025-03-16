@@ -32,8 +32,6 @@ namespace updown_sensor
         UpdownSensor();
         bool begin();
         bool get_is_upside_down(bool radio_connected);
-        float get_x() { return accel_vec->x; }
-        float get_y() { return accel_vec->y; }
-        float get_z() { return accel_vec->z; }
+        vector3_t *get() { return accel_vec; }
     };
 }

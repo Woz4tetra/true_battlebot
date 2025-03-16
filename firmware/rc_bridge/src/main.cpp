@@ -20,6 +20,7 @@ esc::Esc *right_esc;
 updown_sensor::UpdownSensor *accel;
 
 diagnostics_server::DiagnosticsServer *diagnostics;
+diagnostics_server::telemetry_data_t *telemetry_data;
 
 const int NUM_PIXELS = 1;
 Adafruit_NeoPixel pixels(NUM_PIXELS, PIN_NEOPIXEL, NEO_GRB + NEO_KHZ800);
@@ -119,6 +120,27 @@ void mix_motor_outputs(crsf_bridge::radio_data_t *radio_data, float &left_comman
     }
 }
 
+void print_telemetry_data(diagnostics_server::telemetry_data_t *telemetry_data)
+{
+    MAIN_SERIAL.print("A: ");
+    MAIN_SERIAL.print(telemetry_data->radio_data.a_percent, 3);
+    MAIN_SERIAL.print("\tB: ");
+    MAIN_SERIAL.print(telemetry_data->radio_data.b_percent, 3);
+    MAIN_SERIAL.print("\tLeft: ");
+    MAIN_SERIAL.print(telemetry_data->left_command, 3);
+    MAIN_SERIAL.print("\tRight: ");
+    MAIN_SERIAL.print(telemetry_data->right_command, 3);
+    MAIN_SERIAL.print("\tX: ");
+    MAIN_SERIAL.print(telemetry_data->accel_vec.x, 3);
+    MAIN_SERIAL.print("\tY: ");
+    MAIN_SERIAL.print(telemetry_data->accel_vec.y, 3);
+    MAIN_SERIAL.print("\tZ: ");
+    MAIN_SERIAL.print(telemetry_data->accel_vec.z, 3);
+    MAIN_SERIAL.print("\tUpside down: ");
+    MAIN_SERIAL.print(telemetry_data->is_upside_down);
+    MAIN_SERIAL.print("\n");
+}
+
 void setup()
 {
     MAIN_SERIAL.begin(115200);
@@ -157,6 +179,7 @@ void setup()
 
     diagnostics = new diagnostics_server::DiagnosticsServer();
     diagnostics->begin();
+    telemetry_data = (diagnostics_server::telemetry_data_t *)malloc(sizeof(diagnostics_server::telemetry_data_t));
 
     setup_ota();
 
@@ -214,21 +237,12 @@ void loop()
     left_esc->write(left_command);
     right_esc->write(right_command);
 
-    MAIN_SERIAL.print("A: ");
-    MAIN_SERIAL.print(radio_data->a_percent, 3);
-    MAIN_SERIAL.print("\tB: ");
-    MAIN_SERIAL.print(radio_data->b_percent, 3);
-    MAIN_SERIAL.print("\tLeft: ");
-    MAIN_SERIAL.print(left_command, 3);
-    MAIN_SERIAL.print("\tRight: ");
-    MAIN_SERIAL.print(right_command, 3);
-    MAIN_SERIAL.print("\tX: ");
-    MAIN_SERIAL.print(accel->get_x(), 3);
-    MAIN_SERIAL.print("\tY: ");
-    MAIN_SERIAL.print(accel->get_y(), 3);
-    MAIN_SERIAL.print("\tZ: ");
-    MAIN_SERIAL.print(accel->get_z(), 3);
-    MAIN_SERIAL.print("\tUpside down: ");
-    MAIN_SERIAL.print(is_upside_down);
-    MAIN_SERIAL.print("\n");
+    telemetry_data->radio_data = *radio_data;
+    telemetry_data->is_upside_down = is_upside_down;
+    telemetry_data->accel_vec = *accel->get();
+    telemetry_data->left_command = left_command;
+    telemetry_data->right_command = right_command;
+
+    diagnostics->write_telemetry(telemetry_data);
+    print_telemetry_data(telemetry_data);
 }
