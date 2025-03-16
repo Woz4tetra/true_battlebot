@@ -240,9 +240,11 @@ void loop()
     telemetry_data->radio_data = *radio_data;
     telemetry_data->is_upside_down = is_upside_down;
     telemetry_data->accel_vec = *accel->get();
+    telemetry_data->max_accel_vec = *accel->get_max();
+    telemetry_data->min_accel_vec = *accel->get_min();
     telemetry_data->left_command = left_command;
     telemetry_data->right_command = right_command;
 
-    diagnostics->write_telemetry(telemetry_data);
+    // diagnostics->write_telemetry(telemetry_data);
     print_telemetry_data(telemetry_data);
 }

@@ -23,15 +23,20 @@ namespace updown_sensor
         Adafruit_ADXL375 *accel;
         bool initialized = false;
         vector3_t *accel_vec;
+        vector3_t *max_accel_vec;
+        vector3_t *min_accel_vec;
         bool is_upside_down = false;
         uint32_t reconnect_timer = 0;
         vector3_t *make_unit_vector(float x, float y, float z);
         bool get_accel(bool radio_connected);
+        vector3_t *init_vector3(float x, float y, float z);
 
     public:
         UpdownSensor();
         bool begin();
         bool get_is_upside_down(bool radio_connected);
         vector3_t *get() { return accel_vec; }
+        vector3_t *get_max() { return max_accel_vec; }
+        vector3_t *get_min() { return min_accel_vec; }
     };
 }

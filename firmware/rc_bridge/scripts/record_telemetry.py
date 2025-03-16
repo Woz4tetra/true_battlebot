@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import argparse
 import json
 import socket
@@ -44,7 +45,7 @@ def main() -> None:
                             continue
                         data["local_time"] = time.time()
                         file.write(json.dumps(data) + "\n")
-                        print(decoded_packet)
+                        print(data)
                 packets.clear()
 
     finally:

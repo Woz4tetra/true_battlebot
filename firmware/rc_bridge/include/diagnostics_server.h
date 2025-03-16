@@ -12,7 +12,7 @@ namespace diagnostics_server
     {
         crsf_bridge::radio_data_t radio_data;
         bool is_upside_down;
-        updown_sensor::vector3_t accel_vec;
+        updown_sensor::vector3_t accel_vec, max_accel_vec, min_accel_vec;
         float left_command, right_command;
     } telemetry_data_t;
 
@@ -20,6 +20,7 @@ namespace diagnostics_server
     {
     private:
         WiFiUDP udp;
+        int sequence_number = 0;
 
     public:
         DiagnosticsServer();
