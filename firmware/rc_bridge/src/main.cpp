@@ -1,168 +1,35 @@
 #include <Arduino.h>
-#include <Servo.h>
-#include <Wire.h>
-#include <Adafruit_Sensor.h>
-#include <Adafruit_ADXL375.h>
+#include <Adafruit_NeoPixel.h>
+#include <ArduinoOTA.h>
+#include <crsf_bridge.h>
+#include <esc.h>
+#include <updown_sensor.h>
+#include <diagnostics_server.h>
 
-float led_intensity = 0.0;
-int led_cycle_index = 0;
-int led_cycle_direction = 1;
+#define MAIN_SERIAL Serial
 
-#define CHANNEL_A 0
-#define CHANNEL_B 1
+crsf_bridge::CrsfBridge *crsf;
+crsf_bridge::radio_data_t *radio_data;
 
-const unsigned long LOW_PERIOD = 19000;  // 19 millisecond (nominally 50 Hz)
-const unsigned long HIGH_PERIOD = 21000; // 21 millisecond (nominally 50 Hz)
-volatile unsigned long pulse_in_begin_a = 0, pulse_in_begin_b = 0;
-volatile unsigned long pulse_in_end_a = 0, pulse_in_end_b = 0;
-volatile unsigned long pulse_duration_a = 0, pulse_duration_b = 0;
-volatile bool pulse_in_available_a = false, pulse_in_available_b = false;
-float duty_cycle_a = 0.0, duty_cycle_b = 0.0;
+#define LEFT_ESC A2
+#define RIGHT_ESC A3
 
-const float min_cycle = 5.0;
-const float max_cycle = 10.0;
+esc::Esc *left_esc;
+esc::Esc *right_esc;
 
-#define SERVO_LEFT 9
-#define SERVO_RIGHT 11
+updown_sensor::UpdownSensor *accel;
 
-Servo servo_left;
-Servo servo_right;
+diagnostics_server::DiagnosticsServer *diagnostics;
+diagnostics_server::telemetry_data_t *telemetry_data;
 
-const int neutral_pulse = 1500;
-const int spread_pulse = 500;
-const int max_pulse = neutral_pulse + spread_pulse;
-const int min_pulse = neutral_pulse - spread_pulse;
-
-const float deadzone_percent = 10.0;
-
-typedef struct
-{
-    float x;
-    float y;
-    float z;
-} vector3_t;
-vector3_t *accel_vec;
-float right_side_up_threshold = -2.0;
-float upside_down_threshold = -15.0;
-bool is_upside_down = false;
-
-Adafruit_ADXL375 accel = Adafruit_ADXL375(12345);
-bool accel_initialized = false;
-
-vector3_t *make_unit_vector(float x, float y, float z)
-{
-    float magnitude = sqrt(x * x + y * y + z * z);
-    vector3_t *unit_vector = (vector3_t *)malloc(sizeof(vector3_t));
-    unit_vector->x = x / magnitude;
-    unit_vector->y = y / magnitude;
-    unit_vector->z = z / magnitude;
-    return unit_vector;
-}
-
-float scale_cycle_to_percent(float duty_cycle)
-{
-    float percent = -200.0 / (max_cycle - min_cycle) * (duty_cycle - min_cycle) + 100.0;
-    return min(100.0, max(-100.0, percent));
-}
-
-int scale_percent_to_pulse(float signed_percent)
-{
-    if (abs(signed_percent) < deadzone_percent)
-        return neutral_pulse;
-    float angle = (max_pulse - min_pulse) / 200.0 * (signed_percent + 100.0) + min_pulse;
-    return (int)min(MAX_PULSE_WIDTH, max(MIN_PULSE_WIDTH, angle));
-}
-
-void channel_a_interrupt()
-{
-    if (digitalRead(CHANNEL_A) == HIGH)
-    {
-        unsigned long now_a = micros();
-        pulse_duration_a = now_a - pulse_in_begin_a;
-        pulse_in_begin_a = now_a;
-    }
-    else
-    {
-        pulse_in_end_a = micros();
-        pulse_in_available_a = true;
-    }
-}
-
-void channel_b_interrupt()
-{
-    if (digitalRead(CHANNEL_B) == HIGH)
-    {
-        unsigned long now_b = micros();
-        pulse_duration_b = now_b - pulse_in_begin_b;
-        pulse_in_begin_b = now_b;
-    }
-    else
-    {
-        pulse_in_end_b = micros();
-        pulse_in_available_b = true;
-    }
-}
-
-bool read_durations_channel_a(unsigned long &high_duration, unsigned long &low_duration)
-{
-    if (!pulse_in_available_a)
-        return false;
-    noInterrupts();
-    high_duration = pulse_in_end_a - pulse_in_begin_a;
-    low_duration = pulse_duration_a - high_duration;
-    pulse_in_available_a = false;
-    interrupts();
-    return true;
-}
-
-bool read_durations_channel_b(unsigned long &high_duration, unsigned long &low_duration)
-{
-    if (!pulse_in_available_b)
-        return false;
-    noInterrupts();
-    high_duration = pulse_in_end_b - pulse_in_begin_b;
-    low_duration = pulse_duration_b - high_duration;
-    pulse_in_available_b = false;
-    interrupts();
-    return true;
-}
-
-bool read_pwm(unsigned long high_duration, unsigned long low_duration, float &duty_cycle)
-{
-    unsigned long period = high_duration + low_duration;
-    if (period < LOW_PERIOD || period > HIGH_PERIOD)
-    {
-        return false;
-    }
-
-    duty_cycle = (float)high_duration / (float)period * 100;
-    return true;
-}
-
-void write_escs(int left_pulse, int right_pulse)
-{
-    servo_left.writeMicroseconds(left_pulse);
-    servo_right.writeMicroseconds(right_pulse);
-}
-
-void initialize_escs()
-{
-    write_escs(neutral_pulse, neutral_pulse);
-}
+const int NUM_PIXELS = 1;
+Adafruit_NeoPixel pixels(NUM_PIXELS, PIN_NEOPIXEL, NEO_GRB + NEO_KHZ800);
+int rainbow_tick = 0, led_intensity = 20;
 
 void set_builtin_led(int value)
 {
-    analogWrite(LED_BUILTIN, value);
-}
-
-void cycle_led(float intensity)
-{
-    led_cycle_index = min(255, max(0, led_cycle_direction + 1));
-    set_builtin_led(led_cycle_index);
-    if (led_cycle_index < 0 || led_cycle_index >= 255)
-    {
-        led_cycle_direction *= -1;
-    }
+    pixels.fill(pixels.Color(value, 0, 0));
+    pixels.show();
 }
 
 void pulse_led()
@@ -180,122 +47,206 @@ void pulse_led()
     set_builtin_led(0);
 }
 
-void setup()
+void cycle_rainbow_led(int tick, int brightness)
 {
-    Serial.begin(115200);
-    Serial.println("Starting setup");
-    accel_vec = make_unit_vector(0.0, 0.0, -1.0);
-    pinMode(LED_BUILTIN, OUTPUT);
-    for (int count = 0; count < 2; count++)
-        pulse_led();
-
-    servo_left.attach(SERVO_LEFT);
-    servo_right.attach(SERVO_RIGHT);
-    initialize_escs();
-
-    pinMode(CHANNEL_A, INPUT);
-    pinMode(CHANNEL_B, INPUT);
-    attachInterrupt(digitalPinToInterrupt(CHANNEL_A), channel_a_interrupt, CHANGE);
-    attachInterrupt(digitalPinToInterrupt(CHANNEL_B), channel_b_interrupt, CHANGE);
-
-    accel_initialized = accel.begin();
-    if (!accel_initialized)
+    for (int i = 0; i < NUM_PIXELS; i++)
     {
-        Serial.println("Could not initialize accelerometer");
-        for (int count = 0; count < 10; count++)
-            pulse_led();
+        pixels.setPixelColor(i, pixels.ColorHSV(tick * 65536 / 255 + i * 65536 / NUM_PIXELS, 255, 255));
     }
-    accel.setTrimOffsets(0, 0, 0);
-
-    set_builtin_led(255);
-    Serial.println("Setup complete");
+    pixels.setBrightness(brightness);
+    pixels.show();
 }
 
-bool get_accel(vector3_t *accel_vec)
+void set_led_intensity(float percent)
 {
-    if (!accel_initialized)
-        return false;
-    sensors_event_t event;
-    accel.getEvent(&event);
-
-    accel_vec->x = event.acceleration.x;
-    accel_vec->y = event.acceleration.y;
-    accel_vec->z = event.acceleration.z;
-    return true;
+    led_intensity = (int)(2.35 * min(100.0f, max(-100.0f, percent))) + 20;
 }
 
-bool get_is_upside_down(vector3_t *accel_vec)
+void stop_escs()
 {
-    if (!get_accel(accel_vec))
-        return is_upside_down;
-
-    float z = accel_vec->z;
-
-    if (z > right_side_up_threshold)
-        is_upside_down = false;
-    else if (z < upside_down_threshold)
-        is_upside_down = true;
-    return is_upside_down;
+    left_esc->stop();
+    right_esc->stop();
+    set_led_intensity(0);
 }
 
-void loop()
+void setup_ota()
 {
-    unsigned long high_duration_a, low_duration_a;
-    unsigned long high_duration_b, low_duration_b;
-    float next_duty_cycle_a, next_duty_cycle_b;
+    stop_escs();
 
-    if (read_durations_channel_a(high_duration_a, low_duration_a) &&
-        read_pwm(high_duration_a, low_duration_a, next_duty_cycle_a))
-        duty_cycle_a = next_duty_cycle_a;
-    if (read_durations_channel_b(high_duration_b, low_duration_b) &&
-        read_pwm(high_duration_b, low_duration_b, next_duty_cycle_b))
-        duty_cycle_b = next_duty_cycle_b;
+    ArduinoOTA
+        .onStart([]()
+                 {
+    stop_escs();
+    String type;
+    if (ArduinoOTA.getCommand() == U_FLASH) {
+      type = "sketch";
+    } else {  // U_SPIFFS
+      type = "filesystem";
+    }
 
-    float a_percent, b_percent;
-    if (duty_cycle_a == 0.0)
-        a_percent = 0.0;
-    else
-        a_percent = scale_cycle_to_percent(duty_cycle_a);
+    // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
+    MAIN_SERIAL.println("Start updating " + type); })
+        .onEnd([]()
+               { MAIN_SERIAL.println("\nEnd"); })
+        .onProgress([](unsigned int progress, unsigned int total)
+                    { MAIN_SERIAL.printf("Progress: %u%%\r", (progress / (total / 100))); })
+        .onError([](ota_error_t error)
+                 {
+    MAIN_SERIAL.printf("Error[%u]: ", error);
+    if (error == OTA_AUTH_ERROR) {
+      MAIN_SERIAL.println("Auth Failed");
+    } else if (error == OTA_BEGIN_ERROR) {
+      MAIN_SERIAL.println("Begin Failed");
+    } else if (error == OTA_CONNECT_ERROR) {
+      MAIN_SERIAL.println("Connect Failed");
+    } else if (error == OTA_RECEIVE_ERROR) {
+      MAIN_SERIAL.println("Receive Failed");
+    } else if (error == OTA_END_ERROR) {
+      MAIN_SERIAL.println("End Failed");
+    } });
 
-    if (duty_cycle_b == 0.0)
-        b_percent = 0.0;
-    else
-        b_percent = -1 * scale_cycle_to_percent(duty_cycle_b);
+    ArduinoOTA.begin();
+}
 
-    led_intensity = (abs(a_percent) + abs(b_percent)) / 2.0;
-
-    is_upside_down = get_is_upside_down(accel_vec);
-
-    if (is_upside_down)
-        a_percent *= -1;
-
-    float left_command = a_percent + b_percent;
-    float right_command = a_percent - b_percent;
+void mix_motor_outputs(crsf_bridge::radio_data_t *radio_data, float &left_command, float &right_command)
+{
+    left_command = radio_data->a_percent + radio_data->b_percent;
+    right_command = radio_data->a_percent - radio_data->b_percent;
     float max_command = max(abs(left_command), abs(right_command));
     if (max_command > 100.0)
     {
         left_command = left_command / max_command * 100.0;
         right_command = right_command / max_command * 100.0;
     }
+}
 
-    int left_pulse = scale_percent_to_pulse(left_command);
-    int right_pulse = scale_percent_to_pulse(right_command);
+void print_telemetry_data(diagnostics_server::telemetry_data_t *telemetry_data)
+{
+    MAIN_SERIAL.print("A: ");
+    MAIN_SERIAL.print(telemetry_data->radio_data.a_percent, 3);
+    MAIN_SERIAL.print("\tB: ");
+    MAIN_SERIAL.print(telemetry_data->radio_data.b_percent, 3);
+    MAIN_SERIAL.print("\tLeft: ");
+    MAIN_SERIAL.print(telemetry_data->left_command, 3);
+    MAIN_SERIAL.print("\tRight: ");
+    MAIN_SERIAL.print(telemetry_data->right_command, 3);
+    MAIN_SERIAL.print("\tX: ");
+    MAIN_SERIAL.print(telemetry_data->accel_vec.x, 3);
+    MAIN_SERIAL.print("\tY: ");
+    MAIN_SERIAL.print(telemetry_data->accel_vec.y, 3);
+    MAIN_SERIAL.print("\tZ: ");
+    MAIN_SERIAL.print(telemetry_data->accel_vec.z, 3);
+    MAIN_SERIAL.print("\tUpside down: ");
+    MAIN_SERIAL.print(telemetry_data->is_upside_down);
+    MAIN_SERIAL.print("\n");
+}
 
-    write_escs(left_pulse, right_pulse);
+void setup()
+{
+    MAIN_SERIAL.begin(115200);
+    MAIN_SERIAL.println("Starting setup");
 
-    Serial.print("A: ");
-    Serial.print(duty_cycle_a, 3);
-    Serial.print("\tB: ");
-    Serial.print(duty_cycle_b, 3);
-    Serial.print("\tX: ");
-    Serial.print(accel_vec->x, 3);
-    Serial.print("\tY: ");
-    Serial.print(accel_vec->y, 3);
-    Serial.print("\tZ: ");
-    Serial.print(accel_vec->z, 3);
-    Serial.print("\tUpside down: ");
-    Serial.println(is_upside_down);
+#if defined(NEOPIXEL_POWER)
+    // If this board has a power control pin, we must set it to output and high
+    // in order to enable the NeoPixels_-> We put this in an #if defined so it can
+    // be reused for other boards without compilation errors
+    pinMode(NEOPIXEL_POWER, OUTPUT);
+    digitalWrite(NEOPIXEL_POWER, HIGH);
+    MAIN_SERIAL.println("Set neopixel power");
+#endif
+    left_esc = new esc::Esc(LEFT_ESC, 0);
+    right_esc = new esc::Esc(RIGHT_ESC, 1);
+    left_esc->begin();
+    right_esc->begin();
+    delay(500); // Wait for the ESCs to initialize
 
+    pixels.begin();
+    pixels.setBrightness(20);
+
+    for (int count = 0; count < 2; count++)
+        pulse_led();
+
+    accel = new updown_sensor::UpdownSensor();
+    if (!accel->begin())
+    {
+        for (int count = 0; count < 10; count++)
+            pulse_led();
+    }
+    set_builtin_led(255);
+    radio_data = (crsf_bridge::radio_data_t *)malloc(sizeof(crsf_bridge::radio_data_t));
+    crsf = new crsf_bridge::CrsfBridge();
+    crsf->begin();
+
+    diagnostics = new diagnostics_server::DiagnosticsServer();
+    diagnostics->begin();
+    telemetry_data = (diagnostics_server::telemetry_data_t *)malloc(sizeof(diagnostics_server::telemetry_data_t));
+
+    setup_ota();
+
+    MAIN_SERIAL.println("Setup complete");
+}
+
+void loop()
+{
     delay(10);
-    cycle_led(led_intensity);
+    cycle_rainbow_led(rainbow_tick, led_intensity);
+    rainbow_tick = (rainbow_tick + 5) % 255;
+
+    if (radio_data->button_state)
+        ArduinoOTA.handle();
+
+    if (!crsf->update(radio_data))
+    {
+        MAIN_SERIAL.println("Disconnected from radio");
+        stop_escs();
+        return;
+    }
+
+    if (!radio_data->armed)
+    {
+        MAIN_SERIAL.println("Disarmed.");
+        stop_escs();
+        return;
+    }
+
+    set_led_intensity((abs(radio_data->a_percent) + abs(radio_data->b_percent)) / 2.0);
+
+    bool is_upside_down;
+    switch (radio_data->flip_switch_state)
+    {
+    case crsf_bridge::UP:
+        is_upside_down = true;
+        break;
+    case crsf_bridge::MIDDLE:
+        is_upside_down = false;
+        break;
+    case crsf_bridge::DOWN:
+        is_upside_down = accel->get_is_upside_down(radio_data->connected);
+        break;
+
+    default:
+        is_upside_down = false;
+        break;
+    }
+
+    if (is_upside_down)
+        radio_data->a_percent *= -1;
+
+    float left_command, right_command;
+    mix_motor_outputs(radio_data, left_command, right_command);
+
+    left_esc->write(left_command);
+    right_esc->write(right_command);
+
+    telemetry_data->radio_data = *radio_data;
+    telemetry_data->is_upside_down = is_upside_down;
+    telemetry_data->accel_vec = *accel->get();
+    telemetry_data->max_accel_vec = *accel->get_max();
+    telemetry_data->min_accel_vec = *accel->get_min();
+    telemetry_data->left_command = left_command;
+    telemetry_data->right_command = right_command;
+
+    if (radio_data->button_state)
+        diagnostics->write_telemetry(telemetry_data);
+    print_telemetry_data(telemetry_data);
 }
