@@ -245,6 +245,6 @@ void loop()
     telemetry_data->left_command = left_command;
     telemetry_data->right_command = right_command;
 
-    // diagnostics->write_telemetry(telemetry_data);
+    diagnostics->write_telemetry(telemetry_data);
     print_telemetry_data(telemetry_data);
 }

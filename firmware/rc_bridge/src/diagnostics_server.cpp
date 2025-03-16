@@ -12,7 +12,6 @@ DiagnosticsServer::DiagnosticsServer()
 
 void DiagnosticsServer::begin()
 {
-
     WiFi.softAP(SSID, PASSWORD);
     udp.begin(PORT);
 }
