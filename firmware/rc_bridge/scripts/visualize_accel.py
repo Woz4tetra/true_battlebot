@@ -41,7 +41,7 @@ def main() -> None:
             if counter > 1:
                 print(f"Skipped {counter - 1} packets")
             data = json.loads(packet.decode("utf-8"))
-            acceleration = [data["accel_x"], data["accel_y"], data["accel_z"]]
+            acceleration = [data["accel"]["x"], data["accel"]["y"], data["accel"]["z"]]
             print("X: {:.2f}, Y: {:.2f}, Z: {:.2f}".format(*acceleration))
 
             # draw arrow

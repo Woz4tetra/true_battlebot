@@ -28,6 +28,7 @@ def main() -> None:
     out_dir = os.path.dirname(out_path)
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
+    print(f"Writing telemetry to {out_path}")
 
     write_frequency = 20
     packets: List[bytes] = []
