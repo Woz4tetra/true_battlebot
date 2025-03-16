@@ -1,17 +1,21 @@
 import argparse
+import socket
 
-import numpy as np
-import serial
 from matplotlib import pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
 
+def make_udp_server(ip: str, port: int) -> socket.socket:
+    server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    server.bind((ip, port))
+    return server
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--port", type=str, default="/dev/ttyACM0")
+    parser.add_argument("--ip", type=str, default="192.168.4.1")
     args = parser.parse_args()
-    port = args.port
-    device = serial.Serial(port, 115200)
+    udp = make_udp_server(args.ip, 4176)
     plt.ion()
 
     # make 3d interactive plot
@@ -24,10 +28,10 @@ def main() -> None:
 
     while True:
         try:
-            while device.in_waiting > 0:
-                data = device.readline().decode()
+            data, _ = udp.recvfrom(1024)
             if not data:
                 continue
+            data = data.decode("utf-8")
             row = data.split("\t")
             acceleration = [0.0, 0.0, 0.0]
             for column in row:
