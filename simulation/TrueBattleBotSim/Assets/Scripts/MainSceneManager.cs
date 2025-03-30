@@ -383,6 +383,18 @@ public class MainSceneManager : MonoBehaviour
                 relative_to_follower.SetSequence(actor_config.name, actor_config.objective, scaled_sequence);
                 relative_to_follower.SetActiveActors(actors);
                 break;
+            case "target_180":
+                if (target_180_follower == null)
+                {
+                    Debug.LogError("Target 180 follower not found");
+                    break;
+                }
+                followerEngine = GetFollowerEngine(objective_config.follower_engine, actor, objective_config);
+                target_180_follower.enabled = true;
+                target_180_follower.SetSequence(actor_config.name, actor_config.objective, scaled_sequence);
+                target_180_follower.SetActiveActors(actors);
+                target_180_follower.SetFollowerEngine(followerEngine);
+                break;
             default:
                 Debug.LogError("Invalid objective type: " + objective_config.type);
                 break;

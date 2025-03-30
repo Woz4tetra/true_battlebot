@@ -21,6 +21,7 @@ public class SequenceElementConfig : ICloneable
 
     // Target follower fields
     public string target_name = "";
+    public string secondary_target_name = "";
 
     // Loop back to the top
     public bool reset = false;
