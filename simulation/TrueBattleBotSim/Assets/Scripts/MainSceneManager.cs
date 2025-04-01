@@ -293,6 +293,7 @@ public class MainSceneManager : MonoBehaviour
         TargetFollower target_follower = actor.GetComponent<TargetFollower>();
         TeleportFollower teleport_follower = actor.GetComponent<TeleportFollower>();
         RelativeToFollower relative_to_follower = actor.GetComponent<RelativeToFollower>();
+        Target180Follower target_180_follower = actor.GetComponent<Target180Follower>();
 
         try { keyboard_input.enabled = false; }
         catch (NullReferenceException e) { Debug.Log($"Actor {actor.name} prefab missing keyboard input: {e.Message}"); }
@@ -311,6 +312,9 @@ public class MainSceneManager : MonoBehaviour
 
         try { relative_to_follower.enabled = false; }
         catch (NullReferenceException e) { Debug.Log($"Actor {actor.name} prefab missing relative_to input: {e.Message}"); }
+
+        try { target_180_follower.enabled = false; }
+        catch (NullReferenceException e) { Debug.Log($"Actor {actor.name} prefab missing target_180 input: {e.Message}"); }
 
         BaseFollowerEngine followerEngine;
         List<SequenceElementConfig> scaled_sequence = GetScaledSequence(objective_config.init, scenario.cage.dims, objective_config.sequence);

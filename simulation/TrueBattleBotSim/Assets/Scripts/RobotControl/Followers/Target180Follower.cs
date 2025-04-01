@@ -19,57 +19,71 @@ class Target180Follower : BaseVelocityFollower
     protected override bool ComputeNextGoal(float current_time, int index, out SequenceElementConfig next)
     {
         SequenceElementConfig current = GetElement(index);
-        string target_name = current.target_name;
+        string target_name = current.target_name; // Opponent in the middle
         if (target_name.Length == 0)
         {
             next = current;
             return false;
         }
-        string secondary_target_name = current.secondary_target_name;
+        string secondary_target_name = current.secondary_target_name;  // Friendly robot
         if (secondary_target_name.Length == 0)
         {
             next = current;
             return false;
         }
 
-        Matrix4x4 currentPose = GetOdomPose(controller.GetGroundTruth());
-
-        float vx_limit;
+        float vxLimit;
         if (reverseWhenUpsideDown)
         {
-            vx_limit = controller.IsUpsideDown() ? -maxLinearSpeed : maxLinearSpeed;
+            vxLimit = controller.IsUpsideDown() ? -maxLinearSpeed : maxLinearSpeed;
         }
         else
         {
-            vx_limit = maxLinearSpeed;
+            vxLimit = maxLinearSpeed;
         }
 
+        GameObject target = null, secondary_target = null;
         foreach (string name in active_actors.Keys)
         {
             if (name == target_name)
-            {
-                GameObject actor = active_actors[name];
-                ControllerInterface other_controller = actor.GetComponent<ControllerInterface>();
-
-                Matrix4x4 goalPose = GetOdomPose(other_controller.GetGroundTruth());
-                Vector3 delta = goalPose.GetT() - currentPose.GetT();
-                float heading = Mathf.Rad2Deg * Mathf.Atan2(delta.y, delta.x);
-                next = new SequenceElementConfig
-                {
-                    timestamp = current.timestamp,
-                    x = actor.transform.position.x,
-                    y = actor.transform.position.z,
-                    yaw = heading,
-                    vx = vx_limit,
-                    vy = 0.0f,
-                    vyaw = maxAngularSpeed,
-                };
-                return true;
-            }
+                target = active_actors[name];
+            if (name == secondary_target_name)
+                secondary_target = active_actors[name];
+            if (target != null && secondary_target != null)
+                break;
         }
+        if (target == null && secondary_target == null)
+        {
+            next = current;
+            return false;
+        }
+        ControllerInterface targetController = target.GetComponent<ControllerInterface>();
+        ControllerInterface secondaryTargetController = secondary_target.GetComponent<ControllerInterface>();
 
-        Debug.LogError($"Target not found {target_name}. Available targets: {string.Join(", ", active_actors.Keys)}");
-        next = current;
-        return false;
+        Matrix4x4 tfMapFromTarget = GetOdomPose(targetController.GetGroundTruth());
+        Matrix4x4 tfMapFromSecondaryTarget = GetOdomPose(secondaryTargetController.GetGroundTruth());
+        // Matrix4x4 tfSecondaryTargetFromTarget = tfMapFromSecondaryTarget.inverse * tfMapFromTarget;
+        Vector3 delta = tfMapFromSecondaryTarget.GetT() - tfMapFromTarget.GetT();
+        float heading = Mathf.Atan2(delta.y, delta.x);
+        float radius = delta.magnitude;
+        heading += Mathf.PI;
+        float angle = Mathf.Deg2Rad * tfMapFromSecondaryTarget.GetR().eulerAngles.z;
+        angle += Mathf.PI;
+
+        Vector3 newDelta = new Vector3(radius * Mathf.Cos(heading), radius * Mathf.Sin(heading));
+        Vector3 goalPos = newDelta + tfMapFromTarget.GetT();
+
+        next = new SequenceElementConfig
+        {
+            timestamp = current.timestamp,
+            x = goalPos.x,
+            y = goalPos.y,
+            yaw = Mathf.Rad2Deg * angle,
+            vx = vxLimit,
+            vy = 0.0f,
+            vyaw = maxAngularSpeed,
+        };
+
+        return true;
     }
 }

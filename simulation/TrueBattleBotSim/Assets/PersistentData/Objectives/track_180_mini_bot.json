@@ -1,0 +1,15 @@
+{
+    "type": "target_180",
+    "init": {
+        "type": "relative",
+        "x": -0.85,
+        "y": 0.5,
+        "yaw": -45.0
+    },
+    "sequence": [
+        {
+            "target_name": "mini_bot",
+            "secondary_target_name": "main_bot"
+        }
+    ]
+}
