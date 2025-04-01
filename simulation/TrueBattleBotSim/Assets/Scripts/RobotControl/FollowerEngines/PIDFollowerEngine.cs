@@ -1,3 +1,4 @@
+using System;
 using MathExtensions;
 using RosMessageTypes.Geometry;
 using UnityEngine;
@@ -5,6 +6,7 @@ using UnityEngine;
 
 public class PIDFollowerEngine : BaseFollowerEngine
 {
+    [SerializeField] float matchAngleDistanceThreshold = 0.01f;
     [SerializeField] PidConfig linearPIDConfig = new PidConfig(2.0f, 0.0f, 0.0f, 1.0f);
     [SerializeField] PidConfig angularPIDConfig = new PidConfig(10.0f, 0.1f, 1.0f, 1.0f);
 
@@ -36,12 +38,7 @@ public class PIDFollowerEngine : BaseFollowerEngine
     {
         Matrix4x4 relativePose = currentPose.inverse * goalPose;
         Vector3 relativePosition = relativePose.GetT();
-        float relativeAngle = relativePose.GetR().eulerAngles.z * Mathf.Deg2Rad;
-        relativeAngle = relativeAngle % (2 * Mathf.PI);
-        if (relativeAngle > Mathf.PI)
-        {
-            relativeAngle -= 2 * Mathf.PI;
-        }
+        bool isGoalBehind = relativePosition.x < 0.0f;
 
         if (Time.deltaTime <= 0.0f)
         {
@@ -49,7 +46,23 @@ public class PIDFollowerEngine : BaseFollowerEngine
         }
 
         float linearVelocity = linearPID.Update(relativePosition.x, 0.0f, Time.deltaTime);
-        float angularVelocity = angularPID.Update(relativeAngle, 0.0f, Time.deltaTime);
+        float angularVelocity;
+        if (relativePosition.magnitude > matchAngleDistanceThreshold)
+        {
+            float heading = Mathf.Atan2(relativePosition.y, relativePosition.x);
+            if (isGoalBehind)
+            {
+                heading += Mathf.PI;
+            }
+            heading = MathfEx.NormalizeAnglePi(heading);
+            angularVelocity = angularPID.Update(heading, 0.0f, Time.deltaTime);
+        }
+        else
+        {
+            float relativeAngle = relativePose.GetR().eulerAngles.z * Mathf.Deg2Rad;
+            relativeAngle = MathfEx.NormalizeAnglePi(relativeAngle);
+            angularVelocity = angularPID.Update(relativeAngle, 0.0f, Time.deltaTime);
+        }
 
         float maxLinearSpeedMagnitude = Mathf.Abs(goalVelocity.x);
         linearVelocity = Mathf.Clamp(linearVelocity, -maxLinearSpeedMagnitude, maxLinearSpeedMagnitude);

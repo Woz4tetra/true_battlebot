@@ -69,5 +69,32 @@ namespace MathExtensions
             Quaternion q = new Quaternion(quat.z, -quat.x, quat.y, -quat.w);
             return q.eulerAngles;
         }
+
+
+        /**
+        Bound the number between min_value and max_value, wrapping around if it goes over.
+
+        Examples:
+            input_modulus(1, -1, 3) == 1
+            input_modulus(6, -1, 3) == 2
+            input_modulus(0, -1, 3) == 0
+            input_modulus(5, -1, 3) == 1
+        */
+        public static float InputModulus(float value, float min_value, float max_value)
+        {
+            float modulus = max_value - min_value;
+
+            value -= min_value;
+            value = Mathf.Repeat(value, modulus);
+            value += min_value;
+
+            return value;
+        }
+
+
+        public static float NormalizeAnglePi(float angle)
+        {
+            return InputModulus(angle, -Mathf.PI, Mathf.PI);
+        }
     }
 }
