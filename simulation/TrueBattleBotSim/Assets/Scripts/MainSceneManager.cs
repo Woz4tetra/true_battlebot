@@ -409,6 +409,7 @@ public class MainSceneManager : MonoBehaviour
     {
         PIDFollowerEngine pid_follower_engine = actor.GetComponent<PIDFollowerEngine>();
         RamseteFollowerEngine ramsete_follower_engine = actor.GetComponent<RamseteFollowerEngine>();
+        TeleportFollowerEngine teleport_follower_engine = actor.GetComponent<TeleportFollowerEngine>();
 
         try { pid_follower_engine.enabled = false; }
         catch (NullReferenceException e) { Debug.Log($"Actor {actor.name} prefab missing PID follower engine: {e.Message}"); }
@@ -447,12 +448,22 @@ public class MainSceneManager : MonoBehaviour
                 }
                 followerEngine = pid_follower_engine;
                 break;
+            case "Teleport":
+                if (teleport_follower_engine == null)
+                {
+                    Debug.LogError("Teleport follower engine not found");
+                    break;
+                }
+                teleport_follower_engine.enabled = true;
+                followerEngine = teleport_follower_engine;
+                break;
             default:
                 Debug.LogError("Invalid follower engine type: " + followerType);
                 break;
         }
         return followerEngine;
     }
+
 
     List<SequenceElementConfig> GetScaledSequence(ScenarioInitConfig init_config, DimsConfig dims, List<SequenceElementConfig> sequence)
     {

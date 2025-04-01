@@ -1,10 +1,9 @@
-using RosMessageTypes.Geometry;
-using Unity.Robotics.ROSTCPConnector.ROSGeometry;
 using UnityEngine;
 
 class TeleportFollower : BaseFollower
 {
     [SerializeField] private bool smooth = false;
+    TeleportFollowerEngine followerEngine;
 
     public override void Awake()
     {
@@ -15,6 +14,11 @@ class TeleportFollower : BaseFollower
     override protected void OnResetSequence()
     {
 
+    }
+
+    public void SetFollowerEngine(TeleportFollowerEngine engine)
+    {
+        followerEngine = engine;
     }
 
     protected override bool ComputeNextGoal(float current_time, int index, out SequenceElementConfig next)
@@ -76,12 +80,9 @@ class TeleportFollower : BaseFollower
         };
     }
 
-    protected override void UpdateRobotState(SequenceElementConfig next)
+    protected override void UpdateRobotState(SequenceElementConfig currentElement)
     {
-        PointMsg position = new PointMsg(next.x, next.y, next.z);
-        Quaternion rotation_tmp = Quaternion.Euler(next.roll, next.pitch, next.yaw);
-        QuaternionMsg rotation = new QuaternionMsg(rotation_tmp.x, rotation_tmp.y, rotation_tmp.z, rotation_tmp.w);
-
-        controller.Teleport(position, rotation);
+        Matrix4x4 goalPose = GetElementPose(currentElement);
+        followerEngine.ComputeVelocity(Matrix4x4.identity, goalPose, Vector3.zero, Vector3.zero);
     }
 }

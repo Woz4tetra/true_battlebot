@@ -26,7 +26,7 @@ public abstract class BaseFollower : MonoBehaviour
 
     public virtual void Awake()
     {
-        properties = FindObjectOfType<ActorSharedProperties>();
+        properties = FindFirstObjectByType<ActorSharedProperties>();
         arrowPrefabs = Resources.LoadAll<ArrowIndicator>("Indicators");
         controller = GetComponent<ControllerInterface>();
 

@@ -6,7 +6,7 @@ using UnityEngine;
 public class ObjectiveConfig
 {
     public string type = "idle";  // keyboard, idle, auto, follow, target, teleport, relative_to
-    public string follower_engine = "PID";  // PID, Ramsete, Teleport, TeleportSmooth
+    public string follower_engine = "PID";  // PID, Ramsete, Teleport
     public bool smooth_teleports = false;
     public ScenarioInitConfig init = new ScenarioInitConfig();
     public List<SequenceElementConfig> sequence = new List<SequenceElementConfig>();

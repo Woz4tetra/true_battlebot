@@ -2565,6 +2565,7 @@ GameObject:
   - component: {fileID: 6561679593709339005}
   - component: {fileID: 4039071903360444408}
   - component: {fileID: 3096475733974788893}
+  - component: {fileID: 4885484021339659302}
   m_Layer: 3
   m_Name: MR STABS MK2
   m_TagString: mr_stabs_mk2
@@ -2891,6 +2892,18 @@ MonoBehaviour:
   maxLinearSpeed: 10
   maxAngularSpeed: 1000
   reverseWhenUpsideDown: 1
+--- !u!114 &4885484021339659302
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5216086362637302625}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0ea8b5889e7bc75d19ca7d7002505e45, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &5384303744497917018
 GameObject:
   m_ObjectHideFlags: 0

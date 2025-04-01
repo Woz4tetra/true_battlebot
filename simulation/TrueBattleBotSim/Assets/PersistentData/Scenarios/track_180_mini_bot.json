@@ -23,12 +23,12 @@
         {
             "name": "main_bot",
             "model": "MRS BUFF MK2",
-            "objective": "keyboard_blue_corner"
+            "objective": "keyboard_red_corner"
         },
         {
             "name": "opponent_1",
             "model": "MRS BUFF B-03 Bizarro",
-            "objective": "track_180_mini_bot"
+            "objective": "track_180_mini_bot_main_bot"
         },
         {
             "name": "referee",
