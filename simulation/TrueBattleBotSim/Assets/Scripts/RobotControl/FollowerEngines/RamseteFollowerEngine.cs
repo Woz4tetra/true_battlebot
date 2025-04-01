@@ -16,7 +16,7 @@ public class RamseteFollowerEngine : BaseFollowerEngine
         ramseteConfig = config;
     }
 
-    public override TwistMsg ComputeVelocity(Matrix4x4 currentPose, Matrix4x4 goalPose, Vector3 currentVelocity, Vector3 goalVelocity)
+    public override TwistMsg ComputeVelocity(Matrix4x4 currentPose, Matrix4x4 goalPose, Velocity2d currentVelocity, Velocity2d goalVelocity)
     {
         Matrix4x4 relativePose = currentPose.inverse * goalPose;
         Vector3 relativePosition = relativePose.GetT();
@@ -27,8 +27,8 @@ public class RamseteFollowerEngine : BaseFollowerEngine
             relativeAngle -= 2 * Mathf.PI;
         }
 
-        float vxRef = goalVelocity.x;  // m/s
-        float vtRef = goalVelocity.z;  // rad/s
+        float vxRef = goalVelocity.vx;  // m/s
+        float vtRef = goalVelocity.vyaw;  // rad/s
         float k = (
             2.0f
             * ramseteConfig.zeta

@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using MathExtensions;
+using RosMessageTypes.Nav;
 using UnityEngine;
 
 class Target180Follower : BaseVelocityFollower
@@ -9,6 +11,16 @@ class Target180Follower : BaseVelocityFollower
     [SerializeField] bool reverseWhenUpsideDown = true;
 
     Dictionary<string, GameObject> active_actors = new Dictionary<string, GameObject>();
+
+
+    override public void SetFollowerEngine(BaseFollowerEngine engine)
+    {
+        base.SetFollowerEngine(engine);
+        if (followerEngine.GetType() == typeof(PIDFollowerEngine))
+        {
+            ((PIDFollowerEngine)followerEngine).SetFeedforwardGoalVelocity(true);
+        }
+    }
 
     public void SetActiveActors(Dictionary<string, GameObject> active_actors)
     {
@@ -60,9 +72,10 @@ class Target180Follower : BaseVelocityFollower
         ControllerInterface targetController = target.GetComponent<ControllerInterface>();
         ControllerInterface secondaryTargetController = secondary_target.GetComponent<ControllerInterface>();
 
-        Matrix4x4 tfMapFromTarget = GetOdomPose(targetController.GetGroundTruth());
+        OdometryMsg targetOdom = targetController.GetGroundTruth();
+        OdometryMsg secondaryTargetOdom = secondaryTargetController.GetGroundTruth();
+        Matrix4x4 tfMapFromTarget = GetOdomPose(targetOdom);
         Matrix4x4 tfMapFromSecondaryTarget = GetOdomPose(secondaryTargetController.GetGroundTruth());
-        // Matrix4x4 tfSecondaryTargetFromTarget = tfMapFromSecondaryTarget.inverse * tfMapFromTarget;
         Vector3 delta = tfMapFromSecondaryTarget.GetT() - tfMapFromTarget.GetT();
         float heading = Mathf.Atan2(delta.y, delta.x);
         float radius = delta.magnitude;
@@ -73,15 +86,22 @@ class Target180Follower : BaseVelocityFollower
         Vector3 newDelta = new Vector3(radius * Mathf.Cos(heading), radius * Mathf.Sin(heading));
         Vector3 goalPos = newDelta + tfMapFromTarget.GetT();
 
+        Tuple<Vector3, Vector3> velocities = GetOdomVelocity(secondaryTargetOdom);
+        Vector3 linearVel = velocities.Item1;
+        Vector3 angularVel = velocities.Item2;
+
+        float velocityX = Mathf.Clamp(linearVel.x, -vxLimit, vxLimit);
+        float velocityAngular = Mathf.Clamp(Mathf.Rad2Deg * angularVel.z, -maxAngularSpeed, maxAngularSpeed);
+
         next = new SequenceElementConfig
         {
             timestamp = current.timestamp,
             x = goalPos.x,
             y = goalPos.y,
             yaw = Mathf.Rad2Deg * angle,
-            vx = vxLimit,
+            vx = velocityX,
             vy = 0.0f,
-            vyaw = maxAngularSpeed,
+            vyaw = velocityAngular,
         };
 
         return true;

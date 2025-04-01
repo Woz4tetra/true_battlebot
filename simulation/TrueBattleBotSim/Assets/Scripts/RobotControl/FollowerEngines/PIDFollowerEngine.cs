@@ -10,12 +10,19 @@ public class PIDFollowerEngine : BaseFollowerEngine
     [SerializeField] PidConfig linearPIDConfig = new PidConfig(2.0f, 0.0f, 0.0f, 1.0f);
     [SerializeField] PidConfig angularPIDConfig = new PidConfig(10.0f, 0.1f, 1.0f, 1.0f);
 
+    bool feedforwardGoalVelocity = false;
+
     PID linearPID, angularPID;
 
     public PIDFollowerEngine() : base()
     {
         linearPID = new PID(linearPIDConfig);
         angularPID = new PID(angularPIDConfig);
+    }
+
+    public virtual void SetFeedforwardGoalVelocity(bool feedforward)
+    {
+        feedforwardGoalVelocity = feedforward;
     }
 
     public void SetLinearPIDConfig(PidConfig config)
@@ -32,9 +39,10 @@ public class PIDFollowerEngine : BaseFollowerEngine
     {
         linearPID.Reset();
         angularPID.Reset();
+        feedforwardGoalVelocity = false;
     }
 
-    public override TwistMsg ComputeVelocity(Matrix4x4 currentPose, Matrix4x4 goalPose, Vector3 currentVelocity, Vector3 goalVelocity)
+    public override TwistMsg ComputeVelocity(Matrix4x4 currentPose, Matrix4x4 goalPose, Velocity2d currentVelocity, Velocity2d goalVelocity)
     {
         Matrix4x4 relativePose = currentPose.inverse * goalPose;
         Vector3 relativePosition = relativePose.GetT();
@@ -64,17 +72,25 @@ public class PIDFollowerEngine : BaseFollowerEngine
             angularVelocity = angularPID.Update(relativeAngle, 0.0f, Time.deltaTime);
         }
 
-        float maxLinearSpeedMagnitude = Mathf.Abs(goalVelocity.x);
-        linearVelocity = Mathf.Clamp(linearVelocity, -maxLinearSpeedMagnitude, maxLinearSpeedMagnitude);
-        if (goalVelocity.x < 0)
+        if (feedforwardGoalVelocity)
         {
-            linearVelocity *= -1;
+            linearVelocity += goalVelocity.vx;
+            angularVelocity += goalVelocity.vyaw;
         }
-        float maxAngularSpeedMagnitude = Mathf.Abs(goalVelocity.z);
-        angularVelocity = Mathf.Clamp(angularVelocity, -maxAngularSpeedMagnitude, maxAngularSpeedMagnitude);
-        if (goalVelocity.z < 0)
+        else
         {
-            angularVelocity *= -1;
+            float maxLinearSpeedMagnitude = Mathf.Abs(goalVelocity.vx);
+            linearVelocity = Mathf.Clamp(linearVelocity, -maxLinearSpeedMagnitude, maxLinearSpeedMagnitude);
+            if (goalVelocity.vx < 0)
+            {
+                linearVelocity *= -1;
+            }
+            float maxAngularSpeedMagnitude = Mathf.Abs(goalVelocity.vyaw);
+            angularVelocity = Mathf.Clamp(angularVelocity, -maxAngularSpeedMagnitude, maxAngularSpeedMagnitude);
+            if (goalVelocity.vyaw < 0)
+            {
+                angularVelocity *= -1;
+            }
         }
         return new TwistMsg
         {

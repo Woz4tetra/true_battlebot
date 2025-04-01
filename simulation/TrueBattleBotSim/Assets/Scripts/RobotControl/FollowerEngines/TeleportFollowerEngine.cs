@@ -25,7 +25,7 @@ public class TeleportFollowerEngine : BaseFollowerEngine
         controller.Teleport(positionMsg, rotationMsg);
     }
 
-    public override TwistMsg ComputeVelocity(Matrix4x4 currentPose, Matrix4x4 goalPose, Vector3 currentVelocity, Vector3 goalVelocity)
+    public override TwistMsg ComputeVelocity(Matrix4x4 currentPose, Matrix4x4 goalPose, Velocity2d currentVelocity, Velocity2d goalVelocity)
     {
         TeleportRobot(goalPose);
         return new TwistMsg();

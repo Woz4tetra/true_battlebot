@@ -83,6 +83,6 @@ class TeleportFollower : BaseFollower
     protected override void UpdateRobotState(SequenceElementConfig currentElement)
     {
         Matrix4x4 goalPose = GetElementPose(currentElement);
-        followerEngine.ComputeVelocity(Matrix4x4.identity, goalPose, Vector3.zero, Vector3.zero);
+        followerEngine.ComputeVelocity(Matrix4x4.identity, goalPose, new Velocity2d(), new Velocity2d());
     }
 }

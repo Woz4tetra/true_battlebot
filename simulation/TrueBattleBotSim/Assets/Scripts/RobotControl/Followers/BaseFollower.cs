@@ -7,6 +7,7 @@ using Unity.Robotics.ROSTCPConnector;
 using UnityEngine;
 using Unity.Robotics.ROSTCPConnector.ROSGeometry;
 using MathExtensions;
+using System;
 
 public abstract class BaseFollower : MonoBehaviour
 {
@@ -173,6 +174,14 @@ public abstract class BaseFollower : MonoBehaviour
             new Vector3((float)position.x, (float)position.y, (float)position.z),
             new Quaternion((float)orientation.x, (float)orientation.y, (float)orientation.z, (float)orientation.w),
             Vector3.one);
+    }
+
+    protected Tuple<Vector3, Vector3> GetOdomVelocity(OdometryMsg odom)
+    {
+        TwistMsg twist = odom.twist.twist;
+        Vector3 linearVel = new Vector3((float)twist.linear.x, (float)twist.linear.y, (float)twist.linear.z);
+        Vector3 angularVel = new Vector3((float)twist.angular.x, (float)twist.angular.y, (float)twist.angular.z);
+        return new Tuple<Vector3, Vector3>(linearVel, angularVel);
     }
 
     protected Matrix4x4 GetElementPose(SequenceElementConfig element)

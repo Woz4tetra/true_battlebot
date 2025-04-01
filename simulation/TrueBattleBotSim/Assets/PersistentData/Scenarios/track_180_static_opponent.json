@@ -23,7 +23,7 @@
         {
             "name": "main_bot",
             "model": "MRS BUFF MK2",
-            "objective": "keyboard_red_corner"
+            "objective": "keyboard_blue_corner"
         },
         {
             "name": "opponent_1",

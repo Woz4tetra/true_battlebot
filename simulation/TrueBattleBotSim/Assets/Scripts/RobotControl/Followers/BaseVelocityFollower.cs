@@ -4,7 +4,7 @@ using UnityEngine;
 
 abstract class BaseVelocityFollower : BaseFollower
 {
-    BaseFollowerEngine followerEngine;
+    protected BaseFollowerEngine followerEngine;
     public BaseVelocityFollower() : base()
     {
         if (followerEngine != null)
@@ -19,7 +19,7 @@ abstract class BaseVelocityFollower : BaseFollower
         SetShowArrow(true);
     }
 
-    public void SetFollowerEngine(BaseFollowerEngine engine)
+    virtual public void SetFollowerEngine(BaseFollowerEngine engine)
     {
         followerEngine = engine;
     }
@@ -37,12 +37,12 @@ abstract class BaseVelocityFollower : BaseFollower
         OdometryMsg odom = controller.GetGroundTruth();
         Matrix4x4 currentPose = GetOdomPose(odom);
         Matrix4x4 goalPose = GetElementPose(currentElement);
-        Vector3 currentVelocity = new Vector3(
+        Velocity2d currentVelocity = new Velocity2d(
             (float)odom.twist.twist.linear.x,
             (float)odom.twist.twist.linear.y,
             (float)odom.twist.twist.angular.z
         );
-        Vector3 goalVelocity = new Vector3(currentElement.vx, currentElement.vy, currentElement.vyaw * Mathf.Deg2Rad);
+        Velocity2d goalVelocity = new Velocity2d(currentElement.vx, currentElement.vy, currentElement.vyaw * Mathf.Deg2Rad);
 
         return followerEngine.ComputeVelocity(currentPose, goalPose, currentVelocity, goalVelocity);
     }
