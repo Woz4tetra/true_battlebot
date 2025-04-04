@@ -22,9 +22,11 @@ from geometry_msgs.msg import (
     Pose,
     PoseStamped,
     PoseWithCovariance,
+    PoseWithCovarianceStamped,
     Quaternion,
     TransformStamped,
     Twist,
+    TwistStamped,
     TwistWithCovariance,
     Vector3,
 )
@@ -39,7 +41,6 @@ from bw_object_filter.covariances import ApriltagHeuristics, CmdVelHeuristics, R
 from bw_object_filter.estimation_topic_metadata import EstimationTopicMetadata
 from bw_object_filter.extrapolation.extrapolator_interface import ExtrapolatorInterface
 from bw_object_filter.extrapolation.simple_extrapolator import SimpleExtrapolator
-from bw_object_filter.extrapolation.spline_extrapolator import SplineExtrapolator
 from bw_object_filter.filter_models import DriveKalmanModel, TrackingModel
 from bw_object_filter.filter_models.drive_kf_impl import NUM_STATES
 from bw_object_filter.filter_models.helpers import measurement_to_pose, measurement_to_twist
@@ -74,6 +75,7 @@ class RobotFilter:
         field_buffer = get_param("~field_buffer", 0.2)
         self.tag_rolling_median_window = get_param("~tag_rolling_median_window", 5)
         self.field_buffer = XYZ(field_buffer, field_buffer, field_buffer)
+        self.estimated_system_lag = rospy.Duration.from_sec(get_param("~estimated_system_lag", 0.2))
 
         self.filter_lock = Lock()
 
@@ -118,9 +120,9 @@ class RobotFilter:
         self.tag_rolling_medians: dict[str, RollingMedianOrientation] = {}
         self.cmd_vel_trackers: dict[str, CmdVelTracker] = {}
         self.measurement_sorter = RobotMeasurementSorter()
-        self.tf_buffer = tf2_ros.Buffer()
-        self.tf_listener = tf2_ros.TransformListener(self.tf_buffer)
-        self.tf_broadcaster = tf2_ros.TransformBroadcaster()
+        self.tf_buffer = tf2_ros.Buffer()  # type: ignore
+        self.tf_listener = tf2_ros.TransformListener(self.tf_buffer)  # type: ignore
+        self.tf_broadcaster = tf2_ros.TransformBroadcaster()  # type: ignore
         self.filter_state_array_pub = rospy.Publisher("filtered_states", EstimatedObjectArray, queue_size=50)
         self.nonextrapolate_array_pub = rospy.Publisher("nonextrapolated_states", EstimatedObjectArray, queue_size=50)
 
@@ -250,14 +252,18 @@ class RobotFilter:
 
     def _init_cmd_vel_trackers(self, robot_fleet: list[RobotConfig]) -> None:
         self.cmd_vel_trackers = {
-            robot.name: CmdVelTracker(self.robot_cmd_vel_heuristics, self.command_timeout) for robot in robot_fleet
+            robot.name: CmdVelTracker(
+                self.robot_cmd_vel_heuristics,
+                history_length=self.estimated_system_lag,
+                command_timeout=self.command_timeout,
+            )
+            for robot in robot_fleet
         }
 
     def _init_extrapolators(self, robot_fleet: list[RobotConfig]) -> None:
-        # self.extrapolators = {
-        #     robot.name: SplineExtrapolator(lookahead_time=0.2, lookback_window=1.0) for robot in robot_fleet
-        # }
-        self.extrapolators = {robot.name: SimpleExtrapolator(lookahead_time=0.2) for robot in robot_fleet}
+        self.extrapolators = {
+            robot.name: SimpleExtrapolator(lookahead_time=self.estimated_system_lag) for robot in robot_fleet
+        }
 
     def robot_estimation_callback(self, metadata: EstimationTopicMetadata, msg: EstimatedObjectArray) -> None:
         if not self.field_received():
@@ -302,7 +308,7 @@ class RobotFilter:
         robot_measurements: list[EstimatedObject],
         use_orientation: bool,
     ) -> None:
-        map_measurements: list[PoseWithCovariance] = []
+        map_measurements: list[PoseWithCovarianceStamped] = []
         for measurement in robot_measurements:
             map_pose = self.transform_to_map(measurement.header, measurement.pose.pose)
             if map_pose is None:
@@ -312,9 +318,12 @@ class RobotFilter:
                 rospy.logdebug(f"{measurement.label} is out of bounds. Skipping.")
                 continue
             map_measurements.append(
-                PoseWithCovariance(
-                    map_pose,
-                    covariance=measurement.pose.covariance,
+                PoseWithCovarianceStamped(
+                    header=measurement.header,
+                    pose=PoseWithCovariance(
+                        pose=map_pose,
+                        covariance=measurement.pose.covariance,
+                    ),
                 )
             )
 
@@ -329,7 +338,7 @@ class RobotFilter:
     def apply_sorted_measurement(
         self,
         robot_filter: ModelBase,
-        map_measurement: PoseWithCovariance,
+        map_measurement: PoseWithCovarianceStamped,
         camera_measurement: EstimatedObject,
         use_orientation: bool,
     ) -> None:
@@ -337,12 +346,13 @@ class RobotFilter:
 
         try:
             if use_orientation:
-                robot_filter.update_pose(map_measurement)
+                robot_filter.update_pose(map_measurement.pose)
             else:
-                robot_filter.update_position(map_measurement)
+                robot_filter.update_position(map_measurement.pose)
         except np.linalg.LinAlgError as e:
             rospy.logwarn(f"Failed to update from robot measurement. Resetting filter. {e}")
             robot_filter.reset()
+        robot_filter.update_filter_time(map_measurement.header.stamp)
 
     def cage_corner_callback(self, corner: CageCorner) -> None:
         rospy.loginfo("Cage corner set. Resetting filters.")
@@ -410,6 +420,7 @@ class RobotFilter:
                     rospy.logwarn(f"Failed to update from tag. Resetting filter. {e}")
                     robot_filter.reset()
                     continue
+                robot_filter.update_filter_time(detection.header.stamp)
             else:
                 rospy.logwarn(f"Tag for {detection.label} not found in filters.")
 
@@ -425,7 +436,9 @@ class RobotFilter:
     def cmd_vel_callback(self, msg: Twist, robot_filter: ModelBase) -> None:
         if not self.field_received():
             return
-        self.cmd_vel_trackers[robot_filter.config.name].set_command(msg)
+        self.cmd_vel_trackers[robot_filter.config.name].add_velocity(
+            TwistStamped(header=RosHeader(stamp=rospy.Time.now()), twist=msg)
+        )
 
     def apply_cmd_vel(self, robot_filter: ModelBase, measurement: TwistWithCovariance) -> None:
         try:
@@ -437,8 +450,8 @@ class RobotFilter:
     def update_all_cmd_vels(self) -> None:
         with self.filter_lock:
             for robot_name, tracker in self.cmd_vel_trackers.items():
-                cmd_vel = tracker.get_command()
                 robot_filter = self.name_to_filter[robot_name]
+                cmd_vel = tracker.get_velocity(robot_filter.get_filter_time())
                 self.apply_cmd_vel(robot_filter, cmd_vel)
 
     def field_callback(self, msg: EstimatedObject) -> None:
@@ -550,7 +563,8 @@ class RobotFilter:
                     label=robot_name,
                 )
                 extrapolator = self.extrapolators[robot_name]
-                extrapolated_state = extrapolator.extrapolate(state_msg)
+                cmd_vel_tracker = self.cmd_vel_trackers[robot_name]
+                extrapolated_state = extrapolator.extrapolate(state_msg, cmd_vel_tracker.get_velocities())
 
                 transforms.append(self.state_to_transform(extrapolated_state))
                 self.filter_state_pubs[robot_name].publish(self.state_to_odom(extrapolated_state))

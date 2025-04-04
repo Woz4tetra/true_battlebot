@@ -77,6 +77,7 @@ class DriveKalmanModel(ModelBase):
         self.state, self.covariance = kf_update(
             self.state, self.covariance, self.orientation_H, measurement, noise, (0,)
         )
+        self.reset_stale_timer()
 
     def update_cmd_vel(self, msg: TwistWithCovariance) -> None:
         measurement, noise = twist_to_measurement(msg)

@@ -2,12 +2,11 @@ from dataclasses import dataclass
 from typing import List
 
 import numpy as np
-import rospy
 from bw_interfaces.msg import EstimatedObject
 from bw_shared.geometry.pose2d import Pose2D
 from bw_shared.geometry.twist2d import Twist2D
 from bw_shared.messages.header import Header
-from geometry_msgs.msg import PoseWithCovariance
+from geometry_msgs.msg import PoseWithCovariance, TwistStamped
 from numba import njit
 from scipy.interpolate import CubicSpline
 
@@ -57,7 +56,7 @@ class SplineExtrapolator(ExtrapolatorInterface):
         self.knots: List[SplineKnot] = []
         self.num_knots = 3
 
-    def extrapolate(self, state: EstimatedObject) -> EstimatedObject:
+    def extrapolate(self, state: EstimatedObject, velocities: list[TwistStamped]) -> EstimatedObject:
         prev_pose_2d = Pose2D.from_msg(state.pose.pose)
         prev_twist_2d = Twist2D.from_msg(state.twist.twist)
         self.knots.append(SplineKnot(state.header.stamp.to_sec(), prev_pose_2d, prev_twist_2d))
@@ -72,10 +71,14 @@ class SplineExtrapolator(ExtrapolatorInterface):
         timestamps = np.array([knot.timestamp for knot in selected_knots]) - first_timestamp
         poses = np.array([knot.pose.to_array() for knot in selected_knots])
         relative_velocities = np.array([knot.twist.to_array() for knot in selected_knots])
-        velocities = rotate_velocities(relative_velocities, poses[:, 2])
+        predicted_velocities = rotate_velocities(relative_velocities, poses[:, 2])
 
         # Fit cubic splines to the position data using velocity as the first derivative
-        spline_pos = CubicSpline(timestamps, poses, bc_type=((1, velocities[0]), (1, velocities[-1])))  # type: ignore
+        spline_pos = CubicSpline(
+            timestamps,
+            poses,
+            bc_type=((1, predicted_velocities[0]), (1, predicted_velocities[-1])),  # type: ignore
+        )
 
         extrapolation_time = duration + self.lookahead_time
         new_pose_array = spline_pos(extrapolation_time)

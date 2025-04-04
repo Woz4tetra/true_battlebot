@@ -1,7 +1,9 @@
 import time
 from abc import ABC, abstractmethod
 
+import genpy
 import numpy as np
+import rospy
 from bw_shared.configs.robot_fleet_config import RobotConfig
 from bw_shared.geometry.xy import XY
 from geometry_msgs.msg import PoseWithCovariance, TwistWithCovariance, Vector3
@@ -35,6 +37,7 @@ class ModelBase(ABC):
         self.object_radius = 0.0
         self.stale_timer = self._now()
         self._is_initialized = False
+        self.last_position_time = rospy.Time.from_sec(0.0)
 
         self.reset()
 
@@ -111,3 +114,9 @@ class ModelBase(ABC):
 
     def reset_stale_timer(self) -> None:
         self.stale_timer = self._now()
+
+    def update_filter_time(self, measurement_timestamp: genpy.Time) -> None:
+        self.last_position_time = measurement_timestamp
+
+    def get_filter_time(self) -> genpy.Time:
+        return self.last_position_time
