@@ -1,10 +1,12 @@
 import math
 
+import rospy
 from bw_interfaces.msg import EstimatedObject
 from bw_shared.geometry.polar import Polar
 from bw_shared.geometry.pose2d import Pose2D
 from geometry_msgs.msg import PoseWithCovariance, Twist
 
+from bw_navigation.planners.engines.config.overlay_velocity_config import OverlayVelocityConfig
 from bw_navigation.planners.shared.match_state import MatchState
 
 
@@ -43,12 +45,20 @@ def compute_mirrored_state(match_state: MatchState) -> MatchState:
 
 
 def overlay_friendly_twist(
-    twist: Twist, match_state: MatchState, magnify: float, start_overlay_distance: float
-) -> Twist:
+    twist: Twist, match_state: MatchState, config: OverlayVelocityConfig
+) -> tuple[Twist, float, float]:
+    magnify = config.friendly_mirror_magnify
+    start_overlay_distance = config.friendly_mirror_proximity
+    relative_goal = match_state.relative_goal
+    if abs(relative_goal.theta) > config.angle_threshold_rad:
+        return twist, 0.0, 0.0
+
     friendly_twist = match_state.friendly_robot.twist.twist
     distance_to_goal = match_state.distance_to_goal
-    ratio = 1 - distance_to_goal / start_overlay_distance
+    ratio = max(0.0, min(1.0, 1 - distance_to_goal / start_overlay_distance))
+    input_factor = 1 - ratio
+    friendly_factor = ratio * magnify
     new_twist = Twist()
-    new_twist.linear.x = twist.linear.x * (1 - ratio) + friendly_twist.linear.x * ratio * magnify
-    new_twist.angular.z = twist.angular.z * (1 - ratio) + friendly_twist.angular.z * ratio * magnify
-    return new_twist
+    new_twist.linear.x = twist.linear.x * input_factor + friendly_twist.linear.x * friendly_factor
+    new_twist.angular.z = twist.angular.z * input_factor + friendly_twist.angular.z * friendly_factor
+    return new_twist, input_factor, friendly_factor

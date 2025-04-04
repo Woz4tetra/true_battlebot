@@ -5,6 +5,7 @@ from bw_interfaces.msg import EstimatedObject, GoalEngineConfig
 from bw_shared.geometry.field_bounds import FieldBounds2D
 from bw_tools.messages.goal_strategy import GoalStrategy
 from geometry_msgs.msg import Twist
+from visualization_msgs.msg import MarkerArray
 
 from bw_navigation.planners.shared.goal_progress import GoalProgress
 
@@ -23,4 +24,4 @@ class PlannerInterface(ABC):
         engine_config: Optional[GoalEngineConfig],
         xy_tolerance: float,
         goal_strategy: GoalStrategy,
-    ) -> Tuple[Twist, GoalProgress]: ...
+    ) -> Tuple[Twist, GoalProgress, MarkerArray]: ...

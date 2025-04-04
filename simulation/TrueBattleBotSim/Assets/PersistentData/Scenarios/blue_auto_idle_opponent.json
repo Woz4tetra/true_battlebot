@@ -24,7 +24,7 @@
     {
       "name": "opponent_1",
       "model": "MRS BUFF B-03 Bizarro",
-      "objective": "target_main_bot_red_corner"
+      "objective": "idle_center"
     },
     {
       "name": "referee",

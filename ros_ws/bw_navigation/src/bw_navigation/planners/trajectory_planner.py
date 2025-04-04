@@ -26,7 +26,7 @@ from bw_navigation.planners.shared.compute_mirrored_goal import (
     overlay_friendly_twist,
 )
 from bw_navigation.planners.shared.goal_progress import GoalProgress, compute_feedback_distance
-from bw_navigation.planners.shared.is_in_bounds import is_in_bounds
+from bw_navigation.planners.shared.is_in_bounds import is_controlled_bot_in_bounds
 from bw_navigation.planners.shared.match_state import MatchState
 
 
@@ -57,9 +57,6 @@ class TrajectoryPlanner(PlannerInterface):
         self.recover_from_engine = RecoverFromDangerEngine(self.config.recover_from_danger)
         self.near_goal_linear_pid = PID(self.config.near_goal.linear_pid)
         self.near_goal_angular_pid = PID(self.config.near_goal.angular_pid)
-        self.visualization_publisher = rospy.Publisher(
-            "trajectory_visualization", MarkerArray, queue_size=1, latch=True
-        )
         self.trajectory_complete_time = None
 
     def reset(self) -> None:
@@ -78,11 +75,11 @@ class TrajectoryPlanner(PlannerInterface):
         engine_config: Optional[GoalEngineConfig],
         xy_tolerance: float,
         goal_strategy: GoalStrategy,
-    ) -> Tuple[Twist, GoalProgress]:
+    ) -> Tuple[Twist, GoalProgress, MarkerArray]:
         now = rospy.Time.now()
         if self.controlled_robot_name not in robot_states:
             rospy.logwarn_throttle(1, f"Robot {self.controlled_robot_name} not found in robot states")
-            return Twist(), GoalProgress(is_done=False)
+            return Twist(), GoalProgress(is_done=False), MarkerArray()
 
         match_state = MatchState(
             goal_target=goal_target,
@@ -102,14 +99,14 @@ class TrajectoryPlanner(PlannerInterface):
         goal_progress = GoalProgress(is_done=False)
         twist = Twist()
 
-        if match_state.distance_to_goal < self.config.friendly_mirror_proximity:
+        if match_state.distance_to_goal < self.config.overlay_velocity.friendly_mirror_proximity:
             relative_goal = match_state.goal_pose.relative_to(match_state.controlled_robot_pose)
             twist.linear.x = self.near_goal_linear_pid.update(relative_goal.x, 0.0, dt)
             twist.angular.z = self.near_goal_angular_pid.update(relative_goal.theta, 0.0, dt)
-            twist = overlay_friendly_twist(
-                twist, match_state, self.config.friendly_mirror_magnify, self.config.friendly_mirror_proximity
+            twist, input_factor, friendly_factor = overlay_friendly_twist(
+                twist, match_state, self.config.overlay_velocity
             )
-            return twist, goal_progress
+            return twist, goal_progress, MarkerArray()
 
         if self.trajectory_complete_time is not None and rotate_at_end:
             rospy.logdebug("Rotating at end.")
@@ -125,14 +122,14 @@ class TrajectoryPlanner(PlannerInterface):
         elif avoid_danger_twist := self.recover_from_engine.compute_recovery_command(match_state):
             rospy.logdebug("In danger recovery.")
             twist = avoid_danger_twist
-        elif is_in_bounds(self.buffer_xy, self.config.backaway_recover.angle_tolerance, match_state):
+        elif is_controlled_bot_in_bounds(self.buffer_xy, self.config.backaway_recover.angle_tolerance, match_state):
             markers.extend(self.local_planner.visualize_local_plan())
             trajectory, did_replan, start_time = self.global_planner.compute(
                 controlled_robot, goal_target, field, engine_config
             )
             if trajectory is None:
                 rospy.logwarn("No active trajectory")
-                return Twist(), goal_progress
+                return Twist(), goal_progress, MarkerArray(markers=markers)
             if did_replan:
                 rospy.logdebug("Replanned trajectory.")
                 markers.extend(self.global_planner.visualize_trajectory())
@@ -149,5 +146,4 @@ class TrajectoryPlanner(PlannerInterface):
         twist = clamp_twist_with_config(twist, engine_config, self.traj_velocity_limits)
         goal_progress.distance_to_goal = compute_feedback_distance(controlled_robot, goal_target)
 
-        self.visualization_publisher.publish(MarkerArray(markers=markers))
-        return twist, goal_progress
+        return twist, goal_progress, MarkerArray(markers=markers)

@@ -48,7 +48,7 @@ class MatchState:
 
     @cached_property
     def distance_to_goal(self) -> float:
-        return self.controlled_robot_point.magnitude(self.goal_point)
+        return self.relative_goal.magnitude()
 
     @cached_property
     def avoid_robot_states(self) -> list[EstimatedObject]:
@@ -73,3 +73,7 @@ class MatchState:
     @cached_property
     def friendly_robot_point(self) -> XY:
         return XY(self.friendly_robot_pose.x, self.friendly_robot_pose.y)
+
+    @cached_property
+    def relative_goal(self) -> Pose2D:
+        return self.goal_pose.relative_to(self.controlled_robot_pose)

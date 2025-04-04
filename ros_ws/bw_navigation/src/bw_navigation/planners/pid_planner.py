@@ -9,6 +9,7 @@ from bw_shared.geometry.xy import XY
 from bw_shared.pid.pid import PID
 from bw_tools.messages.goal_strategy import GoalStrategy
 from geometry_msgs.msg import Twist
+from visualization_msgs.msg import Marker, MarkerArray
 
 from bw_navigation.planners.engines.backaway_from_wall_engine import BackawayFromWallEngine
 from bw_navigation.planners.engines.config.pid_planner_config import PidPlannerConfig
@@ -22,7 +23,8 @@ from bw_navigation.planners.shared.compute_mirrored_goal import (
     overlay_friendly_twist,
 )
 from bw_navigation.planners.shared.goal_progress import GoalProgress, compute_feedback_distance
-from bw_navigation.planners.shared.is_in_bounds import is_in_bounds
+from bw_navigation.planners.shared.is_in_bounds import is_controlled_bot_in_bounds, is_goal_in_bounds
+from bw_navigation.planners.shared.marker_utils import make_pose_marker, make_text_marker
 from bw_navigation.planners.shared.match_state import MatchState
 
 
@@ -35,6 +37,10 @@ class PidPlanner(PlannerInterface):
         config: PidPlannerConfig,
     ) -> None:
         self.config = config
+        self.default_velocity_limits = GoalEngineConfig(
+            max_velocity=self.config.max_velocity,
+            max_angular_velocity=self.config.max_angular_velocity,
+        )
         self.controlled_robot_name = controlled_robot_name
         self.friendly_robot_name = friendly_robot_name
         self.avoid_robot_names = avoid_robot_names
@@ -61,10 +67,10 @@ class PidPlanner(PlannerInterface):
         engine_config: Optional[GoalEngineConfig],
         xy_tolerance: float,
         goal_strategy: GoalStrategy,
-    ) -> Tuple[Twist, GoalProgress]:
+    ) -> Tuple[Twist, GoalProgress, MarkerArray]:
         if self.controlled_robot_name not in robot_states:
             rospy.logwarn_throttle(1, f"Robot {self.controlled_robot_name} not found in robot states")
-            return Twist(), GoalProgress(is_done=False)
+            return Twist(), GoalProgress(is_done=False), MarkerArray()
 
         match_state = MatchState(
             goal_target=goal_target,
@@ -75,33 +81,44 @@ class PidPlanner(PlannerInterface):
             avoid_robot_names=self.avoid_robot_names,
         )
         if goal_strategy == GoalStrategy.MIRROR_FRIENDLY:
-            match_state = compute_mirrored_state(match_state)
+            mirrored_match_state = compute_mirrored_state(match_state)
+            if is_goal_in_bounds(self.buffer_xy, mirrored_match_state):
+                match_state = mirrored_match_state
 
         goal_progress = GoalProgress(is_done=False)
         twist = Twist()
+        markers: list[Marker] = []
 
-        if not self.did_robot_move_engine.did_move(match_state.controlled_robot_pose_stamped):
-            rospy.logdebug("Thrashing to recover")
+        is_in_tolerance = match_state.distance_to_goal < xy_tolerance
+        did_move = self.did_robot_move_engine.did_move(match_state.controlled_robot_pose_stamped)
+
+        if not did_move and not is_in_tolerance:
             twist = self.thrash_recover_engine.compute(dt)
+            markers.append(make_text_marker("Thrash recovery", match_state.controlled_robot_pose.to_msg(), "status"))
         elif avoid_danger_twist := self.recover_from_engine.compute_recovery_command(match_state):
-            rospy.logdebug("In danger recovery.")
             twist = avoid_danger_twist
-        elif is_in_bounds(self.buffer_xy, self.config.backaway_recover.angle_tolerance, match_state):
+            markers.append(make_text_marker("Danger recovery", match_state.controlled_robot_pose.to_msg(), "status"))
+        elif is_controlled_bot_in_bounds(self.buffer_xy, self.config.backaway_recover.angle_tolerance, match_state):
             twist = self.compute_twist(dt, match_state)
-            twist = overlay_friendly_twist(
-                twist, match_state, self.config.friendly_mirror_magnify, self.config.friendly_mirror_proximity
+            twist, input_factor, friendly_factor = overlay_friendly_twist(
+                twist, match_state, self.config.overlay_velocity
             )
+            status_msg = f"Go to goal. in:{int(input_factor * 100)} fr:{int(friendly_factor * 100)}"
+            markers.append(make_pose_marker(match_state.goal_pose.to_msg(), "goal"))
+            markers.append(make_text_marker(status_msg, match_state.controlled_robot_pose.to_msg(), "status"))
         else:
-            rospy.logdebug("Backing away from wall.")
             twist = self.backaway_engine.compute(match_state.goal_pose, match_state.controlled_robot_pose)
+            markers.append(make_text_marker("Backaway recovery", match_state.controlled_robot_pose.to_msg(), "status"))
 
-        twist = clamp_twist_with_config(twist, engine_config)
+        markers.extend(self.recover_from_engine.get_markers())
+
+        twist = clamp_twist_with_config(twist, engine_config, self.default_velocity_limits)
         goal_progress.distance_to_goal = compute_feedback_distance(match_state.controlled_robot, goal_target)
 
-        return twist, goal_progress
+        return twist, goal_progress, MarkerArray(markers=markers)
 
     def compute_twist(self, dt: float, match_state: MatchState) -> Twist:
-        relative_goal = match_state.goal_pose.relative_to(match_state.controlled_robot_pose)
+        relative_goal = match_state.relative_goal
         relative_xy = XY(relative_goal.x, relative_goal.y)
         distance_to_goal = relative_xy.magnitude()
         is_goal_behind = relative_xy.x < 0.0

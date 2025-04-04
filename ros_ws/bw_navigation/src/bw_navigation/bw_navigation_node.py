@@ -24,6 +24,7 @@ from bw_tools.get_param import get_param
 from bw_tools.messages.goal_strategy import GoalStrategy
 from bw_tools.messages.goal_type import GoalType
 from geometry_msgs.msg import PoseStamped, Twist
+from visualization_msgs.msg import MarkerArray
 
 from bw_navigation.exceptions import NavigationError
 from bw_navigation.goal_supplier import FixedPoseSupplier, GoalSupplierInterface, TrackedTargetSupplier
@@ -75,6 +76,7 @@ class BwNavigationNode:
         self.opponent_fleet_sub = rospy.Subscriber(
             "opponent_fleet", RobotFleetConfigMsg, self.opponent_fleet_callback, queue_size=1
         )
+        self.visualization_publisher = rospy.Publisher("trajectory_visualization", MarkerArray, queue_size=1)
         self.goal_server.start()
         rospy.loginfo("Navigation is ready")
 
@@ -186,7 +188,7 @@ class BwNavigationNode:
             self.goal_pose_pub.publish(goal_feedback)
 
             try:
-                twist, goal_progress = self.planner.go_to_goal(
+                twist, goal_progress, markers = self.planner.go_to_goal(
                     dt, goal_target, self.robots, self.field_bounds_2d, engine_config, goal.xy_tolerance, goal_strategy
                 )
             except NavigationError as e:
@@ -195,6 +197,7 @@ class BwNavigationNode:
                 break
 
             self.twist_pub.publish(twist)
+            self.visualization_publisher.publish(markers)
 
             feedback = GoToGoalFeedback()
             goal_progress.fill_feedback(feedback)
