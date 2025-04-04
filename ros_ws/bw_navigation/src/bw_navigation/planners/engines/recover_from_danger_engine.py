@@ -37,12 +37,22 @@ class RecoverFromDangerEngine:
         for other_state in states:
             opponent_pose = Pose2D.from_msg(other_state.pose.pose)
             controlled_bot_relative_to_opponent = match_state.controlled_robot_pose.relative_to(opponent_pose)
-            fan_angle = abs(controlled_bot_relative_to_opponent.heading()) * 2
+            fan_angle = abs(controlled_bot_relative_to_opponent.heading())
             opponent_speed = other_state.twist.twist.linear.x
             projected_distance = opponent_speed * self.config.reaction_time
             distance_to_opponent = controlled_bot_relative_to_opponent.magnitude()
             self.markers.append(self.make_arc_marker(opponent_pose, danger_fan_angle, projected_distance))
-            if fan_angle < danger_fan_angle and projected_distance > distance_to_opponent:
+
+            opponent_width = max(other_state.size.x, other_state.size.y)
+            combined_width = match_state.controlled_robot_width + opponent_width
+            magnitude_lower_bound = combined_width * self.config.size_multiplier
+
+            is_in_angle_fan = fan_angle / 2 < danger_fan_angle and projected_distance > distance_to_opponent
+            is_in_line_of_sight = (
+                magnitude_lower_bound < controlled_bot_relative_to_opponent.magnitude() < self.config.linear_tolerance
+            )
+
+            if is_in_angle_fan or is_in_line_of_sight:
                 return (
                     DangerState.LEFT_DANGER if controlled_bot_relative_to_opponent.y > 0 else DangerState.RIGHT_DANGER
                 )

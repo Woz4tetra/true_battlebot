@@ -8,6 +8,9 @@ class RecoverFromDangerConfig:
     velocity_threshold: float = 0.1
     reaction_time: float = 0.5  # seconds
 
+    linear_tolerance: float = 0.35
+    size_multiplier: float = 1.5
+
     linear_magnitude: float = 2.0
     angular_magnitude: float = 10.0
 
