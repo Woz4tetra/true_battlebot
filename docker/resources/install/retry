@@ -1,0 +1,25 @@
+#!/bin/bash
+MAX_ATTEMPTS=$1
+COMMAND_TO_RUN=$2
+
+if [ -z "$MAX_ATTEMPTS" ] || [ -z "$COMMAND_TO_RUN" ]; then
+  echo "Usage: $0 <max_attempts> <command_to_run>"
+  exit 1
+fi
+
+attempt=1
+until [ $attempt -gt $MAX_ATTEMPTS ]; do
+  $COMMAND_TO_RUN
+  if [ $? -eq 0 ]; then
+    break # Exit loop if command succeeds
+  else
+    echo "Command failed, attempt $attempt of $MAX_ATTEMPTS"
+    attempt=$((attempt + 1))
+    sleep 2 # Wait before retrying
+  fi
+done
+
+if [ $attempt -gt $MAX_ATTEMPTS ]; then
+  echo "Command failed after $MAX_ATTEMPTS attempts"
+  exit 1
+fi

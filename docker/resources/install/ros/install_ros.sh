@@ -23,7 +23,7 @@ cd rospkg
 python setup.py install --user
 
 cd ${BASE_ROS_WS_ROOT}
-rosdep install --from-paths src --ignore-src --rosdistro=${ROS_DISTRO} -y -r || true
+retry "rosdep install --from-paths src --ignore-src --rosdistro=${ROS_DISTRO} -y -r || true"
 
 ./src/catkin/bin/catkin_make install -DCMAKE_BUILD_TYPE=Release -DSETUPTOOLS_DEB_LAYOUT=OFF -DPYTHON_EXECUTABLE=/usr/bin/python
 
