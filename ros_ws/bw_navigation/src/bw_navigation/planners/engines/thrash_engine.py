@@ -2,7 +2,7 @@ import math
 
 from geometry_msgs.msg import Twist
 
-from bw_navigation.planners.engines.trajectory_planner_engine_config import ThrashRecoveryConfig
+from bw_navigation.planners.engines.config.thrash_recovery_config import ThrashRecoveryConfig
 
 
 class ThrashEngine:

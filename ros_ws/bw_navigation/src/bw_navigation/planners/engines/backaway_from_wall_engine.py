@@ -3,7 +3,7 @@ from bw_shared.geometry.pose2d import Pose2D
 from bw_shared.geometry.xy import XY
 from geometry_msgs.msg import Twist
 
-from bw_navigation.planners.engines.trajectory_planner_engine_config import BackawayRecoverConfig
+from bw_navigation.planners.engines.config.backaway_recover_config import BackawayRecoverConfig
 
 
 class BackawayFromWallEngine:

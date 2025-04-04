@@ -4,7 +4,9 @@ from functools import cached_property
 from bw_interfaces.msg import EstimatedObject
 from bw_shared.geometry.field_bounds import FieldBounds2D
 from bw_shared.geometry.pose2d import Pose2D
+from bw_shared.geometry.pose2d_stamped import Pose2DStamped
 from bw_shared.geometry.xy import XY
+from bw_shared.messages.header import Header
 
 
 @dataclass
@@ -23,6 +25,10 @@ class MatchState:
     @cached_property
     def controlled_robot_pose(self) -> Pose2D:
         return Pose2D.from_msg(self.controlled_robot.pose.pose)
+
+    @cached_property
+    def controlled_robot_pose_stamped(self) -> Pose2DStamped:
+        return Pose2DStamped(Header.from_msg(self.controlled_robot.header), self.controlled_robot_pose)
 
     @cached_property
     def controlled_robot_point(self) -> XY:

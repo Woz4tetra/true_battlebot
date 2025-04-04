@@ -5,7 +5,9 @@ from bw_shared.geometry.pose2d import Pose2D
 from bw_shared.pid.pid import PID
 from geometry_msgs.msg import Twist, Vector3
 
-from bw_navigation.planners.engines.trajectory_planner_engine_config import PidFollowerEngineConfig
+from bw_navigation.planners.engines.config.pid_follower_engine_config import (
+    PidFollowerEngineConfig,
+)
 
 
 class PidFollowerEngine:

@@ -1,0 +1,33 @@
+import math
+
+import numpy as np
+from bw_shared.geometry.pose2d_stamped import Pose2DStamped
+
+from bw_navigation.planners.engines.config.did_robot_move_config import DidRobotMoveConfig
+
+
+class DidRobotMoveEngine:
+    def __init__(self, config: DidRobotMoveConfig) -> None:
+        self.move_timeout = config.move_timeout
+        self.move_distance_threshold = config.move_distance_threshold
+        self.move_angle_threshold = math.radians(config.move_angle_threshold)
+
+    def reset(self) -> None:
+        self.prev_move_time = 0.0
+        self.prev_poses: list[Pose2DStamped] = []
+
+    def did_move(self, controlled_robot_pose: Pose2DStamped) -> bool:
+        self.prev_poses.append(controlled_robot_pose)
+        now = controlled_robot_pose.header.stamp
+        while self.prev_poses[-1].header.stamp - self.prev_poses[0].header.stamp > self.move_timeout:
+            self.prev_poses.pop(0)
+        earliest_pose = self.prev_poses[0]
+        relative_poses = np.array([pose.pose.relative_to(earliest_pose.pose).to_array() for pose in self.prev_poses])
+        pose_spread = np.ptp(relative_poses, axis=0)
+        if (
+            pose_spread[0] > self.move_distance_threshold
+            or pose_spread[1] > self.move_distance_threshold
+            or pose_spread[2] > self.move_angle_threshold
+        ):
+            return True
+        return now - self.prev_move_time < self.move_timeout

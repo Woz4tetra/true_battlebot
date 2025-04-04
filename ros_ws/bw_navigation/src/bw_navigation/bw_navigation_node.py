@@ -27,8 +27,9 @@ from geometry_msgs.msg import PoseStamped, Twist
 
 from bw_navigation.exceptions import NavigationError
 from bw_navigation.goal_supplier import FixedPoseSupplier, GoalSupplierInterface, TrackedTargetSupplier
-from bw_navigation.planners import PlannerInterface, TrajectoryPlanner
-from bw_navigation.planners.engines.trajectory_planner_engine_config import PlannerConfig
+from bw_navigation.planners import PidPlanner, PlannerInterface, TrajectoryPlanner
+from bw_navigation.planners.engines.config.pid_planner_config import PidPlannerConfig
+from bw_navigation.planners.engines.config.trajectory_planner_config import TrajectoryPlannerConfig
 
 
 class BwNavigationNode:
@@ -39,6 +40,7 @@ class BwNavigationNode:
         self.tick_rate = get_param("~tick_rate", 100.0)
         self.friendly_fire = get_param("~friendly_fire", False)
         self.try_again_if_not_in_tolerance = get_param("~try_again_if_not_in_tolerance", True)
+        self.planner_name = get_param("~planner", PidPlannerConfig.type)
 
         robot_configs = {robot.name: robot for robot in shared_config.robots.robots}
         if self.controlled_robot not in robot_configs:
@@ -101,9 +103,13 @@ class BwNavigationNode:
             GoalType.TRACKED_TARGET: TrackedTargetSupplier(self.controlled_robot, opponent_names),
         }
         friendly_robot_name = friendly_robot_names[0]  # TODO: Support multiple friendly robots
-        self.planner: PlannerInterface = TrajectoryPlanner(
-            self.controlled_robot, friendly_robot_name, avoid_robot_names, PlannerConfig()
-        )
+        self.planner: PlannerInterface
+        if self.planner_name == TrajectoryPlannerConfig.type:
+            self.planner = TrajectoryPlanner(
+                self.controlled_robot, friendly_robot_name, avoid_robot_names, TrajectoryPlannerConfig()
+            )
+        elif self.planner_name == PidPlannerConfig.type:
+            self.planner = PidPlanner(self.controlled_robot, friendly_robot_name, avoid_robot_names, PidPlannerConfig())
         self.should_cancel = True
         rospy.loginfo(f"Initialized {len(self.goal_suppliers)} goal suppliers")
 

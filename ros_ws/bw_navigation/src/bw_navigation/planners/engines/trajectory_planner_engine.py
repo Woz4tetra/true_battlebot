@@ -17,12 +17,14 @@ from wpimath.kinematics import DifferentialDriveKinematics
 from wpimath.trajectory import Trajectory, TrajectoryConfig, TrajectoryGenerator
 from wpimath.trajectory.constraint import CentripetalAccelerationConstraint, DifferentialDriveKinematicsConstraint
 
+from bw_navigation.planners.engines.config.trajectory_planner_config import (
+    TrajectoryGlobalPlannerConfig,
+)
 from bw_navigation.planners.engines.trajectory_helpers import PlanningResult, PlanningTicket, get_theta
-from bw_navigation.planners.engines.trajectory_planner_engine_config import TrajectoryPlannerEngineConfig
 
 
 class TrajectoryPlannerEngine:
-    def __init__(self, config: TrajectoryPlannerEngineConfig) -> None:
+    def __init__(self, config: TrajectoryGlobalPlannerConfig) -> None:
         self.plan_config = config
         self.kinematics = DifferentialDriveKinematics(self.plan_config.track_width)
         self.replan_interval = rospy.Duration.from_sec(self.plan_config.replan_interval)

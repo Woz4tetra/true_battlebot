@@ -1,12 +1,14 @@
 import pytest
+from bw_navigation.planners.engines.config.trajectory_planner_config import (
+    TrajectoryPlannerConfig,
+)
 from bw_navigation.planners.engines.trajectory_planner_engine import TrajectoryPlannerEngine
-from bw_navigation.planners.engines.trajectory_planner_engine_config import TrajectoryPlannerEngineConfig
 from bw_shared.geometry.pose2d import Pose2D
 
 
 @pytest.fixture
-def global_planner_config() -> TrajectoryPlannerEngineConfig:
-    return TrajectoryPlannerEngineConfig(
+def global_planner_config() -> TrajectoryPlannerConfig:
+    return TrajectoryPlannerConfig(
         max_velocity=1.0,
         max_acceleration=1.0,
         track_width=0.2,
@@ -14,7 +16,7 @@ def global_planner_config() -> TrajectoryPlannerEngineConfig:
 
 
 @pytest.mark.timeout(10)
-def test_straight_line(global_planner_config: TrajectoryPlannerEngineConfig) -> None:
+def test_straight_line(global_planner_config: TrajectoryPlannerConfig) -> None:
     goal_distance = 1.0
     start_pose = Pose2D(0.0, 0.0, 0.0)
     goal_pose = Pose2D(goal_distance, 0.0, 0.0)

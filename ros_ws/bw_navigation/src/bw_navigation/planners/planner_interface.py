@@ -6,7 +6,7 @@ from bw_shared.geometry.field_bounds import FieldBounds2D
 from bw_tools.messages.goal_strategy import GoalStrategy
 from geometry_msgs.msg import Twist
 
-from bw_navigation.planners.goal_progress import GoalProgress
+from bw_navigation.planners.shared.goal_progress import GoalProgress
 
 
 class PlannerInterface(ABC):

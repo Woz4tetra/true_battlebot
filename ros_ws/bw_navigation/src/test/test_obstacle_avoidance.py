@@ -1,12 +1,14 @@
 import pytest
 from bw_interfaces.msg import EstimatedObject
 from bw_navigation.planners.engines.backaway_from_wall_engine import BackawayFromWallEngine
-from bw_navigation.planners.engines.local_planner_engine import LocalPlannerEngine
-from bw_navigation.planners.engines.trajectory_planner_engine_config import (
+from bw_navigation.planners.engines.config.backaway_recover_config import (
     BackawayRecoverConfig,
-    LocalPlannerEngineConfig,
-    RamseteConfig,
 )
+from bw_navigation.planners.engines.config.local_planner_engine_config import (
+    LocalPlannerEngineConfig,
+)
+from bw_navigation.planners.engines.config.ramsete_config import RamseteConfig
+from bw_navigation.planners.engines.local_planner_engine import LocalPlannerEngine
 from bw_shared.geometry.pose2d import Pose2D
 from matplotlib import pyplot as plt
 from plot_helpers import draw_arrow, plot_robots

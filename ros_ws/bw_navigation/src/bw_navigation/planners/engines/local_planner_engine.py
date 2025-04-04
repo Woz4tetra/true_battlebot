@@ -12,9 +12,12 @@ from wpimath.controller import RamseteController
 from wpimath.trajectory import Trajectory
 
 from bw_navigation.planners.engines.backaway_from_wall_engine import BackawayFromWallEngine
+from bw_navigation.planners.engines.config.local_planner_engine_config import (
+    LocalPlannerEngineConfig,
+)
+from bw_navigation.planners.engines.config.ramsete_config import RamseteConfig
 from bw_navigation.planners.engines.trajectory_helpers import get_theta, trajectory_to_msg
-from bw_navigation.planners.engines.trajectory_planner_engine_config import LocalPlannerEngineConfig, RamseteConfig
-from bw_navigation.planners.goal_progress import GoalProgress
+from bw_navigation.planners.shared.goal_progress import GoalProgress
 
 
 class LocalPlannerEngine:
