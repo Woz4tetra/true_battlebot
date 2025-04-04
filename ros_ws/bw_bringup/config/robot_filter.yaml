@@ -3,6 +3,7 @@ cmd_vel_base_covariance_scalar: 0.1
 process_noise: 0.001
 robot_min_radius: 0.1
 robot_max_radius: 0.4
+estimated_system_lag: 0.02
 estimation_topics:
     - topic: "/camera_0/estimation/robots"
       use_orientation: true

@@ -75,7 +75,7 @@ class RobotFilter:
         field_buffer = get_param("~field_buffer", 0.2)
         self.tag_rolling_median_window = get_param("~tag_rolling_median_window", 5)
         self.field_buffer = XYZ(field_buffer, field_buffer, field_buffer)
-        self.estimated_system_lag = rospy.Duration.from_sec(get_param("~estimated_system_lag", 0.2))
+        self.estimated_system_lag = rospy.Duration.from_sec(get_param("~estimated_system_lag", 0.0))
 
         self.filter_lock = Lock()
 
@@ -254,7 +254,7 @@ class RobotFilter:
         self.cmd_vel_trackers = {
             robot.name: CmdVelTracker(
                 self.robot_cmd_vel_heuristics,
-                history_length=self.estimated_system_lag,
+                history_length=self.estimated_system_lag * 2,
                 command_timeout=self.command_timeout,
             )
             for robot in robot_fleet

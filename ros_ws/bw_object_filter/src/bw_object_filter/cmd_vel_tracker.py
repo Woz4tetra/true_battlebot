@@ -19,8 +19,11 @@ class CmdVelTracker:
 
     def add_velocity(self, command: TwistStamped) -> None:
         now = rospy.Time.now()
+        if self.history_length == rospy.Duration(0):
+            self.commands = [command]
+            return
         self.commands.append(command)
-        while self.commands and now - self.commands[0].header.stamp > self.history_length:
+        while len(self.commands) > 1 and now - self.commands[0].header.stamp > self.history_length:
             self.commands.pop(0)
 
     def get_nearest_time(self, lookup_time: genpy.Time) -> int:
@@ -38,13 +41,17 @@ class CmdVelTracker:
         return self.commands[nearest_time]
 
     def get_velocity(self, lookup_time: genpy.Time) -> TwistWithCovariance:
-        if rospy.Time.now() - self.commands[-1].header.stamp > self.command_timeout:
+        if not self.commands:
+            return TwistWithCovariance()
+        if self.history_length == rospy.Duration(0):
+            twist = self.commands[0]
+        elif rospy.Time.now() - self.commands[-1].header.stamp > self.command_timeout:
             twist = TwistStamped()
         else:
             twist = self.get_nearest_velocity(lookup_time)
         return TwistWithCovariance(
             twist=twist.twist,
-            covariance=self.cmd_vel_heuristics.compute_covariance(twist),  # type: ignore
+            covariance=self.cmd_vel_heuristics.compute_covariance(twist.twist),  # type: ignore
         )
 
     def get_velocities_after(self, lookup_time: genpy.Time) -> list[TwistStamped]:
@@ -55,5 +62,7 @@ class CmdVelTracker:
         return velocities
 
     def get_velocities(self) -> list[TwistStamped]:
+        if self.history_length == rospy.Duration(0):
+            return self.commands
         velocities = self.get_velocities_after(rospy.Time.now() - self.history_length)
         return velocities

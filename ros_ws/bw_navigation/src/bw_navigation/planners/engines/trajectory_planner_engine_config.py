@@ -96,7 +96,7 @@ class PlannerConfig:
     move_timeout: float = 1.0  # seconds
 
     rotate_180_buffer: float = 0.05
-    friendly_mirror_proximity: float = 1.0  # meters
+    friendly_mirror_proximity: float = 0.25  # meters
     friendly_mirror_magnify: float = 1.5
 
     backaway_recover: BackawayRecoverConfig = field(default_factory=BackawayRecoverConfig)
