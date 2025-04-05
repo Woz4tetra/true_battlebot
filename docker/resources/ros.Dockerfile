@@ -103,11 +103,6 @@ COPY --chown=1000:1000 \
     /opt/${ORGANIZATION}/install/
 RUN bash /opt/${ORGANIZATION}/install/install_ros.sh
 
-COPY --chown=1000:1000 \
-    ./install/ros/build_ros.sh \
-    /opt/${ORGANIZATION}/install/
-RUN bash /opt/${ORGANIZATION}/install/build_ros.sh
-
 ENV DEP_ROS_WS_ROOT=${HOME}/dep_ws
 
 COPY --chown=1000:1000 \
