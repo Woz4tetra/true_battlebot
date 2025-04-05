@@ -4,6 +4,7 @@ set -e
 
 BASE_DIR=$(realpath "$(dirname "${0}")")
 
+sudo apt-get update
 sudo rosdep init
 rosdep_update () {
     rosdep update
@@ -32,6 +33,8 @@ rosdep_install_dependencies() {
 }
 export -f rosdep_install_dependencies
 retry 10 rosdep_install_dependencies
+
+cd ${BASE_ROS_WS_ROOT}
 
 ./src/catkin/bin/catkin_make install -DCMAKE_BUILD_TYPE=Release -DSETUPTOOLS_DEB_LAYOUT=OFF -DPYTHON_EXECUTABLE=/usr/bin/python
 
