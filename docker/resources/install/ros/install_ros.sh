@@ -38,4 +38,6 @@ cd ${BASE_ROS_WS_ROOT}
 
 ./src/catkin/bin/catkin_make install -DCMAKE_BUILD_TYPE=Release -DSETUPTOOLS_DEB_LAYOUT=OFF -DPYTHON_EXECUTABLE=/usr/bin/python
 
+cp -rf ./src/catkin/bin/* ./install/bin/
+
 echo "Installed ROS"
