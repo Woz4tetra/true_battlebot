@@ -14,6 +14,7 @@ from bw_interfaces.msg import (
     RobotFleetConfigMsg,
 )
 from bw_shared.configs.robot_fleet_config import RobotConfig, RobotFleetConfig
+from bw_shared.enums.driver_intent import DriverIntent
 from bw_shared.enums.robot_team import RobotTeam
 from bw_shared.geometry.field_bounds import FieldBounds2D
 from bw_shared.geometry.xy import XY
@@ -24,6 +25,7 @@ from bw_tools.get_param import get_param
 from bw_tools.messages.goal_strategy import GoalStrategy
 from bw_tools.messages.goal_type import GoalType
 from geometry_msgs.msg import PoseStamped, Twist
+from std_msgs.msg import Int32
 from visualization_msgs.msg import MarkerArray
 
 from bw_navigation.exceptions import NavigationError
@@ -61,6 +63,7 @@ class BwNavigationNode:
         self.robots: dict[str, EstimatedObject] = {}
         self.field_bounds_2d: FieldBounds2D = (XY(0.0, 0.0), XY(0.0, 0.0))
         self.should_cancel = False
+        self.driver_intent = DriverIntent.NONE
 
         self.initialize_planners(shared_config.robots.robots)
 
@@ -75,6 +78,9 @@ class BwNavigationNode:
         )
         self.opponent_fleet_sub = rospy.Subscriber(
             "opponent_fleet", RobotFleetConfigMsg, self.opponent_fleet_callback, queue_size=1
+        )
+        self.driver_intent_mode_sub = rospy.Subscriber(
+            "driver_intent", Int32, self.driver_intent_callback, queue_size=1
         )
         self.visualization_publisher = rospy.Publisher("trajectory_visualization", MarkerArray, queue_size=1)
         self.goal_server.start()
@@ -189,7 +195,14 @@ class BwNavigationNode:
 
             try:
                 twist, goal_progress, markers = self.planner.go_to_goal(
-                    dt, goal_target, self.robots, self.field_bounds_2d, engine_config, goal.xy_tolerance, goal_strategy
+                    dt,
+                    goal_target,
+                    self.robots,
+                    self.field_bounds_2d,
+                    engine_config,
+                    goal.xy_tolerance,
+                    goal_strategy,
+                    self.driver_intent,
                 )
             except NavigationError as e:
                 rospy.logerr(f"Error going to goal: {e}")
@@ -213,6 +226,13 @@ class BwNavigationNode:
                 self.goal_server.set_succeeded(GoToGoalResult(success=is_success))
                 break
         self.twist_pub.publish(Twist())
+
+    def driver_intent_callback(self, msg: Int32) -> None:
+        try:
+            self.driver_intent = DriverIntent(msg.data)
+        except ValueError:
+            rospy.logwarn(f"Invalid driver intent: {msg.data}")
+            self.driver_intent = DriverIntent.NONE
 
     def run(self) -> None:
         rospy.spin()

@@ -1,25 +1,36 @@
 import math
 
-import rospy
 from bw_interfaces.msg import EstimatedObject
 from bw_shared.geometry.polar import Polar
 from bw_shared.geometry.pose2d import Pose2D
+from bw_shared.geometry.xy import XY
 from geometry_msgs.msg import PoseWithCovariance, Twist
 
 from bw_navigation.planners.engines.config.overlay_velocity_config import OverlayVelocityConfig
+from bw_navigation.planners.shared.is_in_bounds import is_point_in_bounds
 from bw_navigation.planners.shared.match_state import MatchState
 
 
-def compute_mirrored_goal(match_state: MatchState) -> EstimatedObject:
+def rotate_target_about(friendly_point: XY, goal_point: XY, angle_rotation: float) -> XY:
+    relative_friendly_point = friendly_point - goal_point
+    relative_friendly_polar = Polar.from_xy(relative_friendly_point)
+    mirrored_polar = Polar(relative_friendly_polar.radius, relative_friendly_polar.theta + angle_rotation)
+    mirrored_point = mirrored_polar.to_xy() + goal_point
+    return mirrored_point
+
+
+def compute_mirrored_goal(buffer_xy: XY, match_state: MatchState) -> EstimatedObject:
     goal_point = match_state.goal_point
     friendly_point = match_state.friendly_robot_point
     goal_target = match_state.goal_target
-    relative_friendly_point = friendly_point - goal_point
-    relative_friendly_polar = Polar.from_xy(relative_friendly_point)
-    mirrored_polar = Polar(-1 * relative_friendly_polar.radius, relative_friendly_polar.theta)
-    mirrored_point = mirrored_polar.to_xy() + goal_point
-    mirrored_theta = match_state.friendly_robot_pose.theta + math.pi
+    angle_rotation = math.radians(90.0)
+    mirrored_point = rotate_target_about(friendly_point, goal_point, angle_rotation)
+    if not is_point_in_bounds(mirrored_point, buffer_xy, match_state):
+        angle_rotation = -angle_rotation
+        mirrored_point = rotate_target_about(friendly_point, goal_point, angle_rotation)
+    mirrored_theta = match_state.friendly_robot_pose.theta + angle_rotation
     mirrored_pose = Pose2D(mirrored_point.x, mirrored_point.y, mirrored_theta)
+
     return EstimatedObject(
         header=goal_target.header,
         child_frame_id=goal_target.child_frame_id,
@@ -33,9 +44,9 @@ def compute_mirrored_goal(match_state: MatchState) -> EstimatedObject:
     )
 
 
-def compute_mirrored_state(match_state: MatchState) -> MatchState:
+def compute_mirrored_state(buffer_xy: XY, match_state: MatchState) -> MatchState:
     return MatchState(
-        goal_target=compute_mirrored_goal(match_state),
+        goal_target=compute_mirrored_goal(buffer_xy, match_state),
         robot_states=match_state.robot_states,
         field_bounds=match_state.field_bounds,
         controlled_robot_name=match_state.controlled_robot_name,

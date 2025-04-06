@@ -3,6 +3,7 @@ from typing import Optional, Tuple
 
 import rospy
 from bw_interfaces.msg import EstimatedObject, GoalEngineConfig
+from bw_shared.enums.driver_intent import DriverIntent
 from bw_shared.geometry.field_bounds import FieldBounds2D
 from bw_shared.geometry.input_modulus import normalize_angle
 from bw_shared.geometry.xy import XY
@@ -67,6 +68,7 @@ class PidPlanner(PlannerInterface):
         engine_config: Optional[GoalEngineConfig],
         xy_tolerance: float,
         goal_strategy: GoalStrategy,
+        driver_intent: DriverIntent,
     ) -> Tuple[Twist, GoalProgress, MarkerArray]:
         if self.controlled_robot_name not in robot_states:
             rospy.logwarn_throttle(1, f"Robot {self.controlled_robot_name} not found in robot states")
@@ -81,9 +83,9 @@ class PidPlanner(PlannerInterface):
             avoid_robot_names=self.avoid_robot_names,
         )
         if goal_strategy == GoalStrategy.MIRROR_FRIENDLY:
-            mirrored_match_state = compute_mirrored_state(match_state)
-            if is_goal_in_bounds(self.buffer_xy, mirrored_match_state):
-                match_state = mirrored_match_state
+            match_state = compute_mirrored_state(self.buffer_xy, match_state)
+            # if is_goal_in_bounds(self.buffer_xy, mirrored_match_state):
+            #     match_state = mirrored_match_state
 
         goal_progress = GoalProgress(is_done=False)
         twist = Twist()
@@ -114,6 +116,8 @@ class PidPlanner(PlannerInterface):
 
         twist = clamp_twist_with_config(twist, engine_config, self.default_velocity_limits)
         goal_progress.distance_to_goal = compute_feedback_distance(match_state.controlled_robot, goal_target)
+        if driver_intent == DriverIntent.BACK_AWAY:
+            twist = Twist()
 
         return twist, goal_progress, MarkerArray(markers=markers)
 

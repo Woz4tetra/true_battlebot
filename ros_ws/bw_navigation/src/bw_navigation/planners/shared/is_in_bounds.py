@@ -1,3 +1,4 @@
+from bw_shared.geometry.field_bounds import FieldBounds2D
 from bw_shared.geometry.xy import XY
 
 from bw_navigation.planners.shared.match_state import MatchState
@@ -24,3 +25,8 @@ def is_goal_in_bounds(buffer_xy: XY, match_state: MatchState) -> bool:
     goal_point = match_state.goal_point
     inset_field = get_inset_field(buffer_xy, match_state)
     return inset_field[0] <= goal_point <= inset_field[1]
+
+
+def is_point_in_bounds(point: XY, buffer_xy: XY, match_state: MatchState) -> bool:
+    inset_field = get_inset_field(buffer_xy, match_state)
+    return inset_field[0] <= point <= inset_field[1]

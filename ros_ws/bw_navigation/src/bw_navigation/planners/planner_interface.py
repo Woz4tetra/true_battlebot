@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Optional, Tuple
 
 from bw_interfaces.msg import EstimatedObject, GoalEngineConfig
+from bw_shared.enums.driver_intent import DriverIntent
 from bw_shared.geometry.field_bounds import FieldBounds2D
 from bw_tools.messages.goal_strategy import GoalStrategy
 from geometry_msgs.msg import Twist
@@ -24,4 +25,5 @@ class PlannerInterface(ABC):
         engine_config: Optional[GoalEngineConfig],
         xy_tolerance: float,
         goal_strategy: GoalStrategy,
+        driver_intent: DriverIntent,
     ) -> Tuple[Twist, GoalProgress, MarkerArray]: ...

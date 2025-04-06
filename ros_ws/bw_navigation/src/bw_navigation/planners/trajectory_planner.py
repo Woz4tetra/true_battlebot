@@ -2,6 +2,7 @@ from typing import Optional, Tuple
 
 import rospy
 from bw_interfaces.msg import EstimatedObject, GoalEngineConfig
+from bw_shared.enums.driver_intent import DriverIntent
 from bw_shared.geometry.field_bounds import FieldBounds2D
 from bw_shared.geometry.xy import XY
 from bw_shared.pid.pid import PID
@@ -75,6 +76,7 @@ class TrajectoryPlanner(PlannerInterface):
         engine_config: Optional[GoalEngineConfig],
         xy_tolerance: float,
         goal_strategy: GoalStrategy,
+        driver_intent: DriverIntent,
     ) -> Tuple[Twist, GoalProgress, MarkerArray]:
         now = rospy.Time.now()
         if self.controlled_robot_name not in robot_states:

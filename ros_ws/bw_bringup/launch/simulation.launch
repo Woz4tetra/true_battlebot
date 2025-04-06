@@ -10,7 +10,7 @@
         <include file="$(find bw_bringup)/launch/subsystems/synthetic_camera_conversion.launch" />
     </group>
     <group ns="main_bot">
-        <include file="$(find bw_teleop)/launch/simple_teleop.launch" />
+        <include file="$(find bw_teleop)/launch/tank_teleop.launch" />
         <include file="$(find bw_bringup)/launch/subsystems/twist_mux.launch" />
     </group>
     <group ns="mini_bot">

@@ -4,7 +4,7 @@
         <param name="dev"
             value="/dev/input/js1"
             type="str" />
-        <param name="deadzone" value="0.05" />
+        <param name="deadzone" value="0.0" />
         <param name="autorepeat_rate" value="30.0" />
     </node>
 
@@ -16,5 +16,6 @@
         <param name="scale_right" value="3.0" />
         <param name="track_width" value="0.185" />
         <remap from="cmd_vel" to="cmd_vel/teleop" />
+        <remap from="driver_intent" to="/driver_intent" />
     </node>
 </launch>
