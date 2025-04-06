@@ -50,8 +50,7 @@ class SimulatedFieldFilter(FieldFilterInterface):
             return None
 
         self.logger.debug(
-            f"Applying mask to point cloud. Mask shape is {mask.shape}. "
-            f"Point cloud shape is {point_cloud.points.shape}"
+            f"Applying mask to point cloud. Mask shape is {mask.shape}. Point cloud shape is {point_cloud.points.shape}"
         )
         # assumes the point cloud is same shape as the contour source image
         filtered_point_cloud = PointCloud(header=point_cloud.header, points=point_cloud.masked_points(mask))

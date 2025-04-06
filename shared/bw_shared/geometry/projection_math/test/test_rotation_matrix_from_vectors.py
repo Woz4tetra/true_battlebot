@@ -39,9 +39,9 @@ def euler_matrix_3x3(roll: float, pitch: float, yaw: float) -> np.ndarray:
 )
 def test_rotation_matrix_from_vectors(vec1: np.ndarray, vec2: np.ndarray, expected_rotation: np.ndarray) -> None:
     output_rotation = rotation_matrix_from_vectors(vec1, vec2)
-    assert np.allclose(
-        output_rotation, expected_rotation
-    ), f"{vec1} -> {vec2} returned angles {euler_from_matrix(output_rotation)}"
+    assert np.allclose(output_rotation, expected_rotation), (
+        f"{vec1} -> {vec2} returned angles {euler_from_matrix(output_rotation)}"
+    )
 
 
 @pytest.mark.parametrize(
