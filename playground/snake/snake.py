@@ -1,5 +1,4 @@
 import argparse
-import time
 from enum import Enum
 
 from game.data.direction import Direction

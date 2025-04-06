@@ -11,3 +11,5 @@ apriltag
 aprilgrid
 pyserial
 blobconverter
+neat-python
+pygame
