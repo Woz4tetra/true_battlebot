@@ -1,6 +1,27 @@
+import random
 from pathlib import Path
 
 import neat.config
+from game.snake_backend import SnakeBackend
+
+
+def eval_genomes(genomes: list, config: neat.config.Config):
+    runs = []
+
+    for genome_id, genome in genomes:
+        width = random.randint(10, 30)
+        height = random.randint(10, 30)
+
+        # Set the genome fitness to 0
+        genome.fitness = 0
+
+        # Create a neural network from the genome
+        net = neat.nn.FeedForwardNetwork.create(genome, config)
+
+        # Create a SnakeBackend instance
+        snake_backend = SnakeBackend(width=width, height=height)
+
+        runs.append((net, genome, snake_backend))
 
 
 def train(config_file: Path):

@@ -25,5 +25,6 @@ def initialize_game(width: int, height: int) -> GameContainer:
     if first_apple is None:
         raise ValueError("No valid apple position found.")
     apples = [first_apple]  # Initialize with one apple at a random position
+    start_life = width + height
 
-    return GameContainer(score=0, grid=grid, snake=snake, apples=apples)
+    return GameContainer(score=0, life=start_life, grid=grid, snake=snake, apples=apples)

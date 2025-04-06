@@ -62,10 +62,12 @@ class GraphicFrontend(SnakeFrontend):
             ),
         )
 
-    def _draw_score(self, score: int) -> None:
+    def _draw_score(self, score: int, life: int) -> None:
         font = pygame.font.SysFont("Arial", 24)
-        text_surface = font.render(f"Score: {score}", True, (255, 255, 255))
-        self.screen.blit(text_surface, (10, 10))
+        score_surface = font.render(f"Score: {score}", True, (255, 255, 255))
+        self.screen.blit(score_surface, (10, 10))
+        life_surface = font.render(f"Life: {life}", True, (255, 255, 255))
+        self.screen.blit(life_surface, (200, 10))
 
     def _draw_paused(self) -> None:
         font = pygame.font.SysFont("Arial", 24)
@@ -112,7 +114,7 @@ class GraphicFrontend(SnakeFrontend):
         event = self._get_user_event()
 
         self.screen.fill((0, 0, 0))
-        self._draw_score(game.score)
+        self._draw_score(game.score, game.life)
         self._draw_border(game.grid.width, game.grid.height)
         if is_paused:
             self._draw_paused()

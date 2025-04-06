@@ -31,6 +31,7 @@ def run(snake_frontend: SnakeFrontend, width: int, height: int, input_method: In
             elif event == FrontendTickEvent.PAUSED or event == FrontendTickEvent.DONE:
                 continue
             elif event == FrontendTickEvent.APPLY_INPUT:
+                direction = frontend_runner.get_direction()
                 if input_method == InputMethod.AI:
                     # AI logic to determine the next direction
                     # For now, just set it to a random direction

@@ -114,8 +114,9 @@ class TextFrontend(SnakeFrontend):
     def _draw_paused(self) -> None:
         self.screen.addstr(1, 0, "Game Paused")
 
-    def _draw_score(self, score: int) -> None:
+    def _draw_score(self, score: int, life: int) -> None:
         self.screen.addstr(0, 0, f"Score: {score}")
+        self.screen.addstr(0, 12, f"Life: {life}")
 
     def _draw_border(self, width: int, height: int) -> None:
         height //= 2
@@ -140,7 +141,7 @@ class TextFrontend(SnakeFrontend):
             event = UserInputEvent.NONE
         self.screen.clear()
         self._draw_border(game.grid.width, game.grid.height)
-        self._draw_score(game.score)
+        self._draw_score(game.score, game.life)
         if is_paused:
             self._draw_paused()
             return event

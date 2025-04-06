@@ -12,7 +12,7 @@ def check_apple_collision(next_coord: Coordinate, game_state: GameContainer) -> 
         if apple.coord != next_coord:
             continue
         game_state.score += 1
-        next_apple = get_next_apple(grid, snake, game_state.apples)
+        next_apple = get_next_apple(grid, snake, apples)
         if next_apple is None:
             return AppleCollisionEvent.NO_MORE_ROOM
         apples.remove(apple)

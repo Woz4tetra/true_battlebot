@@ -12,12 +12,14 @@ class GameContainer:
 
     Attributes:
         score (int): The current score of the game.
+        life (int): How many moves the snake has left.
         grid (Grid): The grid representing the game area.
         snake (SnakeHead): The head of the snake in the game.
         apples (list[Apple]): A list of apples in the game.
     """
 
     score: int
+    life: int
     grid: Grid
     snake: SnakeHead
     apples: list[Apple]
