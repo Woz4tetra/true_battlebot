@@ -8,12 +8,13 @@
         <param name="autorepeat_rate" value="30.0" />
     </node>
 
-    <node pkg="bw_teleop" type="simple_joystick_relay.py" name="simple_joystick_relay" output="screen"
+    <node pkg="bw_teleop" type="tank_joystick_relay.py" name="tank_joystick_relay" output="screen"
         clear_params="true">
-        <param name="axis_linear" value="0" />
-        <param name="axis_angular" value="1" />
-        <param name="scale_linear" value="5.0" />
-        <param name="scale_angular" value="20.0" />
+        <param name="axis_left" value="0" />
+        <param name="axis_right" value="1" />
+        <param name="scale_left" value="-3.0" />
+        <param name="scale_right" value="3.0" />
+        <param name="track_width" value="0.185" />
         <remap from="cmd_vel" to="cmd_vel/teleop" />
     </node>
 </launch>

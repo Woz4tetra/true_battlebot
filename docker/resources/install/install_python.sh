@@ -12,14 +12,12 @@ sudo apt-get install -y \
     libbluetooth-dev \
     libportaudio2
 
-if ! /usr/bin/python3 --version | grep -q "${PYTHON_INSTALL_VERSION}"; then
-    sudo add-apt-repository -y ppa:deadsnakes/ppa
-    sudo apt-get update
-    sudo apt-get install -y \
+sudo add-apt-repository -y ppa:deadsnakes/ppa
+sudo apt-get update
+sudo apt-get install -y \
     python${PYTHON_INSTALL_VERSION} \
     python${PYTHON_INSTALL_VERSION}-dev \
     python${PYTHON_INSTALL_VERSION}-venv
-fi
 
 mkdir -p /tmp
 sudo chown -R 1000:1000 /tmp

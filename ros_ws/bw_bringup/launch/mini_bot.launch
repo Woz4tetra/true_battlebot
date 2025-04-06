@@ -9,7 +9,10 @@
     </include> -->
     <group ns="mini_bot">
         <include file="$(find bw_teleop)/launch/mini_bot_bridge.launch" />
-        <include file="$(find bw_teleop)/launch/simple_teleop.launch" />
+        <include file="$(find bw_bringup)/launch/subsystems/twist_mux.launch" />
+    </group>
+    <group ns="main_bot">
+        <include file="$(find bw_teleop)/launch/tank_teleop.launch" />
         <include file="$(find bw_bringup)/launch/subsystems/twist_mux.launch" />
     </group>
     <include file="$(find bw_bringup)/launch/subsystems/mini_bot_static_transforms.launch" />

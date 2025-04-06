@@ -27,6 +27,13 @@ class TrackedTargetSupplier(GoalSupplierInterface):
         self.continuously_select_goal = continuously_select_goal
         self.last_target_name = None
 
+    def make_fallback_goal(self) -> EstimatedObject:
+        fallback_goal = EstimatedObject()
+        fallback_goal.label = self.opponent_names[0]
+        fallback_goal.pose.pose = Pose2D(0.0, 0.0, 0.0).to_msg()
+        fallback_goal.size = XYZ(0.05, 0.05, 0.05).to_msg()
+        return fallback_goal
+
     def nearest_target(self, robot_states: dict[str, EstimatedObject]) -> Optional[EstimatedObject]:
         if self.controlled_robot not in robot_states:
             return None
@@ -43,6 +50,7 @@ class TrackedTargetSupplier(GoalSupplierInterface):
                 nearest_distance = distance
         if nearest_target is None:
             rospy.logwarn(f"No nearest target found. Opponent names: {self.opponent_names}")
+            nearest_target = self.make_fallback_goal()
         return nearest_target
 
     def largest_target(self, robot_states: dict[str, EstimatedObject]) -> Optional[EstimatedObject]:
@@ -57,6 +65,8 @@ class TrackedTargetSupplier(GoalSupplierInterface):
                 largest_size = size
         if largest_target is None:
             rospy.logwarn(f"No largest target found. Opponent names: {self.opponent_names}")
+            largest_target = self.make_fallback_goal()
+
         return largest_target
 
     def smallest_target(self, robot_states: dict[str, EstimatedObject]) -> Optional[EstimatedObject]:
@@ -71,6 +81,7 @@ class TrackedTargetSupplier(GoalSupplierInterface):
                 smallest_size = size
         if smallest_target is None:
             rospy.logwarn(f"No smallest target found. Opponent names: {self.opponent_names}")
+            smallest_target = self.make_fallback_goal()
         return smallest_target
 
     def get_goal(self, robot_states: dict[str, EstimatedObject], field: FieldBounds2D) -> Optional[EstimatedObject]:
