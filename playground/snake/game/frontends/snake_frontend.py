@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 
 from game.data.game_container import GameContainer
 from game.data.game_state import GameState
-from game.data.user_input_event import UserInputEvent
+from game.frontends.user_input_event import UserInputEvent
 
 
 class SnakeFrontend(ABC):

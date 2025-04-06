@@ -1,50 +1,44 @@
 import argparse
 import time
+from enum import Enum
 
 from game.data.direction import Direction
 from game.data.game_state import GameState
-from game.data.user_input_event import UserInputEvent
+from game.frontends.frontend_runner import FrontendRunner
+from game.frontends.frontend_tick_event import FrontendTickEvent
 from game.frontends.snake_frontend import SnakeFrontend
 from game.snake_backend import SnakeBackend
 
 
-def run(snake_frontend: SnakeFrontend, width: int, height: int) -> None:
-    event_mapping = {
-        UserInputEvent.MOVE_UP: Direction.UP,
-        UserInputEvent.MOVE_DOWN: Direction.DOWN,
-        UserInputEvent.MOVE_LEFT: Direction.LEFT,
-        UserInputEvent.MOVE_RIGHT: Direction.RIGHT,
-    }
+class InputMethod(Enum):
+    USER = "user"
+    AI = "ai"
+
+
+def run(snake_frontend: SnakeFrontend, width: int, height: int, input_method: InputMethod, sleep_delay: float) -> None:
     snake_backend = SnakeBackend(width=width, height=height)
-    is_paused = False
+    if input_method == InputMethod.AI:
+        step_interval = 0.0
+    else:
+        step_interval = 0.2
+        sleep_delay = 0.05
+    frontend_runner = FrontendRunner(snake_frontend, sleep_delay=sleep_delay, step_interval=step_interval)
     state = GameState.RUNNING
-    step_interval = 0.2
-    prev_step_time = time.monotonic()
-    direction = Direction.NONE
-    buffered_inputs = []
     try:
         while True:
-            event = snake_frontend.draw(snake_backend.game, state, is_paused)
-            time.sleep(0.05)
-            if event == UserInputEvent.QUIT:
+            event = frontend_runner.step(snake_backend.game, state)
+            if event == FrontendTickEvent.QUIT:
                 break
-            if event == UserInputEvent.TOGGLE_PAUSE:
-                is_paused = not is_paused
-            if is_paused:
+            elif event == FrontendTickEvent.PAUSED or event == FrontendTickEvent.DONE:
                 continue
-            if state == GameState.GAME_OVER:
-                continue
-            elif state == GameState.GAME_WIN:
-                continue
-            next_direction = event_mapping.get(event, None)
-            if next_direction is not None:
-                if len(buffered_inputs) < 2:
-                    buffered_inputs.append(next_direction)
+            elif event == FrontendTickEvent.APPLY_INPUT:
+                if input_method == InputMethod.AI:
+                    # AI logic to determine the next direction
+                    # For now, just set it to a random direction
+                    import random
 
-            now = time.monotonic()
-            if now - prev_step_time >= step_interval:
-                prev_step_time = now
-                direction = buffered_inputs.pop(0) if buffered_inputs else Direction.NONE
+                    direction = random.choice(list(Direction))
+
                 state = snake_backend.step(direction)
     finally:
         snake_frontend.close()
@@ -52,10 +46,13 @@ def run(snake_frontend: SnakeFrontend, width: int, height: int) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Snake Game")
-    parser.add_argument("--width", type=int, default=20, help="Width of the game grid")
-    parser.add_argument("--height", type=int, default=20, help="Height of the game grid")
-    parser.add_argument("--mode", type=str, default="text", choices=["text", "gui"], help="Game mode")
+    parser.add_argument("-wd", "--width", type=int, default=20, help="Width of the game grid")
+    parser.add_argument("-ht", "--height", type=int, default=20, help="Height of the game grid")
+    parser.add_argument("-m", "--mode", type=str, default="gui", choices=["text", "gui"], help="Game mode")
+    parser.add_argument("-i", "--input", type=str, default="user", choices=["user", "ai"], help="Input method")
     args = parser.parse_args()
+
+    input_method = InputMethod(args.input)
 
     if args.mode == "text":
         import curses
@@ -64,14 +61,20 @@ def main() -> None:
 
         def text_main(screen: curses.window) -> None:
             frontend = TextFrontend(screen)
-            run(frontend, args.width, args.height)
+            run(frontend, args.width, args.height, input_method=input_method, sleep_delay=0.05)
 
         curses.wrapper(text_main)
     else:
         from game.frontends.graphic_frontend import GraphicFrontend
 
         frontend = GraphicFrontend()
-        run(frontend, args.width, args.height)
+        run(
+            frontend,
+            args.width,
+            args.height,
+            input_method=input_method,
+            sleep_delay=0.001 if input_method == InputMethod.AI else 0.05,
+        )
 
 
 if __name__ == "__main__":
