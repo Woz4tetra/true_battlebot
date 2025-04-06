@@ -1,25 +1,24 @@
-import curses
+import argparse
 import time
 
 from game.data.direction import Direction
 from game.data.game_state import GameState
 from game.data.user_input_event import UserInputEvent
+from game.frontends.snake_frontend import SnakeFrontend
 from game.snake_backend import SnakeBackend
-from game.text_snake_game.text_game import TextGame
 
 
-def main(screen: curses.window) -> None:
+def run(snake_frontend: SnakeFrontend, width: int, height: int) -> None:
     event_mapping = {
         UserInputEvent.MOVE_UP: Direction.UP,
         UserInputEvent.MOVE_DOWN: Direction.DOWN,
         UserInputEvent.MOVE_LEFT: Direction.LEFT,
         UserInputEvent.MOVE_RIGHT: Direction.RIGHT,
     }
-    snake_backend = SnakeBackend(width=20, height=10)
-    snake_frontend = TextGame(screen)
+    snake_backend = SnakeBackend(width=width, height=height)
     is_paused = False
     state = GameState.RUNNING
-    starting_step_interval = 0.5
+    step_interval = 0.2
     prev_step_time = time.monotonic()
     direction = Direction.NONE
     buffered_inputs = []
@@ -34,17 +33,13 @@ def main(screen: curses.window) -> None:
             if is_paused:
                 continue
             if state == GameState.GAME_OVER:
-                print("Game Over!")
                 continue
             elif state == GameState.GAME_WIN:
-                print("You Win!")
                 continue
             next_direction = event_mapping.get(event, None)
             if next_direction is not None:
                 if len(buffered_inputs) < 2:
                     buffered_inputs.append(next_direction)
-
-            step_interval = starting_step_interval - snake_backend.get_score() * 0.01
 
             now = time.monotonic()
             if now - prev_step_time >= step_interval:
@@ -55,5 +50,29 @@ def main(screen: curses.window) -> None:
         snake_frontend.close()
 
 
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Snake Game")
+    parser.add_argument("--width", type=int, default=20, help="Width of the game grid")
+    parser.add_argument("--height", type=int, default=20, help="Height of the game grid")
+    parser.add_argument("--mode", type=str, default="text", choices=["text", "gui"], help="Game mode")
+    args = parser.parse_args()
+
+    if args.mode == "text":
+        import curses
+
+        from game.frontends.text_frontend import TextFrontend
+
+        def text_main(screen: curses.window) -> None:
+            frontend = TextFrontend(screen)
+            run(frontend, args.width, args.height)
+
+        curses.wrapper(text_main)
+    else:
+        from game.frontends.graphic_frontend import GraphicFrontend
+
+        frontend = GraphicFrontend()
+        run(frontend, args.width, args.height)
+
+
 if __name__ == "__main__":
-    curses.wrapper(main)
+    main()

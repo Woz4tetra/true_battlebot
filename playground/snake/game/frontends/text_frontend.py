@@ -3,10 +3,27 @@ import curses
 from game.data.game_container import GameContainer
 from game.data.game_state import GameState
 from game.data.user_input_event import UserInputEvent
+from game.frontends.snake_frontend import SnakeFrontend
 from game.utils.get_snake_coords import get_snake_coords
 
 
-class TextGame:
+def get_block(y: int) -> str:
+    """
+    Get the block character for a given y-coordinate.
+
+    Args:
+        y (int): The y-coordinate.
+
+    Returns:
+        str: The block character.
+    """
+    if y % 2 == 0:
+        return "▀"
+    else:
+        return "▄"
+
+
+class TextFrontend(SnakeFrontend):
     def __init__(self, screen: curses.window) -> None:
         self.screen = screen
         self.screen.nodelay(True)
@@ -18,6 +35,10 @@ class TextGame:
         self.snake_color = curses.color_pair(2)
         curses.init_pair(3, curses.COLOR_RED, curses.COLOR_BLACK)
         self.apple_color = curses.color_pair(3)
+        curses.init_pair(4, curses.COLOR_RED, curses.COLOR_GREEN)
+        self.apple_snake_color = curses.color_pair(4)
+        curses.init_pair(5, curses.COLOR_GREEN, curses.COLOR_RED)
+        self.snake_apple_color = curses.color_pair(5)
         self.screen.refresh()
 
     def _get_key(self) -> int | None:
@@ -56,14 +77,32 @@ class TextGame:
         apples = game.apples
 
         # Draw the snake
+        snake_drawn_coordinates = set()
         for segment in get_snake_coords(snake):
-            self.screen.addstr(segment.y + self.game_offset[1], segment.x + self.game_offset[0], "█", self.snake_color)
+            y = segment.y // 2
+            x = segment.x
+            if (y, x) in snake_drawn_coordinates:
+                block = "█"
+            else:
+                block = get_block(segment.y)
+            snake_drawn_coordinates.add((y, x))
+            self.screen.addstr(y + self.game_offset[1], x + self.game_offset[0], block, self.snake_color)
 
         # Draw the apples
+        apple_drawn_coordinates = set()
         for apple in apples:
-            self.screen.addstr(
-                apple.coord.y + self.game_offset[1], apple.coord.x + self.game_offset[0], "█", self.apple_color
-            )
+            y = apple.coord.y // 2
+            x = apple.coord.x
+            if (y, x) in apple_drawn_coordinates:
+                block = "█"
+            else:
+                block = get_block(apple.coord.y)
+            if (y, x) in snake_drawn_coordinates:
+                color = self.apple_snake_color
+            else:
+                color = self.apple_color
+            apple_drawn_coordinates.add((y, x))
+            self.screen.addstr(y + self.game_offset[1], x + self.game_offset[0], block, color)
 
         # Clear the screen and display the grid
         self.screen.refresh()
@@ -79,6 +118,7 @@ class TextGame:
         self.screen.addstr(0, 0, f"Score: {score}")
 
     def _draw_border(self, width: int, height: int) -> None:
+        height //= 2
         gx, gy = self.game_offset
         for x in range(width):
             self.screen.addstr(gy - 1, x + gx, "─")

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from game.data.coordinate import Coordinate
 from game.data.direction import Direction
 from game.data.grid_object import GridObject
 
