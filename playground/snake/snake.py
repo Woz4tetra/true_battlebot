@@ -1,9 +1,7 @@
 import argparse
-import pickle
 from enum import Enum
 from pathlib import Path
 
-from game.data.direction import Direction
 from game.data.game_state import GameState
 from game.frontends.frontend_runner import FrontendRunner
 from game.frontends.frontend_tick_event import FrontendTickEvent

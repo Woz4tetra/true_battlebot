@@ -11,6 +11,7 @@ CHECK_DIRS=(
     "${PROJECT_DIR}/perception/training"
     "${PROJECT_DIR}/perception/scripts"
     "${PROJECT_DIR}/shared/bw_shared"
+    "${PROJECT_DIR}/playground/snake"
 )
 
 for dir in ${CHECK_DIRS[@]}; do
