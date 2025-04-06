@@ -1,12 +1,38 @@
+import pickle
 import random
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 import neat.config
+from game.data.game_state import GameState
 from game.snake_backend import SnakeBackend
+from player.ai_player import AiPlayer
+
+
+@dataclass
+class TrainingRun:
+    player: AiPlayer
+    genome: Any
+    snake_backend: SnakeBackend
+    state: GameState = GameState.RUNNING
+
+
+def all_running(runs: dict[int, TrainingRun]) -> bool:
+    """
+    Check if all training runs are still running.
+
+    Args:
+        runs (dict): A dictionary of training runs.
+
+    Returns:
+        bool: True if all runs are running, False otherwise.
+    """
+    return all(run.state == GameState.RUNNING for run in runs.values())
 
 
 def eval_genomes(genomes: list, config: neat.config.Config):
-    runs = []
+    runs: dict[int, TrainingRun] = {}
 
     for genome_id, genome in genomes:
         width = random.randint(10, 30)
@@ -21,7 +47,18 @@ def eval_genomes(genomes: list, config: neat.config.Config):
         # Create a SnakeBackend instance
         snake_backend = SnakeBackend(width=width, height=height)
 
-        runs.append((net, genome, snake_backend))
+        runs[genome_id] = TrainingRun(AiPlayer(net), genome, snake_backend)
+
+    while all_running(runs):
+        for genome_id, run in runs.items():
+            snake_backend = run.snake_backend
+            game = snake_backend.game
+
+            direction = run.player.get_direction(game)
+            state = snake_backend.step(direction)
+
+            run.genome.fitness = game.score
+            run.state = state
 
 
 def train(config_file: Path):
@@ -43,6 +80,11 @@ def train(config_file: Path):
 
     # show final stats
     print("\nBest genome:\n{!s}".format(winner))
+
+    # Save the winner.
+    with open("winner.pkl", "wb") as file:
+        pickle.dump(winner, file)
+        print("Winner genome saved to winner.pkl")
 
 
 if __name__ == "__main__":

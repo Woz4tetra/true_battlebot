@@ -1,9 +1,9 @@
-from enum import Enum, auto
+from enum import IntEnum
 
 from game.data.coordinate import Coordinate
 
 
-class Direction(Enum):
+class Direction(IntEnum):
     """
     An enumeration representing the possible directions of the snake's movement.
 
@@ -14,11 +14,11 @@ class Direction(Enum):
         RIGHT: Represents rightward movement.
     """
 
-    NONE = auto()
-    UP = auto()
-    DOWN = auto()
-    LEFT = auto()
-    RIGHT = auto()
+    NONE = 0
+    UP = 1
+    DOWN = 2
+    LEFT = 3
+    RIGHT = 4
 
     def as_coord(self) -> Coordinate:
         """

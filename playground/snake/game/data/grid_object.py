@@ -17,13 +17,6 @@ class GridObject:
 
     coord: Coordinate
 
-    @classmethod
-    def from_coords(cls, x: int, y: int) -> GridObject:
-        """
-        Create a GridObject from x and y coordinates.
-        """
-        return cls(coord=Coordinate(x, y))
-
     def __repr__(self) -> str:
         return f"GridObject(coord={self.coord})"
 

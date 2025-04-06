@@ -36,3 +36,15 @@ class Coordinate:
         if not isinstance(other, Coordinate):
             return NotImplemented
         return Coordinate(self.x - other.x, self.y - other.y)
+
+    def manhatten_distance(self, other: Coordinate) -> int:
+        """
+        Calculate the Manhattan distance between two coordinates.
+
+        Args:
+            other (Coordinate): The other coordinate to compare with.
+
+        Returns:
+            int: The Manhattan distance between the two coordinates.
+        """
+        return abs(self.x - other.x) + abs(self.y - other.y)
