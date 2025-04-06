@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any
 
 import neat.config
+from game.data.apple_collision_event import AppleCollisionEvent
 from game.data.game_state import GameState
 from game.snake_backend import SnakeBackend
 from player.ai_player import AiPlayer
@@ -51,13 +52,16 @@ def eval_genomes(genomes: list, config: neat.config.Config):
 
     while all_running(runs):
         for genome_id, run in runs.items():
+            if run.state != GameState.RUNNING:
+                continue
             snake_backend = run.snake_backend
             game = snake_backend.game
 
             direction = run.player.get_direction(game)
             state = snake_backend.step(direction)
+            delta_fitness = 0.1 if snake_backend.get_apple_collision() == AppleCollisionEvent.NONE else 10.0
 
-            run.genome.fitness = game.score
+            run.genome.fitness += delta_fitness
             run.state = state
 
 
