@@ -5,7 +5,7 @@ from dataclasses import dataclass
 @dataclass
 class RecoverFromDangerConfig:
     danger_fan_angle: float = 90.0  # degrees
-    velocity_threshold: float = 0.1
+    velocity_threshold: float = 0.1  # m/s
     reaction_time: float = 0.5  # seconds
 
     linear_tolerance: float = 0.35

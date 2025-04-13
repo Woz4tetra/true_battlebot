@@ -15,16 +15,14 @@ from visualization_msgs.msg import Marker, MarkerArray
 from bw_navigation.planners.engines.backaway_from_wall_engine import BackawayFromWallEngine
 from bw_navigation.planners.engines.config.pid_planner_config import PidPlannerConfig
 from bw_navigation.planners.engines.did_robot_move_engine import DidRobotMoveEngine
+from bw_navigation.planners.engines.main_bot_intent_engine import MainBotIntentEngine, MainBotIntentState
 from bw_navigation.planners.engines.recover_from_danger_engine import RecoverFromDangerEngine
 from bw_navigation.planners.engines.thrash_engine import ThrashEngine
 from bw_navigation.planners.planner_interface import PlannerInterface
 from bw_navigation.planners.shared.clamp_twist_with_config import clamp_twist_with_config
-from bw_navigation.planners.shared.compute_mirrored_goal import (
-    compute_mirrored_state,
-    overlay_friendly_twist,
-)
+from bw_navigation.planners.shared.compute_mirrored_goal import overlay_friendly_twist
 from bw_navigation.planners.shared.goal_progress import GoalProgress, compute_feedback_distance
-from bw_navigation.planners.shared.is_in_bounds import is_controlled_bot_in_bounds, is_goal_in_bounds
+from bw_navigation.planners.shared.is_in_bounds import is_controlled_bot_in_bounds
 from bw_navigation.planners.shared.marker_utils import make_pose_marker, make_text_marker
 from bw_navigation.planners.shared.match_state import MatchState
 
@@ -50,6 +48,7 @@ class PidPlanner(PlannerInterface):
         self.thrash_recover_engine = ThrashEngine(self.config.thrash_recovery)
         self.did_robot_move_engine = DidRobotMoveEngine(self.config.did_move)
         self.recover_from_engine = RecoverFromDangerEngine(self.config.recover_from_danger)
+        self.main_bot_intent_engine = MainBotIntentEngine(self.config.main_bot_intent)
         self.linear_pid = PID(self.config.linear_pid)
         self.angular_pid = PID(self.config.angular_pid)
 
@@ -82,14 +81,14 @@ class PidPlanner(PlannerInterface):
             friendly_robot_name=self.friendly_robot_name,
             avoid_robot_names=self.avoid_robot_names,
         )
-        if goal_strategy == GoalStrategy.MIRROR_FRIENDLY:
-            match_state = compute_mirrored_state(self.buffer_xy, match_state)
-            # if is_goal_in_bounds(self.buffer_xy, mirrored_match_state):
-            #     match_state = mirrored_match_state
 
         goal_progress = GoalProgress(is_done=False)
         twist = Twist()
         markers: list[Marker] = []
+
+        if self.main_bot_intent_engine.compute_intent(match_state) == MainBotIntentState.ATTACKING:
+            pass
+        markers.extend(self.main_bot_intent_engine.get_markers())
 
         is_in_tolerance = match_state.distance_to_goal < xy_tolerance
         did_move = self.did_robot_move_engine.did_move(match_state.controlled_robot_pose_stamped)

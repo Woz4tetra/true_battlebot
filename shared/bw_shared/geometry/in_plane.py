@@ -152,6 +152,18 @@ def bound_to_segments(bounds: FieldBounds2D) -> list[np.ndarray]:
     ]
 
 
+def bound_to_points(bounds: FieldBounds2D) -> list[np.ndarray]:
+    """
+    Converts the field bounds into point corners.
+    """
+    return [
+        np.array([bounds[0].x, bounds[0].y]),
+        np.array([bounds[1].x, bounds[0].y]),
+        np.array([bounds[1].x, bounds[1].y]),
+        np.array([bounds[0].x, bounds[1].y]),
+    ]
+
+
 def line_bounds_intersection(segment: np.ndarray, bounds: FieldBounds2D) -> list[np.ndarray]:
     """
     Calculates the intersection point between the segment and the field bounds.

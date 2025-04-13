@@ -3,6 +3,7 @@ from typing import Literal
 
 from bw_navigation.planners.engines.config.backaway_recover_config import BackawayRecoverConfig
 from bw_navigation.planners.engines.config.did_robot_move_config import DidRobotMoveConfig
+from bw_navigation.planners.engines.config.main_bot_intent_config import MainBotIntentConfig
 from bw_navigation.planners.engines.config.overlay_velocity_config import OverlayVelocityConfig
 from bw_navigation.planners.engines.config.recover_from_danger_config import (
     RecoverFromDangerConfig,
@@ -26,6 +27,7 @@ class PidPlannerConfig:
     angular_pid: PidConfig = field(default_factory=lambda: PidConfig(kp=3.0, ki=0.0, kd=0.0, kf=1.0))
     recover_from_danger: RecoverFromDangerConfig = field(default_factory=RecoverFromDangerConfig)
     overlay_velocity: OverlayVelocityConfig = field(default_factory=OverlayVelocityConfig)
+    main_bot_intent: MainBotIntentConfig = field(default_factory=MainBotIntentConfig)
 
     @property
     def max_angular_velocity(self) -> float:
