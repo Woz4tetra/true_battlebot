@@ -4,13 +4,8 @@ set -e
 
 BASE_DIR=$(realpath "$(dirname "${0}")")
 
-sudo apt-get update
 sudo rosdep init
-rosdep_update () {
-    rosdep update
-}
-export -f rosdep_update
-retry 10 rosdep_update
+rosdep update
 
 mkdir -p ${BASE_ROS_WS_ROOT}/src
 cd ${BASE_ROS_WS_ROOT}
@@ -27,17 +22,9 @@ git clone https://github.com/ros-infrastructure/rospkg.git -b 1.5.0
 cd rospkg
 python setup.py install --user
 
-rosdep_install_dependencies() {
-    cd ${BASE_ROS_WS_ROOT}
-    rosdep install --from-paths src --ignore-src --rosdistro=${ROS_DISTRO} -y -r || true
-}
-export -f rosdep_install_dependencies
-retry 10 rosdep_install_dependencies
-
 cd ${BASE_ROS_WS_ROOT}
+rosdep install --from-paths src --ignore-src --rosdistro=${ROS_DISTRO} -y -r || true
 
 ./src/catkin/bin/catkin_make install -DCMAKE_BUILD_TYPE=Release -DSETUPTOOLS_DEB_LAYOUT=OFF -DPYTHON_EXECUTABLE=/usr/bin/python
-
-cp -rf ./src/catkin/bin/* ./install/bin/
 
 echo "Installed ROS"

@@ -9,7 +9,7 @@ sudo apt-get update
 sudo apt-get install -y llvm-${LLVM_VERSION}*
 sudo ln -s /usr/lib/llvm-${LLVM_VERSION}/bin/llvm-config /usr/bin
 
-sudo python -m pip install --no-cache-dir --upgrade pip setuptools
+sudo python -m pip install --no-cache-dir --upgrade pip==24.2 setuptools==75.2.0
 sudo python -m pip install --no-cache-dir -r ${BASE_DIR}/requirements.txt
 
 echo "Installed python dependencies"

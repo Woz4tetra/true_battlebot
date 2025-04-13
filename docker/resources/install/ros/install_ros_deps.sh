@@ -32,8 +32,7 @@ sudo apt-get install -y \
     libsuitesparse-dev \
     python3-termcolor \
     libceres-dev \
-    libgeos-dev \
-    python3-catkin
+    libgeos-dev
 
 sudo -H python -m pip install -U rosdep rosinstall_generator vcstool
 

@@ -11901,7 +11901,7 @@ ArticulationBody:
     driveType: 0
   m_LinearDamping: 0
   m_AngularDamping: 0
-  m_JointFriction: 0
+  m_JointFriction: 1
   m_CenterOfMass: {x: 0, y: 0, z: 0}
   m_InertiaTensor: {x: 0.0001386477, y: 0.0001386477, z: 0.0001743525}
   m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
@@ -19950,6 +19950,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7e4961b0a573f1cd0a9ef87897ff0a5f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  matchAngleDistanceThreshold: 0.01
   linearPIDConfig:
     kp: 2
     ki: 0
