@@ -1,9 +1,10 @@
 import time
 from dataclasses import dataclass, field
 
+import numpy as np
 import rospy
 from bw_interfaces.msg import EstimatedObjectArray
-from bw_shared.enums.label import FRIENDLY_ROBOT_GROUP, ModelLabel
+from bw_shared.enums.label import FRIENDLY_ROBOT_GROUP
 from bw_shared.geometry.pose2d import Pose2D
 from bw_shared.geometry.pose2d_stamped import Pose2DStamped
 from bw_shared.messages.header import Header
@@ -34,15 +35,16 @@ def process_robots(msg: EstimatedObjectArray, app_data: AppData) -> None:
     for robot in msg.robots:
         if robot.label not in FRIENDLY_ROBOT_GROUP:
             continue
-        if robot.header.stamp.to_sec() < app_data.sim_start_time:
+        stamp = robot.header.stamp.to_sec()
+        if stamp < app_data.sim_start_time:
             continue
         pose = Pose2D.from_msg(robot.pose.pose)
-        app_data.poses.append(Pose2DStamped(header=Header.from_msg(robot.header), pose=pose))
+        app_data.poses.append(Pose2DStamped(header=Header.auto(stamp=stamp - app_data.sim_start_time), pose=pose))
 
 
 def main() -> None:
     duration = 3.0
-    time_scale = 10.0
+    time_scale = 20.0
 
     initialize()
     uri = wait_for_ros_connection()
@@ -76,18 +78,28 @@ def main() -> None:
     )
 
     ground_truth_subscriber = RosPollSubscriber("/ground_truth/robots", EstimatedObjectArray, queue_size=50)
-    simulation_controller.configure_simulation(simulation_config)
-    app_data.sim_start_time = time.time()
+    for _ in range(10):
+        t0 = time.perf_counter()
+        simulation_controller.configure_simulation(simulation_config)
+        app_data.sim_start_time = time.time()
+        t1 = time.perf_counter()
 
-    for timer in simulation_controller.wait_for_timer(duration / time_scale):
-        msgs = ground_truth_subscriber.receive_all()
-        for msg in msgs:
-            process_robots(msg, app_data)
+        for timer in simulation_controller.wait_for_timer(duration / time_scale):
+            msgs = ground_truth_subscriber.receive_all()
+            for msg in msgs:
+                process_robots(msg, app_data)
+        t2 = time.perf_counter()
+        print(f"Setup took {t1 - t0:.2f} seconds")
+        print(f"Simulation took {t2 - t1:.2f} seconds, received {len(app_data.poses)} poses")
     ground_truth_subscriber.unregister()
 
-    times = [pose.header.stamp for pose in app_data.poses]
-    xs = [pose.pose.x for pose in app_data.poses]
-    thetas = [pose.pose.theta for pose in app_data.poses]
+    print(f"Simulation finished. {len(app_data.poses)} poses received.")
+    times = np.array([pose.header.stamp for pose in app_data.poses])
+    times = times - times[0]
+    xs = np.array([pose.pose.x for pose in app_data.poses])
+    # ys = np.array([pose.pose.y for pose in app_data.poses])
+    thetas = np.array([pose.pose.theta for pose in app_data.poses])
+
     fig, subplots = plt.subplots(2, 1, sharex=True)
     subplots[0].plot(times, xs, ".")
     subplots[0].set_title("X position of the robot")
