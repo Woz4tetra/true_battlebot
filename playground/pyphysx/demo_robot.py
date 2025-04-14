@@ -61,7 +61,12 @@ def main() -> None:
             "wheel_back_right_joint",
             "wheel_front_right_joint",
         ]
-        scene = Scene()
+        scene = Scene(
+            # scene_flags=[SceneFlag.ENABLE_PCM, SceneFlag.ENABLE_GPU_DYNAMICS, SceneFlag.ENABLE_STABILIZATION],
+            # broad_phase_type=BroadPhaseType.GPU,
+            # gpu_max_num_partitions=8,
+            # gpu_dynamic_allocation_scale=8.0,
+        )
 
         robot = URDFRobot("main_bot.urdf", kinematic=False)
         joints = left_joints + right_joints
@@ -87,7 +92,7 @@ def main() -> None:
         plane = RigidStatic.create_plane(material=Material(static_friction=1.0, dynamic_friction=1.0, restitution=0.0))
         scene.add_actor(plane)
 
-        rate = Rate(120)
+        rate = Rate(240)
         period = rate.period()
 
         twist = Twist2D(x=1.0, y=0.0, theta=2 * np.pi)
@@ -109,8 +114,8 @@ def main() -> None:
         current_time = 0.0
 
         t1 = time.perf_counter()
-        while current_time < 0.8:
-            if 0.2 < current_time < 0.7:
+        while current_time < 3.0:
+            if 1.0 < current_time < 2.0:
                 for joint_name in left_joints:
                     wheel_velocity = (twist.x - twist.theta * base_radius) / wheel_radius
                     robot.movable_joints[joint_name].set_joint_velocity(-1 * wheel_velocity)
