@@ -13,16 +13,16 @@ namespace RosMessageTypes.BwInterfaces
         public const string k_RosMessageName = "bw_interfaces/ConfigureSimulation";
         public override string RosMessageName => k_RosMessageName;
 
-        public SimulationConfigMsg scenario;
-        public SimulationConfigMsg[] objectives;
+        public ScenarioConfigMsg scenario;
+        public ObjectiveConfigMsg[] objectives;
 
         public ConfigureSimulationMsg()
         {
-            this.scenario = new SimulationConfigMsg();
-            this.objectives = new SimulationConfigMsg[0];
+            this.scenario = new ScenarioConfigMsg();
+            this.objectives = new ObjectiveConfigMsg[0];
         }
 
-        public ConfigureSimulationMsg(SimulationConfigMsg scenario, SimulationConfigMsg[] objectives)
+        public ConfigureSimulationMsg(ScenarioConfigMsg scenario, ObjectiveConfigMsg[] objectives)
         {
             this.scenario = scenario;
             this.objectives = objectives;
@@ -32,8 +32,8 @@ namespace RosMessageTypes.BwInterfaces
 
         private ConfigureSimulationMsg(MessageDeserializer deserializer)
         {
-            this.scenario = SimulationConfigMsg.Deserialize(deserializer);
-            deserializer.Read(out this.objectives, SimulationConfigMsg.Deserialize, deserializer.ReadLength());
+            this.scenario = ScenarioConfigMsg.Deserialize(deserializer);
+            deserializer.Read(out this.objectives, ObjectiveConfigMsg.Deserialize, deserializer.ReadLength());
         }
 
         public override void SerializeTo(MessageSerializer serializer)

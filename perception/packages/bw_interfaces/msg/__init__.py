@@ -24,11 +24,12 @@ from ._Labels import *
 from ._MotorCharacterizationSample import *
 from ._MotorCharacterizationSampleArray import *
 from ._MotorVelocities import *
+from ._ObjectiveConfig import *
 from ._RobotConfigMsg import *
 from ._RobotFleetConfigMsg import *
+from ._ScenarioConfig import *
 from ._SegmentationInstance import *
 from ._SegmentationInstanceArray import *
-from ._SimulationConfig import *
 from ._SimulationObjectiveProgress import *
 from ._SimulationScenarioLoadedEvent import *
 from ._SystemSummary import *

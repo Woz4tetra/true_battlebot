@@ -8,29 +8,29 @@ using Unity.Robotics.ROSTCPConnector.MessageGeneration;
 namespace RosMessageTypes.BwInterfaces
 {
     [Serializable]
-    public class SimulationConfigMsg : Message
+    public class ScenarioConfigMsg : Message
     {
-        public const string k_RosMessageName = "bw_interfaces/SimulationConfig";
+        public const string k_RosMessageName = "bw_interfaces/ScenarioConfig";
         public override string RosMessageName => k_RosMessageName;
 
         public string name;
         public string json_data;
 
-        public SimulationConfigMsg()
+        public ScenarioConfigMsg()
         {
             this.name = "";
             this.json_data = "";
         }
 
-        public SimulationConfigMsg(string name, string json_data)
+        public ScenarioConfigMsg(string name, string json_data)
         {
             this.name = name;
             this.json_data = json_data;
         }
 
-        public static SimulationConfigMsg Deserialize(MessageDeserializer deserializer) => new SimulationConfigMsg(deserializer);
+        public static ScenarioConfigMsg Deserialize(MessageDeserializer deserializer) => new ScenarioConfigMsg(deserializer);
 
-        private SimulationConfigMsg(MessageDeserializer deserializer)
+        private ScenarioConfigMsg(MessageDeserializer deserializer)
         {
             deserializer.Read(out this.name);
             deserializer.Read(out this.json_data);
@@ -44,7 +44,7 @@ namespace RosMessageTypes.BwInterfaces
 
         public override string ToString()
         {
-            return "SimulationConfigMsg: " +
+            return "ScenarioConfigMsg: " +
             "\nname: " + name.ToString() +
             "\njson_data: " + json_data.ToString();
         }

@@ -97,7 +97,7 @@ public class ImageSynthesis : MonoBehaviour
     {
         mainCamera = GetComponent<Camera>();
         frame = ObjectUtils.GetComponentInTree<TransformFrame>(gameObject);
-        Renderer[] renderers = FindObjectsOfType<Renderer>();
+        Renderer[] renderers = FindObjectsByType<Renderer>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
 
         ros = ROSConnection.GetOrCreateInstance();
         List<CapturePass> passes = new List<CapturePass>();
@@ -236,7 +236,7 @@ public class ImageSynthesis : MonoBehaviour
 
     void LateUpdate()
     {
-        Renderer[] renderers = FindObjectsOfType<Renderer>();
+        Renderer[] renderers = FindObjectsByType<Renderer>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
 
         // OnCameraChange();   // don't change camera parameters at run time
         if (DidSceneChange(renderers))

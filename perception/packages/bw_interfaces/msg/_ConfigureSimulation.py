@@ -7,25 +7,31 @@ from typing import List, Tuple, Optional
 python3 = True if sys.hexversion > 0x03000000 else False
 import struct
 import genpy
-from bw_interfaces.msg._SimulationConfig import SimulationConfig as bw_interfaces_msg_SimulationConfig
+from bw_interfaces.msg._ObjectiveConfig import ObjectiveConfig as bw_interfaces_msg_ObjectiveConfig
+from bw_interfaces.msg._ScenarioConfig import ScenarioConfig as bw_interfaces_msg_ScenarioConfig
 
 class ConfigureSimulation(genpy.Message):
   _md5sum: str = "01da5b2d9068c99fdcb16dab6ba1dd31"
   _type: str = "bw_interfaces/ConfigureSimulation"
   _has_header: bool = False  # flag to mark the presence of a Header object
-  _full_text: str = """bw_interfaces/SimulationConfig scenario
-bw_interfaces/SimulationConfig[] objectives
+  _full_text: str = """bw_interfaces/ScenarioConfig scenario
+bw_interfaces/ObjectiveConfig[] objectives
 
 ================================================================================
-MSG: bw_interfaces/SimulationConfig
+MSG: bw_interfaces/ScenarioConfig
+string name
+string json_data
+
+================================================================================
+MSG: bw_interfaces/ObjectiveConfig
 string name
 string json_data
 """
   __slots__: List[str] = ['scenario','objectives']
-  _slot_types: List[str] = ['bw_interfaces/SimulationConfig','bw_interfaces/SimulationConfig[]']
+  _slot_types: List[str] = ['bw_interfaces/ScenarioConfig','bw_interfaces/ObjectiveConfig[]']
 
-  def __init__(self, scenario: bw_interfaces_msg_SimulationConfig = None,
-    objectives: List[bw_interfaces_msg_SimulationConfig] = None):
+  def __init__(self, scenario: bw_interfaces_msg_ScenarioConfig = None,
+    objectives: List[bw_interfaces_msg_ObjectiveConfig] = None):
     """
     Constructor. Any message fields that are implicitly/explicitly
     set to None will be assigned a default value. The recommend
@@ -41,11 +47,11 @@ string json_data
     """
     super(ConfigureSimulation, self).__init__(**{'scenario': scenario, 'objectives': objectives})
     if self.scenario is None:
-      self.scenario: bw_interfaces_msg_SimulationConfig = bw_interfaces_msg_SimulationConfig()
+      self.scenario: bw_interfaces_msg_ScenarioConfig = bw_interfaces_msg_ScenarioConfig()
     else:
       self.scenario = scenario
     if self.objectives is None:
-      self.objectives: List[bw_interfaces_msg_SimulationConfig] = []
+      self.objectives: List[bw_interfaces_msg_ObjectiveConfig] = []
     else:
       self.objectives = objectives
 
@@ -100,7 +106,7 @@ string json_data
       codecs.lookup_error("rosmsg").msg_type = self._type
     try:
       if self.scenario is None:
-        self.scenario = bw_interfaces_msg_SimulationConfig()
+        self.scenario = bw_interfaces_msg_ScenarioConfig()
       if self.objectives is None:
         self.objectives = None
       end = 0
@@ -127,7 +133,7 @@ string json_data
       (length,) = _struct_I.unpack(bytes_[start:end])
       self.objectives = []
       for i in range(0, length):
-        val1 = bw_interfaces_msg_SimulationConfig()
+        val1 = bw_interfaces_msg_ObjectiveConfig()
         start = end
         end += 4
         (length,) = _struct_I.unpack(bytes_[start:end])
@@ -199,7 +205,7 @@ string json_data
       codecs.lookup_error("rosmsg").msg_type = self._type
     try:
       if self.scenario is None:
-        self.scenario = bw_interfaces_msg_SimulationConfig()
+        self.scenario = bw_interfaces_msg_ScenarioConfig()
       if self.objectives is None:
         self.objectives = None
       end = 0
@@ -226,7 +232,7 @@ string json_data
       (length,) = _struct_I.unpack(bytes_[start:end])
       self.objectives = []
       for i in range(0, length):
-        val1 = bw_interfaces_msg_SimulationConfig()
+        val1 = bw_interfaces_msg_ObjectiveConfig()
         start = end
         end += 4
         (length,) = _struct_I.unpack(bytes_[start:end])

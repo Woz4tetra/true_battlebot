@@ -6,7 +6,7 @@ public abstract class BaseRectangleSensor : BaseGameObjectSensor
 {
     override protected void PublishTargets()
     {
-        RectangleTarget[] tags = FindObjectsOfType<RectangleTarget>();
+        RectangleTarget[] tags = FindObjectsByType<RectangleTarget>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
         VisibleTarget[] targets = ProcessObjects(tags);
         TargetsCallback(targets);
     }

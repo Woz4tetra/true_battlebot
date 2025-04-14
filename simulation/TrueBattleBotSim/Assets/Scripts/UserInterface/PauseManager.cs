@@ -6,10 +6,16 @@ public class PauseManager : MonoBehaviour
     [SerializeField] float spamCooldown = 0.2f;
 
     float lastSetTime = float.NegativeInfinity;
+    float configTimeScale = 1.0f;
 
     public bool IsPaused()
     {
         return isPaused;
+    }
+
+    public void SetTimeScale(float timeScale)
+    {
+        configTimeScale = timeScale;
     }
 
     public bool SetPause(bool paused)
@@ -23,7 +29,7 @@ public class PauseManager : MonoBehaviour
         lastSetTime = now;
         Debug.Log($"Set pause to {paused}");
         isPaused = paused;
-        Time.timeScale = paused ? 0 : 1;
+        Time.timeScale = paused ? 0.0f : configTimeScale;
         return true;
     }
 }

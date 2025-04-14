@@ -8,4 +8,5 @@ public interface ControllerInterface
     OdometryMsg GetGroundTruth();
     void Reset();
     bool IsUpsideDown();
+    string GetName();
 }

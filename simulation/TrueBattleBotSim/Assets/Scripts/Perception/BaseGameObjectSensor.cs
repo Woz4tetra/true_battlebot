@@ -3,7 +3,7 @@ using Unity.Robotics.ROSTCPConnector;
 using MathExtensions;
 using System.Collections.Generic;
 
-[RequireComponent(typeof(Camera))]
+[RequireComponent(typeof(TransformFrame))]
 public abstract class BaseGameObjectSensor : MonoBehaviour
 {
     public class TrackedDebugRayCast
@@ -25,8 +25,8 @@ public abstract class BaseGameObjectSensor : MonoBehaviour
         }
     }
 
-    protected TransformFrame frame;
-    private Camera cameraView;
+    [SerializeField] protected TransformFrame frame;
+    [SerializeField] private Camera cameraView;
     private uint sentMessageCount = 0;
     private float rayCastOffset = 0.01f;  // Avoids raycast colliding with the camera
     protected ROSConnection ros;
@@ -37,6 +37,7 @@ public abstract class BaseGameObjectSensor : MonoBehaviour
     [SerializeField] private float viewAngleThreshold = 70.0f;
     [SerializeField] private bool debugVisibilityReason = false;
     private float prevPublishTime = 0.0f;
+    [SerializeField] private bool useCameraView = true;
 
     private Dictionary<string, TrackedDebugRayCast> debugRayCasts = new Dictionary<string, TrackedDebugRayCast>();
 
@@ -46,6 +47,11 @@ public abstract class BaseGameObjectSensor : MonoBehaviour
         ros = ROSConnection.GetOrCreateInstance();
         frame = ObjectUtils.GetComponentInTree<TransformFrame>(gameObject);
         cameraView = GetComponent<Camera>();
+        if (cameraView == null)
+        {
+            Debug.LogWarning($"No camera found on {gameObject.name}. Always returning true for visibility.");
+            useCameraView = false;
+        }
 
         BaseGameObjectSensorStart();
     }
@@ -93,6 +99,10 @@ public abstract class BaseGameObjectSensor : MonoBehaviour
 
     protected bool IsVisible(GameObject obj, Bounds bounds)
     {
+        if (!useCameraView)
+        {
+            return true;
+        }
         Plane[] planes = GeometryUtility.CalculateFrustumPlanes(cameraView);
         if (!GeometryUtility.TestPlanesAABB(planes, bounds))
         {

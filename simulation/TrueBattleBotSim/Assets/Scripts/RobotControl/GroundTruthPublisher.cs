@@ -6,7 +6,7 @@ using RosMessageTypes.Geometry;
 class GroundTruthPublisher : MonoBehaviour
 
 {
-    [SerializeField] private string baseTopic = "";
+    private string baseTopic = "";
     private ROSConnection ros;
     private ControllerInterface controller;
     RosTopicState groundTruthTopic;
@@ -14,6 +14,7 @@ class GroundTruthPublisher : MonoBehaviour
     public void Start()
     {
         controller = GetComponent<ControllerInterface>();
+        baseTopic = controller.GetName();
         ros = ROSConnection.GetOrCreateInstance();
         groundTruthTopic = ros.GetTopic(baseTopic + "/ground_truth");
         if (groundTruthTopic == null)

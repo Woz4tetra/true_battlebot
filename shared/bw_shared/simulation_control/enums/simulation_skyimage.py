@@ -2,6 +2,7 @@ from enum import Enum
 
 
 class SimulationSkyImage(Enum):
+    EMPTY = ""
     BEACH = "Beach"
     GARDEN = "Garden"
     GREENHOUSE = "Greenhouse"

@@ -12,8 +12,9 @@ from bw_shared.configs.shared_config import SharedConfig
 from bw_shared.enums.cage_model import CageModel
 from bw_shared.enums.label import ModelLabel
 from bw_shared.geometry.projection_math.project_object_to_uv import ProjectionError, project_object_to_front_back_uv
-from bw_shared.simulation_control.load_cage_model_sizes import load_cage_model_sizes
-from bw_shared.simulation_control.randomized.random_robot_grid import SceneSession, generate_random_robot_grid
+from bw_shared.simulation_control.enums.scenario_name import ScenarioName
+from bw_shared.simulation_control.objective_generators.random_robot_grid import generate_random_robot_grid
+from bw_shared.simulation_control.simulation_config_generator import SimulationConfigGenerator
 from bw_shared.simulation_control.simulation_controller import make_simulation_controller
 from image_geometry import PinholeCameraModel
 from perception_tools.inference.simulated_mask_to_contours import (
@@ -124,7 +125,7 @@ def main() -> None:
     parser.add_argument("-o", "--output_dir", type=str, default="output")
     args = parser.parse_args()
 
-    scenario_name = "image_synthesis"
+    scenario_name = ScenarioName.IMAGE_SYNTHESIS
 
     initialize()
     print()  # Start log on a fresh line
@@ -138,10 +139,10 @@ def main() -> None:
     if not output_dir.exists():
         output_dir.mkdir(parents=True)
 
-    scene_session = SceneSession()
     shared_config = SharedConfig.from_files()
+    sim_config_generator = SimulationConfigGenerator(shared_config)
     written_images = 0
-    cage_sizes = load_cage_model_sizes(shared_config.maps, [CageModel.DRIVE_TEST_BOX, CageModel.NHRL_3LB_CAGE])
+    selected_cages = [CageModel.DRIVE_TEST_BOX, CageModel.NHRL_3LB_CAGE]
 
     uri = wait_for_ros_connection()
     logger.info(f"Connected to ROS master at {uri}")
@@ -156,7 +157,9 @@ def main() -> None:
             # select number of robots and duration. Set camera pose.
             duration = random.uniform(1, 2)
 
-            simulation_config = generate_random_robot_grid(scenario_name, scene_session, cage_sizes, duration)
+            simulation_config = generate_random_robot_grid(
+                scenario_name, sim_config_generator, selected_cages, duration
+            )
             simulation_controller.configure_simulation(simulation_config)
 
             # wait for scenario to finish. Repeat.

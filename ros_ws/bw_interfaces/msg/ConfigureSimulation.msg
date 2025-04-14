@@ -1,2 +1,2 @@
-bw_interfaces/SimulationConfig scenario
-bw_interfaces/SimulationConfig[] objectives
+bw_interfaces/ScenarioConfig scenario
+bw_interfaces/ObjectiveConfig[] objectives

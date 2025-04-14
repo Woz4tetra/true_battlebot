@@ -258,6 +258,8 @@ public class MainSceneManager : MonoBehaviour
             );
         }
 
+        pauseManager.SetTimeScale(scenario.time_scale);
+
         fixturesManager.UpdateFromConfig(scenario.fixtures);
 
         physicsMaterialConfigurator.ResetMaterials();

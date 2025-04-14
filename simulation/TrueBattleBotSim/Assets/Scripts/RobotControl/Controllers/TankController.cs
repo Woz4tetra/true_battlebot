@@ -7,6 +7,7 @@ using MathExtensions;
 
 class TankController : MonoBehaviour, ControllerInterface
 {
+    [SerializeField] private string robotName = "";
     [SerializeField] private string parentFrame = "map";
     [SerializeField] private float baseWidth = 1.0f;
 
@@ -45,6 +46,11 @@ class TankController : MonoBehaviour, ControllerInterface
         frame = GetComponent<TransformFrame>();
 
         tf_spawnhere_from_body = Matrix4x4.TRS(spawnHere.localPosition, spawnHere.localRotation, Vector3.one);
+    }
+
+    public string GetName()
+    {
+        return robotName;
     }
 
     public void FixedUpdate()

@@ -15,7 +15,7 @@ public class RobotSensor : BaseGameObjectSensor
 
     override protected void PublishTargets()
     {
-        RobotTracker[] robot_trackers = FindObjectsOfType<RobotTracker>();
+        RobotTracker[] robot_trackers = FindObjectsByType<RobotTracker>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
         VisibleTarget[] targets = ProcessObjects(robot_trackers);
         EstimatedObjectArrayMsg msg = ConvertTargetsToRobots(targets);
         ros.Publish(topic, msg);

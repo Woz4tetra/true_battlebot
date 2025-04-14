@@ -1,14 +1,14 @@
 import random
 
 import numpy as np
-from bw_interfaces.msg import SimulationConfig
 from geometry_msgs.msg import Quaternion
 
 from bw_shared.enums.cage_model import CageModel
 from bw_shared.geometry.transform3d import Transform3D
-from bw_shared.simulation_control.camera_objective import make_camera_objective
 from bw_shared.simulation_control.compute_camera_pose import compute_camera_pose
-from bw_shared.simulation_control.make_objective import make_objective
+from bw_shared.simulation_control.configs.objective_config import ObjectiveConfig
+from bw_shared.simulation_control.configs.scenario_init_config import ScenarioInitConfig
+from bw_shared.simulation_control.enums.objective_name import ObjectiveName
 
 
 def get_random_camera_pose(cage_model: CageModel) -> Transform3D:
@@ -36,5 +36,5 @@ def get_random_camera_pose(cage_model: CageModel) -> Transform3D:
     return camera_pose
 
 
-def get_random_camera_objective(objective_name: str, cage_model: CageModel) -> SimulationConfig:
-    return make_objective(objective_name, make_camera_objective(get_random_camera_pose(cage_model)))
+def get_random_camera_objective(objective_name: ObjectiveName, cage_model: CageModel) -> ObjectiveConfig:
+    return ObjectiveConfig(objective_name, init=ScenarioInitConfig.from_transform(get_random_camera_pose(cage_model)))

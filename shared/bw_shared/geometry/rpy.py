@@ -71,6 +71,9 @@ class RPY(Tuple[float, float, float]):
         angles = euler_from_quaternion_core((quat.x, quat.y, quat.z, quat.w))
         return cls(angles)
 
+    def to_degrees(self) -> tuple[float, float, float]:
+        return tuple(np.rad2deg(self.to_array()))
+
     def __add__(self, other: Union[RPY, Tuple]) -> RPY:
         return RPY((self[0] + other[0], self[1] + other[1], self[2] + other[2]))
 

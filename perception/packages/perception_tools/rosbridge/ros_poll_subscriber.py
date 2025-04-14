@@ -1,5 +1,6 @@
 import logging
 from queue import Empty, Full, Queue
+from threading import Lock
 from typing import Any, Generic, Type, TypeVar
 
 import rospy
@@ -25,9 +26,24 @@ class RosPollSubscriber(Generic[T]):
         kwargs: dict[str, Any] = {"queue_size": queue_size}
         if buff_size is not None:
             kwargs["buff_size"] = buff_size
+        self.lock = Lock()
         self.subscriber = rospy.Subscriber(self.topic_name, msg_type, lambda msg: self._callback(msg), **kwargs)
 
     def receive(self) -> T | None:
+        # with self.lock:
+        return self._receive()
+
+    def receive_all(self) -> list[T]:
+        with self.lock:
+            return_val = []
+            while True:
+                msg = self._receive()
+                if msg is None:
+                    break
+                return_val.append(msg)
+            return return_val
+
+    def _receive(self) -> T | None:
         if self.queue_size != 1:
             return self._pop_message()
         return_val = self.last_value
@@ -35,22 +51,23 @@ class RosPollSubscriber(Generic[T]):
         return return_val
 
     def _callback(self, msg: T) -> None:
-        try:
-            if self.log and (len(self.exclude_filters) == 0 or self.topic_name not in self.exclude_filters):
-                self.logger.debug(f"{self.topic_name} received a message")
-            if self.queue_size == 1:
-                self.last_value = msg
-                return
+        with self.lock:
+            try:
+                if self.log and (len(self.exclude_filters) == 0 or self.topic_name not in self.exclude_filters):
+                    self.logger.debug(f"{self.topic_name} received a message")
+                if self.queue_size == 1:
+                    self.last_value = msg
+                    return
 
-            while True:
-                try:
-                    self.queue.put_nowait(msg)
-                    break
-                except Full:
-                    self.logger.debug(f"{self.topic_name} dropping a message from the queue")
-                    self._pop_message()
-        except BaseException as e:
-            self.logger.error(f"Error in callback for {self.topic_name}: {e}", exc_info=True)
+                while True:
+                    try:
+                        self.queue.put_nowait(msg)
+                        break
+                    except Full:
+                        self.logger.debug(f"{self.topic_name} dropping a message from the queue")
+                        self._pop_message()
+            except BaseException as e:
+                self.logger.error(f"Error in callback for {self.topic_name}: {e}", exc_info=True)
 
     def _pop_message(self) -> T | None:
         try:
