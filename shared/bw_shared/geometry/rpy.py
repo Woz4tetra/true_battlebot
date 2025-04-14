@@ -64,7 +64,7 @@ class RPY(Tuple[float, float, float]):
 
     @classmethod
     def from_degrees(cls, iterable: Iterable[float]) -> RPY:
-        return cls(np.deg2rad(np.array(iterable)))
+        return cls(np.deg2rad(np.array(iterable, dtype=np.float64)))
 
     @classmethod
     def from_quaternion(cls, quat: Quaternion) -> RPY:

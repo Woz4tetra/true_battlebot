@@ -16,3 +16,5 @@ livelossplot
 
 onnx
 onnxscript
+
+pyphysx @ git+https://github.com/Woz4tetra/pyphysx.git/@b0a9d6fc4cb0876aca09256dd0542af2235ba4d4

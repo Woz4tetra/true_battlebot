@@ -1,0 +1,131 @@
+<?xml version="1.0"?>
+<robot name="main_bot">
+    <material name="red">
+        <color rgba="1.0 0.0 0.0 1.0"/>
+    </material>
+    <material name="blue">
+        <color rgba="0.0 0.0 1.0 1.0"/>
+    </material>
+
+    <link name="base_link">
+        <inertial>
+            <origin xyz="-0.05798199 0 0" rpy="0 0 0" />
+            <mass value="1.000063"/>
+            <inertia ixx="0.004614136" ixy="0" ixz="0" iyy="0.007420513" iyz="0" izz="0.003253288" />
+        </inertial>
+        <visual>
+            <origin xyz="-0.04624488 0.0 0.0"/>
+            <geometry>
+                <box size="0.1620354 0.212 0.029"/>
+            </geometry>
+            <material name="red"/>
+        </visual>
+        <collision>
+            <origin xyz="-0.04624488 0.0 0.0"/>
+            <geometry>
+                <box size="0.1620354 0.212 0.029"/>
+            </geometry>
+        </collision>
+    </link>
+
+    <link name="wheel_front_left">
+        <inertial>
+            <mass value="0.02446162"/>
+            <inertia ixx="4.25606e-06" ixy="0" ixz="0" iyy="8.69638e-06" iyz="0" izz="8.69431e-06" />
+        </inertial>
+        <visual>
+            <geometry>
+                <sphere radius="0.02285709"/>
+            </geometry>
+            <material name="blue"/>
+        </visual>
+        <collision>
+            <geometry>
+                <sphere radius="0.02285709"/>
+            </geometry>
+        </collision>
+    </link>
+
+    <link name="wheel_back_left">
+        <inertial>
+            <mass value="0.02446162"/>
+            <inertia ixx="4.25606e-06" ixy="0" ixz="0" iyy="8.69638e-06" iyz="0" izz="8.69431e-06" />
+        </inertial>
+        <visual>
+            <geometry>
+                <sphere radius="0.02285709"/>
+            </geometry>
+            <material name="blue"/>
+        </visual>
+        <collision>
+            <geometry>
+                <sphere radius="0.02285709"/>
+            </geometry>
+        </collision>
+    </link>
+
+    <link name="wheel_back_right">
+        <inertial>
+            <mass value="0.02446162"/>
+            <inertia ixx="4.25606e-06" ixy="0" ixz="0" iyy="8.69638e-06" iyz="0" izz="8.69431e-06" />
+        </inertial>
+        <visual>
+            <geometry>
+                <sphere radius="0.02285709"/>
+            </geometry>
+            <material name="blue"/>
+        </visual>
+        <collision>
+            <geometry>
+                <sphere radius="0.02285709"/>
+            </geometry>
+        </collision>
+    </link>
+
+    <link name="wheel_front_right">
+        <inertial>
+            <mass value="0.02446162"/>
+            <inertia ixx="4.25606e-06" ixy="0" ixz="0" iyy="8.69638e-06" iyz="0" izz="8.69431e-06" />
+        </inertial>
+        <visual>
+            <geometry>
+                <sphere radius="0.02285709"/>
+            </geometry>
+            <material name="blue"/>
+        </visual>
+        <collision>
+            <geometry>
+                <sphere radius="0.02285709"/>
+            </geometry>
+        </collision>
+    </link>
+
+    <joint name="wheel_front_left_joint" type="revolute">
+        <parent link="base_link"/>
+        <child link="wheel_front_left"/>
+        <origin xyz="0.0 0.09205103 0.0" rpy="0 0 -1.570796"/>
+        <axis xyz="1 0 0"/>
+    </joint>
+
+    <joint name="wheel_back_left_joint" type="revolute">
+        <parent link="base_link"/>
+        <child link="wheel_back_left"/>
+        <origin xyz="-0.10922 0.09205103 0.0" rpy="0 0 -1.570796"/>
+        <axis xyz="1 0 0"/>
+    </joint>
+
+    <joint name="wheel_back_right_joint" type="revolute">
+        <parent link="base_link"/>
+        <child link="wheel_back_right"/>
+        <origin xyz="-0.10922 -0.09205103 0.0" rpy="0 0 -1.570796"/>
+        <axis xyz="1 0 0"/>
+    </joint>
+
+    <joint name="wheel_front_right_joint" type="revolute">
+        <parent link="base_link"/>
+        <child link="wheel_front_right"/>
+        <origin xyz="0.0 -0.09205103 0.0" rpy="0 0 -1.570796"/>
+        <axis xyz="1 0 0"/>
+    </joint>
+
+</robot>
