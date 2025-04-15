@@ -51,7 +51,7 @@ class GlobalFieldManager:
         self.expected_size = XYZ.from_size(map_config.size)
         self.extents_range = make_extents_range(self.expected_size, self.config.field_dims_buffer)
 
-        self.map_frame = self.config.map_frame
+        self.map_frame = self.config.map_frame.value
         self.cage_corner: CageCorner | None = None
         self.field_rotations = {
             CageCorner.BLUE_SIDE: Transform3D.from_position_and_rpy(Vector3(), RPY((0, 0, -math.pi / 2))),
@@ -64,7 +64,7 @@ class GlobalFieldManager:
         self.tf_broadcaster = tf_broadcaster
 
     def process_field(self, field: EstimatedObject) -> EstimatedObject | None:
-        tf_camera_from_relativemap = Transform3D.from_pose_msg(field.pose.pose).inverse()
+        tf_relativemap_from_camera = Transform3D.from_pose_msg(field.pose.pose).inverse()
 
         extents = XYZ.from_msg(field.size)
         passes = (not self.should_check_field_size) or self.extents_range[0] < extents < self.extents_range[1]
@@ -79,12 +79,12 @@ class GlobalFieldManager:
         relative_field.size = field.size
         relative_field.header = RosHeader(frame_id=field.child_frame_id, stamp=field.header.stamp)
         relative_field.child_frame_id = field.header.frame_id
-        relative_field.pose.pose = tf_camera_from_relativemap.to_pose_msg()
+        relative_field.pose.pose = tf_relativemap_from_camera.to_pose_msg()
         relative_field.label = Label.FIELD.value
 
         tf_map_from_relativemap = self.get_cage_aligned_transform()
         aligned_field = copy.deepcopy(relative_field)
-        aligned_field.pose.pose = tf_map_from_relativemap.transform_by(tf_camera_from_relativemap).to_pose_msg()
+        aligned_field.pose.pose = tf_map_from_relativemap.forward_by(tf_relativemap_from_camera).to_pose_msg()
         aligned_field.header.frame_id = self.map_frame
 
         self.logger.info("Publishing field")

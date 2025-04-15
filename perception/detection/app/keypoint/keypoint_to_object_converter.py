@@ -1,3 +1,4 @@
+import copy
 import logging
 
 import numpy as np
@@ -146,7 +147,7 @@ class KeypointToObjectConverter:
             return -1
 
     def _get_pose_from_points(self, front_point: np.ndarray, back_point: np.ndarray) -> Transform3D | None:
-        origin_vec = np.array([1.0, 0.0, 0.0])
+        origin_vec = np.array([-1.0, 0.0, 0.0])
 
         # Calculate the direction vector from front_point to back_point
 
@@ -226,7 +227,7 @@ class KeypointToObjectConverter:
             self.text_marker_scale,
             self.text_marker_color,
         )
-        text_marker.pose = robot_msg.pose.pose
+        text_marker.pose = copy.deepcopy(robot_msg.pose.pose)
         text_marker.pose.position.y -= 0.1
         text_marker.pose.position.z -= 0.1
         text_marker.text = f"{robot_msg.label}_{object_index}"
