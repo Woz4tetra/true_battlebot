@@ -5,6 +5,7 @@ import numpy as np
 import open3d
 from app.field_label.click_state import ClickState
 from bw_interfaces.msg import EstimatedObject
+from bw_shared.enums.frame_id import FrameId
 from bw_shared.enums.label import Label
 from bw_shared.geometry.projection_math.find_nearest_point_to_ray import find_nearest_point_to_ray
 from bw_shared.geometry.projection_math.points_transform import points_transform_by
@@ -140,7 +141,7 @@ class FieldLabelState:
         plane_transform, plane_extents = compute_field_estimate(plane_center, plane_normal, self.cloud_extent_points)
         self.field_estimate = EstimatedObject()
         self.field_estimate.header = cloud.header.to_msg()
-        self.field_estimate.child_frame_id = "map_relative"
+        self.field_estimate.child_frame_id = FrameId.MAP_RELATIVE.value
         self.field_estimate.pose.pose = plane_transform.to_pose_msg()
         self.field_estimate.size = plane_extents.to_msg()
         self.field_estimate.label = Label.FIELD.value

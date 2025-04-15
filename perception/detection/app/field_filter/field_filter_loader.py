@@ -1,5 +1,8 @@
+import bw_interfaces.msg as bw_interfaces
+import tf2_ros
 from app.config.config import Config
 from app.config.field_filter.field_filter_types import FieldFilterConfig
+from app.config.field_filter.global_field_manager_config import GlobalFieldManagerConfig
 from app.config.field_filter.point_cloud_field_filter_config import (
     LeastSquaresPlaneSolverConfig,
     PointCloudFieldFilterConfig,
@@ -8,12 +11,15 @@ from app.config.field_filter.point_cloud_field_filter_config import (
 from app.config.field_filter.simulated_field_filter_config import SimulatedFieldFilterConfig
 from app.container import Container
 from app.field_filter.field_filter_interface import FieldFilterInterface
+from app.field_filter.global_field_manager import GlobalFieldManager
 from app.field_filter.point_cloud_field_filter import PointCloudFieldFilter
 from app.field_filter.simulated_field_filter import SimulatedFieldFilter
 from app.field_filter.solvers import LeastSquaresSolver, RansacPlaneSolver
 from app.field_filter.solvers.base_plane_solver import BasePlaneSolver
-from bw_interfaces.msg import EstimatedObject
+from bw_shared.configs.maps_config import MapConfig
 from perception_tools.rosbridge.ros_poll_subscriber import RosPollSubscriber
+from perception_tools.rosbridge.ros_publisher import RosPublisher
+from visualization_msgs.msg import MarkerArray
 
 
 def make_solver(field_filter_config: PointCloudFieldFilterConfig) -> BasePlaneSolver:
@@ -33,8 +39,26 @@ def load_field_filter(field_filter_config: FieldFilterConfig, container: Contain
     elif isinstance(field_filter_config, SimulatedFieldFilterConfig):
         config = container.resolve(Config)
         simulated_field_result_sub = RosPollSubscriber(
-            config.camera_topic.namespace + "/simulated_field_result", EstimatedObject
+            config.camera_topic.namespace + "/simulated_field_result", bw_interfaces.EstimatedObject
         )
         return SimulatedFieldFilter(field_filter_config, simulated_field_result_sub)
     else:
         raise ValueError(f"Invalid field filter type: {type(field_filter_config)}")
+
+
+def load_global_field_manager(config: GlobalFieldManagerConfig, container: Container) -> GlobalFieldManager:
+    map_config = container.resolve(MapConfig)
+    set_corner_side_sub = RosPollSubscriber("/set_cage_corner", bw_interfaces.CageCorner)
+    estimated_field_pub = RosPublisher("/filter/field", bw_interfaces.EstimatedObject, latch=True)
+    tf_broadcaster = container.resolve(tf2_ros.StaticTransformBroadcaster)
+    estimated_field_marker_pub = RosPublisher("/filter/field/marker", MarkerArray, latch=True)
+    latched_corner_pub = RosPublisher("/cage_corner", bw_interfaces.CageCorner, latch=True)
+    return GlobalFieldManager(
+        config,
+        map_config=map_config,
+        set_corner_side_sub=set_corner_side_sub,
+        estimated_field_pub=estimated_field_pub,
+        estimated_field_marker_pub=estimated_field_marker_pub,
+        tf_broadcaster=tf_broadcaster,
+        latched_corner_pub=latched_corner_pub,
+    )

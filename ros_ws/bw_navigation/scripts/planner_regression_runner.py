@@ -9,11 +9,11 @@ import rospy
 from actionlib import SimpleActionClient
 from bw_interfaces.msg import CageCorner as RosCageCorner
 from bw_interfaces.msg import ConfigureSimulation, GoToGoalAction, GoToGoalFeedback, GoToGoalGoal, Trajectory
+from bw_shared.enums.cage_corner import CageCorner
 from bw_shared.geometry.pose2d import Pose2D
 from bw_shared.pid.config import PidConfig
 from bw_shared.simulation_control.make_objective import make_objective
 from bw_shared.simulation_control.simulation_controller import SimulationController, make_simulation_controller
-from bw_tools.messages.cage_corner import CageCorner
 from bw_tools.messages.goal_strategy import GoalStrategy
 from bw_tools.messages.goal_type import GoalType
 from geometry_msgs.msg import PoseStamped, Twist, TwistStamped

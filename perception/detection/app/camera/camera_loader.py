@@ -84,7 +84,7 @@ def make_svo_camera(camera_config: SvoPlaybackCameraConfig, container: Container
 
     bag_topics = {
         "/set_cage_corner": CageCorner,
-        "/manual_plane_request": Empty,
+        "/field_request": Empty,
         "/camera_1/camera_info": CameraInfo,
         "/camera_1/image_rect": Image,
         "/camera_1/image_rect/compressed": CompressedImage,

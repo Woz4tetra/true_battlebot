@@ -77,7 +77,7 @@ function initRobotModePublisher() {
 function initRequestFieldPublisher() {
     requestFieldPub = new ROSLIB.Topic({
         ros: ros,
-        name: "/manual_plane_request",
+        name: "/field_request",
         messageType: "std_msgs/Empty",
     });
     requestFieldPub.advertise();

@@ -8,6 +8,7 @@ from app.config.camera.noop_camera_config import NoopCameraConfig
 from app.config.camera_topic_config import CameraTopicConfig
 from app.config.field_filter.field_filter_types import FieldFilterConfig
 from app.config.field_filter.field_request_config import FieldRequestConfig
+from app.config.field_filter.global_field_manager_config import GlobalFieldManagerConfig
 from app.config.field_filter.point_cloud_field_filter_config import PointCloudFieldFilterConfig
 from app.config.keypoint_config.keypoint_types import KeypointConfig, YoloKeypointConfig
 from app.config.ros_config import RosConfig
@@ -26,6 +27,7 @@ class Config:
     field_segmentation: SegmentationConfig = field(default_factory=SemanticSegmentationConfig)
     robot_keypoint: KeypointConfig = field(default_factory=YoloKeypointConfig)
     field_filter: FieldFilterConfig = field(default_factory=PointCloudFieldFilterConfig)
+    global_field_manager: GlobalFieldManagerConfig = field(default_factory=GlobalFieldManagerConfig)
     field_request: FieldRequestConfig = field(default_factory=FieldRequestConfig)
 
     @classmethod

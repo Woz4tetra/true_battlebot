@@ -6,6 +6,7 @@ from app.field_filter.field_filter_interface import FieldFilterInterface
 from app.field_filter.helpers import get_field
 from app.field_filter.solvers.base_plane_solver import BasePlaneSolver
 from bw_interfaces.msg import EstimatedObject, SegmentationInstanceArray
+from bw_shared.enums.frame_id import FrameId
 from bw_shared.geometry.projection_math.find_minimum_rectangle import (
     find_minimum_rectangle,
     get_rectangle_angle,
@@ -100,7 +101,7 @@ class PointCloudFieldFilter(FieldFilterInterface):
 
         estimated_field = EstimatedObject(
             header=segmentations.header,
-            child_frame_id="map_relative",
+            child_frame_id=FrameId.MAP_RELATIVE.value,
             pose=PoseWithCovariance(pose=field_centered_plane.to_pose_msg()),
             size=Vector3(x=extents.x, y=extents.y, z=0.0),
             label=field.label,

@@ -7,6 +7,7 @@ from pstats import SortKey, Stats
 from typing import Protocol, cast
 
 import rospy
+import tf2_ros
 from app.camera.camera_interface import CameraInterface, CameraMode
 from app.camera.camera_loader import load_camera
 from app.config.config import Config
@@ -14,14 +15,15 @@ from app.config.config_loader import load_config
 from app.config.list_configs import get_config_path
 from app.container import Container
 from app.field_filter.field_filter_interface import FieldFilterInterface
-from app.field_filter.field_filter_loader import load_field_filter
+from app.field_filter.field_filter_loader import load_field_filter, load_global_field_manager
 from app.field_filter.field_request_handler import FieldRequestHandler
+from app.field_filter.global_field_manager import GlobalFieldManager
 from app.keypoint.keypoint_interface import KeypointInterface
 from app.keypoint.keypoint_loader import load_keypoint
 from app.profiling.context_timer import ContextTimer
 from app.segmentation.segmentation_interface import SegmentationInterface
 from app.segmentation.segmentation_loader import load_segmentation
-from bw_interfaces.msg import EstimatedObject, Heartbeat, KeypointInstanceArray, LabelMap, SegmentationInstanceArray
+from bw_interfaces.msg import Heartbeat, KeypointInstanceArray, LabelMap, SegmentationInstanceArray
 from bw_shared.configs.shared_config import SharedConfig
 from bw_shared.enums.field_type import FieldType
 from bw_shared.environment import get_map, get_robot
@@ -69,6 +71,7 @@ class Runner:
         self.robot_keypoint_publisher: RosPublisher[KeypointInstanceArray] = self.container.resolve_by_name(
             "robot_keypoint_publisher"
         )
+        self.global_field_manager = self.container.resolve(GlobalFieldManager)
         self.camera_data = CameraData()
         self.is_field_request_active = False
         self.prev_no_camera_warning_time = time.monotonic()
@@ -141,7 +144,7 @@ class Runner:
         if not field_result:
             self.logger.debug("No field result")
             return False
-        self.field_request_handler.send_response(field_result)
+        aligned_field = self.global_field_manager.process_field(field_result)
         if debug_image:
             self.logger.info("Publishing debug image")
             self.field_debug_image_publisher.publish(debug_image.to_msg())
@@ -184,6 +187,12 @@ def make_ros_comms(container: Container) -> None:
 
     heartbeat_publisher = RosPublisher("/perception/heartbeat", Heartbeat)
     container.register(heartbeat_publisher, "heartbeat_publisher")
+
+    static_broadcaster = tf2_ros.StaticTransformBroadcaster()
+    container.register(static_broadcaster)
+
+    tf_broadcaster = tf2_ros.TransformBroadcaster()
+    container.register(tf_broadcaster)
 
 
 def make_field_segmentation(container: Container) -> None:
@@ -232,6 +241,9 @@ def make_field_interface(container: Container) -> None:
     field_filter = load_field_filter(config.field_filter, container)
     container.register(field_filter, FieldFilterInterface)
 
+    global_field_manager = load_global_field_manager(config.global_field_manager, container)
+    container.register(global_field_manager, GlobalFieldManager)
+
     logger.info(f"Field filter: {type(field_filter)}")
 
 
@@ -243,9 +255,8 @@ def init_ros_node(container: Container) -> None:
 
 def make_field_request_handler(container: Container) -> None:
     config = container.resolve(Config)
-    request_subscriber = RosPollSubscriber("/perception/field/request", Empty)
-    response_publisher = RosPublisher("/perception/field/response", EstimatedObject)
-    field_request_handler = FieldRequestHandler(config.field_request, request_subscriber, response_publisher)
+    request_subscriber = RosPollSubscriber("/field_request", Empty)
+    field_request_handler = FieldRequestHandler(config.field_request, request_subscriber)
     container.register(field_request_handler)
 
 

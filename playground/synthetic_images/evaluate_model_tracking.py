@@ -69,7 +69,7 @@ def main() -> None:
     app = AppData()
     camera_ns = "/camera_0/"
     select_scenario_pub = rospy.Publisher("/simulation/scenario_selection", String, queue_size=1)
-    request_field_pub = rospy.Publisher("/manual_plane_request", Empty, queue_size=1)
+    request_field_pub = rospy.Publisher("/field_request", Empty, queue_size=1)
     rospy.Subscriber(
         "/filter/field",
         EstimatedObject,

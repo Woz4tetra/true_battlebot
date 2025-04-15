@@ -7,11 +7,11 @@ import numpy as np
 import rospy
 from bw_interfaces.msg import CageCorner as RosCageCorner
 from bw_interfaces.msg import ConfigureSimulation, Trajectory
+from bw_shared.enums.cage_corner import CageCorner
 from bw_shared.geometry.pose2d import Pose2D
 from bw_shared.pid.config import PidConfig
 from bw_shared.simulation_control.make_objective import make_objective
 from bw_shared.simulation_control.simulation_controller import SimulationController, make_simulation_controller
-from bw_tools.messages.cage_corner import CageCorner
 from geometry_msgs.msg import PoseStamped, Twist, TwistStamped
 from nav_msgs.msg import Odometry
 from rosbag.bag import Bag
