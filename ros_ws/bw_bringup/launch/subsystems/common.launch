@@ -6,8 +6,6 @@
     <node pkg="bw_shared_config" type="dynamic_opponent_config_node.py"
         name="dynamic_opponent_config_node" output="screen" clear_params="true" required="true" />
 
-    <include file="$(find bw_object_estimation)/launch/segmentation_to_object.launch" />
-    <!-- <include file="$(find bw_object_estimation)/launch/keypoint_to_object.launch" /> -->
     <include file="$(find bw_tags)/launch/tag_visualization.launch" />
     <include file="$(find bw_bringup)/launch/subsystems/foxglove_bridge.launch">
         <arg name="port" value="8765" />
