@@ -35,7 +35,7 @@ class SimulatedCamera(CameraInterface):
         self.mode = CameraMode.ROBOT_FINDER
         self.mode_change_time = 0.0
         self.depth_receive_time = 0.0
-        self.logger = logging.getLogger("perception")
+        self.logger = logging.getLogger(self.__class__.__name__)
 
     def open(self) -> bool:
         return True

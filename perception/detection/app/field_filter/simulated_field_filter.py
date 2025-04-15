@@ -23,7 +23,7 @@ class SimulatedFieldFilter(FieldFilterInterface):
         self.field_filter_config = field_filter_config
         self.simulated_field_result_sub = simulated_field_result_sub
         self.last_field_result: EstimatedObject | None = None
-        self.logger = logging.getLogger("perception")
+        self.logger = logging.getLogger(self.__class__.__name__)
 
     def get_filtered_point_cloud(
         self, segmentations: SegmentationInstanceArray, point_cloud: PointCloud
@@ -50,8 +50,7 @@ class SimulatedFieldFilter(FieldFilterInterface):
             return None
 
         self.logger.debug(
-            f"Applying mask to point cloud. Mask shape is {mask.shape}. "
-            f"Point cloud shape is {point_cloud.points.shape}"
+            f"Applying mask to point cloud. Mask shape is {mask.shape}. Point cloud shape is {point_cloud.points.shape}"
         )
         # assumes the point cloud is same shape as the contour source image
         filtered_point_cloud = PointCloud(header=point_cloud.header, points=point_cloud.masked_points(mask))

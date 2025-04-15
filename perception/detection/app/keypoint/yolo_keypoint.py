@@ -11,14 +11,12 @@ from perception_tools.data_directory import get_data_directory
 from perception_tools.inference.common import load_metadata
 from perception_tools.messages.image import Image
 from sensor_msgs.msg import CameraInfo
-
-logging.setLoggerClass(logging.Logger)  # fix rospy breaking logs
 from ultralytics import YOLO
 
 
 class YoloKeypoint(KeypointInterface):
     def __init__(self, config: YoloKeypointConfig) -> None:
-        self.logger = logging.getLogger("perception")
+        self.logger = logging.getLogger(self.__class__.__name__)
         self.config = config
         data_dir = get_data_directory()
         model_path = data_dir / "models" / self.config.model_path

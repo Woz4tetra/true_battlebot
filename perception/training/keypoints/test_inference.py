@@ -1,20 +1,16 @@
-import logging
-import time
-
-logger = logging.getLoggerClass()
-
 import argparse
+import time
 from pathlib import Path
 
 import cv2
 import tqdm
+from perception_tools.fix_rosgraph_logging import fix_rosgraph_logging
 from perception_tools.training.keypoints_config import load_keypoints_config
-
-logging.setLoggerClass(logging.Logger)  # fix rospy breaking logs
 from ultralytics import YOLO
 
 
 def main() -> None:
+    fix_rosgraph_logging()
     parser = argparse.ArgumentParser(description="Test inference of a YOLO keypoints model")
     parser.add_argument(
         "model",

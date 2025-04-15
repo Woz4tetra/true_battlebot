@@ -24,7 +24,7 @@ BoundingBox = tuple[int, int, int, int]
 
 class InstanceSegmentation(SegmentationInterface):
     def __init__(self, config: InstanceSegmentationConfig) -> None:
-        self.logger = logging.getLogger("perception")
+        self.logger = logging.getLogger(self.__class__.__name__)
         self.config = config
         data_dir = get_data_directory()
         self.model_path = data_dir / "models" / self.config.model_path

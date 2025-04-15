@@ -13,7 +13,7 @@ class RosPublisher(Generic[T]):
     def __init__(self, topic: str, msg_type: Type[T], queue_size: int = 1, latch: bool = False):
         self.queue_size = queue_size
 
-        self.logger = logging.getLogger("perception")
+        self.logger = logging.getLogger(self.__class__.__name__)
 
         self.msg_type = msg_type
         self.topic_name = topic.replace("-", "_")

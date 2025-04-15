@@ -13,7 +13,7 @@ from sensor_msgs.msg import CameraInfo, Imu
 
 class SvoCamera:
     def __init__(self, svo_path: str, frame_id: str) -> None:
-        self.logger = logging.getLogger("perception")
+        self.logger = logging.getLogger(self.__class__.__name__)
 
         input_type = sl.InputType()
         # Set init parameter to run from the .svo

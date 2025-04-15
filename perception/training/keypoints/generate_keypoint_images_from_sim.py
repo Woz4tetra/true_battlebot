@@ -50,7 +50,7 @@ def make_annotation_from_robot(
     image_size: tuple[int, int],
     labels: list[ModelLabel],
 ) -> YoloKeypointAnnotation | None:
-    logger = logging.getLogger("perception")
+    logger = logging.getLogger("make_annotation_from_robot")
     width, height = image_size
     label = ModelLabel(robot.label)
     segmentation_label = MODEL_LABEL_TO_SEGMENTATION_LABEL_MAP[label]
@@ -84,7 +84,7 @@ def make_annotation_from_robot(
 
 
 def record_image_and_keypoints(output_dir: Path, data_snapshot: RobotDataShapshot, labels: list[ModelLabel]) -> bool:
-    logger = logging.getLogger("perception")
+    logger = logging.getLogger("record_image_and_keypoints")
     color_to_model_label_map = data_snapshot.color_to_model_label_map
     robot = data_snapshot.robots.robots[0]
     image = data_snapshot.image.data
@@ -129,7 +129,7 @@ def main() -> None:
 
     initialize()
     print()  # Start log on a fresh line
-    logger = logging.getLogger("perception")
+    logger = logging.getLogger("main")
     logger.info("Initializing image synthesis")
 
     output_dir = Path(args.output_dir)

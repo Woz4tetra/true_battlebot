@@ -23,7 +23,7 @@ from perception_tools.messages.point_cloud import PointCloud
 
 class PointCloudFieldFilter(FieldFilterInterface):
     def __init__(self, plane_solver: BasePlaneSolver, filter_config: PointCloudFieldFilterConfig) -> None:
-        self.logger = logging.getLogger("perception")
+        self.logger = logging.getLogger(self.__class__.__name__)
         self.field_filter_config = filter_config
         self.plane_solver = plane_solver
 

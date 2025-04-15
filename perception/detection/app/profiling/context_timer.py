@@ -7,7 +7,7 @@ class ContextTimer:
         self.name = name
         self.start_time = 0.0
         self.end_time = 0.0
-        self.logger = logging.getLogger("perception")
+        self.logger = logging.getLogger(self.__class__.__name__)
 
     def __enter__(self):
         self.start_time = time.perf_counter()

@@ -28,7 +28,7 @@ def check_connection(hostname: str, port: int) -> bool:
 
     returns: bool True if connection is successful
     """
-    logger = logging.getLogger("perception")
+    logger = logging.getLogger("check_connection")
 
     # See if the connection can be made over any interface.
     with SocketContext(hostname, port) as sock:

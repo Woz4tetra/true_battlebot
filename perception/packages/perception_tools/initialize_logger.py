@@ -3,14 +3,10 @@ import sys
 
 import numpy as np
 import rospy  # noqa: F401  loads ROS loggers.
-from rosgraph import roslogging
+
+from perception_tools.fix_rosgraph_logging import fix_rosgraph_logging
 
 DEFAULT_FORMATTER = logging.Formatter("[%(levelname)s] [%(name)s] %(asctime)s: %(message)s")
-
-
-def fix_rosgraph_logging() -> None:
-    # Workaround to prevent hangs when a call is made to the broken ros logger
-    roslogging.RospyLogger.findCaller = logging.Logger.findCaller  # type: ignore
 
 
 def initialize(log_level: int = logging.DEBUG, formatter: logging.Formatter | None = DEFAULT_FORMATTER) -> None:
@@ -21,6 +17,7 @@ def initialize(log_level: int = logging.DEBUG, formatter: logging.Formatter | No
             super().__init__(name)
             handler = logging.StreamHandler(sys.stdout)
             handler.setFormatter(formatter)
+            super().addHandler(handler)
 
     logging.setLoggerClass(CustomLogger)
 

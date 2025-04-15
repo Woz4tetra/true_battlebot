@@ -19,7 +19,7 @@ class RosPollSubscriber(Generic[T]):
         else:
             self.queue: Queue[T] = Queue(maxsize=queue_size)
 
-        self.logger = logging.getLogger("perception")
+        self.logger = logging.getLogger(self.__class__.__name__)
 
         self.msg_type = msg_type
         self.topic_name = topic

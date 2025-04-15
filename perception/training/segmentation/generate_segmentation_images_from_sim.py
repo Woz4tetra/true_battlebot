@@ -31,7 +31,7 @@ SEGMENTATION_LABELS = (ModelLabel.BACKGROUND, ModelLabel.FIELD)
 
 
 def record_image_and_segmentation(output_dir: Path, dataset: CocoMetaDataset, data_snapshot: FieldDataShapshot) -> bool:
-    logger = logging.getLogger("perception")
+    logger = logging.getLogger("record_image_and_segmentation")
     field = data_snapshot.field
     image = data_snapshot.image.data
     model = data_snapshot.model
@@ -81,7 +81,7 @@ def main() -> None:
 
     initialize()
     print()  # Start log on a fresh line
-    logger = logging.getLogger("perception")
+    logger = logging.getLogger("main")
     logger.info("Initializing image synthesis")
 
     output_dir = Path(args.output_dir)

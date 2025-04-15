@@ -65,7 +65,7 @@ class NoiseGrid:
         self.grid = grid
         self.noise_generators = noise_generators
         self.select_generators = [True for _ in noise_generators]
-        self.logger = logging.getLogger("perception")
+        self.logger = logging.getLogger(self.__class__.__name__)
 
     def reroll(self) -> None:
         selected_names = []
@@ -125,7 +125,7 @@ class SimulatedSegmentation(SegmentationInterface):
         segmentation_manager: SimulatedSegmentationManager,
     ) -> None:
         self.config = config
-        self.logger = logging.getLogger("perception")
+        self.logger = logging.getLogger(self.__class__.__name__)
         self.debug = config.debug
         self.error_range = self.config.compression_error_tolerance
 

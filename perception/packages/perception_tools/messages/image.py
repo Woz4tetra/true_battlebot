@@ -104,7 +104,7 @@ ROS_ENCODING_TO_NUMPY = {
 }
 
 CV_BRIDGE = CvBridge()
-LOGGER = logging.getLogger("perception")
+LOGGER = logging.getLogger("image")
 
 
 @dataclass

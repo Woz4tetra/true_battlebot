@@ -20,7 +20,7 @@ class SimulatedSegmentationManager:
         self.layer_request_pub = layer_request_pub
         self.prev_image: Image | None = None
         self.prev_segmentation: SegmentationInstanceArray | None = None
-        self.logger = logging.getLogger("perception")
+        self.logger = logging.getLogger(self.__class__.__name__)
 
     def request_segmentation(self) -> None:
         self.logger.debug("Requested segmentation")

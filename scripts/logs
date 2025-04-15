@@ -110,9 +110,10 @@ def print_line(log_line: Dict, args: ParserInput) -> None:
         print(f"{log_color}[{log_level.rjust(5)}] [{node}] {datestr}: {message}")
 
 
+ENABLE_CUSTOM_MESSAGE_DELIMITER = True
+
 MESSAGE_START_PATTERN = r"\"<-<"
 MESSAGE_STOP_PATTERN = r">->\""
-MESSAGE_ENCLOSED_PATTERN = r"\"<-<(.*)>->\""
 
 
 def replace_multiline_chars(line: str) -> str:
@@ -159,9 +160,31 @@ class IncompleteLineTracker:
         return ""
 
 
-def process_line(data: bytes, args: ParserInput, tracker: IncompleteLineTracker) -> None:
+def process_line(data: bytes, args: ParserInput) -> None:
     line = re.sub(b"\x1b\\[.{1,3}m", b"", data).decode()
+    try:
+        log_line = json.loads(line, strict=False)
+        if isinstance(log_line, dict):
+            print_line(log_line, args)
+        else:
+            raise ValueError
+    except ValueError:
+        log_line = {"message": line}
+        if not args.log_filter.does_match(log_line):
+            return
 
+        lower_line = line.lower()
+        if "warn" in lower_line:
+            color_code = COLORS.YELLOW
+        elif "error" in lower_line:
+            color_code = COLORS.RED
+        else:
+            color_code = COLORS.GREY
+        sys.stdout.write(color_code + line)
+
+
+def process_line_with_tracker(data: bytes, args: ParserInput, tracker: IncompleteLineTracker) -> None:
+    line = re.sub(b"\x1b\\[.{1,3}m", b"", data).decode()
     try:
         line = tracker.process(line)
         if len(line) == 0:
@@ -209,7 +232,11 @@ def print_entire_file(filename: str, args: ParserInput) -> None:
         contents = file.read()
     incomplete_line_tracker = IncompleteLineTracker()
     for line in contents.splitlines():
-        process_line(line + b"\n", args, incomplete_line_tracker)
+        line_with_end = line + b"\n"
+        if ENABLE_CUSTOM_MESSAGE_DELIMITER:
+            process_line_with_tracker(line + b"\n", args, incomplete_line_tracker)
+        else:
+            process_line(line_with_end, args)
 
 
 FILTER_PATTERNS = ("message", "node", "logger", "file", "line", "function", "thread")
@@ -281,7 +308,10 @@ def follow_and_process(filename: str, args: ParserInput, log_dir: str) -> None:
     while True:
         with open(filename, "rb") as file:
             for line in follow(file, args.num_lines):
-                process_line(line, args, incomplete_line_tracker)
+                if ENABLE_CUSTOM_MESSAGE_DELIMITER:
+                    process_line_with_tracker(line, args, incomplete_line_tracker)
+                else:
+                    process_line(line, args)
                 now = time.monotonic()
                 if now - last_file_check_time < 1.0:
                     continue

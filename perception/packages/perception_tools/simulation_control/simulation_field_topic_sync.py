@@ -21,7 +21,7 @@ class FieldDataShapshot:
 
 class SimulationFieldTopicSync:
     def __init__(self) -> None:
-        self.logger = logging.getLogger("perception")
+        self.logger = logging.getLogger(self.__class__.__name__)
         self.model: PinholeCameraModel | None = None
         self.image: Image | None = None
         self.field: EstimatedObject | None = None

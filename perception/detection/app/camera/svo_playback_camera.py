@@ -32,7 +32,7 @@ class SvoPlaybackCamera(CameraInterface):
         bag_publishers: dict[str, RosPublisher],
         clock_pub: RosPublisher[Clock],
     ) -> None:
-        self.logger = logging.getLogger("perception")
+        self.logger = logging.getLogger(self.__class__.__name__)
 
         self.config = config
         self.camera_topic_config = camera_topic_config

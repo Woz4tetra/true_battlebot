@@ -21,7 +21,7 @@ class SimulationController:
         self.configuration_acknowledged_event = configuration_acknowledged_event
         self.configure_simulation_pub = configure_simulation_pub
         self.select_scenario_pub = select_scenario_pub
-        self.logger = logging.getLogger("perception")
+        self.logger = logging.getLogger(self.__class__.__name__)
 
     def configure_simulation(self, simulation_config: ConfigureSimulation) -> None:
         # publish scenario and objectives. Start scenario.

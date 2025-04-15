@@ -14,7 +14,7 @@ class FieldRequestHandler:
         request_subscriber: RosPollSubscriber[Empty],
         response_publisher: RosPublisher[EstimatedObject],
     ) -> None:
-        self.logger = logging.getLogger("perception")
+        self.logger = logging.getLogger(self.__class__.__name__)
         self.stale_image_timeout = field_request_config.stale_image_timeout
         self.request_subscriber = request_subscriber
         self.response_publisher = response_publisher

@@ -24,7 +24,7 @@ class RobotDataShapshot:
 
 class SimulationRobotTopicSync:
     def __init__(self, filter_labels: tuple[ModelLabel, ...]) -> None:
-        self.logger = logging.getLogger("perception")
+        self.logger = logging.getLogger(self.__class__.__name__)
         self.model: PinholeCameraModel | None = None
         self.image: Image | None = None
         self.layer: Image | None = None

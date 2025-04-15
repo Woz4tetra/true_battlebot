@@ -28,7 +28,7 @@ class LightSimulatedCamera(CameraInterface):
             point_cloud=PointCloud(header),
             camera_info=CameraInfo(header=header.to_msg()),
         )
-        self.logger = logging.getLogger("perception")
+        self.logger = logging.getLogger(self.__class__.__name__)
 
     def open(self) -> bool:
         return True

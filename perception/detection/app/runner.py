@@ -72,7 +72,7 @@ class Runner:
         self.camera_data = CameraData()
         self.is_field_request_active = False
         self.prev_no_camera_warning_time = time.monotonic()
-        self.logger = logging.getLogger("perception")
+        self.logger = logging.getLogger(self.__class__.__name__)
 
     def start(self) -> None:
         self.logger.info("Runner started")
@@ -166,7 +166,7 @@ class CommandLineArgs(Protocol):
 
 
 def make_camera(container: Container) -> None:
-    logger = logging.getLogger("perception")
+    logger = logging.getLogger("make_camera")
     config = container.resolve(Config)
     camera = load_camera(config.camera, container)
     container.register(camera, CameraInterface)
@@ -187,7 +187,7 @@ def make_ros_comms(container: Container) -> None:
 
 
 def make_field_segmentation(container: Container) -> None:
-    logger = logging.getLogger("perception")
+    logger = logging.getLogger("make_field_segmentation")
     config = container.resolve(Config)
     namespace = config.camera_topic.namespace
     field_segmentation = load_segmentation(container, config.field_segmentation)
@@ -210,7 +210,7 @@ def make_field_segmentation(container: Container) -> None:
 
 
 def make_robot_keypoint(container: Container) -> None:
-    logger = logging.getLogger("perception")
+    logger = logging.getLogger("make_robot_keypoint")
     config = container.resolve(Config)
     namespace = config.camera_topic.namespace
     robot_keypoint = load_keypoint(container, config.robot_keypoint)
@@ -227,7 +227,7 @@ def make_robot_keypoint(container: Container) -> None:
 
 
 def make_field_interface(container: Container) -> None:
-    logger = logging.getLogger("perception")
+    logger = logging.getLogger("make_field_interface")
     config = container.resolve(Config)
     field_filter = load_field_filter(config.field_filter, container)
     container.register(field_filter, FieldFilterInterface)
@@ -250,7 +250,7 @@ def make_field_request_handler(container: Container) -> None:
 
 
 def run_loop(app: Runner, config: Config) -> None:
-    logger = logging.getLogger("perception")
+    logger = logging.getLogger("run_loop")
     logger.info("Running perception")
     for dt in regulate_tick(config.target_tick_rate):
         if dt > config.loop_overrun_threshold:
@@ -272,7 +272,7 @@ def main() -> None:
 
     initialize(config.log_level, CustomJsonFormatter())
     print()  # Start log on a fresh line
-    logger = logging.getLogger("perception")
+    logger = logging.getLogger("main")
     logger.info("Initializing perception")
     if profile_app:
         logger.info("Profiling enabled")

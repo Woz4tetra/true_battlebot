@@ -31,7 +31,7 @@ class ZedCamera(CameraInterface):
         imu_pub: RosPublisher[Imu] | None,
         record_svo_sub: RosPollSubscriber[ControlRecording] | None,
     ) -> None:
-        self.logger = logging.getLogger("perception")
+        self.logger = logging.getLogger(self.__class__.__name__)
 
         self.config = config
         self.camera_topic_config = camera_topic_config

@@ -17,7 +17,7 @@ class SimulatedKeypoint(KeypointInterface):
     def __init__(self, config: SimulatedKeypointConfig, ground_truth_manager: GroundTruthManager) -> None:
         self.ground_truth_manager = ground_truth_manager
         self.config = config
-        self.logger = logging.getLogger("perception")
+        self.logger = logging.getLogger(self.__class__.__name__)
         self.debug = self.config.debug
         self.model: PinholeCameraModel | None = None
         self.camera_info = CameraInfo()

@@ -17,7 +17,7 @@ from perception_tools.messages.image import Image
 
 class SemanticSegmentation(SegmentationInterface):
     def __init__(self, config: SemanticSegmentationConfig) -> None:
-        self.logger = logging.getLogger("perception")
+        self.logger = logging.getLogger(self.__class__.__name__)
         self.config = config
         self.device = get_default_device()
         data_dir = get_data_directory()
