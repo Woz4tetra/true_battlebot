@@ -11,6 +11,7 @@ IMAGE_VERSION=$(${BASE_DIR}/../get_image_tag)
 ORGANIZATION=$(${BASE_DIR}/../get_organization)
 PROJECT_NAME=$(${BASE_DIR}/../get_project_name)
 
+docker stop build_${PROJECT_NAME} || true
 docker run \
     --user ${ORGANIZATION} \
     --name build_${PROJECT_NAME} \

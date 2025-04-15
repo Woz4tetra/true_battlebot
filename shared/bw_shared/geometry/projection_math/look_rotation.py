@@ -3,9 +3,8 @@ from typing import Optional
 import numpy as np
 from geometry_msgs.msg import Quaternion
 
+from bw_shared.epsilon import EPSILON
 from bw_shared.geometry.rotation_transforms import quaternion_from_matrix
-
-EPSILON = np.finfo(float).eps
 
 
 def normalize(vec: np.ndarray) -> np.ndarray:

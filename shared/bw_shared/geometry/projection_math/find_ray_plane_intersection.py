@@ -1,6 +1,6 @@
 import numpy as np
 
-EPSILON = np.finfo(float).eps
+from bw_shared.epsilon import EPSILON
 
 
 def find_ray_plane_intersection(ray: np.ndarray, plane_point: np.ndarray, plane_normal: np.ndarray) -> np.ndarray:

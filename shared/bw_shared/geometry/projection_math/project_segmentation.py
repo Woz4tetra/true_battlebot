@@ -4,13 +4,15 @@ import numpy as np
 from bw_interfaces.msg import SegmentationInstance
 from image_geometry import PinholeCameraModel
 
+from bw_shared.epsilon import EPSILON
+
 
 def line_plane_intersection(
     line_point0: np.ndarray,
     line_point1: np.ndarray,
     plane_center: np.ndarray,
     plane_normal: np.ndarray,
-    epsilon: float = 1e-6,
+    epsilon: float = EPSILON,
 ) -> Optional[np.ndarray]:
     """
     Calculate the intersection of a line and a plane

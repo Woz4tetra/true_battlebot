@@ -15,6 +15,7 @@ if ! echo ${VALUE} | grep -q "${PROJECT_NAME}_perception_build"; then
     docker volume create ${PROJECT_NAME}_perception_build
 fi
 
+docker stop build_${PROJECT_NAME}_perception || true
 docker run \
     --user ${ORGANIZATION} \
     --name build_${PROJECT_NAME}_perception \

@@ -2,10 +2,11 @@ from typing import Optional
 
 import numpy as np
 
+from bw_shared.epsilon import EPSILON
 from bw_shared.geometry.transform3d import Transform3D
 
 
-def rotation_matrix_from_vectors(vec1: np.ndarray, vec2: np.ndarray, epsilon: float = 1e-6) -> np.ndarray:
+def rotation_matrix_from_vectors(vec1: np.ndarray, vec2: np.ndarray, epsilon: float = EPSILON) -> np.ndarray:
     """
     Find the rotation matrix that aligns vec1 to vec2
     From https://stackoverflow.com/questions/45142959/calculate-rotation-matrix-to-align-two-vectors-in-3d-space
@@ -36,7 +37,7 @@ def rotation_matrix_from_vectors(vec1: np.ndarray, vec2: np.ndarray, epsilon: fl
 
 
 def transform_matrix_from_vectors(
-    plane_center: np.ndarray, plane_normal: np.ndarray, up_vec: Optional[np.ndarray] = None, epsilon: float = 1e-6
+    plane_center: np.ndarray, plane_normal: np.ndarray, up_vec: Optional[np.ndarray] = None, epsilon: float = EPSILON
 ) -> Transform3D:
     up_vec = np.array([0.0, 0.0, 1.0]) if up_vec is None else up_vec
     plane_tfmat = np.eye(4)

@@ -19,7 +19,8 @@ from app.field_filter.field_filter_loader import load_field_filter, load_global_
 from app.field_filter.field_request_handler import FieldRequestHandler
 from app.field_filter.global_field_manager import GlobalFieldManager
 from app.keypoint.keypoint_interface import KeypointInterface
-from app.keypoint.keypoint_loader import load_keypoint
+from app.keypoint.keypoint_loader import load_keypoint, load_keypoint_to_object_converter
+from app.keypoint.keypoint_to_object_converter import KeypointToObjectConverter
 from app.profiling.context_timer import ContextTimer
 from app.segmentation.segmentation_interface import SegmentationInterface
 from app.segmentation.segmentation_loader import load_segmentation
@@ -72,6 +73,9 @@ class Runner:
             "robot_keypoint_publisher"
         )
         self.global_field_manager = self.container.resolve(GlobalFieldManager)
+        self.keypoint_to_object_converter: KeypointToObjectConverter = self.container.resolve_by_name(
+            "keypoint_to_object_converter"
+        )
         self.camera_data = CameraData()
         self.is_field_request_active = False
         self.prev_no_camera_warning_time = time.monotonic()
@@ -109,10 +113,15 @@ class Runner:
             robot_points, debug_image = self.robot_keypoint.process_image(
                 camera_data.camera_info, camera_data.color_image
             )
+        if robot_points:
+            with ContextTimer("keypoint_to_object_converter.convert_to_objects"):
+                robot_estimations = self.keypoint_to_object_converter.convert_to_objects(
+                    camera_data.camera_info, robot_points
+                )
+            self.robot_keypoint_publisher.publish(robot_points)
+
         if debug_image:
             self.robot_debug_image_publisher.publish(debug_image.to_msg())
-        if robot_points:
-            self.robot_keypoint_publisher.publish(robot_points)
 
     def perceive_field(self) -> bool:
         self.logger.debug("Processing field request")
@@ -145,6 +154,8 @@ class Runner:
             self.logger.debug("No field result")
             return False
         aligned_field = self.global_field_manager.process_field(field_result)
+        if aligned_field:
+            self.keypoint_to_object_converter.set_field(aligned_field)
         if debug_image:
             self.logger.info("Publishing debug image")
             self.field_debug_image_publisher.publish(debug_image.to_msg())
@@ -223,11 +234,13 @@ def make_robot_keypoint(container: Container) -> None:
     config = container.resolve(Config)
     namespace = config.camera_topic.namespace
     robot_keypoint = load_keypoint(container, config.robot_keypoint)
+    keypoint_to_object_converter = load_keypoint_to_object_converter(container, config.keypoint_to_object_converter)
     robot_debug_image_publisher = RosPublisher(namespace + "/robot/debug_image", Image)
     robot_keypoint_publisher = RosPublisher(namespace + "/robot/keypoints", KeypointInstanceArray)
     robot_label_map_publisher = RosPublisher(namespace + "/robot/label_map", LabelMap, latch=True)
 
     container.register(robot_keypoint, "robot_keypoint")
+    container.register(keypoint_to_object_converter, "keypoint_to_object_converter")
     container.register(robot_keypoint_publisher, "robot_keypoint_publisher")
     container.register(robot_debug_image_publisher, "robot_debug_image_publisher")
     container.register(robot_label_map_publisher, "robot_label_map_publisher")

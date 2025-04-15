@@ -42,7 +42,7 @@ class SimulatedKeypoint(KeypointInterface):
         self.prev_stamps = stamps
         self.camera_info.header.stamp = camera_info.header.stamp
         self.camera_info.header.seq = camera_info.header.seq
-        if self.camera_info != camera_info:
+        if self.camera_info.header != camera_info.header:
             self.model = PinholeCameraModel()
             self.model.fromCameraInfo(camera_info)
             self.logger.info(f"Camera model loaded: {camera_info}")
