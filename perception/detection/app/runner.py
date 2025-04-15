@@ -270,7 +270,7 @@ def main() -> None:
     shared_config = SharedConfig.from_files()
     config = load_config(config_dir, get_robot())
 
-    initialize(CustomJsonFormatter())
+    initialize(config.log_level, CustomJsonFormatter())
     print()  # Start log on a fresh line
     logger = logging.getLogger("perception")
     logger.info("Initializing perception")

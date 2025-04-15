@@ -1,45 +1,40 @@
 import logging
-from importlib import reload
+import sys
 
 import numpy as np
+import rospy  # noqa: F401  loads ROS loggers.
+from rosgraph import roslogging
 
 DEFAULT_FORMATTER = logging.Formatter("[%(levelname)s] [%(name)s] %(asctime)s: %(message)s")
 
 
-def initialize(formatter: logging.Formatter | None = DEFAULT_FORMATTER) -> None:
-    # Reinitialize logging to reset rospy logging
-    logging.shutdown()
-    reload(logging)
-    logging.setLoggerClass(logging.Logger)  # fix rospy breaking logs
+def fix_rosgraph_logging() -> None:
+    # Workaround to prevent hangs when a call is made to the broken ros logger
+    roslogging.RospyLogger.findCaller = logging.Logger.findCaller  # type: ignore
 
-    logger = logging.getLogger("perception")
-    ros_loggers = [
-        logging.getLogger(name)
-        for name in (
-            "rosout",
-            "rospy.client",
-            "rospy.msg",
-            "rospy.internal",
-            "rospy.init",
-            "rospy.impl.statistics",
-            "rospy.rosout",
-            "rospy.simtime",
-            "rospy.registration",
-            "rospy.tcpros",
-            "rospy.service",
-        )
-    ]
 
+def initialize(log_level: int = logging.DEBUG, formatter: logging.Formatter | None = DEFAULT_FORMATTER) -> None:
+    fix_rosgraph_logging()
+
+    class CustomLogger(logging.Logger):
+        def __init__(self, name: str):
+            super().__init__(name)
+            handler = logging.StreamHandler(sys.stdout)
+            handler.setFormatter(formatter)
+
+    logging.setLoggerClass(CustomLogger)
+
+    logging.getLogger().setLevel(logging.DEBUG)
+
+    loggers = [logging.getLogger(name) for name in logging.root.manager.loggerDict]
     handle = logging.StreamHandler()
-    handle.setLevel(logging.DEBUG)
+    handle.setLevel(log_level)
     if formatter:
         handle.setFormatter(formatter)
-    logger.addHandler(handle)
-    logger.setLevel(logging.DEBUG)
 
-    for ros_log in ros_loggers:
-        ros_log.addHandler(handle)
-        ros_log.setLevel(logging.DEBUG)
+    for logger in loggers:
+        logger.addHandler(handle)
+        logger.setLevel(log_level)
 
     # in case any libraries have added any handlers to the root logger
     logging.root.handlers.clear()
@@ -48,4 +43,4 @@ def initialize(formatter: logging.Formatter | None = DEFAULT_FORMATTER) -> None:
     logging.logProcesses = False
 
     # Set numpy print options, which will determine way numpy arrays are displayed
-    np.set_printoptions(formatter={"float": "{: 0.3f}".format})
+    np.set_printoptions(formatter={"float": "{: 0.6f}".format})
