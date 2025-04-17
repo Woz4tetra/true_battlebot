@@ -22,6 +22,8 @@ from app.keypoint.keypoint_interface import KeypointInterface
 from app.keypoint.keypoint_loader import load_keypoint, load_keypoint_to_object_converter
 from app.keypoint.keypoint_to_object_converter import KeypointToObjectConverter
 from app.profiling.context_timer import ContextTimer
+from app.robot_filter.robot_filter import RobotFilter
+from app.robot_filter.robot_filter_loader import load_robot_filter
 from app.segmentation.segmentation_interface import SegmentationInterface
 from app.segmentation.segmentation_loader import load_segmentation
 from bw_interfaces.msg import Heartbeat, KeypointInstanceArray, LabelMap, SegmentationInstanceArray
@@ -76,6 +78,7 @@ class Runner:
         self.keypoint_to_object_converter: KeypointToObjectConverter = self.container.resolve_by_name(
             "keypoint_to_object_converter"
         )
+        self.robot_filter = self.container.resolve(RobotFilter)
         self.camera_data = CameraData()
         self.is_field_request_active = False
         self.prev_no_camera_warning_time = time.monotonic()
@@ -100,6 +103,7 @@ class Runner:
                 self.is_field_request_active = False
         else:
             self.perceive_robot()
+        filtered_robots = self.robot_filter.update()
 
     def perceive_robot(self) -> None:
         if not self.camera.switch_mode(CameraMode.ROBOT_FINDER):
@@ -119,6 +123,9 @@ class Runner:
                     camera_data.camera_info, robot_points
                 )
             self.robot_keypoint_publisher.publish(robot_points)
+            if robot_estimations:
+                with ContextTimer("robot_filter.update_robot_estimations"):
+                    self.robot_filter.update_robot_estimations(robot_estimations)
 
         if debug_image:
             self.robot_debug_image_publisher.publish(debug_image.to_msg())
@@ -156,6 +163,7 @@ class Runner:
         aligned_field = self.global_field_manager.process_field(field_result)
         if aligned_field:
             self.keypoint_to_object_converter.set_field(aligned_field)
+            self.robot_filter.update_field(aligned_field)
         if debug_image:
             self.logger.info("Publishing debug image")
             self.field_debug_image_publisher.publish(debug_image.to_msg())
@@ -273,6 +281,13 @@ def make_field_request_handler(container: Container) -> None:
     container.register(field_request_handler)
 
 
+def make_robot_filter(container: Container) -> None:
+    config = container.resolve(Config)
+    shared_config = container.resolve(SharedConfig)
+    robot_filter = load_robot_filter(container, config.robot_filter, shared_config)
+    container.register(robot_filter)
+
+
 def run_loop(app: Runner, config: Config) -> None:
     logger = logging.getLogger("run_loop")
     logger.info("Running perception")
@@ -315,6 +330,7 @@ def main() -> None:
     make_robot_keypoint(container)
     make_field_interface(container)
     make_field_request_handler(container)
+    make_robot_filter(container)
 
     logger.info("Starting perception")
 

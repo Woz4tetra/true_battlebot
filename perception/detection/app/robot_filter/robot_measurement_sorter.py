@@ -3,17 +3,15 @@ import math
 from typing import Dict, List, Tuple
 
 import numpy as np
-from bw_object_filter.filter_models.model_base import ModelBase
+from app.robot_filter.filter_models.model_base import ModelBase
 from bw_shared.geometry.pose2d import Pose2D
-from geometry_msgs.msg import PoseWithCovarianceStamped
 
 
 class RobotMeasurementSorter:
     def __init__(self) -> None:
         self.cached_permutations: dict[tuple[int, int], np.ndarray] = {}
 
-    def get_distance(self, measurement: PoseWithCovarianceStamped, filter_model: ModelBase) -> float:
-        pose = Pose2D.from_msg(measurement.pose.pose)
+    def get_distance(self, pose: Pose2D, filter_model: ModelBase) -> float:
         filter_pose = Pose2D.from_msg(filter_model.get_state()[0].pose)
         dx = pose.x - filter_pose.x
         dy = pose.y - filter_pose.y
@@ -59,7 +57,7 @@ class RobotMeasurementSorter:
                 mapping.append((matched_column, matched_row))
         return mapping
 
-    def get_ids(self, filters: List[ModelBase], measurements: List[PoseWithCovarianceStamped]) -> Dict[int, int]:
+    def get_ids(self, filters: List[ModelBase], measurements: List[Pose2D]) -> Dict[int, int]:
         if len(measurements) == 0 or len(filters) == 0:
             return {}
         measurement_ids = {}

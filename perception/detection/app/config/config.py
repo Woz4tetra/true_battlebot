@@ -12,6 +12,7 @@ from app.config.field_filter.global_field_manager_config import GlobalFieldManag
 from app.config.field_filter.point_cloud_field_filter_config import PointCloudFieldFilterConfig
 from app.config.keypoint_config.keypoint_to_object_converter_config import KeypointToObjectConverterConfig
 from app.config.keypoint_config.keypoint_types import KeypointConfig, YoloKeypointConfig
+from app.config.robot_filter.robot_filter_config import RobotFilterConfig
 from app.config.ros_config import RosConfig
 from app.config.segmentation.segmentation_types import SegmentationConfig, SemanticSegmentationConfig
 from bw_shared.messages.dataclass_utils import from_dict, to_dict
@@ -33,6 +34,7 @@ class Config:
     field_filter: FieldFilterConfig = field(default_factory=PointCloudFieldFilterConfig)
     global_field_manager: GlobalFieldManagerConfig = field(default_factory=GlobalFieldManagerConfig)
     field_request: FieldRequestConfig = field(default_factory=FieldRequestConfig)
+    robot_filter: RobotFilterConfig = field(default_factory=RobotFilterConfig)
 
     @classmethod
     def from_dict(cls, data: dict) -> Config:
