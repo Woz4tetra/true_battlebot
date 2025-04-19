@@ -6,7 +6,7 @@ from bw_shared.geometry.projection_math.rotation_matrix_from_vectors import rota
 from numba import njit
 
 
-@njit
+@njit(cache=True)
 def rotate_points(points: np.ndarray, rotation_matrix: np.ndarray) -> np.ndarray:
     tfd_points = np.zeros_like(points)
     for i in range(points.shape[0]):

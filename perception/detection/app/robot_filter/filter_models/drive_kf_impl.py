@@ -17,14 +17,14 @@ NUM_STATES = 6
 NUM_STATES_1ST_ORDER = 3
 
 
-@njit
+@njit(cache=True)
 def kf_state_transition(state, dt):
     x = state[STATE_x]
     y = state[STATE_y]
     theta = normalize_theta(state[STATE_t])
 
     vx_prev = state[STATE_vx]
-    vy_prev = state[STATE_vy]
+    vy_prev = 0.0  # state[STATE_vy]
 
     vx = vx_prev * math.cos(theta) - vy_prev * math.sin(theta)
     vy = vx_prev * math.sin(theta) + vy_prev * math.cos(theta)
@@ -41,7 +41,7 @@ def kf_state_transition(state, dt):
     return next_state
 
 
-@njit
+@njit(cache=True)
 def kf_predict(
     state_x: np.ndarray, covariance_p: np.ndarray, process_noise_q: np.ndarray, dt: float
 ) -> tuple[np.ndarray, np.ndarray]:

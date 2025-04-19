@@ -65,7 +65,6 @@ class RobotFilter:
         self.robot_max_radius = config.robot_max_radius
         field_buffer = config.field_buffer
         self.field_buffer = XYZ(field_buffer, field_buffer, field_buffer)
-        self.estimated_system_lag = rospy.Duration.from_sec(config.estimated_system_lag)
 
         initial_state = np.zeros(NUM_STATES)
         initial_covariance = np.diag(initial_variances)
@@ -277,9 +276,6 @@ class RobotFilter:
         for robot_name, tracker in self.cmd_vel_trackers.items():
             if twist_msg := self.cmd_vel_subs[robot_name].receive():
                 tracker.set_velocity(twist_msg)
-            if not tracker.is_timed_out():
-                continue
-            # apply zero velocity to the filter if timed out
             robot_filter = self.name_to_filter[robot_name]
             cmd_vel = tracker.get_velocity()
             self._apply_cmd_vel(robot_filter, cmd_vel)

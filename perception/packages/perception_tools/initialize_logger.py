@@ -4,14 +4,10 @@ import sys
 import numpy as np
 import rospy  # noqa: F401  loads ROS loggers.
 
-from perception_tools.fix_rosgraph_logging import fix_rosgraph_logging
-
 DEFAULT_FORMATTER = logging.Formatter("[%(levelname)s] [%(name)s] %(asctime)s: %(message)s")
 
 
 def initialize(log_level: int = logging.DEBUG, formatter: logging.Formatter | None = DEFAULT_FORMATTER) -> None:
-    fix_rosgraph_logging()
-
     class CustomLogger(logging.Logger):
         def __init__(self, name: str):
             super().__init__(name)

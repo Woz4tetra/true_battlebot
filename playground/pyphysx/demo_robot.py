@@ -8,11 +8,6 @@ from bw_shared.geometry.transform3d import Transform3D
 from bw_shared.geometry.twist2d import Twist2D
 from geometry_msgs.msg import Vector3
 from matplotlib import pyplot as plt
-from pyphysx_render.pyrender import PyPhysxViewer
-from pyphysx_utils.rate import Rate
-from pyphysx_utils.transformations import pose_to_transformation_matrix
-from pyphysx_utils.urdf_robot_parser import URDFRobot
-
 from pyphysx import (
     BroadPhaseType,
     Material,
@@ -23,6 +18,10 @@ from pyphysx import (
     SceneFlag,
     cast_transformation,
 )
+from pyphysx_render.pyrender import PyPhysxViewer
+from pyphysx_utils.rate import Rate
+from pyphysx_utils.transformations import pose_to_transformation_matrix
+from pyphysx_utils.urdf_robot_parser import URDFRobot
 
 
 def tf_to_physx_tf(transform: Transform3D) -> tuple[np.ndarray, np.ndarray]:

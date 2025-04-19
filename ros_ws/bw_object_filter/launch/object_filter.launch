@@ -1,4 +1,5 @@
 <launch>
+    <arg name="auto_initialize" default="false" />
     <node pkg="bw_object_filter" type="field_perception_middle_layer.py" name="field_perception_middle_layer" output="screen"
         respawn="true" clear_params="true">
         <param name="auto_initialize" value="$(arg auto_initialize)" />

@@ -12,7 +12,7 @@ NUM_STATES = 3
 NUM_MEASUREMENTS = 3
 
 
-@njit
+@njit(cache=True)
 def kf_state_transition(state):
     x = state[STATE_x]
     y = state[STATE_y]
@@ -26,7 +26,7 @@ def kf_state_transition(state):
     return next_state
 
 
-@njit
+@njit(cache=True)
 def kf_predict(
     state_x: np.ndarray, covariance_p: np.ndarray, process_noise_q: np.ndarray
 ) -> tuple[np.ndarray, np.ndarray]:

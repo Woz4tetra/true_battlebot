@@ -6,18 +6,17 @@ class CustomJsonFormatter(logging.Formatter):
     def format(self, record: logging.LogRecord) -> str:  # type: ignore[override]
         return json.dumps(
             {
-                "time": record.created,
-                "level": record.levelname,
-                "exc_info": record.exc_info,
-                "exc_text": record.exc_text,
-                "stack_info": record.stack_info,
-                "node": record.name,
-                "logger": record.module,
-                "line": record.lineno,
-                "function": record.funcName,
-                "thread": record.thread,
-                "file": record.filename,
-                "severity": record.levelname,
+                "time": float(record.created),
+                "exc_info": str(record.exc_info),
+                "exc_text": str(record.exc_text),
+                "stack_info": str(record.stack_info),
+                "node": str(record.name),
+                "logger": str(record.module),
+                "line": int(record.lineno),
+                "function": str(record.funcName),
+                "thread": str(record.thread),
+                "file": str(record.filename),
+                "severity": str(record.levelname),
                 "message": f"<-<{record.getMessage()}>->",
             }
         )
