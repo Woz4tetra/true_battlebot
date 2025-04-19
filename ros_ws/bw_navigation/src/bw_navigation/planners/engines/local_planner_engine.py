@@ -130,24 +130,6 @@ class LocalPlannerEngine:
         else:
             return Pose2D.from_msg(controlled_robot_state.pose.pose), True
 
-    def scale_down_near_goal(self, error: Pose2D, chassis_speeds: Twist) -> Twist:
-        dist_magnitude = error.magnitude()
-        new_chassis_speeds = Twist()
-        if dist_magnitude < self.config.slowdown_distance:
-            scale_factor = dist_magnitude / self.config.slowdown_distance
-            new_chassis_speeds.linear.x = chassis_speeds.linear.x * scale_factor
-        else:
-            new_chassis_speeds.linear.x = chassis_speeds.linear.x
-
-        angle_magnitude = abs(error.theta)
-        if angle_magnitude < self.config.slowdown_angle:
-            scale_factor = angle_magnitude / self.config.slowdown_angle
-            new_chassis_speeds.angular.z = chassis_speeds.angular.z * scale_factor
-        else:
-            new_chassis_speeds.angular.z = chassis_speeds.angular.z
-
-        return new_chassis_speeds
-
     def compute(
         self,
         trajectory: Trajectory,
@@ -159,7 +141,6 @@ class LocalPlannerEngine:
         desired_state = trajectory.sample(time_from_start)
         desired_pose = Pose2D(desired_state.pose.X(), desired_state.pose.Y(), get_theta(desired_state.pose.rotation()))
         robot_pose = Pose2D.from_msg(controlled_robot_state.pose.pose)
-        error = desired_pose.relative_to(robot_pose)
         rerouted_pose, was_colliding = self.respond_to_obstacles(
             controlled_robot_state, desired_pose, friendly_robot_states
         )
@@ -172,7 +153,6 @@ class LocalPlannerEngine:
             chassis_speeds = self.controller.calculate(current_pose, desired_state)
             twist.linear.x = chassis_speeds.vx
             twist.angular.z = chassis_speeds.omega
-            twist = self.scale_down_near_goal(error, twist)
         else:
             rospy.logdebug("Backing away from obstacle.")
             twist = self.backaway_engine.compute(desired_pose, robot_pose)

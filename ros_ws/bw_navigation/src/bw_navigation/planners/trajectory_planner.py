@@ -89,24 +89,25 @@ class TrajectoryPlanner(PlannerInterface):
             friendly_robot_name=self.friendly_robot_name,
             avoid_robot_names=self.avoid_robot_names,
         )
+        twist = Twist()
+        goal_progress = GoalProgress(is_done=False)
+
         if goal_strategy == GoalStrategy.MIRROR_FRIENDLY:
             match_state = compute_mirrored_state(match_state)
+
+            if match_state.distance_to_goal < self.config.overlay_velocity.friendly_mirror_proximity:
+                relative_goal = match_state.goal_pose.relative_to(match_state.controlled_robot_pose)
+                twist.linear.x = self.near_goal_linear_pid.update(relative_goal.x, 0.0, dt)
+                twist.angular.z = self.near_goal_angular_pid.update(relative_goal.theta, 0.0, dt)
+                twist, input_factor, friendly_factor = overlay_friendly_twist(
+                    twist, match_state, self.config.overlay_velocity
+                )
+                return twist, goal_progress, MarkerArray()
 
         markers: list[Marker] = []
         controlled_robot = match_state.controlled_robot
         goal_target = match_state.goal_target
         rotate_at_end = False if engine_config is None else engine_config.rotate_at_end
-        goal_progress = GoalProgress(is_done=False)
-        twist = Twist()
-
-        if match_state.distance_to_goal < self.config.overlay_velocity.friendly_mirror_proximity:
-            relative_goal = match_state.goal_pose.relative_to(match_state.controlled_robot_pose)
-            twist.linear.x = self.near_goal_linear_pid.update(relative_goal.x, 0.0, dt)
-            twist.angular.z = self.near_goal_angular_pid.update(relative_goal.theta, 0.0, dt)
-            twist, input_factor, friendly_factor = overlay_friendly_twist(
-                twist, match_state, self.config.overlay_velocity
-            )
-            return twist, goal_progress, MarkerArray()
 
         if self.trajectory_complete_time is not None and rotate_at_end:
             rospy.logdebug("Rotating at end.")
@@ -116,12 +117,12 @@ class TrajectoryPlanner(PlannerInterface):
                 )
             else:
                 goal_progress.is_done = True
-        elif not self.did_robot_move_engine.did_move(match_state.controlled_robot_pose_stamped):
-            rospy.logdebug("Thrashing to recover")
-            twist = self.thrash_recover_engine.compute(dt)
-        elif avoid_danger_twist := self.recover_from_engine.compute_recovery_command(match_state):
-            rospy.logdebug("In danger recovery.")
-            twist = avoid_danger_twist
+        # elif not self.did_robot_move_engine.did_move(match_state.controlled_robot_pose_stamped):
+        #     rospy.logdebug("Thrashing to recover")
+        #     twist = self.thrash_recover_engine.compute(dt)
+        # elif avoid_danger_twist := self.recover_from_engine.compute_recovery_command(match_state):
+        #     rospy.logdebug("In danger recovery.")
+        #     twist = avoid_danger_twist
         elif is_controlled_bot_in_bounds(self.buffer_xy, self.config.backaway_recover.angle_tolerance, match_state):
             markers.extend(self.local_planner.visualize_local_plan())
             trajectory, did_replan, start_time = self.global_planner.compute(

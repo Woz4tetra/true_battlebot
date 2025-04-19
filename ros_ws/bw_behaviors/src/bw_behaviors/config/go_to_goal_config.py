@@ -1,6 +1,9 @@
 from dataclasses import dataclass
 
+from bw_tools.messages.goal_strategy import GoalStrategy
+
 
 @dataclass
 class GoToGoalConfig:
     xy_tolerance: float = 0.1
+    strategy: GoalStrategy = GoalStrategy.CRASH_OPPONENT
