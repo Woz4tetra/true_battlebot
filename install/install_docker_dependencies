@@ -38,7 +38,7 @@ if [ "$VERSION_ID" = "22.04" ]; then
     docker-ce=5:27.1.2-1~ubuntu.22.04~jammy \
     docker-ce-cli=5:27.1.2-1~ubuntu.22.04~jammy \
     containerd.io=1.6.24-1
-elif [ "$VERSION_ID" = "22.04" ]; then
+elif [ "$VERSION_ID" = "20.04" ]; then
   apt-get install -y \
     docker-buildx-plugin=0.16.2-1~ubuntu.20.04~focal \
     docker-ce-rootless-extras=5:27.1.2-1~ubuntu.20.04~focal \
