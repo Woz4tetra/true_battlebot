@@ -1,5 +1,4 @@
 import bw_interfaces.msg as bw_interfaces
-import tf2_ros
 from app.config.config import Config
 from app.config.field_filter.field_filter_types import FieldFilterConfig
 from app.config.field_filter.global_field_manager_config import GlobalFieldManagerConfig

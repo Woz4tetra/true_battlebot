@@ -353,9 +353,9 @@ def main() -> None:
     model.to(device)
     if checkpoint_path is not None:
         checkpoint_model_name = checkpoint_path.stem.split("_")[1]
-        assert (
-            checkpoint_model_name == backbone_model_name
-        ), f"Model backbone mismatch. {checkpoint_model_name} != {backbone_model_name}"
+        assert checkpoint_model_name == backbone_model_name, (
+            f"Model backbone mismatch. {checkpoint_model_name} != {backbone_model_name}"
+        )
         checkpoints = torch.load(checkpoint_path, map_location=device)
         model.load_state_dict(checkpoints, strict=False)
         model.eval()
