@@ -6,7 +6,6 @@ from typing import Optional
 
 import numpy as np
 import rospy
-import tf2_ros
 from app.config.robot_filter.robot_filter_config import RobotFilterConfig
 from app.robot_filter.cmd_vel_tracker import CmdVelTracker
 from app.robot_filter.covariances import CmdVelHeuristics, RobotStaticHeuristics
@@ -21,13 +20,14 @@ from bw_shared.enums.label import Label
 from bw_shared.enums.robot_team import RobotTeam
 from bw_shared.geometry.pose2d import Pose2D
 from bw_shared.geometry.transform3d import Transform3D
+from bw_shared.geometry.transform3d_stamped import Transform3DStamped
 from bw_shared.geometry.xy import XY
 from bw_shared.geometry.xyz import XYZ
+from bw_shared.messages.header import Header
 from geometry_msgs.msg import (
     Point,
     Pose,
     PoseWithCovariance,
-    TransformStamped,
     Twist,
     TwistWithCovariance,
     Vector3,
@@ -35,6 +35,7 @@ from geometry_msgs.msg import (
 from nav_msgs.msg import Odometry
 from perception_tools.rosbridge.ros_poll_subscriber import RosPollSubscriber
 from perception_tools.rosbridge.ros_publisher import RosPublisher
+from perception_tools.rosbridge.transform_broadcaster_bridge import TransformBroadcasterBridge
 from std_msgs.msg import Empty
 from std_msgs.msg import Header as RosHeader
 
@@ -48,7 +49,7 @@ class RobotFilter:
         cmd_vel_subs: dict[str, RosPollSubscriber[Twist]],
         reset_filters_sub: RosPollSubscriber[Empty],
         filter_state_array_pub: RosPublisher[EstimatedObjectArray],
-        tf_broadcaster: tf2_ros.TransformBroadcaster,
+        tf_broadcaster: TransformBroadcasterBridge,
     ) -> None:
         self.logger = logging.getLogger(self.__class__.__name__)
         self.all_robots_config = robots_config
@@ -76,7 +77,8 @@ class RobotFilter:
         ]
 
         self.field = EstimatedObject()
-        self.tf_map_from_camera = Transform3D.identity()
+        self.tf_map_from_camerastart = Transform3D.identity()
+        self.tf_camerastart_from_camera: Transform3DStamped | None = None
         self.field_bounds = (XYZ(0.0, 0.0, 0.0), XYZ(0.0, 0.0, 0.0))
         self.filter_bounds = (XY(0.0, 0.0), XY(0.0, 0.0))
 
@@ -129,9 +131,13 @@ class RobotFilter:
             XY(self.field_bounds[0].x, self.field_bounds[0].y),
             XY(self.field_bounds[1].x, self.field_bounds[1].y),
         )
-        self.tf_map_from_camera = Transform3D.from_pose_msg(msg.pose.pose)
+        self.tf_map_from_camerastart = Transform3D.from_pose_msg(msg.pose.pose)
+        self.tf_camerastart_from_camera = None
         self.logger.info("Resetting filters.")
         self._reset_filters()
+
+    def update_camera_transform(self, camera_transform: Transform3DStamped) -> None:
+        self.tf_camerastart_from_camera = camera_transform
 
     def update(self) -> EstimatedObjectArray:
         if self.reset_filters_sub.receive():
@@ -299,7 +305,7 @@ class RobotFilter:
         self.logger.info(f"Initialized {robot_filter.config.name}.")
 
     def _field_received(self) -> bool:
-        return self.field.header.stamp != rospy.Time(0)
+        return self.field.header.stamp != rospy.Time(0) and self.tf_camerastart_from_camera is not None
 
     def _is_in_field_bounds(self, position: Point) -> bool:
         if not self._field_received():
@@ -312,14 +318,18 @@ class RobotFilter:
         if not self._field_received():
             self.logger.warning("Field not received. Skipping transform.")
             return None
-        if robot.header.frame_id != self.field.child_frame_id:
+        assert self.tf_camerastart_from_camera is not None
+        if robot.header.frame_id != self.tf_camerastart_from_camera.child_frame_id:
             self.logger.warning(
                 f"Header frame id {robot.header.frame_id} does not match "
-                f"field child frame id {self.field.child_frame_id}"
+                f"measurement frame id {self.tf_camerastart_from_camera.child_frame_id}"
             )
             return None
         tf_camera_from_robot = Transform3D.from_pose_msg(robot.pose.pose)
-        tf_map_from_robot = self.tf_map_from_camera.forward_by(tf_camera_from_robot)
+        tf_camerastart_from_camera = self.tf_camerastart_from_camera.transform
+        tf_map_from_robot = self.tf_map_from_camerastart.forward_by(tf_camerastart_from_camera).forward_by(
+            tf_camera_from_robot
+        )
         return tf_map_from_robot.to_pose_msg()
 
     def _predict_all_filters(self) -> None:
@@ -335,14 +345,12 @@ class RobotFilter:
             if not robot_filter.is_in_bounds(self.filter_bounds[0], self.filter_bounds[1]) or robot_filter.is_stale():
                 robot_filter.reset()
 
-    def _state_to_transform(self, state_msg: EstimatedObject) -> TransformStamped:
-        transform = TransformStamped()
-        transform.header = state_msg.header
-        transform.child_frame_id = state_msg.child_frame_id
-        transform.transform.translation = Vector3(
-            state_msg.pose.pose.position.x, state_msg.pose.pose.position.y, state_msg.pose.pose.position.z
+    def _state_to_transform(self, state_msg: EstimatedObject) -> Transform3DStamped:
+        transform = Transform3DStamped(
+            Header.from_msg(state_msg.header),
+            state_msg.child_frame_id,
+            Transform3D.from_pose_msg(state_msg.pose.pose),
         )
-        transform.transform.rotation = state_msg.pose.pose.orientation
         return transform
 
     def _state_to_odom(self, state_msg: EstimatedObject) -> Odometry:
@@ -354,7 +362,7 @@ class RobotFilter:
         return odom
 
     def _publish_all_filters(self) -> EstimatedObjectArray:
-        transforms = []
+        transforms: list[Transform3DStamped] = []
         now = rospy.Time.now()
         filtered_states = EstimatedObjectArray()
         for robot_filter in self.robot_filters:
@@ -376,5 +384,5 @@ class RobotFilter:
 
             filtered_states.robots.append(state_msg)
         self.filter_state_array_pub.publish(filtered_states)
-        self.tf_broadcaster.sendTransform(transforms)
+        self.tf_broadcaster.publish_transforms(*transforms)
         return filtered_states

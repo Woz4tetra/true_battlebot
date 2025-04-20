@@ -8,14 +8,14 @@ from std_msgs.msg import Header
 
 
 def zed_to_ros_camera_info(camera_information: Any) -> CameraInfo:
-    intrinsics = camera_information.camera_configuration.calibration_parameters.left_cam
-    resolution = intrinsics.image_size
+    zed_intrinsics = camera_information.camera_configuration.calibration_parameters.left_cam
+    resolution = zed_intrinsics.image_size
 
-    distortion = intrinsics.disto
+    distortion = np.array(zed_intrinsics.disto).flatten().tolist()
     intrinsics = np.array(
         [
-            [intrinsics.fx, 0, intrinsics.cx],
-            [0, intrinsics.fy, intrinsics.cy],
+            [zed_intrinsics.fx, 0, zed_intrinsics.cx],
+            [0, zed_intrinsics.fy, zed_intrinsics.cy],
             [0, 0, 1],
         ],
         dtype=np.float64,

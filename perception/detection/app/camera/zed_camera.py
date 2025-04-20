@@ -10,7 +10,11 @@ from app.camera.zed.video_settings import Zed2iVideoSettings, ZedParameterError
 from app.config.camera.zed_camera_config import ZedCameraConfig
 from app.config.camera_topic_config import CameraTopicConfig
 from bw_interfaces.msg import ControlRecording
+from bw_shared.enums.frame_id import FrameId
+from bw_shared.geometry.transform3d import Transform3D
+from bw_shared.geometry.transform3d_stamped import Transform3DStamped
 from bw_shared.messages.header import Header
+from geometry_msgs.msg import Quaternion, Vector3
 from perception_tools.messages.camera_data import CameraData
 from perception_tools.messages.image import Image
 from perception_tools.messages.point_cloud import CloudFieldName, PointCloud
@@ -49,6 +53,8 @@ class ZedCamera(CameraInterface):
         self.init_params.camera_fps = self.config.fps
         self.init_params.coordinate_units = sl.UNIT.METER
 
+        self.tracking_parameters = sl.PositionalTrackingParameters()
+
         if self.config.serial_number != -1:
             self.init_params.set_from_serial_number(self.config.serial_number, sl.BUS_TYPE.USB)
             self.logger.info(f"ZED Camera serial number: {self.config.serial_number}")
@@ -84,15 +90,15 @@ class ZedCamera(CameraInterface):
         return True
 
     def open(self) -> bool:
-        status = None
+        open_status = None
         if self.is_open:
             return True
         while not rospy.is_shutdown():
-            status = self.camera.open(self.init_params)
-            if status == sl.ERROR_CODE.SUCCESS:
+            open_status = self.camera.open(self.init_params)
+            if open_status == sl.ERROR_CODE.SUCCESS:
                 self.logger.info("ZED Camera opened successfully")
                 break
-            self.logger.error(f"ZED Camera failed to open: {zed_status_to_str(status)}")
+            self.logger.error(f"ZED Camera failed to open: {zed_status_to_str(open_status)}")
             self.logger.error("Retrying...")
             self.camera.close()
 
@@ -104,10 +110,16 @@ class ZedCamera(CameraInterface):
             return False
 
         self.logger.info(f"ZED camera settings: {str(Zed2iVideoSettings.from_camera(self.camera))}")
-
         self.logger.info("ZED Camera opened successfully")
 
         self.camera_info = self.load_camera_info()
+        if self.config.enable_positional_tracking:
+            pos_track_status = self.camera.enable_positional_tracking(self.tracking_parameters)
+            if pos_track_status != sl.ERROR_CODE.SUCCESS:
+                self.logger.error(f"Failed to enable positional tracking: {zed_status_to_str(pos_track_status)}")
+                self.close()
+                return False
+
         self.is_open = True
         return True
 
@@ -148,6 +160,20 @@ class ZedCamera(CameraInterface):
             case _:
                 self.logger.error(f"Invalid ZED Camera recording command: {command}")
 
+    def _update_positional_tracking(self) -> Transform3D:
+        zed_pose = sl.Pose()
+        self.camera.get_position(zed_pose, sl.REFERENCE_FRAME.CAMERA)
+        translation_container = sl.Translation()
+        translation = zed_pose.get_translation(translation_container).get()
+        rotation_container = sl.Orientation()
+        rotation = zed_pose.get_orientation(rotation_container).get()
+        transform = Transform3D.from_position_and_quaternion(
+            Vector3(translation[0], translation[1], translation[2]),
+            Quaternion(rotation[0], rotation[1], rotation[2], rotation[3]),
+        )
+
+        return transform
+
     def poll(self) -> CameraData | None:
         self._poll_recording()
         status = self.camera.grab(self.runtime_parameters)
@@ -171,10 +197,14 @@ class ZedCamera(CameraInterface):
         self.camera_info.header = header.to_msg()
         image = Image(header, color_image_data)
         point_cloud = PointCloud(header, points, colors, color_encoding=CloudFieldName.BGRA)
+        tf_camera_from_world = self._update_positional_tracking() if self.config.enable_positional_tracking else None
+
         camera_data = CameraData(
             color_image=image,
             point_cloud=point_cloud,
             camera_info=self.camera_info,
+            tf_camera_from_world=tf_camera_from_world,
+            world_frame=FrameId.WORLD_CAMERA_0,
         )
         sensors_data = sl.SensorsData()
         imu_status = self.camera.get_sensors_data(sensors_data, sl.TIME_REFERENCE.CURRENT)

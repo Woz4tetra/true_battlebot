@@ -1,4 +1,6 @@
+from app.field_filter.live_pose_field_tracker import LivePoseFieldTracker
 from perception_tools.fix_rosgraph_logging import fix_rosgraph_logging
+from perception_tools.rosbridge.transform_broadcaster_bridge import TransformBroadcasterBridge
 
 fix_rosgraph_logging()
 
@@ -19,7 +21,11 @@ from app.config.config_loader import load_config
 from app.config.list_configs import get_config_path
 from app.container import Container
 from app.field_filter.field_filter_interface import FieldFilterInterface
-from app.field_filter.field_filter_loader import load_field_filter, load_global_field_manager
+from app.field_filter.field_filter_loader import (
+    load_field_filter,
+    load_global_field_manager,
+    load_live_pose_field_tracker,
+)
 from app.field_filter.field_request_handler import FieldRequestHandler
 from app.field_filter.global_field_manager import GlobalFieldManager
 from app.keypoint.keypoint_interface import KeypointInterface
@@ -83,6 +89,9 @@ class Runner:
             "keypoint_to_object_converter"
         )
         self.robot_filter = self.container.resolve(RobotFilter)
+        self.live_pose_field_tracker = self.container.resolve(LivePoseFieldTracker)
+        self.transform_broadcaster = self.container.resolve(TransformBroadcasterBridge)
+
         self.camera_data = CameraData()
         self.is_field_request_active = False
         self.prev_no_camera_warning_time = time.monotonic()
@@ -108,6 +117,7 @@ class Runner:
         else:
             self.perceive_robot()
         filtered_robots = self.robot_filter.update()
+        self.transform_broadcaster.send_pending_transforms()
 
     def perceive_robot(self) -> None:
         if not self.camera.switch_mode(CameraMode.ROBOT_FINDER):
@@ -117,6 +127,10 @@ class Runner:
         if camera_data is None or camera_data.color_image.data.size == 0:
             return
         self.camera_data = camera_data
+        if tfstamped_camera_from_world := self.camera_data.tfstamped_camera_from_world:
+            self.robot_filter.update_camera_transform(
+                self.live_pose_field_tracker.get_tf_worldstart_from_camera(tfstamped_camera_from_world)
+            )
         with ContextTimer("robot_keypoint.process_image"):
             robot_points, debug_image = self.robot_keypoint.process_image(
                 camera_data.camera_info, camera_data.color_image
@@ -150,9 +164,14 @@ class Runner:
             return False
         self.camera_data = camera_data
 
-        self.point_cloud_publisher.publish(camera_data.point_cloud.to_msg())
-
+        point_cloud = camera_data.point_cloud
         image = camera_data.color_image
+
+        # for this single frame, camera and world are the same. camera -> world is computed after this.
+        point_cloud.header.frame_id = camera_data.world_frame
+        image.header.frame_id = camera_data.world_frame
+        self.point_cloud_publisher.publish(point_cloud.to_msg())
+
         with ContextTimer("field_segmentation.process_image"):
             field_seg, debug_image = self.field_segmentation.process_image(image)
         if not field_seg:
@@ -160,14 +179,15 @@ class Runner:
             return False
         self.field_segmentation_publisher.publish(field_seg)
         with ContextTimer("field_filter.compute_field"):
-            field_result, field_point_cloud = self.field_filter.compute_field(field_seg, camera_data.point_cloud)
+            field_result, field_point_cloud = self.field_filter.compute_field(field_seg, point_cloud)
         if not field_result:
             self.logger.debug("No field result")
             return False
-        aligned_field = self.global_field_manager.process_field(field_result)
-        if aligned_field:
+        aligned_field, relative_field = self.global_field_manager.process_field(field_result)
+        if aligned_field and relative_field:
             self.keypoint_to_object_converter.set_field(aligned_field)
             self.robot_filter.update_field(aligned_field)
+            self.live_pose_field_tracker.reset(relative_field)
         if debug_image:
             self.logger.info("Publishing debug image")
             self.field_debug_image_publisher.publish(debug_image.to_msg())
@@ -212,10 +232,8 @@ def make_ros_comms(container: Container) -> None:
     container.register(heartbeat_publisher, "heartbeat_publisher")
 
     static_broadcaster = tf2_ros.StaticTransformBroadcaster()
-    container.register(static_broadcaster)
-
     tf_broadcaster = tf2_ros.TransformBroadcaster()
-    container.register(tf_broadcaster)
+    container.register(TransformBroadcasterBridge(static_broadcaster, tf_broadcaster))
 
 
 def make_field_segmentation(container: Container) -> None:
@@ -268,6 +286,9 @@ def make_field_interface(container: Container) -> None:
 
     global_field_manager = load_global_field_manager(config.global_field_manager, container)
     container.register(global_field_manager, GlobalFieldManager)
+
+    live_pose_field_tracker = load_live_pose_field_tracker(config.live_pose_field_tracker, container)
+    container.register(live_pose_field_tracker, LivePoseFieldTracker)
 
     logger.info(f"Field filter: {type(field_filter)}")
 

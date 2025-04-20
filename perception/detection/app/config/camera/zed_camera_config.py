@@ -13,3 +13,4 @@ class ZedCameraConfig:
     svo_directory: str = "/data/svo"
     resolution: Zed2iResolutions = Zed2iResolutions.MODE_HD1080
     fps: int = 30
+    enable_positional_tracking: bool = True

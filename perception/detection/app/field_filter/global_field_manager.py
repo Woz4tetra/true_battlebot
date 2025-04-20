@@ -3,7 +3,6 @@ import logging
 import math
 
 import bw_interfaces.msg as bw_interfaces
-import tf2_ros
 from app.config.field_filter.global_field_manager_config import GlobalFieldManagerConfig
 from bw_interfaces.msg import EstimatedObject
 from bw_shared.configs.maps_config import MapConfig
@@ -12,11 +11,13 @@ from bw_shared.enums.field_type import FieldType
 from bw_shared.enums.label import Label
 from bw_shared.geometry.rpy import RPY
 from bw_shared.geometry.transform3d import Transform3D
+from bw_shared.geometry.transform3d_stamped import Transform3DStamped
 from bw_shared.geometry.xyz import XYZ
 from bw_shared.messages.header import Header
 from geometry_msgs.msg import Vector3
 from perception_tools.rosbridge.ros_poll_subscriber import RosPollSubscriber
 from perception_tools.rosbridge.ros_publisher import RosPublisher
+from perception_tools.rosbridge.transform_broadcaster_bridge import TransformBroadcasterBridge
 from std_msgs.msg import ColorRGBA
 from std_msgs.msg import Header as RosHeader
 from visualization_msgs.msg import Marker, MarkerArray
@@ -35,7 +36,7 @@ class GlobalFieldManager:
         set_corner_side_sub: RosPollSubscriber[bw_interfaces.CageCorner],
         estimated_field_pub: RosPublisher[EstimatedObject],
         estimated_field_marker_pub: RosPublisher[MarkerArray],
-        tf_broadcaster: tf2_ros.StaticTransformBroadcaster,
+        tf_broadcaster: TransformBroadcasterBridge,
         latched_corner_pub: RosPublisher[bw_interfaces.CageCorner],
     ) -> None:
         self.logger = logging.getLogger(self.__class__.__name__)
@@ -63,7 +64,7 @@ class GlobalFieldManager:
         self.estimated_field_marker_pub = estimated_field_marker_pub
         self.tf_broadcaster = tf_broadcaster
 
-    def process_field(self, field: EstimatedObject) -> EstimatedObject | None:
+    def process_field(self, field: EstimatedObject) -> tuple[EstimatedObject | None, EstimatedObject | None]:
         tf_relativemap_from_camera = Transform3D.from_pose_msg(field.pose.pose).inverse()
 
         extents = XYZ.from_msg(field.size)
@@ -73,7 +74,7 @@ class GlobalFieldManager:
             self.logger.warning(
                 f"Field size does not match expected size: Got {extents}, expected {self.expected_size}"
             )
-            return None
+            return None, None
 
         relative_field = EstimatedObject()
         relative_field.size = field.size
@@ -91,7 +92,7 @@ class GlobalFieldManager:
         self.estimated_field_pub.publish(aligned_field)
         self.publish_field_markers(aligned_field)
         self.publish_transforms(relative_field)
-        return aligned_field
+        return aligned_field, relative_field
 
     def get_cage_aligned_transform(self) -> Transform3D:
         if msg := self.set_corner_side_sub.receive():
@@ -154,26 +155,25 @@ class GlobalFieldManager:
         marker.color = color
         return marker
 
-    def get_field_tf(self, estimated_field: EstimatedObject) -> tf2_ros.TransformStamped:
+    def get_field_tf(self, estimated_field: EstimatedObject) -> Transform3DStamped:
         field_pose = estimated_field.pose.pose
         transform = Transform3D.from_pose_msg(field_pose)
 
-        field_tf = tf2_ros.TransformStamped()
-        field_tf.header.stamp = estimated_field.header.stamp
-        field_tf.header.frame_id = estimated_field.header.frame_id
-        field_tf.child_frame_id = estimated_field.child_frame_id
-        field_tf.transform = transform.to_msg()
+        field_tf = Transform3DStamped(
+            Header.from_msg(estimated_field.header), estimated_field.child_frame_id, transform
+        )
         return field_tf
 
-    def get_aligned_tf(self, estimated_field: EstimatedObject) -> tf2_ros.TransformStamped:
+    def get_aligned_tf(self, estimated_field: EstimatedObject) -> Transform3DStamped:
         transform = self.get_cage_aligned_transform()
-        aligned_tf = tf2_ros.TransformStamped()
-        aligned_tf.header.stamp = estimated_field.header.stamp
-        aligned_tf.header.frame_id = self.map_frame
-        aligned_tf.child_frame_id = estimated_field.header.frame_id
-        aligned_tf.transform = transform.to_msg()
+        aligned_tf = Transform3DStamped(
+            Header(estimated_field.header.stamp.to_sec(), self.map_frame, estimated_field.header.seq),
+            estimated_field.header.frame_id,
+            transform,
+        )
         return aligned_tf
 
     def publish_transforms(self, relative_field: EstimatedObject) -> None:
-        tfs = [self.get_field_tf(relative_field), self.get_aligned_tf(relative_field)]
-        self.tf_broadcaster.sendTransform(tfs)
+        self.tf_broadcaster.publish_static_transforms(
+            self.get_field_tf(relative_field), self.get_aligned_tf(relative_field)
+        )
