@@ -16,7 +16,7 @@ class CameraData:
     camera_info: CameraInfo = field(default_factory=CameraInfo)
     imu: Imu = field(default_factory=Imu)
     tf_camera_from_world: Transform3D | None = None
-    world_frame: FrameId = FrameId.WORLD_CAMERA_0
+    world_frame_id: FrameId = FrameId.WORLD_CAMERA_0
 
     def set_header(self, header):
         self.color_image.header = header
@@ -30,6 +30,6 @@ class CameraData:
             return None
         return Transform3DStamped(
             header=self.color_image.header,
-            child_frame_id=self.world_frame,
+            child_frame_id=self.world_frame_id,
             transform=self.tf_camera_from_world,
         )

@@ -1,3 +1,4 @@
+import copy
 import logging
 from pathlib import Path
 
@@ -10,9 +11,7 @@ from app.camera.zed.video_settings import Zed2iVideoSettings, ZedParameterError
 from app.config.camera.zed_camera_config import ZedCameraConfig
 from app.config.camera_topic_config import CameraTopicConfig
 from bw_interfaces.msg import ControlRecording
-from bw_shared.enums.frame_id import FrameId
 from bw_shared.geometry.transform3d import Transform3D
-from bw_shared.geometry.transform3d_stamped import Transform3DStamped
 from bw_shared.messages.header import Header
 from geometry_msgs.msg import Quaternion, Vector3
 from perception_tools.messages.camera_data import CameraData
@@ -48,7 +47,9 @@ class ZedCamera(CameraInterface):
         self.camera = sl.Camera()
 
         self.init_params = sl.InitParameters()
-        self.init_params.depth_mode = sl.DEPTH_MODE.NEURAL_PLUS
+        self.init_params.depth_mode = sl.DEPTH_MODE.PERFORMANCE
+        # self.init_params.depth_mode = sl.DEPTH_MODE.NEURAL_PLUS
+        self.init_params.coordinate_system = sl.COORDINATE_SYSTEM.IMAGE
         self.init_params.camera_resolution = self.config.resolution.to_zed()
         self.init_params.camera_fps = self.config.fps
         self.init_params.coordinate_units = sl.UNIT.METER
@@ -81,7 +82,7 @@ class ZedCamera(CameraInterface):
 
     def _set_robot_finder_settings(self) -> bool:
         self.logger.info("Setting ZED Camera to Robot Finder mode")
-        self.runtime_parameters.enable_depth = False
+        self.runtime_parameters.enable_depth = True
         return True
 
     def _set_field_finder_settings(self) -> bool:
@@ -137,7 +138,7 @@ class ZedCamera(CameraInterface):
         image_time = self.camera.get_timestamp(sl.TIME_REFERENCE.IMAGE).get_nanoseconds()
         self.header.stamp = image_time * 1e-9
         self.header.seq += 1
-        return self.header
+        return copy.copy(self.header)
 
     def _poll_recording(self) -> None:
         if not self.record_svo_sub:
@@ -162,7 +163,7 @@ class ZedCamera(CameraInterface):
 
     def _update_positional_tracking(self) -> Transform3D:
         zed_pose = sl.Pose()
-        self.camera.get_position(zed_pose, sl.REFERENCE_FRAME.CAMERA)
+        self.camera.get_position(zed_pose, sl.REFERENCE_FRAME.WORLD)
         translation_container = sl.Translation()
         translation = zed_pose.get_translation(translation_container).get()
         rotation_container = sl.Orientation()
@@ -197,14 +198,16 @@ class ZedCamera(CameraInterface):
         self.camera_info.header = header.to_msg()
         image = Image(header, color_image_data)
         point_cloud = PointCloud(header, points, colors, color_encoding=CloudFieldName.BGRA)
-        tf_camera_from_world = self._update_positional_tracking() if self.config.enable_positional_tracking else None
+        tf_camera_from_world = (
+            self._update_positional_tracking() if self.config.enable_positional_tracking else Transform3D.identity()
+        )
 
         camera_data = CameraData(
             color_image=image,
             point_cloud=point_cloud,
             camera_info=self.camera_info,
             tf_camera_from_world=tf_camera_from_world,
-            world_frame=FrameId.WORLD_CAMERA_0,
+            world_frame_id=self.camera_topic_config.world_frame_id,
         )
         sensors_data = sl.SensorsData()
         imu_status = self.camera.get_sensors_data(sensors_data, sl.TIME_REFERENCE.CURRENT)

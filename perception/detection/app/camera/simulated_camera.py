@@ -60,13 +60,15 @@ class SimulatedCamera(CameraInterface):
             if self.mode_change_time > self.depth_receive_time:
                 self.logger.debug("Requested depth image")
                 self.depth_request_pub.publish(Empty())
-        if color := self.color_image_sub.receive():
-            self._update_color(now, color)
         if depth := self.depth_image_sub.receive():
             self._update_depth(now, depth)
         if camera_info := self.camera_info_sub.receive():
             self._update_camera_info(now, camera_info)
-        return self.camera_data
+        if color := self.color_image_sub.receive():
+            self._update_color(now, color)
+            return self.camera_data
+        else:
+            return None
 
     def _update_camera_info(self, now: float, camera_info: CameraInfo) -> None:
         info_time = camera_info.header.stamp.to_sec()
@@ -74,7 +76,7 @@ class SimulatedCamera(CameraInterface):
         self.logger.debug(f"Received info. Delay: {now - info_time}")
         self.camera_data.camera_info = camera_info
         self.camera_data.tf_camera_from_world = Transform3D.identity()
-        self.camera_data.world_frame = FrameId.WORLD_CAMERA_0
+        self.camera_data.world_frame_id = self.camera_topic_config.world_frame_id
 
     def _update_color(self, now: float, color: RosImage) -> None:
         color_image_time = color.header.stamp.to_sec()

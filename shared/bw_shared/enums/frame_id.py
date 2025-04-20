@@ -5,3 +5,5 @@ class FrameId(str, EnumAutoLowerStr):
     MAP = auto()
     MAP_RELATIVE = auto()
     WORLD_CAMERA_0 = auto()
+    CAMERA_0 = auto()
+    CAMERA_1 = auto()

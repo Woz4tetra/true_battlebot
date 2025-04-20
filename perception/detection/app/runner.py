@@ -168,8 +168,8 @@ class Runner:
         image = camera_data.color_image
 
         # for this single frame, camera and world are the same. camera -> world is computed after this.
-        point_cloud.header.frame_id = camera_data.world_frame
-        image.header.frame_id = camera_data.world_frame
+        point_cloud.header.frame_id = camera_data.world_frame_id
+        image.header.frame_id = camera_data.world_frame_id
         self.point_cloud_publisher.publish(point_cloud.to_msg())
 
         with ContextTimer("field_segmentation.process_image"):

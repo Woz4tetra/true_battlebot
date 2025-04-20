@@ -1,6 +1,5 @@
 import logging
 
-import tf2_ros
 from app.config.field_filter.live_pose_field_tracker_config import LivePoseFieldTrackerConfig
 from bw_interfaces.msg import EstimatedObject
 from bw_shared.geometry.transform3d import Transform3D
