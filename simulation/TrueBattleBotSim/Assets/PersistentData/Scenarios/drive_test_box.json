@@ -18,11 +18,6 @@
             "objective": "drive_test_box_slow_camera"
         },
         {
-            "name": "tracking_camera",
-            "model": "OAK-1",
-            "objective": "drive_test_box_tracking_camera"
-        },
-        {
             "name": "mini_bot",
             "model": "MR STABS MK2",
             "objective": "keyboard_blue_corner"

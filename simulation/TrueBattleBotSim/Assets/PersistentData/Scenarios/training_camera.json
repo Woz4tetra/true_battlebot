@@ -11,8 +11,8 @@
     },
     "actors": [
         {
-            "name": "tracking_camera",
-            "model": "Training Camera",
+            "name": "slow_camera",
+            "model": "ZED 2i",
             "objective": "blue_slow_camera"
         },
         {

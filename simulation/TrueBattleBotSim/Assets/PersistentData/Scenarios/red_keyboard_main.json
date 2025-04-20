@@ -12,11 +12,6 @@
             "objective": "red_slow_camera"
         },
         {
-            "name": "tracking_camera",
-            "model": "OAK-1",
-            "objective": "red_tracking_camera"
-        },
-        {
             "name": "mini_bot",
             "model": "MR STABS MK2",
             "objective": "auto_red_corner"

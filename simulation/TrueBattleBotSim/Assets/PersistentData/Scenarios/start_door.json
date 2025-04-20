@@ -16,11 +16,6 @@
             "objective": "blue_slow_camera"
         },
         {
-            "name": "tracking_camera",
-            "model": "OAK-1",
-            "objective": "blue_tracking_camera"
-        },
-        {
             "name": "mini_bot",
             "model": "MR STABS MK2",
             "objective": "auto_door"
