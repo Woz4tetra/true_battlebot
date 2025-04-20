@@ -173,7 +173,7 @@ class ZedCamera(CameraInterface):
             Quaternion(rotation[0], rotation[1], rotation[2], rotation[3]),
         )
 
-        return transform
+        return transform.inverse()
 
     def poll(self) -> CameraData | None:
         self._poll_recording()

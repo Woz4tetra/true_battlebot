@@ -38,7 +38,7 @@ class LivePoseFieldTracker:
         tf_worldstart_from_camera = Transform3DStamped(
             header=Header.auto(stamp=tf_camera_from_world.header.stamp, frame_id=tf_camera_from_world.child_frame_id),
             child_frame_id=tf_camera_from_world.header.frame_id,
-            transform=tf_worldstart_from_world.forward_by(tf_camera_from_world.transform),
+            transform=tf_worldstart_from_world.forward_by(tf_camera_from_world.transform.inverse()),
         )
         self.tf_broadcaster.publish_transforms(tf_worldstart_from_camera)
         return tf_worldstart_from_camera
