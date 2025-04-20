@@ -47,8 +47,7 @@ class ZedCamera(CameraInterface):
         self.camera = sl.Camera()
 
         self.init_params = sl.InitParameters()
-        self.init_params.depth_mode = sl.DEPTH_MODE.PERFORMANCE
-        # self.init_params.depth_mode = sl.DEPTH_MODE.NEURAL_PLUS
+        self.init_params.depth_mode = sl.DEPTH_MODE.NEURAL
         self.init_params.coordinate_system = sl.COORDINATE_SYSTEM.IMAGE
         self.init_params.camera_resolution = self.config.resolution.to_zed()
         self.init_params.camera_fps = self.config.fps

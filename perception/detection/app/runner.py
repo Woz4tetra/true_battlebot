@@ -10,6 +10,8 @@ import time
 from cProfile import Profile
 from pathlib import Path
 from pstats import SortKey, Stats
+from queue import Queue
+from threading import Event, Thread
 from typing import Protocol, cast
 
 import rospy
@@ -36,7 +38,13 @@ from app.robot_filter.robot_filter import RobotFilter
 from app.robot_filter.robot_filter_loader import load_robot_filter
 from app.segmentation.segmentation_interface import SegmentationInterface
 from app.segmentation.segmentation_loader import load_segmentation
-from bw_interfaces.msg import Heartbeat, KeypointInstanceArray, LabelMap, SegmentationInstanceArray
+from bw_interfaces.msg import (
+    EstimatedObjectArray,
+    Heartbeat,
+    KeypointInstanceArray,
+    LabelMap,
+    SegmentationInstanceArray,
+)
 from bw_shared.configs.shared_config import SharedConfig
 from bw_shared.enums.field_type import FieldType
 from bw_shared.environment import get_map, get_robot
@@ -55,6 +63,7 @@ from std_msgs.msg import Empty
 class Runner:
     def __init__(self, container: Container) -> None:
         self.container = container
+        self.config = self.container.resolve(Config)
         self.heartbeat_publisher: RosPublisher[Heartbeat] = self.container.resolve_by_name("heartbeat_publisher")
         self.camera = self.container.resolve(CameraInterface)
 
@@ -92,6 +101,10 @@ class Runner:
         self.live_pose_field_tracker = self.container.resolve(LivePoseFieldTracker)
         self.transform_broadcaster = self.container.resolve(TransformBroadcasterBridge)
 
+        self.robot_estimation_queue: Queue[EstimatedObjectArray] = Queue()
+        self.robot_estimation_thread = Thread(target=self.robot_estimations_task)
+        self.exit_event = Event()
+
         self.camera_data = CameraData()
         self.is_field_request_active = False
         self.prev_no_camera_warning_time = time.monotonic()
@@ -101,6 +114,7 @@ class Runner:
         self.logger.info("Runner started")
         self.field_label_map_publisher.publish(self.field_segmentation.get_model_to_system_labels())
         self.robot_label_map_publisher.publish(self.robot_keypoint.get_model_to_system_labels())
+        self.robot_estimation_thread.start()
 
         if not self.camera.open():
             raise RuntimeError("Failed to open camera")
@@ -116,8 +130,17 @@ class Runner:
                 self.is_field_request_active = False
         else:
             self.perceive_robot()
-        filtered_robots = self.robot_filter.update()
         self.transform_broadcaster.send_pending_transforms()
+
+    def robot_estimations_task(self) -> None:
+        queue = self.robot_estimation_queue
+        for dt in regulate_tick(self.config.target_tick_rate):
+            if dt > self.config.loop_overrun_threshold:
+                self.logger.warning(f"Estimations task overrun: {dt:.6f} seconds")
+            if not queue.empty():
+                robot_estimations = queue.get()
+                self.robot_filter.update_robot_estimations(robot_estimations)
+            self.robot_filter.update()
 
     def perceive_robot(self) -> None:
         if not self.camera.switch_mode(CameraMode.ROBOT_FINDER):
@@ -142,8 +165,7 @@ class Runner:
                 )
             self.robot_keypoint_publisher.publish(robot_points)
             if robot_estimations:
-                with ContextTimer("robot_filter.update_robot_estimations"):
-                    self.robot_filter.update_robot_estimations(robot_estimations)
+                self.robot_estimation_queue.put(robot_estimations)
 
         if debug_image:
             self.robot_debug_image_publisher.publish(debug_image.to_msg())
@@ -202,6 +224,8 @@ class Runner:
 
     def stop(self) -> None:
         self.camera.close()
+        self.exit_event.set()
+        self.robot_estimation_thread.join()
         rospy.signal_shutdown("Runner stopped")
         self.logger.info("Runner stopped")
 
