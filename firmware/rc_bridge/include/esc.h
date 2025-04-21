@@ -11,7 +11,7 @@ namespace esc
     const int SPREAD_PULSE = 90;
     const int MAX_PULSE = NEUTRAL_ANGLE + SPREAD_PULSE;
     const int MIN_PULSE = NEUTRAL_ANGLE - SPREAD_PULSE;
-    const float DEADZONE_PERCENT = 10.0;
+    const float DEADZONE_PERCENT = 1.0;
 
     class Esc
     {

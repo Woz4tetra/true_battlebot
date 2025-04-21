@@ -123,28 +123,29 @@ class TrajectoryPlanner(PlannerInterface):
         # elif avoid_danger_twist := self.recover_from_engine.compute_recovery_command(match_state):
         #     rospy.logdebug("In danger recovery.")
         #     twist = avoid_danger_twist
-        elif is_controlled_bot_in_bounds(self.buffer_xy, self.config.backaway_recover.angle_tolerance, match_state):
-            markers.extend(self.local_planner.visualize_local_plan())
-            trajectory, did_replan, start_time = self.global_planner.compute(
-                controlled_robot, goal_target, field, engine_config
-            )
-            if trajectory is None:
-                rospy.logwarn("No active trajectory")
-                return Twist(), goal_progress, MarkerArray(markers=markers)
-            if did_replan:
-                rospy.logdebug("Replanned trajectory.")
-                markers.extend(self.global_planner.visualize_trajectory())
-            twist, goal_progress = self.local_planner.compute(
-                trajectory, start_time, controlled_robot, match_state.avoid_robot_states
-            )
-            if goal_progress.is_done and match_state.distance_to_goal < xy_tolerance:
-                self.trajectory_complete_time = now
-                goal_progress.is_done = not rotate_at_end
-        else:
-            rospy.logdebug("Backing away from wall.")
-            twist = self.backaway_engine.compute(match_state.goal_pose, match_state.controlled_robot_pose)
+        # elif is_controlled_bot_in_bounds(self.buffer_xy, self.config.backaway_recover.angle_tolerance, match_state):
+        markers.extend(self.local_planner.visualize_local_plan())
+        trajectory, did_replan, start_time = self.global_planner.compute(
+            controlled_robot, goal_target, field, engine_config
+        )
+        if trajectory is None:
+            rospy.logwarn("No active trajectory")
+            return Twist(), goal_progress, MarkerArray(markers=markers)
+        if did_replan:
+            rospy.logdebug("Replanned trajectory.")
+            markers.extend(self.global_planner.visualize_trajectory())
+        twist, goal_progress = self.local_planner.compute(
+            trajectory, start_time, controlled_robot, match_state.avoid_robot_states
+        )
+        if goal_progress.is_done and match_state.distance_to_goal < xy_tolerance:
+            self.trajectory_complete_time = now
+            goal_progress.is_done = not rotate_at_end
+        # else:
+        #     rospy.logdebug("Backing away from wall.")
+        #     twist = self.backaway_engine.compute(match_state.goal_pose, match_state.controlled_robot_pose)
 
         twist = clamp_twist_with_config(twist, engine_config, self.traj_velocity_limits)
+        rospy.loginfo("twist x: %s, twist z: %s", twist.linear.x, twist.angular.z)
         goal_progress.distance_to_goal = compute_feedback_distance(controlled_robot, goal_target)
 
         return twist, goal_progress, MarkerArray(markers=markers)

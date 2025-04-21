@@ -5,5 +5,5 @@ from bw_tools.messages.goal_strategy import GoalStrategy
 
 @dataclass
 class GoToGoalConfig:
-    xy_tolerance: float = 0.1
+    xy_tolerance: float = 0.01
     strategy: GoalStrategy = GoalStrategy.CRASH_OPPONENT

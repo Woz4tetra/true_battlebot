@@ -4,7 +4,7 @@ target_tick_rate = 120.0
 type = "ZedCamera"
 serial_number = 33234316  # polarlized
 # serial_number = 33452020  # non-polarlized
-fps = 60  # 15, 30, 60, 100
+fps = 30  # 15, 30, 60, 100
 resolution = "mode_hd720"  # mode_auto, mode_vga, mode_hd720, mode_hd1080, mode_hd2k
 
 [camera.video_settings]

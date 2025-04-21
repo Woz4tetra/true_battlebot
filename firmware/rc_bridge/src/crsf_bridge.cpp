@@ -49,6 +49,10 @@ float CrsfBridge::scale_channel_to_percent(float channel_value)
         percent = -100.0 / (MID_CYCLE - MIN_CYCLE) * (MID_CYCLE - channel_value);
     else
         percent = 100.0 / (MAX_CYCLE - MID_CYCLE) * (channel_value - MID_CYCLE);
+    if (abs(percent) < EPSILON_PERCENT)
+        percent = 0.0;
+    else if (abs(percent) < DEADZONE_PERCENT)
+        percent = DEADZONE_PERCENT * (percent > 0 ? 1 : -1);
     return min(100.0f, max(-100.0f, percent));
 }
 

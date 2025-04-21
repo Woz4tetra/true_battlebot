@@ -26,6 +26,8 @@ const int NUM_PIXELS = 1;
 Adafruit_NeoPixel pixels(NUM_PIXELS, PIN_NEOPIXEL, NEO_GRB + NEO_KHZ800);
 int rainbow_tick = 0, led_intensity = 20;
 
+bool is_loading_firmware = false;
+
 void set_builtin_led(int value)
 {
     pixels.fill(pixels.Color(value, 0, 0));
@@ -76,6 +78,7 @@ void setup_ota()
     ArduinoOTA
         .onStart([]()
                  {
+    is_loading_firmware = true;
     stop_escs();
     String type;
     if (ArduinoOTA.getCommand() == U_FLASH) {
@@ -192,7 +195,7 @@ void loop()
     cycle_rainbow_led(rainbow_tick, led_intensity);
     rainbow_tick = (rainbow_tick + 5) % 255;
 
-    if (radio_data->button_state)
+    if (radio_data->button_state || is_loading_firmware)
         ArduinoOTA.handle();
 
     if (!crsf->update(radio_data))

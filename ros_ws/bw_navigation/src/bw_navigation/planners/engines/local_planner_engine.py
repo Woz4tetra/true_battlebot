@@ -141,9 +141,11 @@ class LocalPlannerEngine:
         desired_state = trajectory.sample(time_from_start)
         desired_pose = Pose2D(desired_state.pose.X(), desired_state.pose.Y(), get_theta(desired_state.pose.rotation()))
         robot_pose = Pose2D.from_msg(controlled_robot_state.pose.pose)
-        rerouted_pose, was_colliding = self.respond_to_obstacles(
-            controlled_robot_state, desired_pose, friendly_robot_states
-        )
+        rerouted_pose = desired_pose
+        was_colliding = False
+        # rerouted_pose, was_colliding = self.respond_to_obstacles(
+        #     controlled_robot_state, desired_pose, friendly_robot_states
+        # )
         self.desired_pose = rerouted_pose
 
         twist = Twist()

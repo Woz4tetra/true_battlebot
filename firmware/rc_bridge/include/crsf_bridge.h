@@ -14,6 +14,9 @@ namespace crsf_bridge
     const float UPPER_CYCLE = 1200.0;
     const float MAX_CYCLE = 1700.0;
 
+    const float DEADZONE_PERCENT = 1.0;
+    const float EPSILON_PERCENT = 0.1;
+
     typedef enum three_state_switch
     {
         DOWN = 0,
