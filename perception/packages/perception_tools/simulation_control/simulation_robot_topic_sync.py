@@ -76,7 +76,7 @@ class SimulationRobotTopicSync:
     def get_snapshot(self) -> RobotDataShapshot | None:
         with self.lock:
             if self.image is None:
-                self.logger.warning("Missing image")
+                # self.logger.warning("Missing image")
                 return None
             image = Image.from_other(self.image)
             self.image = None

@@ -1,9 +1,6 @@
-from app.field_filter.live_pose_field_tracker import LivePoseFieldTracker
 from perception_tools.fix_rosgraph_logging import fix_rosgraph_logging
-from perception_tools.rosbridge.transform_broadcaster_bridge import TransformBroadcasterBridge
 
 fix_rosgraph_logging()
-
 import argparse
 import logging
 import time
@@ -30,6 +27,7 @@ from app.field_filter.field_filter_loader import (
 )
 from app.field_filter.field_request_handler import FieldRequestHandler
 from app.field_filter.global_field_manager import GlobalFieldManager
+from app.field_filter.live_pose_field_tracker import LivePoseFieldTracker
 from app.keypoint.keypoint_interface import KeypointInterface
 from app.keypoint.keypoint_loader import load_keypoint, load_keypoint_to_object_converter
 from app.keypoint.keypoint_to_object_converter import KeypointToObjectConverter
@@ -55,6 +53,7 @@ from perception_tools.json_logger import CustomJsonFormatter
 from perception_tools.messages.camera_data import CameraData
 from perception_tools.rosbridge.ros_poll_subscriber import RosPollSubscriber
 from perception_tools.rosbridge.ros_publisher import RosPublisher
+from perception_tools.rosbridge.transform_broadcaster_bridge import TransformBroadcasterBridge
 from perception_tools.rosbridge.wait_for_ros_connection import wait_for_ros_connection
 from sensor_msgs.msg import Image, PointCloud2
 from std_msgs.msg import Empty

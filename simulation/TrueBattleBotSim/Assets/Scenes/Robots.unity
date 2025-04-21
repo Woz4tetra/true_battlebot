@@ -583,6 +583,11 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 26f56d420891a4b27bc761378e77c2c7, type: 3}
+--- !u!4 &759034895 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4843778166518662606, guid: 26f56d420891a4b27bc761378e77c2c7, type: 3}
+  m_PrefabInstance: {fileID: 759034894}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &794473125
 GameObject:
   m_ObjectHideFlags: 0
@@ -1925,6 +1930,10 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 2425132708144454237, guid: c153a5e827bd2046aaf87e7af443b236, type: 3}
+      propertyPath: volumeTrigger
+      value: 
+      objectReference: {fileID: 759034895}
     - target: {fileID: 8417969372049884506, guid: c153a5e827bd2046aaf87e7af443b236, type: 3}
       propertyPath: m_RootOrder
       value: 17

@@ -295,7 +295,7 @@ MonoBehaviour:
     requestTopic: layer/request
     renderTexture: {fileID: 8400000, guid: 9aa2ff5a63cc8811cbca8aea28148e91, type: 2}
     enabled: 1
-    continuous: 0
+    continuous: 1
   - name: depth
     imageTopic: depth/depth_registered
     infoTopic: depth/camera_info
@@ -391,6 +391,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 86add3b1c87735b5c94dd5bb265f9a5c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  frame: {fileID: 0}
+  cameraView: {fileID: 0}
   maxDistance: 3
   layerMask:
     serializedVersion: 2
@@ -399,6 +401,7 @@ MonoBehaviour:
   publishRate: 4
   viewAngleThreshold: 55
   debugVisibilityReason: 0
+  useCameraView: 1
   topic: /camera_0/tag_detections
 --- !u!114 &2701020576551160325
 MonoBehaviour:
@@ -412,6 +415,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 720e719b89b33ceb5b5469c48890de6e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  frame: {fileID: 0}
+  cameraView: {fileID: 0}
   maxDistance: 5
   layerMask:
     serializedVersion: 2
@@ -420,6 +425,7 @@ MonoBehaviour:
   publishRate: 0
   viewAngleThreshold: 70
   debugVisibilityReason: 0
+  useCameraView: 1
   plane_request_topic: camera_0/plane_request
   plane_response_topic: camera_0/plane_response
 --- !u!114 &8862371988769966112
@@ -434,6 +440,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 97dde157c74a4a6098ad5f0b7dbb81cd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  frame: {fileID: 0}
+  cameraView: {fileID: 0}
   maxDistance: 5
   layerMask:
     serializedVersion: 2
@@ -442,6 +450,7 @@ MonoBehaviour:
   publishRate: 1
   viewAngleThreshold: 70
   debugVisibilityReason: 0
+  useCameraView: 1
   topic: /camera_0/simulated_field_result
   child_frame_id: map_relative
   label: field
@@ -517,14 +526,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 79b8e5816a4c6d9aeb68896e19ac9064, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  frame: {fileID: 0}
+  cameraView: {fileID: 0}
   maxDistance: 5
   layerMask:
     serializedVersion: 2
     m_Bits: 2248
   debugRayCast: 0
-  publishRate: 10
+  publishRate: 30
   viewAngleThreshold: 180
   debugVisibilityReason: 0
+  useCameraView: 1
   topic: /camera_0/ground_truth/robots
 --- !u!114 &1022128046478193387
 MonoBehaviour:
