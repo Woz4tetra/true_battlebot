@@ -276,8 +276,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   baseTopic: camera_0
-  imageWidth: 1920
-  imageHeight: 1080
+  imageWidth: 1280
+  imageHeight: 720
   publishRate: 30
   segmentationTopic: simulated_segmentation
   publishSegmentationLabels: 1

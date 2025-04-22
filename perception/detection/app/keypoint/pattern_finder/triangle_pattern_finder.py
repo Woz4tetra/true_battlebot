@@ -46,15 +46,15 @@ class TrianglePatternFinder(PatternFinder):
 
         approx_reduced = approx[:, 0]
         lengths = [np.linalg.norm(approx_reduced[(i + 1) % num_points] - approx_reduced[i]) for i in range(num_points)]
-        shortest_index = lengths.index(max(lengths))
-        longest_line = approx_reduced[shortest_index], approx_reduced[(shortest_index + 1) % num_points]
-        longest_length_angle = np.arctan2(
-            longest_line[1][1] - longest_line[0][1],
-            longest_line[1][0] - longest_line[0][0],
+        shortest_index = lengths.index(min(lengths))
+        shortest_line = approx_reduced[shortest_index], approx_reduced[(shortest_index + 1) % num_points]
+        shortest_length_angle = np.arctan2(
+            shortest_line[1][1] - shortest_line[0][1],
+            shortest_line[1][0] - shortest_line[0][0],
         )
         back_xy = XY(
-            (longest_line[0][0] + longest_line[1][0]) / 2,
-            (longest_line[0][1] + longest_line[1][1]) / 2,
+            (shortest_line[0][0] + shortest_line[1][0]) / 2,
+            (shortest_line[0][1] + shortest_line[1][1]) / 2,
         )
         front_xys: list[XY] = []
         angles = []
@@ -70,7 +70,7 @@ class TrianglePatternFinder(PatternFinder):
                 back_xy.y - front_xy.y,
                 back_xy.x - front_xy.x,
             )
-            delta_angle = abs(longest_length_angle - angle) % np.pi
+            delta_angle = abs(shortest_length_angle - angle) % np.pi
             angles.append(delta_angle)
 
         max_angle_index = np.argmax(angles)
