@@ -1,6 +1,5 @@
 import math
 
-import rospy
 from bw_interfaces.msg import EstimatedObject
 from bw_shared.geometry.polar import Polar
 from bw_shared.geometry.pose2d import Pose2D

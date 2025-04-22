@@ -10,6 +10,7 @@ from app.field_label.command_line_args import CommandLineArgs
 from app.field_label.field_label_app import FieldLabelApp
 from app.field_label.nhrl_cam_label_state import NhrlCamLabelState
 from bw_shared.geometry.camera.camera_info_loader import read_calibration
+from bw_shared.geometry.plane import Plane
 from bw_shared.geometry.projection_math.points_transform import points_transform_by
 from bw_shared.geometry.projection_math.project_segmentation import project_segmentation
 from bw_shared.geometry.rpy import RPY
@@ -17,7 +18,6 @@ from bw_shared.geometry.transform3d import Transform3D
 from geometry_msgs.msg import Vector3
 from image_geometry import PinholeCameraModel
 from open3d.visualization import Visualizer  # type: ignore
-from perception_tools.geometry.transform_to_plane import transform_to_plane
 from perception_tools.geometry.xyzquat_to_matrix import xyzquat_to_matrix
 from perception_tools.messages.camera_data import CameraData
 
@@ -28,8 +28,8 @@ def compute_predicted_points_in_camera(
     tf_map_from_nhrl_param: tuple[float, float, float, float, float, float, float],
 ) -> np.ndarray:
     tf_map_from_nhrl = Transform3D(xyzquat_to_matrix(*tf_map_from_nhrl_param))
-    nhrl_plane_center, nhrl_plane_normal = transform_to_plane(tf_map_from_nhrl.inverse().tfmat)
-    plane_points_nhrl = project_segmentation(known_nhrl_rays, nhrl_plane_center, nhrl_plane_normal)
+    nhrl_plane = Plane.from_transform(tf_map_from_nhrl.inverse())
+    plane_points_nhrl = project_segmentation(known_nhrl_rays, nhrl_plane)
     tf_camera0_from_nhrl = tf_knowncamera_from_map.forward_by(tf_map_from_nhrl)
     return points_transform_by(plane_points_nhrl, tf_camera0_from_nhrl.tfmat)
 
@@ -152,10 +152,8 @@ class NhrlCamLabelApp(FieldLabelApp):
         nhrl_camera_pixels = nhrl_camera_pixels * np.array([width_scale, height_scale])
 
         tf_camera0_from_map = Transform3D.from_pose_msg(self.label_state.field_estimate.pose.pose)
-        camera_0_plane_center, camera_0_plane_normal = transform_to_plane(tf_camera0_from_map.tfmat)
-        camera_0_plane_points = project_segmentation(
-            self.label_state.cloud_plane_points, camera_0_plane_center, camera_0_plane_normal
-        )
+        camera_0_plane = Plane.from_transform(tf_camera0_from_map)
+        camera_0_plane_points = project_segmentation(self.label_state.cloud_plane_points, camera_0_plane)
         known_nhrl_rays = np.zeros((0, 3))
         for u, v in nhrl_camera_pixels:
             ray = self.nhrl_camera_model.projectPixelTo3dRay((u, v))

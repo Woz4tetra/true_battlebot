@@ -1,0 +1,6 @@
+from typing import Union
+
+from .noop_pattern_finder_config import NoopPatternFinderConfig
+from .triangle_pattern_finder_config import TrianglePatternFinderConfig
+
+PatternFinderConfig = Union[NoopPatternFinderConfig, TrianglePatternFinderConfig]

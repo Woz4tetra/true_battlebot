@@ -7,10 +7,10 @@ from app.field_label.click_state import ClickState
 from bw_interfaces.msg import EstimatedObject
 from bw_shared.enums.frame_id import FrameId
 from bw_shared.enums.label import Label
+from bw_shared.geometry.plane import Plane
 from bw_shared.geometry.projection_math.find_nearest_point_to_ray import find_nearest_point_to_ray
 from bw_shared.geometry.projection_math.points_transform import points_transform_by
 from bw_shared.geometry.projection_math.project_segmentation import project_segmentation
-from bw_shared.geometry.projection_math.rotation_matrix_from_vectors import transform_matrix_from_vectors
 from bw_shared.geometry.rpy import RPY
 from bw_shared.geometry.transform3d import Transform3D
 from bw_shared.geometry.xy import XY
@@ -30,10 +30,8 @@ def nearest_point_in_cloud(cloud: open3d.geometry.PointCloud, ray: np.ndarray) -
     return find_nearest_point_to_ray(points, ray)
 
 
-def compute_field_estimate(
-    plane_center: np.ndarray, plane_normal: np.ndarray, extent_points: np.ndarray
-) -> tuple[Transform3D, XY]:
-    plane_transform = transform_matrix_from_vectors(plane_center, plane_normal)
+def compute_field_estimate(plane: Plane, extent_points: np.ndarray) -> tuple[Transform3D, XY]:
+    plane_transform = plane.to_transform()
     flattened_points = points_transform_by(extent_points, plane_transform.inverse().tfmat)
     centeroid = np.mean(flattened_points, axis=0)
 
@@ -128,17 +126,16 @@ class FieldLabelState:
             nearest_point_to_ray = nearest_point_in_cloud(cloud, ray)
             self.cloud_plane_points[index] = nearest_point_to_ray
 
-        plane_center, plane_normal = points_to_plane(self.cloud_plane_points)
-        plane_normal *= -1
+        plane = points_to_plane(self.cloud_plane_points).invert_normal()
         extent_rays = []
         for index, uv_point in enumerate(self.image_extent_points):
             ray = np.array(self.camera_model.projectPixelTo3dRay(uv_point))
             if np.any(np.isnan(ray)):
                 raise RuntimeError("Failed to project pixel to 3D ray")
             extent_rays.append(ray)
-        self.cloud_extent_points = project_segmentation(np.array(extent_rays), plane_center, plane_normal)
+        self.cloud_extent_points = project_segmentation(np.array(extent_rays), plane)
 
-        plane_transform, plane_extents = compute_field_estimate(plane_center, plane_normal, self.cloud_extent_points)
+        plane_transform, plane_extents = compute_field_estimate(plane, self.cloud_extent_points)
         self.field_estimate = EstimatedObject()
         self.field_estimate.header = cloud.header.to_msg()
         self.field_estimate.child_frame_id = FrameId.MAP_RELATIVE.value

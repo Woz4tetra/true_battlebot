@@ -3,11 +3,12 @@ from typing import Optional
 
 from bw_interfaces.msg import EstimatedObject, GoToGoalGoal
 from bw_shared.geometry.field_bounds import FieldBounds2D
+from bw_shared.messages.field import Field
 
 
 class GoalSupplierInterface(ABC):
     @abstractmethod
-    def initialize(self, goal: GoToGoalGoal, field: EstimatedObject, continuously_select_goal: bool) -> None: ...
+    def initialize(self, goal: GoToGoalGoal, field: Field, continuously_select_goal: bool) -> None: ...
 
     @abstractmethod
     def get_goal(

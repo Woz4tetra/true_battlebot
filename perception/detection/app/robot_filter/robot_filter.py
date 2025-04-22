@@ -22,10 +22,9 @@ from bw_shared.geometry.pose2d import Pose2D
 from bw_shared.geometry.transform3d import Transform3D
 from bw_shared.geometry.transform3d_stamped import Transform3DStamped
 from bw_shared.geometry.xy import XY
-from bw_shared.geometry.xyz import XYZ
+from bw_shared.messages.field import Field
 from bw_shared.messages.header import Header
 from geometry_msgs.msg import (
-    Point,
     Pose,
     PoseWithCovariance,
     Twist,
@@ -65,7 +64,7 @@ class RobotFilter:
         self.robot_min_radius = config.robot_min_radius
         self.robot_max_radius = config.robot_max_radius
         field_buffer = config.field_buffer
-        self.field_buffer = XYZ(field_buffer, field_buffer, field_buffer)
+        self.field_buffer = XY(field_buffer, field_buffer)
 
         initial_state = np.zeros(NUM_STATES)
         initial_covariance = np.diag(initial_variances)
@@ -77,9 +76,6 @@ class RobotFilter:
         ]
 
         self.field = EstimatedObject()
-        self.tf_map_from_camerastart = Transform3D.identity()
-        self.tf_camerastart_from_camera: Transform3DStamped | None = None
-        self.field_bounds = (XYZ(0.0, 0.0, 0.0), XYZ(0.0, 0.0, 0.0))
         self.filter_bounds = (XY(0.0, 0.0), XY(0.0, 0.0))
 
         self.robot_heuristics = RobotStaticHeuristics(
@@ -107,37 +103,23 @@ class RobotFilter:
 
         self.logger.info("Robot filter initialized.")
 
-    def update_robot_estimations(self, msg: EstimatedObjectArray) -> None:
+    def update_robot_estimations(self, msg: EstimatedObjectArray, field: Field) -> None:
         if not self._field_received():
             self.logger.debug("Field not received. Skipping robot estimation callback.")
             return
-        measurements = self._make_measurements(msg)
+        measurements = self._make_measurements(msg, field)
 
         for label, label_measurements in measurements.items():
             self._apply_update_with_sorter(self.label_to_filter[label], label_measurements)
 
-    def update_field(self, msg: EstimatedObject) -> None:
+    def update_field(self, field: Field) -> None:
         if self._field_received():
             return
         self.logger.info("Field received.")
-        self.field = msg
-        half_x = msg.size.x / 2
-        half_y = msg.size.y / 2
-        self.field_bounds = (
-            XYZ(-half_x, -half_y, 0.0) - self.field_buffer,
-            XYZ(half_x, half_y, msg.size.z) + self.field_buffer,
-        )
-        self.filter_bounds = (
-            XY(self.field_bounds[0].x, self.field_bounds[0].y),
-            XY(self.field_bounds[1].x, self.field_bounds[1].y),
-        )
-        self.tf_map_from_camerastart = Transform3D.from_pose_msg(msg.pose.pose)
-        self.tf_camerastart_from_camera = None
+        self.field = field
+        self.filter_bounds = (field.bounds_2d[0] - self.field_buffer, field.bounds_2d[1] + self.field_buffer)
         self.logger.info("Resetting filters.")
         self._reset_filters()
-
-    def update_camera_transform(self, camera_transform: Transform3DStamped) -> None:
-        self.tf_camerastart_from_camera = camera_transform
 
     def update(self) -> EstimatedObjectArray:
         if self.reset_filters_sub.receive():
@@ -232,6 +214,7 @@ class RobotFilter:
     def _make_measurements(
         self,
         robot_measurements: EstimatedObjectArray,
+        field: Field,
     ) -> dict[Label, list[EstimatedObject]]:
         measurements: dict[Label, list[EstimatedObject]] = {label: [] for label in self.label_to_filter.keys()}
         for robot in robot_measurements.robots:
@@ -242,7 +225,7 @@ class RobotFilter:
                 continue
             if all([c == 0 for c in robot.pose.covariance]):
                 robot.pose.covariance = self.robot_heuristics.compute_covariance(robot)
-            map_pose = self._transform_measurement_in_camera_to_map(robot)
+            map_pose = self._transform_measurement_in_camera_to_map(robot, field)
             if map_pose is None:
                 self.logger.warning(f"Could not transform pose for measurement {robot.label}")
                 continue
@@ -293,7 +276,7 @@ class RobotFilter:
             self._initialize_filter_random(robot_filter)
 
     def _initialize_filter_random(self, robot_filter: ModelBase) -> None:
-        field_size = self.field_bounds[1] - self.field_bounds[0]
+        field_size = self.filter_bounds[1] - self.filter_bounds[0]
         initialization_pose = PoseWithCovariance()
         initialization_pose.pose = Pose2D(
             x=2.0 * (random.random() - 0.5) * field_size.x,
@@ -305,31 +288,19 @@ class RobotFilter:
         self.logger.info(f"Initialized {robot_filter.config.name}.")
 
     def _field_received(self) -> bool:
-        return self.field.header.stamp != rospy.Time(0) and self.tf_camerastart_from_camera is not None
+        return self.field.header.stamp != rospy.Time(0)
 
-    def _is_in_field_bounds(self, position: Point) -> bool:
-        if not self._field_received():
-            self.logger.warning("Field not received. Skipping field bounds check.")
-            return False
-        xyz = XYZ.from_msg(Vector3(position.x, position.y, position.z))
-        return self.field_bounds[0] < xyz < self.field_bounds[1]
-
-    def _transform_measurement_in_camera_to_map(self, robot: EstimatedObject) -> Optional[Pose]:
+    def _transform_measurement_in_camera_to_map(self, robot: EstimatedObject, field: Field) -> Optional[Pose]:
         if not self._field_received():
             self.logger.warning("Field not received. Skipping transform.")
             return None
-        assert self.tf_camerastart_from_camera is not None
-        if robot.header.frame_id != self.tf_camerastart_from_camera.child_frame_id:
+        if robot.header.frame_id != field.child_frame_id:
             self.logger.warning(
-                f"Header frame id {robot.header.frame_id} does not match "
-                f"measurement frame id {self.tf_camerastart_from_camera.child_frame_id}"
+                f"Header frame id {robot.header.frame_id} does not match measurement frame id {field.child_frame_id}"
             )
             return None
         tf_camera_from_robot = Transform3D.from_pose_msg(robot.pose.pose)
-        tf_camerastart_from_camera = self.tf_camerastart_from_camera.transform
-        tf_map_from_robot = self.tf_map_from_camerastart.forward_by(tf_camerastart_from_camera).forward_by(
-            tf_camera_from_robot
-        )
+        tf_map_from_robot = field.tf_map_from_camera.forward_by(tf_camera_from_robot)
         return tf_map_from_robot.to_pose_msg()
 
     def _predict_all_filters(self) -> None:
@@ -342,7 +313,7 @@ class RobotFilter:
                 self.logger.warning(f"Failed predict. Resetting filter. {e}")
                 robot_filter.reset()
                 continue
-            if not robot_filter.is_in_bounds(self.filter_bounds[0], self.filter_bounds[1]) or robot_filter.is_stale():
+            if not robot_filter.is_in_bounds(self.filter_bounds) or robot_filter.is_stale():
                 robot_filter.reset()
 
     def _state_to_transform(self, state_msg: EstimatedObject) -> Transform3DStamped:

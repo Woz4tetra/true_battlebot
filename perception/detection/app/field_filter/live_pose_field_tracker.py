@@ -1,6 +1,5 @@
 import logging
 
-from app.config.field_filter.live_pose_field_tracker_config import LivePoseFieldTrackerConfig
 from bw_interfaces.msg import EstimatedObject
 from bw_shared.geometry.transform3d import Transform3D
 from bw_shared.geometry.transform3d_stamped import Transform3DStamped
@@ -9,8 +8,7 @@ from perception_tools.rosbridge.transform_broadcaster_bridge import TransformBro
 
 
 class LivePoseFieldTracker:
-    def __init__(self, config: LivePoseFieldTrackerConfig, tf_broadcaster: TransformBroadcasterBridge) -> None:
-        self.config = config
+    def __init__(self, tf_broadcaster: TransformBroadcasterBridge) -> None:
         self.tf_worldstart_from_world: Transform3D | None = None
         self.tf_broadcaster = tf_broadcaster
         self.relative_field: EstimatedObject | None = None

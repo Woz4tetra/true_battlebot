@@ -2,8 +2,8 @@ import numpy as np
 import pytest
 from bw_shared.geometry.rpy import RPY
 from bw_shared.geometry.transform3d import Transform3D
+from bw_shared.geometry.transform_to_plane import transform_to_plane
 from geometry_msgs.msg import Vector3
-from perception_tools.geometry.transform_to_plane import transform_to_plane
 
 
 def rpy_deg(roll: float, pitch: float, yaw: float) -> RPY:

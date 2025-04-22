@@ -1,4 +1,5 @@
 import numpy as np
+
 from bw_shared.geometry.projection_math.plane_from_3_points import plane_from_3_points
 
 

@@ -20,14 +20,9 @@ from app.config.config_loader import load_config
 from app.config.list_configs import get_config_path
 from app.container import Container
 from app.field_filter.field_filter_interface import FieldFilterInterface
-from app.field_filter.field_filter_loader import (
-    load_field_filter,
-    load_global_field_manager,
-    load_live_pose_field_tracker,
-)
+from app.field_filter.field_filter_loader import load_field_filter, load_global_field_transformer
 from app.field_filter.field_request_handler import FieldRequestHandler
-from app.field_filter.global_field_manager import GlobalFieldManager
-from app.field_filter.live_pose_field_tracker import LivePoseFieldTracker
+from app.field_filter.global_field_transformer import GlobalFieldTransformer
 from app.keypoint.keypoint_interface import KeypointInterface
 from app.keypoint.keypoint_loader import load_keypoint, load_keypoint_to_object_converter
 from app.keypoint.keypoint_to_object_converter import KeypointToObjectConverter
@@ -92,12 +87,11 @@ class Runner:
         self.robot_keypoint_publisher: RosPublisher[KeypointInstanceArray] = self.container.resolve_by_name(
             "robot_keypoint_publisher"
         )
-        self.global_field_manager = self.container.resolve(GlobalFieldManager)
+        self.global_field_transformer = self.container.resolve(GlobalFieldTransformer)
         self.keypoint_to_object_converter: KeypointToObjectConverter = self.container.resolve_by_name(
             "keypoint_to_object_converter"
         )
         self.robot_filter = self.container.resolve(RobotFilter)
-        self.live_pose_field_tracker = self.container.resolve(LivePoseFieldTracker)
         self.transform_broadcaster = self.container.resolve(TransformBroadcasterBridge)
 
         self.robot_estimation_queue: Queue[EstimatedObjectArray] = Queue()
@@ -138,8 +132,14 @@ class Runner:
                 self.logger.warning(f"Estimations task overrun: {dt:.6f} seconds")
             if not queue.empty():
                 robot_estimations = queue.get()
-                self.robot_filter.update_robot_estimations(robot_estimations)
+                if not (field := self.global_field_transformer.get_field()):
+                    self.logger.warning("No map transform available. Skipping filter update.")
+                    continue
+                self.robot_filter.update_robot_estimations(robot_estimations, field)
             self.robot_filter.update()
+            if self.exit_event.is_set():
+                break
+        self.logger.info("Robot estimation task stopped")
 
     def perceive_robot(self) -> None:
         if not self.camera.switch_mode(CameraMode.ROBOT_FINDER):
@@ -150,17 +150,18 @@ class Runner:
             return
         self.camera_data = camera_data
         if tfstamped_camera_from_world := self.camera_data.tfstamped_camera_from_world:
-            self.robot_filter.update_camera_transform(
-                self.live_pose_field_tracker.get_tf_worldstart_from_camera(tfstamped_camera_from_world)
-            )
+            self.global_field_transformer.update_camera_transform(tfstamped_camera_from_world)
+        if not (field := self.global_field_transformer.get_field()):
+            return
+        tf_camera_from_map = field.tfstamped_camera_from_map
         with ContextTimer("robot_keypoint.process_image"):
             robot_points, debug_image = self.robot_keypoint.process_image(
-                camera_data.camera_info, camera_data.color_image
+                camera_data.camera_info, camera_data.color_image, field
             )
         if robot_points:
             with ContextTimer("keypoint_to_object_converter.convert_to_objects"):
                 robot_estimations = self.keypoint_to_object_converter.convert_to_objects(
-                    camera_data.camera_info, robot_points
+                    camera_data.camera_info, robot_points, tf_camera_from_map
                 )
             self.robot_keypoint_publisher.publish(robot_points)
             if robot_estimations:
@@ -189,8 +190,13 @@ class Runner:
         image = camera_data.color_image
 
         # for this single frame, camera and world are the same. camera -> world is computed after this.
-        point_cloud.header.frame_id = camera_data.world_frame_id
-        image.header.frame_id = camera_data.world_frame_id
+        world_header = Header(
+            stamp=camera_data.color_image.header.stamp,
+            frame_id=camera_data.world_frame_id,
+            seq=camera_data.color_image.header.seq,
+        )
+        point_cloud.header = world_header
+        image.header = world_header
         self.point_cloud_publisher.publish(point_cloud.to_msg())
 
         with ContextTimer("field_segmentation.process_image"):
@@ -204,11 +210,9 @@ class Runner:
         if not field_result:
             self.logger.debug("No field result")
             return False
-        aligned_field, relative_field = self.global_field_manager.process_field(field_result)
-        if aligned_field and relative_field:
-            self.keypoint_to_object_converter.set_field(aligned_field)
+        aligned_field = self.global_field_transformer.process_field(field_result)
+        if aligned_field:
             self.robot_filter.update_field(aligned_field)
-            self.live_pose_field_tracker.reset(relative_field)
         if debug_image:
             self.logger.info("Publishing debug image")
             self.field_debug_image_publisher.publish(debug_image.to_msg())
@@ -307,11 +311,8 @@ def make_field_interface(container: Container) -> None:
     field_filter = load_field_filter(config.field_filter, container)
     container.register(field_filter, FieldFilterInterface)
 
-    global_field_manager = load_global_field_manager(config.global_field_manager, container)
-    container.register(global_field_manager, GlobalFieldManager)
-
-    live_pose_field_tracker = load_live_pose_field_tracker(config.live_pose_field_tracker, container)
-    container.register(live_pose_field_tracker, LivePoseFieldTracker)
+    global_field_manager = load_global_field_transformer(config.global_field_manager, container)
+    container.register(global_field_manager, GlobalFieldTransformer)
 
     logger.info(f"Field filter: {type(field_filter)}")
 

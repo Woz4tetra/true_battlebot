@@ -1,0 +1,3 @@
+from perception_tools.fix_rosgraph_logging import fix_rosgraph_logging
+
+fix_rosgraph_logging()

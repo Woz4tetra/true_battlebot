@@ -7,6 +7,7 @@ from app.keypoint.keypoint_interface import KeypointInterface
 from app.profiling.context_timer import ContextTimer
 from bw_interfaces.msg import KeypointInstance, KeypointInstanceArray, LabelMap, UVKeypoint
 from bw_shared.enums.label import Label, ModelLabel
+from bw_shared.messages.field import Field
 from perception_tools.data_directory import get_data_directory
 from perception_tools.inference.common import load_metadata
 from perception_tools.messages.image import Image
@@ -45,7 +46,9 @@ class YoloKeypoint(KeypointInterface):
         t1 = time.perf_counter()
         self.logger.info(f"Model warmed up in {t1 - t0} seconds")
 
-    def process_image(self, camera_info: CameraInfo, msg: Image) -> tuple[KeypointInstanceArray | None, Image | None]:
+    def process_image(
+        self, camera_info: CameraInfo, msg: Image, field: Field
+    ) -> tuple[KeypointInstanceArray | None, Image | None]:
         with ContextTimer("YoloKeypoint.model"):
             result = self.model(
                 msg.data,

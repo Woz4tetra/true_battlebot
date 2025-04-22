@@ -20,6 +20,7 @@ class RobotDataShapshot:
     layer: Image
     robots: EstimatedObjectArray
     color_to_model_label_map: dict[int, ModelLabel]
+    camera_info: CameraInfo
 
 
 class SimulationRobotTopicSync:
@@ -29,6 +30,7 @@ class SimulationRobotTopicSync:
         self.image: Image | None = None
         self.layer: Image | None = None
         self.robots: EstimatedObjectArray | None = None
+        self.camera_info: CameraInfo | None = None
         self.color_to_model_label_map: dict[int, ModelLabel] = {}
         self.image_timestamp = 0.0
         self.lock = Lock()
@@ -95,13 +97,16 @@ class SimulationRobotTopicSync:
             if self.robots.robots[0].header.stamp.to_sec() - self.image_timestamp > self.image_layer_max_delay:
                 self.logger.warning("Robot and image timestamps are too far apart.")
                 return None
+            if self.camera_info is None:
+                self.logger.warning("Missing camera info")
+                return None
             layer = Image.from_other(self.layer)
             self.layer = None
             robots = self.robots
             self.robots = None
             model = self.model
 
-            return RobotDataShapshot(model, image, layer, robots, self.color_to_model_label_map)
+            return RobotDataShapshot(model, image, layer, robots, self.color_to_model_label_map, self.camera_info)
 
     def image_callback(self, msg: ImageMsg) -> None:
         with self.lock:
@@ -128,6 +133,7 @@ class SimulationRobotTopicSync:
             self.logger.info("Received camera info.")
             self.model = PinholeCameraModel()
             self.model.fromCameraInfo(msg)
+            self.camera_info = msg
 
     def ground_truth_callback(self, msg: EstimatedObjectArray) -> None:
         with self.lock:

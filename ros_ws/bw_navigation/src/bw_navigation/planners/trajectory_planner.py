@@ -26,7 +26,6 @@ from bw_navigation.planners.shared.compute_mirrored_goal import (
     overlay_friendly_twist,
 )
 from bw_navigation.planners.shared.goal_progress import GoalProgress, compute_feedback_distance
-from bw_navigation.planners.shared.is_in_bounds import is_controlled_bot_in_bounds
 from bw_navigation.planners.shared.match_state import MatchState
 
 

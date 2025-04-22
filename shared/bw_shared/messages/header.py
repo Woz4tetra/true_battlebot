@@ -8,7 +8,7 @@ from std_msgs.msg import Header as RosHeader
 from bw_shared.context_sequence_counter import ContextSequenceCounter
 
 
-@dataclass(eq=True)
+@dataclass(frozen=True, eq=True)
 class Header:
     stamp: float
     frame_id: str

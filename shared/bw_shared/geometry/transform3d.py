@@ -18,7 +18,7 @@ from bw_shared.geometry.rpy import RPY
 from bw_shared.geometry.xyz import XYZ
 
 
-@dataclass
+@dataclass(frozen=True)
 class Transform3D:
     """
     A class for defining frames.

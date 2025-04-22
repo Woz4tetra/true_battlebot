@@ -5,6 +5,7 @@ from bw_interfaces.msg import EstimatedObject, GoToGoalGoal
 from bw_shared.geometry.field_bounds import FieldBounds2D
 from bw_shared.geometry.pose2d import Pose2D
 from bw_shared.geometry.xyz import XYZ
+from bw_shared.messages.field import Field
 from bw_tools.messages.target_type import TargetType
 
 from bw_navigation.goal_supplier.goal_supplier_interface import GoalSupplierInterface
@@ -22,7 +23,7 @@ class TrackedTargetSupplier(GoalSupplierInterface):
         self.continuously_select_goal = True
         self.last_target_name = None
 
-    def initialize(self, goal: GoToGoalGoal, field: EstimatedObject, continuously_select_goal: bool) -> None:
+    def initialize(self, goal: GoToGoalGoal, field: Field, continuously_select_goal: bool) -> None:
         self.target_type = TargetType(goal.target_type)
         self.continuously_select_goal = continuously_select_goal
         self.last_target_name = None

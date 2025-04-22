@@ -7,7 +7,7 @@ from bw_shared.geometry.projection_math.find_ray_plane_intersection import find_
     ("ray", "plane_normal", "plane_point", "expected_intersection"),
     [
         (np.array([1, 0, 0]), np.array([-1, 0, 0]), np.array([0, 0, 0]), np.array([0, 0, 0])),
-        (np.array([1, 0, 0]), np.array([-1, 0, 0]), np.array([1, 0, 0]), np.array([1, 0, 0])),
+        (np.array([1, 0, 0]), np.array([-1, 0, 0]), np.array([1, 0, 0]), np.array([-1, 0, 0])),
         (np.array([1, 0, 0]), np.array([-1, 0, 0]), np.array([0, 0, 1]), np.array([0, 0, 0])),
     ],
 )

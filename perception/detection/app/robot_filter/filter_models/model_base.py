@@ -5,7 +5,7 @@ import genpy
 import numpy as np
 import rospy
 from bw_shared.configs.robot_fleet_config import RobotConfig
-from bw_shared.geometry.xy import XY
+from bw_shared.geometry.field_bounds import FieldBounds2D
 from geometry_msgs.msg import PoseWithCovariance, TwistWithCovariance, Vector3
 
 from .drive_kf_impl import NUM_STATES, NUM_STATES_1ST_ORDER
@@ -103,7 +103,8 @@ class ModelBase(ABC):
         self._is_initialized = False
         self.stale_timer = 0.0
 
-    def is_in_bounds(self, lower_bound: XY, upper_bound: XY) -> bool:
+    def is_in_bounds(self, field_bounds_2d: FieldBounds2D) -> bool:
+        lower_bound, upper_bound = field_bounds_2d
         return lower_bound.x <= self.state[0] <= upper_bound.x and lower_bound.y <= self.state[1] <= upper_bound.y
 
     def is_initialized(self) -> bool:

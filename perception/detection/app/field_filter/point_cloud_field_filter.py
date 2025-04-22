@@ -7,13 +7,13 @@ from app.field_filter.helpers import get_field
 from app.field_filter.solvers.base_plane_solver import BasePlaneSolver
 from bw_interfaces.msg import EstimatedObject, SegmentationInstanceArray
 from bw_shared.enums.frame_id import FrameId
+from bw_shared.geometry.plane import Plane
 from bw_shared.geometry.projection_math.find_minimum_rectangle import (
     find_minimum_rectangle,
     get_rectangle_angle,
     get_rectangle_extents,
 )
 from bw_shared.geometry.projection_math.points_transform import points_transform_by
-from bw_shared.geometry.projection_math.rotation_matrix_from_vectors import transform_matrix_from_vectors
 from bw_shared.geometry.rpy import RPY
 from bw_shared.geometry.transform3d import Transform3D
 from bw_shared.geometry.xy import XY
@@ -35,15 +35,12 @@ class PointCloudFieldFilter(FieldFilterInterface):
         plane_normal, plane_inliers = self.compute_plane_coeffs(filtered_points)
         inlier_points = filtered_points[plane_inliers]
         plane_center = np.mean(inlier_points, axis=0)
-        self.logger.debug(
-            f"Plane normal: {plane_normal.tolist()}. "
-            f"Plane center: {plane_center.tolist()}. "
-            f"Number of inliers: {np.sum(plane_inliers)}."
-        )
+        plane = Plane.from_iterable(plane_center, plane_normal)
+        self.logger.debug(f"Plane: {plane}. Number of inliers: {np.sum(plane_inliers)}.")
         self.logger.debug(f"Inlier points shape: {inlier_points.shape}")
 
         # find an orientation for the plane that makes it face the camera
-        plane_transform = transform_matrix_from_vectors(plane_center, plane_normal)
+        plane_transform = plane.to_transform()
         self.logger.debug(f"Plane transform: {plane_transform}")
 
         # The following steps find an abitrary rotation of the plane to the camera.

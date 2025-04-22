@@ -9,8 +9,11 @@ from bw_shared.configs.label_config import LabelsConfig
 from bw_shared.enums.keypoint_name import KeypointName
 from bw_shared.enums.label import Label
 from bw_shared.epsilon import EPSILON
+from bw_shared.geometry.array_conversions import xyz_to_array
+from bw_shared.geometry.plane import Plane
 from bw_shared.geometry.projection_math.rotation_matrix_from_vectors import transform_matrix_from_vectors
 from bw_shared.geometry.transform3d import Transform3D
+from bw_shared.geometry.transform3d_stamped import Transform3DStamped
 from geometry_msgs.msg import Point, Vector3
 from image_geometry import PinholeCameraModel
 from perception_tools.rosbridge.ros_publisher import RosPublisher
@@ -32,7 +35,6 @@ class KeypointToObjectConverter:
         self.labels = labels
         self.robot_pub = robot_pub
         self.robot_marker_pub = robot_marker_pub
-        self.field = EstimatedObject()
         self.logger = logging.getLogger(self.__class__.__name__)
 
         self.included_labels = self.config.included_labels
@@ -41,9 +43,6 @@ class KeypointToObjectConverter:
 
         self.camera_model: PinholeCameraModel | None = None
         self.camera_info = CameraInfo()
-
-        self.plane_center = np.zeros(3)
-        self.plane_normal = np.zeros(3)
 
         self.point_marker_scale = (0.05, 0.05, 0.05)
         self.front_marker_color = (1.0, 0.0, 0.0, 0.75)
@@ -55,35 +54,28 @@ class KeypointToObjectConverter:
         self.text_marker_color = (1.0, 1.0, 1.0, 0.75)
         self.text_marker_scale = (1.0, 1.0, 0.1)
 
-    def set_field(self, field: EstimatedObject) -> None:
-        self.logger.info(f"Field received: {field}")
-        if self._compute_plane(field):
-            self.field = field
-
     def convert_to_objects(
-        self, camera_info: CameraInfo, keypoints: KeypointInstanceArray
+        self, camera_info: CameraInfo, keypoints: KeypointInstanceArray, tf_camera_from_map: Transform3DStamped
     ) -> EstimatedObjectArray | None:
         self._set_camera_info(camera_info)
-        if not self._is_field_set():
-            self.logger.debug("No field received, skipping estimation")
-            return None
 
         robot_array = EstimatedObjectArray()
         robot_markers = MarkerArray()
         robot_markers.markers = []
+        field_plane_in_camera = Plane.from_transform(tf_camera_from_map.transform)
 
         for instance in keypoints.instances:
             if not self._is_label_included(instance.label):
                 continue
 
-            points = self._project_keypoints_to_field(instance)
+            points = self._project_keypoints_to_field(instance, plane=field_plane_in_camera)
             back_index = self._get_index(instance.names, KeypointName.FRONT)
             front_index = self._get_index(instance.names, KeypointName.BACK)
             if front_index == -1 or back_index == -1:
                 self.logger.debug(f"Keypoint not found in instance {instance.label}")
                 continue
-            front_point = points[front_index]
-            back_point = points[back_index]
+            front_point = xyz_to_array(points[front_index])
+            back_point = xyz_to_array(points[back_index])
             transform = self._get_pose_from_points(front_point, back_point)
             if transform is None:
                 continue
@@ -115,9 +107,6 @@ class KeypointToObjectConverter:
         self.camera_model = PinholeCameraModel()
         self.camera_model.fromCameraInfo(camera_info)
 
-    def _is_field_set(self) -> bool:
-        return bool(self.field.header.frame_id)
-
     def _is_label_included(self, label: str) -> bool:
         if not self.included_labels:
             return True
@@ -126,14 +115,12 @@ class KeypointToObjectConverter:
                 return True
         return False
 
-    def _project_keypoints_to_field(self, instance: KeypointInstance) -> list[np.ndarray]:
-        points: list[np.ndarray] = []
-        plane_center = self._get_plane_center()
-        plane_normal = self._get_plane_normal()
+    def _project_keypoints_to_field(self, instance: KeypointInstance, plane: Plane) -> list[Vector3]:
+        points: list[Vector3] = []
 
         for keypoint in instance.keypoints:
             pixel = np.array([keypoint.x, keypoint.y], dtype=np.float64)
-            center = self._project_to_field(pixel, plane_center, plane_normal)
+            center = self._project_to_field(pixel, plane)
             if center is None:
                 self.logger.warning(f"Failed to project keypoint {keypoint} to field")
                 return []
@@ -161,12 +148,6 @@ class KeypointToObjectConverter:
         center = (front_point + back_point) / 2.0
         transform = transform_matrix_from_vectors(center, direction, origin_vec)
         return transform
-
-    def _get_plane_normal(self) -> np.ndarray:
-        return self.plane_normal
-
-    def _get_plane_center(self) -> np.ndarray:
-        return self.plane_center
 
     def _get_label_height(self, label: Label) -> float:
         return self.labels.labels_map[label].height
@@ -257,32 +238,9 @@ class KeypointToObjectConverter:
             color=ColorRGBA(r=color[0], g=color[1], b=color[2], a=color[3]),
         )
 
-    def _project_to_field(
-        self, pixel: np.ndarray, plane_center: np.ndarray, plane_normal: np.ndarray
-    ) -> np.ndarray | None:
+    def _project_to_field(self, pixel: np.ndarray, plane: Plane) -> Vector3 | None:
         if self.camera_model is None:
             self.logger.warning("Camera model not set")
             return None
-        root_vector = np.array(self.camera_model.projectPixelTo3dRay(pixel))
-        origin = np.array([0.0, 0.0, 0.0], dtype=np.float64)
-        dot = plane_normal.dot(root_vector)
-        if np.abs(dot) <= EPSILON:
-            return None
-        offset = origin - plane_center
-        project_factor = -plane_normal.dot(offset) / dot
-        project_offset = root_vector * project_factor
-        return origin + project_offset
-
-    def _compute_plane(self, field: EstimatedObject) -> bool:
-        tf_map_from_camera = Transform3D.from_pose_msg(field.pose.pose)
-        tf_camera_from_map = tf_map_from_camera.inverse()
-        rotation_matrix = tf_camera_from_map.rotation_matrix
-        normal = np.dot(rotation_matrix, np.array([0.0, 0.0, 1.0], dtype=np.float64))
-        magnitude = np.linalg.norm(normal)
-        if magnitude <= EPSILON:
-            self.logger.warning("Plane normal magnitude is too small, cannot compute plane")
-            return False
-        normal = normal / magnitude
-        self.plane_normal = normal
-        self.plane_center = tf_camera_from_map.position_array
-        return True
+        root_vector = Vector3(*self.camera_model.projectPixelTo3dRay(pixel))
+        return plane.ray_intersection(root_vector)

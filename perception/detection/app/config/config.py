@@ -9,7 +9,6 @@ from app.config.camera_topic_config import CameraTopicConfig
 from app.config.field_filter.field_filter_types import FieldFilterConfig
 from app.config.field_filter.field_request_config import FieldRequestConfig
 from app.config.field_filter.global_field_manager_config import GlobalFieldManagerConfig
-from app.config.field_filter.live_pose_field_tracker_config import LivePoseFieldTrackerConfig
 from app.config.field_filter.point_cloud_field_filter_config import PointCloudFieldFilterConfig
 from app.config.keypoint_config.keypoint_to_object_converter_config import KeypointToObjectConverterConfig
 from app.config.keypoint_config.keypoint_types import KeypointConfig, YoloKeypointConfig
@@ -36,7 +35,6 @@ class Config:
     global_field_manager: GlobalFieldManagerConfig = field(default_factory=GlobalFieldManagerConfig)
     field_request: FieldRequestConfig = field(default_factory=FieldRequestConfig)
     robot_filter: RobotFilterConfig = field(default_factory=RobotFilterConfig)
-    live_pose_field_tracker: LivePoseFieldTrackerConfig = field(default_factory=LivePoseFieldTrackerConfig)
 
     @classmethod
     def from_dict(cls, data: dict) -> Config:

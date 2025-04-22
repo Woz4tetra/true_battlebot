@@ -2,7 +2,6 @@ import bw_interfaces.msg as bw_interfaces
 from app.config.config import Config
 from app.config.field_filter.field_filter_types import FieldFilterConfig
 from app.config.field_filter.global_field_manager_config import GlobalFieldManagerConfig
-from app.config.field_filter.live_pose_field_tracker_config import LivePoseFieldTrackerConfig
 from app.config.field_filter.point_cloud_field_filter_config import (
     LeastSquaresPlaneSolverConfig,
     PointCloudFieldFilterConfig,
@@ -11,8 +10,7 @@ from app.config.field_filter.point_cloud_field_filter_config import (
 from app.config.field_filter.simulated_field_filter_config import SimulatedFieldFilterConfig
 from app.container import Container
 from app.field_filter.field_filter_interface import FieldFilterInterface
-from app.field_filter.global_field_manager import GlobalFieldManager
-from app.field_filter.live_pose_field_tracker import LivePoseFieldTracker
+from app.field_filter.global_field_transformer import GlobalFieldTransformer
 from app.field_filter.point_cloud_field_filter import PointCloudFieldFilter
 from app.field_filter.simulated_field_filter import SimulatedFieldFilter
 from app.field_filter.solvers import LeastSquaresSolver, RansacPlaneSolver
@@ -48,14 +46,14 @@ def load_field_filter(field_filter_config: FieldFilterConfig, container: Contain
         raise ValueError(f"Invalid field filter type: {type(field_filter_config)}")
 
 
-def load_global_field_manager(config: GlobalFieldManagerConfig, container: Container) -> GlobalFieldManager:
+def load_global_field_transformer(config: GlobalFieldManagerConfig, container: Container) -> GlobalFieldTransformer:
     map_config = container.resolve(MapConfig)
     set_corner_side_sub = RosPollSubscriber("/set_cage_corner", bw_interfaces.CageCorner)
     estimated_field_pub = RosPublisher("/filter/field", bw_interfaces.EstimatedObject, latch=True)
     tf_broadcaster = container.resolve(TransformBroadcasterBridge)
     estimated_field_marker_pub = RosPublisher("/filter/field/marker", MarkerArray, latch=True)
     latched_corner_pub = RosPublisher("/cage_corner", bw_interfaces.CageCorner, latch=True)
-    return GlobalFieldManager(
+    return GlobalFieldTransformer(
         config,
         map_config=map_config,
         set_corner_side_sub=set_corner_side_sub,
@@ -64,8 +62,3 @@ def load_global_field_manager(config: GlobalFieldManagerConfig, container: Conta
         tf_broadcaster=tf_broadcaster,
         latched_corner_pub=latched_corner_pub,
     )
-
-
-def load_live_pose_field_tracker(config: LivePoseFieldTrackerConfig, container: Container) -> LivePoseFieldTracker:
-    tf_broadcaster = container.resolve(TransformBroadcasterBridge)
-    return LivePoseFieldTracker(config, tf_broadcaster)

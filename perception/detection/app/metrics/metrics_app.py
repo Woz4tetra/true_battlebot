@@ -14,12 +14,12 @@ from bw_shared.configs.maps_config import MapConfig
 from bw_shared.geometry.camera.camera_info_loader import read_calibration
 from bw_shared.geometry.projection_math.find_ray_plane_intersection import find_ray_plane_intersection
 from bw_shared.geometry.transform3d import Transform3D
+from bw_shared.geometry.transform_to_plane import transform_to_plane
 from bw_shared.geometry.xyz import XYZ
 from bw_shared.messages.header import Header
 from geometry_msgs.msg import Vector3
 from image_geometry import PinholeCameraModel
 from matplotlib import pyplot as plt
-from perception_tools.geometry.transform_to_plane import transform_to_plane
 from perception_tools.messages.image import Image
 
 
@@ -191,7 +191,7 @@ class MetricsApp:
         centroid = np.mean(contour, axis=0).astype(np.int32)[0]
         ray = np.array(self.camera_model.projectPixelTo3dRay(centroid))
         intersection_in_camera = XYZ(
-            *find_ray_plane_intersection(ray, self.field_plane_center_in_camera, -1 * self.field_plane_normal_in_camera)
+            *find_ray_plane_intersection(ray, self.field_plane_center_in_camera, self.field_plane_normal_in_camera)
         )
         return intersection_in_camera, centroid
 

@@ -21,5 +21,10 @@ def find_ray_plane_intersection(ray: np.ndarray, plane_point: np.ndarray, plane_
         # Ray is parallel to the plane
         return np.zeros(3)
 
+    # The factor of the point between p0 -> p1 (0 - 1)
+    # If 'fac' is between (0 - 1) the point intersects with the segment.
+    # Otherwise:
+    #  < 0.0: behind ray vector.
+    #  > 1.0: in front of ray vector.
     fac = -1 * np.dot(plane_point, -1 * plane_normal) / dot_with_normal
     return ray * fac

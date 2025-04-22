@@ -15,9 +15,7 @@ from bw_interfaces.msg import (
 )
 from bw_shared.configs.robot_fleet_config import RobotConfig, RobotFleetConfig
 from bw_shared.enums.robot_team import RobotTeam
-from bw_shared.geometry.field_bounds import FieldBounds2D
-from bw_shared.geometry.xy import XY
-from bw_shared.geometry.xyz import XYZ
+from bw_shared.messages.field import Field
 from bw_shared.tick_regulator import regulate_tick
 from bw_tools.configs.rosparam_client import get_shared_config
 from bw_tools.get_param import get_param
@@ -57,9 +55,8 @@ class BwNavigationNode:
         self.goal_server = SimpleActionServer(
             "go_to_goal", GoToGoalAction, execute_cb=self.go_to_goal_callback, auto_start=False
         )
-        self.field = EstimatedObject()
+        self.field = Field()
         self.robots: dict[str, EstimatedObject] = {}
-        self.field_bounds_2d: FieldBounds2D = (XY(0.0, 0.0), XY(0.0, 0.0))
         self.should_cancel = False
 
         self.initialize_planners(shared_config.robots.robots)
@@ -118,17 +115,7 @@ class BwNavigationNode:
     def estimated_field_callback(self, estimated_field: EstimatedObject) -> None:
         if not self.field.header.frame_id:
             rospy.loginfo("Field received")
-        self.field = estimated_field
-        half_x = estimated_field.size.x / 2
-        half_y = estimated_field.size.y / 2
-        self.field_bounds = (
-            XYZ(-half_x, -half_y, 0.0),
-            XYZ(half_x, half_y, estimated_field.size.z),
-        )
-        self.field_bounds_2d = (
-            XY(self.field_bounds[0].x, self.field_bounds[0].y),
-            XY(self.field_bounds[1].x, self.field_bounds[1].y),
-        )
+        self.field = Field.from_msg(estimated_field)
 
     def robot_states_callback(self, robot_states: EstimatedObjectArray) -> None:
         self.robots = {robot.label: robot for robot in robot_states.robots}
@@ -173,7 +160,7 @@ class BwNavigationNode:
                 continue
 
             try:
-                goal_target = goal_supplier.get_goal(self.robots, self.field_bounds_2d)
+                goal_target = goal_supplier.get_goal(self.robots, self.field.bounds_2d)
             except NavigationError as e:
                 rospy.logerr(f"Error getting goal: {e}")
                 self.goal_server.set_aborted()
@@ -189,7 +176,7 @@ class BwNavigationNode:
 
             try:
                 twist, goal_progress, markers = self.planner.go_to_goal(
-                    dt, goal_target, self.robots, self.field_bounds_2d, engine_config, goal.xy_tolerance, goal_strategy
+                    dt, goal_target, self.robots, self.field.bounds_2d, engine_config, goal.xy_tolerance, goal_strategy
                 )
             except NavigationError as e:
                 rospy.logerr(f"Error going to goal: {e}")

@@ -4,6 +4,8 @@ import math
 
 import bw_interfaces.msg as bw_interfaces
 from app.config.field_filter.global_field_manager_config import GlobalFieldManagerConfig
+from app.field_filter.field_transform_manager import FieldTransformManager
+from app.field_filter.live_pose_field_tracker import LivePoseFieldTracker
 from bw_interfaces.msg import EstimatedObject
 from bw_shared.configs.maps_config import MapConfig
 from bw_shared.enums.cage_corner import CageCorner
@@ -13,6 +15,7 @@ from bw_shared.geometry.rpy import RPY
 from bw_shared.geometry.transform3d import Transform3D
 from bw_shared.geometry.transform3d_stamped import Transform3DStamped
 from bw_shared.geometry.xyz import XYZ
+from bw_shared.messages.field import Field
 from bw_shared.messages.header import Header
 from geometry_msgs.msg import Vector3
 from perception_tools.rosbridge.ros_poll_subscriber import RosPollSubscriber
@@ -28,7 +31,7 @@ def make_extents_range(expected_size: XYZ, field_dims_buffer: float) -> tuple[XY
     return expected_size - buffer_extents, expected_size + buffer_extents
 
 
-class GlobalFieldManager:
+class GlobalFieldTransformer:
     def __init__(
         self,
         config: GlobalFieldManagerConfig,
@@ -39,6 +42,9 @@ class GlobalFieldManager:
         tf_broadcaster: TransformBroadcasterBridge,
         latched_corner_pub: RosPublisher[bw_interfaces.CageCorner],
     ) -> None:
+        self.tf_broadcaster = tf_broadcaster
+        self.live_pose_field_tracker = LivePoseFieldTracker(self.tf_broadcaster)
+        self.field_transform_manager = FieldTransformManager()
         self.logger = logging.getLogger(self.__class__.__name__)
         self.config = config
         self.map_config = map_config
@@ -62,9 +68,8 @@ class GlobalFieldManager:
         self.latched_corner_pub = latched_corner_pub
         self.estimated_field_pub = estimated_field_pub
         self.estimated_field_marker_pub = estimated_field_marker_pub
-        self.tf_broadcaster = tf_broadcaster
 
-    def process_field(self, field: EstimatedObject) -> tuple[EstimatedObject | None, EstimatedObject | None]:
+    def process_field(self, field: EstimatedObject) -> Field | None:
         tf_relativemap_from_camera = Transform3D.from_pose_msg(field.pose.pose).inverse()
 
         extents = XYZ.from_msg(field.size)
@@ -74,7 +79,7 @@ class GlobalFieldManager:
             self.logger.warning(
                 f"Field size does not match expected size: Got {extents}, expected {self.expected_size}"
             )
-            return None, None
+            return None
 
         relative_field = EstimatedObject()
         relative_field.size = field.size
@@ -83,18 +88,30 @@ class GlobalFieldManager:
         relative_field.pose.pose = tf_relativemap_from_camera.to_pose_msg()
         relative_field.label = Label.FIELD.value
 
-        tf_map_from_relativemap = self.get_cage_aligned_transform()
+        tf_map_from_relativemap = self._get_cage_aligned_transform()
         aligned_field = copy.deepcopy(relative_field)
         aligned_field.pose.pose = tf_map_from_relativemap.forward_by(tf_relativemap_from_camera).to_pose_msg()
         aligned_field.header.frame_id = self.map_frame
 
         self.logger.info("Publishing field")
         self.estimated_field_pub.publish(aligned_field)
-        self.publish_field_markers(aligned_field)
-        self.publish_transforms(relative_field)
-        return aligned_field, relative_field
+        self._publish_field_markers(aligned_field)
+        self._publish_transforms(relative_field)
 
-    def get_cage_aligned_transform(self) -> Transform3D:
+        self.live_pose_field_tracker.reset(relative_field)
+        self.field_transform_manager.update_field(aligned_field)
+
+        return Field.from_msg(aligned_field)
+
+    def update_camera_transform(self, tfstamped_camera_from_world: Transform3DStamped) -> None:
+        self.field_transform_manager.update_camera_transform(
+            self.live_pose_field_tracker.get_tf_worldstart_from_camera(tfstamped_camera_from_world)
+        )
+
+    def get_field(self) -> Field | None:
+        return self.field_transform_manager.get_field()
+
+    def _get_cage_aligned_transform(self) -> Transform3D:
         if msg := self.set_corner_side_sub.receive():
             self.cage_corner = CageCorner.from_msg(msg)
             self.latched_corner_pub.publish(msg)
@@ -105,17 +122,17 @@ class GlobalFieldManager:
             cage_corner = self.cage_corner
         return self.field_rotations[cage_corner]
 
-    def publish_field_markers(self, estimated_field: EstimatedObject) -> None:
+    def _publish_field_markers(self, estimated_field: EstimatedObject) -> None:
         markers = [
-            self.estimated_object_to_plane_marker(estimated_field, ColorRGBA(0, 1, 0.5, 0.25), 0),
-            self.estimated_object_to_text_marker(estimated_field, "blue", ColorRGBA(0, 0, 1, 1), 1, (-1, 1)),
-            self.estimated_object_to_text_marker(estimated_field, "red", ColorRGBA(1, 0, 0, 1), 2, (1, -1)),
-            self.estimated_object_to_text_marker(estimated_field, "door", ColorRGBA(1, 1, 1, 1), 3, (0, 1)),
-            self.estimated_object_to_text_marker(estimated_field, "audience", ColorRGBA(1, 1, 1, 1), 4, (0, -1)),
+            self._estimated_object_to_plane_marker(estimated_field, ColorRGBA(0, 1, 0.5, 0.25), 0),
+            self._estimated_object_to_text_marker(estimated_field, "blue", ColorRGBA(0, 0, 1, 1), 1, (-1, 1)),
+            self._estimated_object_to_text_marker(estimated_field, "red", ColorRGBA(1, 0, 0, 1), 2, (1, -1)),
+            self._estimated_object_to_text_marker(estimated_field, "door", ColorRGBA(1, 1, 1, 1), 3, (0, 1)),
+            self._estimated_object_to_text_marker(estimated_field, "audience", ColorRGBA(1, 1, 1, 1), 4, (0, -1)),
         ]
         self.estimated_field_marker_pub.publish(MarkerArray(markers=markers))
 
-    def estimated_object_to_plane_marker(
+    def _estimated_object_to_plane_marker(
         self, estimated_object: EstimatedObject, color: ColorRGBA, id: int = 0
     ) -> Marker:
         marker = Marker()
@@ -132,7 +149,7 @@ class GlobalFieldManager:
         marker.color = color
         return marker
 
-    def estimated_object_to_text_marker(
+    def _estimated_object_to_text_marker(
         self,
         estimated_object: EstimatedObject,
         text: str,
@@ -155,7 +172,7 @@ class GlobalFieldManager:
         marker.color = color
         return marker
 
-    def get_field_tf(self, estimated_field: EstimatedObject) -> Transform3DStamped:
+    def _get_field_tf(self, estimated_field: EstimatedObject) -> Transform3DStamped:
         field_pose = estimated_field.pose.pose
         transform = Transform3D.from_pose_msg(field_pose)
 
@@ -164,8 +181,8 @@ class GlobalFieldManager:
         )
         return field_tf
 
-    def get_aligned_tf(self, estimated_field: EstimatedObject) -> Transform3DStamped:
-        transform = self.get_cage_aligned_transform()
+    def _get_aligned_tf(self, estimated_field: EstimatedObject) -> Transform3DStamped:
+        transform = self._get_cage_aligned_transform()
         aligned_tf = Transform3DStamped(
             Header(estimated_field.header.stamp.to_sec(), self.map_frame, estimated_field.header.seq),
             estimated_field.header.frame_id,
@@ -173,7 +190,7 @@ class GlobalFieldManager:
         )
         return aligned_tf
 
-    def publish_transforms(self, relative_field: EstimatedObject) -> None:
+    def _publish_transforms(self, relative_field: EstimatedObject) -> None:
         self.tf_broadcaster.publish_static_transforms(
-            self.get_field_tf(relative_field), self.get_aligned_tf(relative_field)
+            self._get_field_tf(relative_field), self._get_aligned_tf(relative_field)
         )

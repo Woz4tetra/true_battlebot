@@ -159,7 +159,7 @@ class SimulatedSegmentation(SegmentationInterface):
         if len(color_image.data) == 0:
             self.logger.warning("Empty image received")
             return None, None
-        image = self.segmentation_manager.get_image()
+        image = self.segmentation_manager.get_layer_image()
         if image is None:
             return None, None
         if segmentation := self.segmentation_manager.get_segmentation():
