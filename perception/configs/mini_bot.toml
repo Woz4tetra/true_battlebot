@@ -43,6 +43,11 @@ exclude_filters = [
     "/camera_0/depth/depth_registered",
     "/camera_0/robot/segmentation",
     "/perception/heartbeat",
+    "/filtered_states",
+    "/mini_bot/odom",
+    "/main_bot/odom",
+    "/referee/odom",
+    "/opponent_3lb/odom",
 ]
 
 [robot_keypoint]

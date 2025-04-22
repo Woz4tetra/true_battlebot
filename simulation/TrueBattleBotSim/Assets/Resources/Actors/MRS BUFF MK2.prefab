@@ -19813,7 +19813,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f9b26e993356c0fa1a59dbfbda2f0b1a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  robotName: 
+  robotName: main_bot
   parentFrame: map
   baseWidth: 0.1841018
   leftWheel: {fileID: 4288791210768590535}
@@ -20229,7 +20229,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &5237017583116658127
 Transform:
   m_ObjectHideFlags: 0

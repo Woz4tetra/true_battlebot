@@ -2,12 +2,13 @@ from abc import ABC, abstractmethod
 
 import numpy as np
 from bw_interfaces.msg import UVKeypoint
+from perception_tools.messages.image import Image
 
 
 class PatternFinder(ABC):
     @abstractmethod
     def find(
-        self, image: np.ndarray, contour: np.ndarray, debug_image: np.ndarray | None = None
+        self, image: np.ndarray, contour: np.ndarray, debug_image: Image | None = None
     ) -> tuple[UVKeypoint | None, UVKeypoint | None]:
         """
         Find the pattern in the image using the contours.
@@ -15,7 +16,7 @@ class PatternFinder(ABC):
         Args:
             image (np.ndarray): The input image.
             contour (np.ndarray): The contour to find the pattern within.
-            debug_image (np.ndarray | None): Optional debug image for visualization.
+            debug_image (Image | None): Optional debug image for visualization.
                 If provided, the function may draw the found keypoints on this image for debugging purposes.
 
         Returns:

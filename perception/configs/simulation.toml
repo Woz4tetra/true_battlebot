@@ -32,13 +32,16 @@ exclude_filters = [
     "/perception/heartbeat",
     "/camera_0/simulated_field_result",
     "/camera_0/ground_truth/robots",
+    "/filtered_states",
+    "/mini_bot/odom",
+    "/main_bot/odom",
+    "/referee/odom",
+    "/opponent_3lb/odom",
 ]
 
 [robot_keypoint]
-type = "YoloKeypoint"
+type = "SimulatedShapeKeypoint"
 debug_image = true
-threshold = 0.75
-model_path = "yolo11n-pose_2024-10-09.pt"
 
 [robot_keypoint.model_to_system_labels.mapping]
 "mr_stabs_mk1" = "robot"

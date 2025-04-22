@@ -1,44 +1,54 @@
+import logging
+
 import cv2
 import numpy as np
 from app.config.keypoint_config.pattern_finder_config.triangle_pattern_finder_config import TrianglePatternFinderConfig
 from app.keypoint.pattern_finder.pattern_finder import PatternFinder
 from bw_interfaces.msg import UVKeypoint
 from bw_shared.geometry.xy import XY
+from perception_tools.messages.image import Image
 
 
 class TrianglePatternFinder(PatternFinder):
     def __init__(self, config: TrianglePatternFinderConfig) -> None:
         self.config = config
+        self.logger = logging.getLogger(self.__class__.__name__)
 
     def find(
-        self, image: np.ndarray, contour: np.ndarray, debug_image: np.ndarray | None = None
+        self, image: np.ndarray, contour: np.ndarray, debug_image: Image | None = None
     ) -> tuple[UVKeypoint | None, UVKeypoint | None]:
         mask = np.zeros(image.shape[0:2], dtype=np.uint8)
-        mask = cv2.drawContours(mask, [contour], -1, (255,), -1)
         crop = cv2.boundingRect(contour)
+        mask = cv2.drawContours(mask, contour.astype(np.int32), -1, (255,), -1)  # type: ignore
         cropped_image = image[crop[1] : crop[1] + crop[3], crop[0] : crop[0] + crop[2]]
         cropped_mask = mask[crop[1] : crop[1] + crop[3], crop[0] : crop[0] + crop[2]]
-        eroded_mask = cv2.erode(cropped_mask, np.ones((3, 3), np.uint8), iterations=1)
-        masked_image = cv2.bitwise_and(cropped_image, cropped_image, mask=eroded_mask)
-        gray = cv2.cvtColor(masked_image, cv2.COLOR_BGR2GRAY)
-        cv2.normalize(gray, gray, 0, 255, cv2.NORM_MINMAX, mask=eroded_mask)
-        thresholded = cv2.threshold(gray, 200, 255, cv2.THRESH_BINARY)[1]
+        if cropped_image.size == 0:
+            self.logger.debug("Cropped image is empty")
+            return None, None
+        cropped_gray = cv2.cvtColor(cropped_image, cv2.COLOR_BGR2GRAY)
+        normalized = cv2.normalize(cropped_gray, None, 0, 255, cv2.NORM_MINMAX, mask=cv2.bitwise_not(cropped_mask))  # type: ignore
+        thresholded = cv2.threshold(normalized, self.config.threshold, 255, cv2.THRESH_BINARY)[1]
         filtered_contours, _ = cv2.findContours(thresholded, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         if len(filtered_contours) == 0:
+            self.logger.debug("No contours found")
             return None, None
         largest_contour = max(filtered_contours, key=cv2.contourArea)
-        approx = cv2.approxPolyDP(largest_contour, 0.07 * cv2.arcLength(largest_contour, True), True)
-        if len(approx) != 3:
+        approx = cv2.approxPolyDP(
+            largest_contour, self.config.contour_smoothing * cv2.arcLength(largest_contour, True), True
+        )
+        num_points = 3
+        if len(approx) != num_points:
+            self.logger.debug(f"Contour is not a triangle: {len(approx)}")
             return None, None
 
         if debug_image is not None:
             approx_absolute = approx + np.array([crop[0], crop[1]])
-            cv2.drawContours(debug_image, [approx_absolute], -1, (0, 255, 0), 3)  # type: ignore
+            cv2.drawContours(debug_image.data, [approx_absolute], -1, (0, 255, 0), 3)  # type: ignore
 
         approx_reduced = approx[:, 0]
-        lengths = [np.linalg.norm(approx_reduced[(i + 1) % 3] - approx_reduced[i]) for i in range(3)]
+        lengths = [np.linalg.norm(approx_reduced[(i + 1) % num_points] - approx_reduced[i]) for i in range(num_points)]
         shortest_index = lengths.index(min(lengths))
-        shortest_line = approx_reduced[shortest_index], approx_reduced[(shortest_index + 1) % 3]
+        shortest_line = approx_reduced[shortest_index], approx_reduced[(shortest_index + 1) % num_points]
         shortest_length_angle = np.arctan2(
             shortest_line[1][1] - shortest_line[0][1],
             shortest_line[1][0] - shortest_line[0][0],
@@ -49,10 +59,12 @@ class TrianglePatternFinder(PatternFinder):
         )
         front_xys: list[XY] = []
         angles = []
-        for index in range(len(lengths)):
+        for index in range(num_points):
+            if index == shortest_index:
+                continue
             front_xy = XY(
-                (approx_reduced[(index) % 3][0]),
-                (approx_reduced[(index) % 3][1]),
+                (approx_reduced[index % num_points][0]),
+                (approx_reduced[index % num_points][1]),
             )
             front_xys.append(front_xy)
             angle = np.arctan2(
@@ -70,11 +82,11 @@ class TrianglePatternFinder(PatternFinder):
 
         if debug_image is not None:
             cv2.line(
-                debug_image,
+                debug_image.data,
                 (int(front_keypoint.x), int(front_keypoint.y)),
-                (int(back_keypoint.x), int(back_xy.y)),
+                (int(back_keypoint.x), int(back_keypoint.y)),
                 (0, 0, 255),
-                2,
+                3,
             )
 
         return front_keypoint, back_keypoint

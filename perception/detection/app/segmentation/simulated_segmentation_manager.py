@@ -36,7 +36,7 @@ class SimulatedSegmentationManager:
 
     def get_layer_image(self) -> Image | None:
         if image := self.sim_segmentation_image_sub.receive():
-            self.prev_image = Image.from_msg(image)
+            self.prev_image = Image.from_msg(image, desired_encoding="rgb8")
         return self.prev_image
 
     def get_segmentation(self) -> SegmentationInstanceArray | None:

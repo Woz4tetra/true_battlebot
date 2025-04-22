@@ -2671,6 +2671,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f9b26e993356c0fa1a59dbfbda2f0b1a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  robotName: mini_bot
   parentFrame: map
   baseWidth: 0.128
   leftWheel: {fileID: 2438036507904052247}
@@ -2825,7 +2826,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9022b84966db145058212ec01274049d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  baseTopic: mini_bot
 --- !u!114 &4413291676818037465
 MonoBehaviour:
   m_ObjectHideFlags: 0

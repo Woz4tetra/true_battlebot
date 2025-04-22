@@ -4172,6 +4172,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f9b26e993356c0fa1a59dbfbda2f0b1a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  robotName: mini_bot
   parentFrame: map
   baseWidth: 0.128
   leftWheel: {fileID: 6325562500467880854}
@@ -4295,6 +4296,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7e4961b0a573f1cd0a9ef87897ff0a5f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  matchAngleDistanceThreshold: 0.01
   linearPIDConfig:
     kp: 2
     ki: 0
@@ -4325,7 +4327,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9022b84966db145058212ec01274049d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  baseTopic: opponent_2
 --- !u!114 &192545822873529806
 MonoBehaviour:
   m_ObjectHideFlags: 0

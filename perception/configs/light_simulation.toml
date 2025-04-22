@@ -26,6 +26,11 @@ exclude_filters = [
     "/perception/heartbeat",
     "/camera_0/simulated_field_result",
     "/camera_0/ground_truth/robots",
+    "/filtered_states",
+    "/mini_bot/odom",
+    "/main_bot/odom",
+    "/referee/odom",
+    "/opponent_3lb/odom",
 ]
 
 [robot_keypoint]

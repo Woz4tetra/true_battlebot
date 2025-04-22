@@ -203,7 +203,7 @@ class RobotFilter:
             self.filter_state_pubs[robot_name].unregister()
             del self.filter_state_pubs[robot_name]
         for robot_name in robots_to_add:
-            self.filter_state_pubs[robot_name] = RosPublisher(f"{robot_name}/odom", Odometry, queue_size=10)
+            self.filter_state_pubs[robot_name] = RosPublisher(f"/{robot_name}/odom", Odometry, queue_size=10)
 
     def _init_cmd_vel_trackers(self) -> None:
         self.cmd_vel_trackers = {

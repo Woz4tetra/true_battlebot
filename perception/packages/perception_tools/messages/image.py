@@ -113,6 +113,14 @@ class Image:
     data: np.ndarray = field(default_factory=lambda: np.array([]))
     encoding: Encoding = Encoding.BGR8
 
+    @property
+    def width(self) -> int:
+        return self.data.shape[1] if len(self.data.shape) > 1 else 0
+
+    @property
+    def height(self) -> int:
+        return self.data.shape[0] if len(self.data.shape) > 1 else 0
+
     @classmethod
     def from_other(cls, other: Image) -> Image:
         return Image(

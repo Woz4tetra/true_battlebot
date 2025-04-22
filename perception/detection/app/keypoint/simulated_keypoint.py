@@ -20,7 +20,7 @@ class SimulatedKeypoint(KeypointInterface):
         self.ground_truth_manager = ground_truth_manager
         self.config = config
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.debug = self.config.debug
+        self.debug = self.config.debug_image
         self.model_loader = CameraModelLoader()
         self.keypoint_names = [KeypointName.FRONT, KeypointName.BACK]
         self.model_labels = tuple(ModelLabel)
@@ -108,7 +108,7 @@ class SimulatedKeypoint(KeypointInterface):
             keypoints=[front_pixel, back_pixel],
             names=self.keypoint_names,  # type: ignore
             score=1.0,
-            label=label,
+            label=label.value,
             class_index=self.class_indices[label],
             object_index=object_index,
         )

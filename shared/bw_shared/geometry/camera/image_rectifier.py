@@ -2,6 +2,7 @@ from typing import Optional
 
 import cv2
 import numpy as np
+from numba import njit
 from sensor_msgs.msg import CameraInfo
 
 
@@ -37,6 +38,24 @@ def resize_camera_info(camera_info: CameraInfo, dims: tuple[int, int]) -> Camera
     new_camera_info.roi.height = int(camera_info.roi.height * scale_y)
 
     return new_camera_info
+
+
+@njit(cache=True)
+def compute_inverse_mapping(mapx: np.ndarray, mapy: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    # Compute the inverse mapping
+    height, width = mapx.shape
+    inverse_mapx = np.zeros_like(mapx, dtype=np.float32)
+    inverse_mapy = np.zeros_like(mapy, dtype=np.float32)
+
+    for y in range(height):
+        for x in range(width):
+            # Find the corresponding source pixel for each rectified pixel
+            src_x = mapx[y, x]
+            src_y = mapy[y, x]
+            if 0 <= src_x < width and 0 <= src_y < height:
+                inverse_mapx[int(src_y), int(src_x)] = x
+                inverse_mapy[int(src_y), int(src_x)] = y
+    return inverse_mapx, inverse_mapy
 
 
 class ImageRectifier:
@@ -85,6 +104,8 @@ class ImageRectifier:
         )
         self.padding = padding
 
+        self.inverse_mapx, self.inverse_mapy = compute_inverse_mapping(self.mapx, self.mapy)
+
     def rectify(self, image: np.ndarray) -> np.ndarray:
         if image.shape[0] != self.unpadded_height or image.shape[1] != self.unpadded_width:
             image = cv2.resize(image, (self.unpadded_width, self.unpadded_height))
@@ -101,6 +122,15 @@ class ImageRectifier:
                 value=(0,),
             )
         return new_image
+
+    def unrectify(self, image: np.ndarray) -> np.ndarray:
+        if self.padding > 0:
+            image = image[
+                self.padding : -self.padding,
+                self.padding : -self.padding,
+            ]
+
+        return cv2.remap(image, self.inverse_mapx, self.inverse_mapy, cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT)
 
     def get_rectified_info(self) -> CameraInfo:
         return CameraInfo(

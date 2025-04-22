@@ -167,7 +167,7 @@ class Runner:
             if robot_estimations:
                 self.robot_estimation_queue.put(robot_estimations)
 
-        if debug_image:
+        if debug_image is not None:
             self.robot_debug_image_publisher.publish(debug_image.to_msg())
 
     def perceive_field(self) -> bool:
