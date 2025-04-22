@@ -8,13 +8,13 @@ from perception_tools.messages.image import Image
 class PatternFinder(ABC):
     @abstractmethod
     def find(
-        self, image: np.ndarray, contour: np.ndarray, debug_image: Image | None = None
+        self, gray_image: np.ndarray, contour: np.ndarray, debug_image: Image | None = None
     ) -> tuple[UVKeypoint | None, UVKeypoint | None]:
         """
         Find the pattern in the image using the contours.
 
         Args:
-            image (np.ndarray): The input image.
+            gray_image (np.ndarray): The input image. It should be a grayscale image.
             contour (np.ndarray): The contour to find the pattern within.
             debug_image (Image | None): Optional debug image for visualization.
                 If provided, the function may draw the found keypoints on this image for debugging purposes.

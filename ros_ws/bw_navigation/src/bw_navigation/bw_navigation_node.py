@@ -143,7 +143,7 @@ class BwNavigationNode:
 
         self.planner.reset()
 
-        goal_feedback = PoseStamped(header=self.field.header)
+        goal_feedback = PoseStamped(header=self.field.header.to_msg())
 
         for dt in regulate_tick(self.tick_rate):
             if rospy.is_shutdown() or self.should_cancel:

@@ -12,9 +12,24 @@
             "objective": "blue_slow_camera"
         },
         {
+            "name": "mini_bot",
+            "model": "MR STABS MK2",
+            "objective": "auto_blue_corner"
+        },
+        {
             "name": "main_bot",
             "model": "MRS BUFF MK2",
             "objective": "keyboard_blue_corner"
+        },
+        {
+            "name": "opponent_1",
+            "model": "MRS BUFF B-03 Bizarro",
+            "objective": "idle_center"
+        },
+        {
+            "name": "referee",
+            "model": "Referee",
+            "objective": "idle_ref_corner"
         }
     ]
 }

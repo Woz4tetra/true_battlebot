@@ -15,18 +15,17 @@ class TrianglePatternFinder(PatternFinder):
         self.logger = logging.getLogger(self.__class__.__name__)
 
     def find(
-        self, image: np.ndarray, contour: np.ndarray, debug_image: Image | None = None
+        self, gray_image: np.ndarray, contour: np.ndarray, debug_image: Image | None = None
     ) -> tuple[UVKeypoint | None, UVKeypoint | None]:
-        mask = np.zeros(image.shape[0:2], dtype=np.uint8)
+        mask = np.zeros(gray_image.shape[0:2], dtype=np.uint8)
         crop = cv2.boundingRect(contour)
         mask = cv2.drawContours(mask, contour.astype(np.int32), -1, (255,), -1)  # type: ignore
-        cropped_image = image[crop[1] : crop[1] + crop[3], crop[0] : crop[0] + crop[2]]
+        cropped_image = gray_image[crop[1] : crop[1] + crop[3], crop[0] : crop[0] + crop[2]]
         cropped_mask = mask[crop[1] : crop[1] + crop[3], crop[0] : crop[0] + crop[2]]
         if cropped_image.size == 0:
             self.logger.debug("Cropped image is empty")
             return None, None
-        cropped_gray = cv2.cvtColor(cropped_image, cv2.COLOR_BGR2GRAY)
-        normalized = cv2.normalize(cropped_gray, None, 0, 255, cv2.NORM_MINMAX, mask=cv2.bitwise_not(cropped_mask))  # type: ignore
+        normalized = cv2.normalize(cropped_image, None, 0, 255, cv2.NORM_MINMAX, mask=cv2.bitwise_not(cropped_mask))  # type: ignore
         thresholded = cv2.threshold(normalized, self.config.threshold, 255, cv2.THRESH_BINARY)[1]
         filtered_contours, _ = cv2.findContours(thresholded, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         if len(filtered_contours) == 0:

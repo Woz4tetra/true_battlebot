@@ -1,3 +1,4 @@
+import time
 from typing import Sequence
 
 import cv2
@@ -58,7 +59,7 @@ def simulated_mask_to_contours(
     layer_image: np.ndarray,
     simulated_segmentation_color_map: dict[int, ModelLabel],
     model_labels: tuple[ModelLabel, ...],
-    error_range: int = -1,
+    error_range: int = 1,
     erode_dilate_size: int = 3,
     debug_image: np.ndarray | None = None,
 ) -> tuple[SegmentationInstanceArray, dict[int, Exception]]:
@@ -71,13 +72,10 @@ def simulated_mask_to_contours(
             exceptions[color] = exc
             continue
         color_bgr = color_i32_to_bgr(color)
-        if error_range < 0:
-            mask = np.all(layer_image == color_bgr, axis=2).astype(np.uint8)
-        else:
-            color_nominal = np.array(color_bgr)
-            color_lower = color_nominal - error_range
-            color_upper = color_nominal + error_range
-            mask = cv2.inRange(layer_image, color_lower, color_upper)
+        color_nominal = np.array(color_bgr)
+        color_lower = color_nominal - error_range
+        color_upper = color_nominal + error_range
+        mask = cv2.inRange(layer_image, color_lower, color_upper)
         mask = bridge_gaps(mask, erode_dilate_size)
         contours, hierarchy = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
         if hierarchy is None:  # empty mask

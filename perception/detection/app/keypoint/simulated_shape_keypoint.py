@@ -9,7 +9,7 @@ from app.keypoint.warp_field_perspective import get_warp_perspective_field
 from app.segmentation.simulated_segmentation_manager import SimulatedSegmentationManager
 from bw_interfaces.msg import KeypointInstance, KeypointInstanceArray, LabelMap, UVKeypoint
 from bw_shared.enums.keypoint_name import KeypointName
-from bw_shared.enums.label import NON_FIELD_GROUP, Label, ModelLabel
+from bw_shared.enums.label import NON_FIELD_GROUP, OUR_ROBOT_GROUP, Label, ModelLabel
 from bw_shared.geometry.camera.image_rectifier import ImageRectifier
 from bw_shared.messages.field import Field
 from perception_tools.camera.camera_model_loader import CameraModelLoader
@@ -31,6 +31,7 @@ class SimulatedShapeKeypoint(KeypointInterface):
         self.model_loader = CameraModelLoader()
         self.keypoint_names = [KeypointName.FRONT, KeypointName.BACK]
         self.model_labels = tuple(NON_FIELD_GROUP)
+        self.our_team_labels = tuple(OUR_ROBOT_GROUP)
         self.system_labels = tuple(Label)
         self.rectifier: ImageRectifier | None = None
         self.pattern_finder = pattern_finder
@@ -99,17 +100,22 @@ class SimulatedShapeKeypoint(KeypointInterface):
     ) -> tuple[list[ModelLabel], np.ndarray]:
         keypoint_labels = []
         warped_keypoints = []
-        for label, contours in contour_map.items():
+        for model_label, contours in contour_map.items():
+            if model_label not in self.our_team_labels:
+                continue  # TODO: Handle other labels
             for contour in contours:
+                label = self.model_to_system_labels[model_label]
+                channel = self.config.label_to_color_channel.get(label, 0)
                 transformed_contour = cv2.perspectiveTransform(contour.astype(np.float32), tf_warp)
-                warped_front, warped_back = self.pattern_finder.find(warped_image, transformed_contour, debug_image)
+                warped_channel = warped_image[:, :, channel]
+                warped_front, warped_back = self.pattern_finder.find(warped_channel, transformed_contour, debug_image)
                 if warped_front is None or warped_back is None:
-                    self.logger.warning(f"Failed to find keypoints for label {label}")
+                    self.logger.warning(f"Failed to find keypoints for label {model_label}")
                     continue
                 warped_keypoints.append((warped_front.x, warped_front.y))
                 warped_keypoints.append((warped_back.x, warped_back.y))
-                keypoint_labels.append(label)
-                keypoint_labels.append(label)
+                keypoint_labels.append(model_label)
+                keypoint_labels.append(model_label)
         tf_warp_inv = np.linalg.inv(tf_warp)
 
         if debug_image is not None:
