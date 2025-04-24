@@ -35,6 +35,8 @@ services:
             - /home/${USER}/.gitconfig:/home/${ORGANIZATION}/.gitconfig:rw
             - /home/${USER}/.ssh:/home/${ORGANIZATION}/.ssh:rw
             - /dev:/dev:rw
+            - /media/storage/true-battlebot-media/.bash_history:/home/${ORGANIZATION}/.bash_history:rw
+            - /media/storage/true-battlebot-media/.bash_aliases:/home/${ORGANIZATION}/.bash_aliases:rw
 
         command: sleep infinity
 
@@ -62,5 +64,7 @@ services:
             - /home/${USER}/.gitconfig:/home/${ORGANIZATION}/.gitconfig:rw
             - /home/${USER}/.ssh:/home/${ORGANIZATION}/.ssh:rw
             - /dev:/dev:rw
+            - /media/storage/true-battlebot-media/.bash_history:/home/${ORGANIZATION}/.bash_history:rw
+            - /media/storage/true-battlebot-media/.bash_aliases:/home/${ORGANIZATION}/.bash_aliases:rw
 
         command: sleep infinity
