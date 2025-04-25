@@ -1,0 +1,16 @@
+#!/usr/bin/env python
+# PYTHON_ARGCOMPLETE_OK
+import os
+import sys
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+SCRIPT_DIR = os.path.join(BASE_DIR, "..", "training")
+os.chdir(SCRIPT_DIR)
+
+sys.path.append(SCRIPT_DIR)
+
+if __name__ == "__main__":
+    from auto_label.auto_label_tool import main  # type: ignore
+
+    main()
