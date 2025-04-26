@@ -8,7 +8,7 @@ from pathlib import Path
 
 import torch
 from perception_tools.config.model_metadata import FIELD_SEMANTIC_MODEL_METADATA
-from perception_tools.data_directory import get_data_directory
+from perception_tools.directories.data_directory import get_data_directory
 from perception_tools.inference.common import get_default_device
 from perception_tools.training.deeplabv3 import load_model
 

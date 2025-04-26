@@ -14,7 +14,7 @@ from bw_shared.messages.contours import contour_to_msg
 from bw_shared.messages.header import Header
 from detectron2.layers import paste_masks_in_image
 from detectron2.utils.visualizer import GenericMask
-from perception_tools.data_directory import get_data_directory
+from perception_tools.directories.data_directory import get_data_directory
 from perception_tools.inference.common import load_metadata
 from perception_tools.messages.image import Image
 from torch import Tensor

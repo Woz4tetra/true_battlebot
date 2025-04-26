@@ -11,6 +11,6 @@ os.chdir(SCRIPT_DIR)
 sys.path.append(SCRIPT_DIR)
 
 if __name__ == "__main__":
-    from auto_label.auto_label_tool import main  # type: ignore
+    from auto_label.auto_label import main  # type: ignore
 
     main()

@@ -2,9 +2,9 @@ import dacite.exceptions
 import pytest
 from app.config.config import Config
 from app.config.config_loader import load_config
-from app.config.list_configs import get_config_path, list_configs, list_robots
 from app.config.ros_config import RosConfig
 from bw_shared.messages.dataclass_utils import from_dict
+from perception_tools.directories.config_directory import get_config_path, list_configs, list_robots
 
 
 def test_get_config_path() -> None:
@@ -22,7 +22,7 @@ def test_list_configs() -> None:
 
 @pytest.mark.parametrize("robot_name", list_robots())
 def test_load_config(robot_name: str) -> None:
-    assert isinstance(load_config(get_config_path(), robot_name), Config)
+    assert isinstance(load_config(robot_name), Config)
 
 
 def test_extra_field() -> None:

@@ -2,7 +2,7 @@ import cv2
 import pytest
 from app.keypoint.yolo_keypoint import YoloKeypoint
 from bw_shared.messages.header import Header
-from perception_tools.data_directory import get_data_directory
+from perception_tools.directories.data_directory import get_data_directory
 from perception_tools.messages.image import Image
 from sensor_msgs.msg import CameraInfo
 

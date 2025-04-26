@@ -8,7 +8,7 @@ from app.profiling.context_timer import ContextTimer
 from bw_interfaces.msg import KeypointInstance, KeypointInstanceArray, LabelMap, UVKeypoint
 from bw_shared.enums.label import Label, ModelLabel
 from bw_shared.messages.field import Field
-from perception_tools.data_directory import get_data_directory
+from perception_tools.directories.data_directory import get_data_directory
 from perception_tools.inference.common import load_metadata
 from perception_tools.messages.image import Image
 from sensor_msgs.msg import CameraInfo

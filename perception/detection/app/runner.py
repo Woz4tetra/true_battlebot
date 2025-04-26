@@ -2,7 +2,6 @@ import argparse
 import logging
 import time
 from cProfile import Profile
-from pathlib import Path
 from pstats import SortKey, Stats
 from queue import Queue
 from threading import Event, Thread
@@ -14,7 +13,6 @@ from app.camera.camera_interface import CameraInterface, CameraMode
 from app.camera.camera_loader import load_camera
 from app.config.config import Config
 from app.config.config_loader import load_config
-from app.config.list_configs import get_config_path
 from app.container import Container
 from app.field_filter.field_filter_interface import FieldFilterInterface
 from app.field_filter.field_filter_loader import load_field_filter, load_global_field_transformer
@@ -345,15 +343,13 @@ def run_loop(app: Runner, config: Config) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", type=str, default=str(get_config_path()))
     parser.add_argument("--profile", action="store_true")
     args: CommandLineArgs = cast(CommandLineArgs, parser.parse_args())
 
-    config_dir = Path(args.config)
     profile_app = args.profile
 
     shared_config = SharedConfig.from_files()
-    config = load_config(config_dir, get_robot())
+    config = load_config(get_robot())
 
     initialize(config.log_level, CustomJsonFormatter())
     print()  # Start log on a fresh line

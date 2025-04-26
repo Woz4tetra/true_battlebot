@@ -1,11 +1,7 @@
-from pathlib import Path
-
-import toml
 from app.config.config import Config
+from perception_tools.directories.config_directory import load_config_as_dict
 
 
-def load_config(config_dir: Path, robot_name: str) -> Config:
-    path = config_dir / (robot_name + ".toml")
-    with open(path, "r") as file:
-        config_raw = toml.load(file)
+def load_config(robot_name: str) -> Config:
+    config_raw = load_config_as_dict(robot_name)
     return Config.from_dict(config_raw)

@@ -1,7 +1,7 @@
 import cv2
 import pytest
 from app.segmentation.semantic_segmentation import SemanticSegmentation
-from perception_tools.data_directory import get_data_directory
+from perception_tools.directories.data_directory import get_data_directory
 from perception_tools.messages.image import Image
 
 TEST_IMAGES = (
