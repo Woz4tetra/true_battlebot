@@ -1,12 +1,17 @@
 import logging
 import tkinter as tk
+from pathlib import Path
 from tkinter import ttk
 
 import sv_ttk
-from auto_label.command_line_args import CommandLineArgs
-from auto_label.config.auto_label_config import AutoLabelConfig
 from perception_tools.directories.config_directory import ConfigType, load_config_as_dict
 from perception_tools.directories.data_directory import get_data_directory
+from perception_tools.initialize_logger import initialize
+
+from auto_label.backend.manual_label_backend import ManualLabelBackend
+from auto_label.command_line_args import CommandLineArgs
+from auto_label.config.auto_label_config import AutoLabelConfig
+from auto_label.ui.manual_label_panel import ManualLabelPanel
 
 
 def load_config(config_name: str) -> AutoLabelConfig:
@@ -17,6 +22,7 @@ def load_config(config_name: str) -> AutoLabelConfig:
 class App:
     def __init__(self, args: CommandLineArgs) -> None:
         self.config = load_config(args.config)
+        initialize(self.config.log_level)
         self.window = tk.Tk()
         self.window.tk.call("tk", "scaling", 1.0)
 
@@ -27,22 +33,14 @@ class App:
         self.window.minsize(self.config.min_size[0], self.config.min_size[1])
         self.window.maxsize(self.config.max_size[0], self.config.max_size[1])
 
-        # Set the icon
         self.set_icon()
 
-        # Create a label
-        label = ttk.Label(self.window, text="Hello, Tkinter!")
-        label.pack(pady=10)
+        manual_label_backend = ManualLabelBackend(Path(self.config.data_root_directory))
+        panels = [ManualLabelPanel(self.window, manual_label_backend)]
+        for panel in panels:
+            panel.pack()
 
-        # Create a button
-        button = ttk.Button(self.window, text="Click Me", command=self.button_click)
-        button.pack(pady=10)
-
-        # Create an entry field
-        entry = ttk.Entry(self.window, width=20)
-        entry.pack(pady=10)
-
-        sv_ttk.set_theme("dark")
+        sv_ttk.set_theme("light")
 
         self.logger = logging.getLogger(self.__class__.__name__)
 
@@ -58,10 +56,6 @@ class App:
             self.window.tk.call("wm", "iconphoto", self.window._w, img)  # type: ignore
         else:
             self.logger.warning(f"Icon path {icon_path} does not exist")
-
-    # Function to be called when the button is clicked
-    def button_click(self) -> None:
-        print("Button clicked!")
 
     def run(self) -> None:
         self.window.mainloop()

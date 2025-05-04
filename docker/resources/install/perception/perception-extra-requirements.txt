@@ -11,3 +11,4 @@ apriltag
 aprilgrid
 pyserial
 blobconverter
+sv-ttk

@@ -16,7 +16,7 @@ class YoloVisibility(IntEnum):
 YoloKeypointData = tuple[float, float, YoloVisibility]
 
 
-@dataclass
+@dataclass(eq=False)
 class YoloKeypointAnnotation:
     class_index: int = -1
     bbox: list[float] = field(default_factory=lambda: [0, 0, 0, 0])
@@ -119,11 +119,28 @@ class YoloKeypointAnnotation:
             keypoints.append((x_keypoint, y_keypoint, visibility))
         return cls(class_index, bbox, keypoints)
 
+    def __hash__(self) -> int:
+        hash_value = hash(self.class_index)
+        hash_value ^= hash(self.bbox)
+        hash_value ^= hash(self.keypoints)
+        return hash_value
 
-@dataclass
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, YoloKeypointAnnotation):
+            return NotImplemented
+        if self.class_index != other.class_index:
+            return False
+        if self.bbox != other.bbox:
+            return False
+        if self.keypoints != other.keypoints:
+            return False
+        return True
+
+
+@dataclass(eq=False)
 class YoloKeypointImage:
     image_id: str = ""
-    labels: list[YoloKeypointAnnotation] = field(default_factory=list)
+    labels: set[YoloKeypointAnnotation] = field(default_factory=set)
 
     def to_txt(self) -> str:
         return "".join(label.to_row() for label in self.labels)
@@ -132,8 +149,23 @@ class YoloKeypointImage:
     def from_txt(cls, data: str) -> YoloKeypointImage:
         self = cls()
         for line in data.splitlines():
-            self.labels.append(YoloKeypointAnnotation.from_row(line))
+            self.labels.add(YoloKeypointAnnotation.from_row(line))
         return self
+
+    def __hash__(self) -> int:
+        hash_value = hash(self.image_id)
+        for label in self.labels:
+            hash_value ^= hash(label)
+        return hash_value
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, YoloKeypointImage):
+            return NotImplemented
+        if self.image_id != other.image_id:
+            return False
+        if self.labels != other.labels:
+            return False
+        return True
 
 
 @dataclass
