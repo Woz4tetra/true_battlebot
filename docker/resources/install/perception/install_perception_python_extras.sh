@@ -4,6 +4,9 @@ set -e
 
 BASE_DIR=$(realpath "$(dirname "${0}")")
 
+sudo apt-get update
+sudo apt-get install -y python3-tk
+
 sudo python -m pip uninstall -y bson
 sudo python -m pip install --ignore-installed --no-cache-dir -r ${BASE_DIR}/perception-extra-requirements.txt
 sudo python -m pip install numpy==1.26.4

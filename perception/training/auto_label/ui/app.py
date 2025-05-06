@@ -20,6 +20,7 @@ def load_config(config_name: str) -> AutoLabelConfig:
 
 class App:
     def __init__(self, args: CommandLineArgs) -> None:
+        self.logger = logging.getLogger(self.__class__.__name__)
         self.config = load_config(args.config)
         initialize(self.config.log_level)
         self.window = tk.Tk()
@@ -40,8 +41,6 @@ class App:
             panel.pack()
 
         sv_ttk.set_theme("light")
-
-        self.logger = logging.getLogger(self.__class__.__name__)
 
     def get_screen_size(self) -> tuple[int, int]:
         screen_width = self.window.winfo_screenwidth()

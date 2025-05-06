@@ -136,7 +136,5 @@ class ManualLabelPanel(Panel):
                 self.logger.debug(f"Jump count decreased to {self.jump_count}.")
             else:
                 self.logger.debug("Jump count is already at minimum.")
-        elif event.keysym == "Escape":
-            self.window.quit()
         else:
             self.image_canvas.keystroke_callback(event)

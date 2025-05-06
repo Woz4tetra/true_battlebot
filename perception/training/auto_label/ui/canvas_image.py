@@ -15,8 +15,10 @@ class HighlightRectangleState:
         self.start_y = 0
         self.end_x = 0
         self.end_y = 0
+        self.offset_x = 0
+        self.offset_y = 0
         self.is_drawing = False
-        self.rectangle_id = self.canvas.create_rectangle(0, 0, 0, 0, outline="red", width=2)
+        self.rectangle_id = self.canvas.create_rectangle(0.0, 0.0, 0.0, 0.0, outline="red", width=2)
         self.hide()
 
     def hide(self) -> None:
@@ -25,29 +27,37 @@ class HighlightRectangleState:
     def show(self) -> None:
         self.canvas.itemconfigure(self.rectangle_id, state="normal")
 
-    def start_drawing(self, event: tk.Event) -> None:
-        self.start_x = event.x
-        self.start_y = event.y
+    def start_drawing(self, start_x: float, start_y: float) -> None:
+        self.start_x = start_x
+        self.start_y = start_y
         self.is_drawing = True
         print(f"Start drawing rectangle at ({self.start_x}, {self.start_y})")
         self.show()
 
-    def offset_position(self, x: int, y: int) -> None:
+    def update_rectangle(self, canvas_x: float, canvas_y: float) -> None:
         if not self.is_drawing:
             return
-
-    def update_rectangle(self, event: tk.Event) -> None:
-        if not self.is_drawing:
-            return
-        self.end_x = event.x
-        self.end_y = event.y
+        self.end_x = canvas_x
+        self.end_y = canvas_y
         self.canvas.coords(self.rectangle_id, self.start_x, self.start_y, self.end_x, self.end_y)
 
     def finish_drawing(self) -> None:
         self.is_drawing = False
         print(f"Finish drawing rectangle at ({self.end_x}, {self.end_y})")
         self.hide()
-        self.canvas.coords(self.rectangle_id, 0, 0, 0, 0)
+        self.canvas.coords(self.rectangle_id, 0.0, 0.0, 0.0, 0.0)  # hide rectangle
+
+    def scale(self, focal_x: float, focal_y: float, relative_scale: float) -> None:
+        if not self.is_drawing:
+            return
+        self.start_x = (self.start_x - focal_x) * relative_scale + focal_x
+        self.start_y = (self.start_y - focal_y) * relative_scale + focal_y
+
+    def get_bbox(self) -> tuple[float, float, float, float]:
+        """Get bounding box of the rectangle"""
+        if not self.is_drawing:
+            return 0.0, 0.0, 0.0, 0.0
+        return self.start_x, self.start_y, self.end_x, self.end_y
 
 
 class CanvasImage:
@@ -81,11 +91,11 @@ class CanvasImage:
         self.hbar.configure(command=self._scroll_x)  # bind scrollbars to the canvas
         self.vbar.configure(command=self._scroll_y)
 
-        self.h_line1_id = self.canvas.create_line(0, 0, 0, 0, fill="white", width=1)  # horizontal line
-        self.v_line1_id = self.canvas.create_line(0, 0, 0, 0, fill="white", width=1)  # vertical line
+        self.h_line1_id = self.canvas.create_line(0.0, 0.0, 0.0, 0.0, fill="white", width=1)  # horizontal line
+        self.v_line1_id = self.canvas.create_line(0.0, 0.0, 0.0, 0.0, fill="white", width=1)  # vertical line
 
-        self.h_line2_id = self.canvas.create_line(0, 0, 0, 0, fill="black", width=1)  # horizontal line
-        self.v_line2_id = self.canvas.create_line(0, 0, 0, 0, fill="black", width=1)  # vertical line
+        self.h_line2_id = self.canvas.create_line(0.0, 0.0, 0.0, 0.0, fill="black", width=1)  # horizontal line
+        self.v_line2_id = self.canvas.create_line(0.0, 0.0, 0.0, 0.0, fill="black", width=1)  # vertical line
 
         self.highlight_rectangle = HighlightRectangleState(self.canvas)
 
@@ -94,33 +104,19 @@ class CanvasImage:
     def set_image(self, image: Image.Image, annotation: YoloKeypointImage) -> None:
         self._image = image
         self._annotation = annotation
-        self._pyramid: list[Image.Image] = [image]
 
         # Create image pyramid
         # Set ratio coefficient for image pyramid
-        self._curr_img = 0  # current image from the pyramid
-        self.imscale = 1.0  # scale for the canvas image zoom, public for outer classes
-        self._scale = self.imscale
-        self._reduction = 2  # reduction degree of image pyramid
+        self._scale = 1.0  # scale for the canvas image zoom, public for outer classes
 
         # Decide if this image huge or not
-        self._huge_size = 14000  # define size of the huge image
-        self.imwidth, self.imheight = self._image.size  # public for outer classes
-        if self.imwidth * self.imheight > self._huge_size * self._huge_size:
-            raise ValueError("Image is too big.")
-        self._min_side = min(self.imwidth, self.imheight)  # get the smaller image side
-
-        w, h = self._pyramid[-1].size
-        while w > 512 and h > 512:  # top pyramid image is around 512 pixels in size
-            w /= self._reduction  # divide on reduction degree
-            h /= self._reduction  # divide on reduction degree
-            self._pyramid.append(self._pyramid[-1].resize((int(w), int(h)), self._filter))
+        width, height = self._image.size  # public for outer classes
 
         if self.container is not None:
             self.canvas.delete(self.container)
 
         # Put image into container rectangle and use it to set proper coordinates to the image
-        self.container = self.canvas.create_rectangle((0, 0, self.imwidth, self.imheight), width=0)
+        self.container = self.canvas.create_rectangle((0, 0, width, height), width=0)
 
         self._image_set = True
         self.redraw_figures()  # method for child classes
@@ -203,7 +199,7 @@ class CanvasImage:
         x2 = min(box_canvas[2], box_image[2]) - box_image[0]
         y2 = min(box_canvas[3], box_image[3]) - box_image[1]
         if int(x2 - x1) > 0 and int(y2 - y1) > 0:  # show image if it's in the visible area
-            image = self._pyramid[max(0, self._curr_img)].crop(  # crop current img from pyramid
+            image = self._image.crop(
                 (int(x1 / self._scale), int(y1 / self._scale), int(x2 / self._scale), int(y2 / self._scale))
             )
             imagetk = ImageTk.PhotoImage(image.resize((int(x2 - x1), int(y2 - y1)), self._filter))
@@ -211,7 +207,7 @@ class CanvasImage:
                 max(box_canvas[0], box_img_int[0]), max(box_canvas[1], box_img_int[1]), anchor="nw", image=imagetk
             )
             self.canvas.lower(imageid)  # set image into background
-            self.imagetk = imagetk  # keep an extra reference to prevent garbage-collection
+            self._cropped_image = imagetk  # keep an extra reference to prevent garbage-collection
 
     def move_from_callback(self, event: tk.Event) -> None:
         """Remember previous coordinates for scrolling with the mouse"""
@@ -235,13 +231,25 @@ class CanvasImage:
         self.canvas.coords(self.h_line2_id, bbox[0], y_offset + 1, bbox[2], y_offset + 1)  # horizontal line
         self.canvas.coords(self.v_line2_id, x_offset + 1, bbox[1], x_offset + 1, bbox[3])  # vertical line
 
-        self.highlight_rectangle.update_rectangle(event)
+        self.highlight_rectangle.update_rectangle(x_offset, y_offset)  # update highlight rectangle
 
     def outside(self, x: int, y: int) -> bool:
         """Checks if the point (x,y) is outside the image area"""
         assert self.container is not None
         bbox = self.canvas.coords(self.container)  # get image area
         return not (bbox[0] < x < bbox[2] and bbox[1] < y < bbox[3])
+
+    def button1_click_callback(self, event: tk.Event) -> None:
+        if not self._image_set:
+            return
+        if self.outside(event.x, event.y):
+            return
+        if not self.highlight_rectangle.is_drawing:
+            canvas_x = self.canvas.canvasx(event.x)  # get coordinates of the event on the canvas
+            canvas_y = self.canvas.canvasy(event.y)
+            self.highlight_rectangle.start_drawing(canvas_x, canvas_y)  # start drawing rectangle
+        else:
+            self.highlight_rectangle.finish_drawing()
 
     def wheel_callback(self, event: tk.Event) -> None:
         """Zoom with mouse wheel"""
@@ -251,41 +259,25 @@ class CanvasImage:
         y = self.canvas.canvasy(event.y)
         if self.outside(x, y):
             return  # zoom only inside image area
-        scale = 1.0
+        relative_scale = 1.0
         # Respond to Linux (event.num) or Windows (event.delta) wheel event
         if event.num == 5 or event.delta == -120:  # scroll down, smaller
-            if round(self._min_side * self.imscale) < 30:
-                return  # image is less than 30 pixels
-            self.imscale /= self._delta
-            scale /= self._delta
+            relative_scale /= self._delta
         if event.num == 4 or event.delta == 120:  # scroll up, bigger
-            index = min(self.canvas.winfo_width(), self.canvas.winfo_height()) >> 1
-            if index < self.imscale:
-                return  # 1 pixel is bigger than the visible area
-            self.imscale *= self._delta
-            scale *= self._delta
-
-        if scale != 1.0:
-            self._set_position_and_scale(x, y, scale)  # set new scale
-
-    def button1_click_callback(self, event: tk.Event) -> None:
-        if not self._image_set:
+            relative_scale *= self._delta
+        new_scale = self._scale * relative_scale
+        if new_scale < 0.5:  # don't zoom out too much
             return
-        if self.outside(event.x, event.y):
+        if new_scale > 10.0:  # don't zoom in too much
             return
-        if not self.highlight_rectangle.is_drawing:
-            self.highlight_rectangle.start_drawing(event)
-        else:
-            self.highlight_rectangle.finish_drawing()
+        self._scale = new_scale
 
-    def _set_position_and_scale(self, x: int, y: int, scale: float) -> None:
-        # Take appropriate image from the pyramid
-        k = self.imscale  # temporary coefficient
-        self._curr_img = min((-1) * int(math.log(k, self._reduction)), len(self._pyramid) - 1)
-        self._scale = k * math.pow(self._reduction, max(0, self._curr_img))
+        if relative_scale != 1.0:
+            self._set_position_and_scale(x, y, relative_scale)  # set new scale
 
-        self.canvas.scale("all", x, y, scale, scale)  # rescale all objects
-        self.highlight_rectangle.offset_position(x, y)  # move highlight rectangle
+    def _set_position_and_scale(self, focal_x: float, focal_y: float, relative_scale: float) -> None:
+        self.canvas.scale("all", focal_x, focal_y, relative_scale, relative_scale)  # rescale all objects
+        self.highlight_rectangle.scale(focal_x, focal_y, relative_scale)  # rescale highlight rectangle
         # Redraw some figures before showing image on the screen
         self.redraw_figures()  # method for child classes
         self._show_image()
@@ -307,6 +299,8 @@ class CanvasImage:
             self._scroll_y("scroll", -1, "unit", event=event)
         elif event.keysym == "s":
             self._scroll_y("scroll", 1, "unit", event=event)
+        elif event.keysym == "Escape":
+            self.highlight_rectangle.finish_drawing()
         elif event.keysym == "r":
             self._reset_canvas()
             self._show_image()
@@ -349,8 +343,6 @@ class CanvasImage:
     def destroy(self) -> None:
         """ImageFrame destructor"""
         self._image.close()
-        map(lambda i: i.close, self._pyramid)  # close all pyramid images
-        del self._pyramid[:]  # delete pyramid list
-        del self._pyramid  # delete pyramid variable
+        del self._image  # delete image variable
         self.canvas.destroy()
         self._imframe.destroy()
