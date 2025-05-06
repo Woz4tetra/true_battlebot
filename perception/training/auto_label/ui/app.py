@@ -1,7 +1,6 @@
 import logging
 import tkinter as tk
 from pathlib import Path
-from tkinter import ttk
 
 import sv_ttk
 from perception_tools.directories.config_directory import ConfigType, load_config_as_dict

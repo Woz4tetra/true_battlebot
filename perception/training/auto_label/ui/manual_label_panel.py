@@ -4,13 +4,12 @@ from pathlib import Path
 from tkinter import Tk, filedialog, ttk
 
 import cv2
-from matplotlib import pyplot as plt
 from perception_tools.messages.image import Encoding, Image
+from perception_tools.training.yolo_keypoint_dataset import YoloKeypointImage
 from PIL import Image as PILImage
 from PIL import ImageTk
 
 from auto_label.backend.manual_label_backend import ManualLabelBackend
-from auto_label.backend.video_source_collection import ALLOWED_VIDEO_EXTENSIONS
 from auto_label.ui.canvas_image import CanvasImage
 from auto_label.ui.panel import Panel
 
@@ -28,7 +27,13 @@ class ManualLabelPanel(Panel):
         self.add_video_button = ttk.Button(self.window, text="Add Video", command=self.add_video_button_callback)
         self.next_frame_button = ttk.Button(self.window, text="Next Frame", command=self.next_frame_button_callback)
         self.prev_frame_button = ttk.Button(self.window, text="Previous Frame", command=self.prev_frame_button_callback)
+
+        self.selected_video_option = tk.StringVar(self.window)
+        self.videos_dropdown = ttk.OptionMenu(self.window, self.selected_video_option)
+        self.update_video_options()
+        self.selected_video_option.set("Select a video")
         self.available_videos_frame = tk.Frame(self.window)
+
         self.image_canvas = CanvasImage(self.image_frame)
 
         self.logger = logging.getLogger(self.__class__.__name__)
@@ -36,23 +41,33 @@ class ManualLabelPanel(Panel):
     def pack(self) -> None:
         self.image_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
         self.available_videos_frame.pack()
+        self.videos_dropdown.pack(pady=10)
         self.add_video_button.pack(pady=10)
         self.next_frame_button.pack(pady=10)
         self.prev_frame_button.pack(pady=10)
-        for video_name in self.backend.video_source.list_videos():
-            self.add_video_button_to_frame(video_name)
 
         # Bind events to the Canvas
         self.window.bind("<Configure>", self.image_canvas.show_image_callback)  # canvas is resized
-        self.window.bind("<ButtonPress-1>", self.image_canvas.move_from_callback)  # remember canvas position
-        self.window.bind("<B1-Motion>", self.image_canvas.move_to_callback)  # move canvas to the new position
+        self.window.bind("<ButtonPress-3>", self.image_canvas.move_from_callback)  # remember canvas position
+        self.window.bind("<B3-Motion>", self.image_canvas.move_to_callback)  # move canvas to the new position
         self.window.bind("<MouseWheel>", self.image_canvas.wheel_callback)  # zoom for Windows and MacOS, but not Linux
         self.window.bind("<Button-5>", self.image_canvas.wheel_callback)  # zoom for Linux, wheel scroll down
         self.window.bind("<Button-4>", self.image_canvas.wheel_callback)  # zoom for Linux, wheel scroll up
+        self.window.bind("<Motion>", self.image_canvas.move_callback)  # update canvas highlights
+        self.window.bind("<ButtonPress-1>", self.image_canvas.button1_click_callback)
 
         # Handle keystrokes in idle mode, because program slows down on a weak computers,
         # when too many key stroke events in the same time
         self.window.bind("<Key>", lambda event: self.window.after_idle(self.keystroke_callback, event))
+
+    def update_video_options(self) -> None:
+        menu = self.videos_dropdown["menu"]
+        menu.delete(0, "end")
+        menu.add_command(label="Select a video", command=lambda: None)
+        for video_name in self.backend.video_source.list_videos():
+            menu.add_command(
+                label=video_name, command=lambda value=video_name: self.select_video_button_callback(value)
+            )
 
     def add_video_button_callback(self) -> None:
         # Open file dialog to select video
@@ -64,21 +79,16 @@ class ManualLabelPanel(Panel):
         if video_path:
             video_path_obj = Path(video_path)
             self.backend.add_video(video_path_obj)
-            self.add_video_button_to_frame(video_path_obj.name)
+            self.update_video_options()
             self.next_frame_button_callback()
             self.logger.info(f"Video {video_path} added.")
         else:
             self.logger.warning("No video selected.")
 
-    def add_video_button_to_frame(self, video_name: str) -> None:
-        video_button = ttk.Button(self.available_videos_frame, text=video_name)
-        video_button.pack(pady=10)
-        video_button.bind("<Button-1>", lambda event: self.select_video_button_callback(video_name))
-        self.logger.info(f"Video {video_name} added to frame.")
-
     def select_video_button_callback(self, video_name: str) -> None:
         self.backend.select_video(video_name)
         self.logger.info(f"Video {video_name} selected.")
+        self.selected_video_option.set(video_name)
         self.next_frame_button_callback()
 
     def next_frame_button_callback(self) -> None:
@@ -106,8 +116,11 @@ class ManualLabelPanel(Panel):
         else:
             self.logger.error(f"Unsupported image encoding: {image.encoding}")
             return
+        annotation = self.backend.annotations_cache.get_annotation(self.backend.get_video_name(), image.header.seq)
+        if annotation is None:
+            annotation = YoloKeypointImage()
         # Convert the image to a format Tkinter can use
-        self.image_canvas.set_image(PILImage.fromarray(image_array))
+        self.image_canvas.set_image(PILImage.fromarray(image_array), annotation)
 
     def keystroke_callback(self, event: tk.Event) -> None:
         if event.keysym == "Left":

@@ -4,7 +4,50 @@ import tkinter as tk
 from tkinter import ttk
 from typing import Any
 
+from perception_tools.training.yolo_keypoint_dataset import YoloKeypointAnnotation, YoloKeypointImage
 from PIL import Image, ImageTk
+
+
+class HighlightRectangleState:
+    def __init__(self, canvas: tk.Canvas) -> None:
+        self.canvas = canvas
+        self.start_x = 0
+        self.start_y = 0
+        self.end_x = 0
+        self.end_y = 0
+        self.is_drawing = False
+        self.rectangle_id = self.canvas.create_rectangle(0, 0, 0, 0, outline="red", width=2)
+        self.hide()
+
+    def hide(self) -> None:
+        self.canvas.itemconfigure(self.rectangle_id, state="hidden")
+
+    def show(self) -> None:
+        self.canvas.itemconfigure(self.rectangle_id, state="normal")
+
+    def start_drawing(self, event: tk.Event) -> None:
+        self.start_x = event.x
+        self.start_y = event.y
+        self.is_drawing = True
+        print(f"Start drawing rectangle at ({self.start_x}, {self.start_y})")
+        self.show()
+
+    def offset_position(self, x: int, y: int) -> None:
+        if not self.is_drawing:
+            return
+
+    def update_rectangle(self, event: tk.Event) -> None:
+        if not self.is_drawing:
+            return
+        self.end_x = event.x
+        self.end_y = event.y
+        self.canvas.coords(self.rectangle_id, self.start_x, self.start_y, self.end_x, self.end_y)
+
+    def finish_drawing(self) -> None:
+        self.is_drawing = False
+        print(f"Finish drawing rectangle at ({self.end_x}, {self.end_y})")
+        self.hide()
+        self.canvas.coords(self.rectangle_id, 0, 0, 0, 0)
 
 
 class CanvasImage:
@@ -38,8 +81,19 @@ class CanvasImage:
         self.hbar.configure(command=self._scroll_x)  # bind scrollbars to the canvas
         self.vbar.configure(command=self._scroll_y)
 
-    def set_image(self, image: Image.Image) -> None:
+        self.h_line1_id = self.canvas.create_line(0, 0, 0, 0, fill="white", width=1)  # horizontal line
+        self.v_line1_id = self.canvas.create_line(0, 0, 0, 0, fill="white", width=1)  # vertical line
+
+        self.h_line2_id = self.canvas.create_line(0, 0, 0, 0, fill="black", width=1)  # horizontal line
+        self.v_line2_id = self.canvas.create_line(0, 0, 0, 0, fill="black", width=1)  # vertical line
+
+        self.highlight_rectangle = HighlightRectangleState(self.canvas)
+
+        self.annotation_ids: list[int] = []  # list of annotation object ids
+
+    def set_image(self, image: Image.Image, annotation: YoloKeypointImage) -> None:
         self._image = image
+        self._annotation = annotation
         self._pyramid: list[Image.Image] = [image]
 
         # Create image pyramid
@@ -71,11 +125,12 @@ class CanvasImage:
         self._image_set = True
         self.redraw_figures()  # method for child classes
         self._show_image()  # show image on the canvas
+        self._draw_annotation(self._annotation)  # draw annotation on the canvas
         self.canvas.focus_set()  # set focus on the canvas
 
     def _reset_canvas(self) -> None:
         """Move canvas to the initial position"""
-        self.set_image(self._image)
+        self.set_image(self._image, self._annotation)
 
     def redraw_figures(self) -> None:
         """Dummy function to redraw figures in the children classes"""
@@ -96,13 +151,11 @@ class CanvasImage:
         """Exception: cannot use place with this widget"""
         raise Exception("Cannot use place with the widget " + self.__class__.__name__)
 
-    # noinspection PyUnusedLocal
     def _scroll_x(self, *args: Any, **kwargs: Any) -> None:
         """Scroll canvas horizontally and redraw the image"""
         self.canvas.xview(*args)  # scroll horizontally
         self._show_image()  # redraw the image
 
-    # noinspection PyUnusedLocal
     def _scroll_y(self, *args: Any, **kwargs: Any) -> None:
         """Scroll canvas vertically and redraw the image"""
         self.canvas.yview(*args)  # scroll vertically
@@ -169,6 +222,21 @@ class CanvasImage:
         self.canvas.scan_dragto(event.x, event.y, gain=1)
         self._show_image()  # zoom tile and show it on the canvas
 
+    def move_callback(self, event: tk.Event) -> None:
+        """Draw crosshair on the canvas"""
+        if self.container is None:
+            return
+        x_offset = self.canvas.canvasx(event.x)
+        y_offset = self.canvas.canvasy(event.y)
+        bbox = self.canvas.coords(self.container)
+        self.canvas.coords(self.h_line1_id, bbox[0], y_offset, bbox[2], y_offset)  # horizontal line
+        self.canvas.coords(self.v_line1_id, x_offset, bbox[1], x_offset, bbox[3])  # vertical line
+
+        self.canvas.coords(self.h_line2_id, bbox[0], y_offset + 1, bbox[2], y_offset + 1)  # horizontal line
+        self.canvas.coords(self.v_line2_id, x_offset + 1, bbox[1], x_offset + 1, bbox[3])  # vertical line
+
+        self.highlight_rectangle.update_rectangle(event)
+
     def outside(self, x: int, y: int) -> bool:
         """Checks if the point (x,y) is outside the image area"""
         assert self.container is not None
@@ -177,6 +245,8 @@ class CanvasImage:
 
     def wheel_callback(self, event: tk.Event) -> None:
         """Zoom with mouse wheel"""
+        if not self._image_set:
+            return
         x = self.canvas.canvasx(event.x)  # get coordinates of the event on the canvas
         y = self.canvas.canvasy(event.y)
         if self.outside(x, y):
@@ -198,6 +268,16 @@ class CanvasImage:
         if scale != 1.0:
             self._set_position_and_scale(x, y, scale)  # set new scale
 
+    def button1_click_callback(self, event: tk.Event) -> None:
+        if not self._image_set:
+            return
+        if self.outside(event.x, event.y):
+            return
+        if not self.highlight_rectangle.is_drawing:
+            self.highlight_rectangle.start_drawing(event)
+        else:
+            self.highlight_rectangle.finish_drawing()
+
     def _set_position_and_scale(self, x: int, y: int, scale: float) -> None:
         # Take appropriate image from the pyramid
         k = self.imscale  # temporary coefficient
@@ -205,6 +285,7 @@ class CanvasImage:
         self._scale = k * math.pow(self._reduction, max(0, self._curr_img))
 
         self.canvas.scale("all", x, y, scale, scale)  # rescale all objects
+        self.highlight_rectangle.offset_position(x, y)  # move highlight rectangle
         # Redraw some figures before showing image on the screen
         self.redraw_figures()  # method for child classes
         self._show_image()
@@ -229,6 +310,41 @@ class CanvasImage:
         elif event.keysym == "r":
             self._reset_canvas()
             self._show_image()
+
+    def _draw_annotation(self, annotation: YoloKeypointImage) -> None:
+        """Draw annotation on the canvas"""
+        if not self._image_set:
+            return
+        assert self.container is not None
+        for label in annotation.labels:
+            self._draw_label(label)
+
+    def _draw_label(self, label: YoloKeypointAnnotation) -> None:
+        """Draw label on the canvas"""
+        if not self._image_set:
+            return
+        assert self.container is not None
+        bbox = self.canvas.coords(self.container)
+        x0 = int(label.x0 * self.imwidth)
+        y0 = int(label.y0 * self.imheight)
+        x1 = int(label.x1 * self.imwidth)
+        y1 = int(label.y1 * self.imheight)
+        x0 = max(x0, bbox[0])
+        y0 = max(y0, bbox[1])
+        x1 = min(x1, bbox[2])
+        y1 = min(y1, bbox[3])
+        self.annotation_ids.append(self.canvas.create_rectangle(x0, y0, x1, y1, outline="red", width=2))
+        for keypoint in label.keypoints:
+            x = int(keypoint[0] * self.imwidth)
+            y = int(keypoint[1] * self.imheight)
+            x = max(x, bbox[0])
+            y = max(y, bbox[1])
+            x = min(x, bbox[2])
+            y = min(y, bbox[3])
+            self.annotation_ids.append(self.canvas.create_oval(x - 3, y - 3, x + 3, y + 3, fill="red", outline="red"))
+        self.annotation_ids.append(
+            self.canvas.create_text(x0, y0 - 10, text=str(label.class_index), fill="red", font=("Arial", 12, "bold"))
+        )
 
     def destroy(self) -> None:
         """ImageFrame destructor"""

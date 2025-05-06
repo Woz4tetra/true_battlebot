@@ -24,6 +24,9 @@ class ManualLabelBackend:
         self.image_keyframe_loader = ImageKeyframeLoader(self.annotations_path)
         self.selected_video: VideoFrameCache | None = None
 
+    def get_video_name(self) -> str:
+        return self.selected_video.video_path.name if self.selected_video else ""
+
     def _make_dirs(self) -> None:
         if not self.root_path.exists():
             self.logger.info(f"Database path {self.root_path} does not exist. Creating it.")

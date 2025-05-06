@@ -35,7 +35,8 @@ class AnnotationCache:
             self._cache.popitem(last=False)
             self.logger.debug("Annotation cache size exceeded. Removing oldest annotation.")
 
-    def get_annotation(self, image_id: str) -> YoloKeypointImage | None:
+    def get_annotation(self, video_name: str, frame_num: int) -> YoloKeypointImage | None:
+        image_id = f"{video_name}-{frame_num}"
         if image_id in self._cache:
             return self._cache[image_id]
         annotation_path = self.annotations_path / (image_id + ".txt")
