@@ -46,19 +46,12 @@ class HighlightRectangleState:
         self.canvas.coords(self.rectangle_id, self.start_x, self.start_y, self.end_x, self.end_y)
 
     def finish_drawing(self) -> None:
-        canvas_coords = self.canvas.coords(self.rectangle_id)
-        self.saved_bbox = (canvas_coords[0], canvas_coords[1], canvas_coords[2], canvas_coords[3])
+        self.saved_bbox = (self.start_x, self.start_y, self.end_x, self.end_y)
         self.is_drawing = False
         self.logger.debug(f"Finish drawing rectangle at ({self.end_x}, {self.end_y})")
         self.hide()
         self.canvas.coords(self.rectangle_id, 0.0, 0.0, 0.0, 0.0)  # hide rectangle
         self.is_cleared = False
-
-    def scale(self, focal_x: float, focal_y: float, relative_scale: float) -> None:
-        if not self.is_drawing:
-            return
-        self.start_x = (self.start_x - focal_x) * relative_scale + focal_x
-        self.start_y = (self.start_y - focal_y) * relative_scale + focal_y
 
     def get_bbox(self) -> tuple[float, float, float, float] | None:
         """Get bounding box of the rectangle"""
@@ -358,6 +351,7 @@ class CanvasImage:
             return None
         bbox = self.highlight_rectangle.get_bbox()
         if bbox is not None:
+            self.logger.debug(f"Get bounding box: {bbox}")
             self.highlight_rectangle.clear()
         return bbox
 
@@ -387,7 +381,6 @@ class CanvasImage:
 
     def _set_position_and_scale(self, focal_x: float, focal_y: float, relative_scale: float) -> None:
         self.canvas.scale("all", focal_x, focal_y, relative_scale, relative_scale)  # rescale all objects
-        self.highlight_rectangle.scale(focal_x, focal_y, relative_scale)  # rescale highlight rectangle
         # Redraw some figures before showing image on the screen
         self.redraw_figures()  # method for child classes
         self._show_image()
@@ -434,6 +427,7 @@ class CanvasImage:
         y0 = max(int(label.y0), bbox[1])
         x1 = min(int(label.x1), bbox[2])
         y1 = min(int(label.y1), bbox[3])
+        self.logger.debug(f"Draw label: {label} with bbox: {(x0, y0, x1, y1)}")
         obj_ids = AnnotationObjectIds(
             rectangle=self.canvas.create_rectangle(x0, y0, x1, y1, outline="red", width=2),
             text=self.canvas.create_text(
