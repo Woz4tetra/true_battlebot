@@ -66,12 +66,12 @@ class ManualLabelBackend:
         keypoints: list[YoloKeypointData] | None = None,
     ) -> YoloKeypointImage | None:
         if self.selected_video is None:
-            self.logger.warning("No video selected.")
+            self.logger.warning("No video selected. Cannot add annotation.")
             return None
         annotation = self.annotations_cache.get_annotation(self.selected_video.video_path.stem, image.header.seq)
         if annotation is None:
             image_id = self.annotations_cache.get_image_id(self.selected_video.video_path.stem, image.header.seq)
-            annotation = YoloKeypointImage(image_id=image_id, labels=set())
+            annotation = YoloKeypointImage(image_id=image_id, labels=[])
         x0 = bbox[0]
         y0 = bbox[1]
         x1 = bbox[2]
@@ -81,12 +81,19 @@ class ManualLabelBackend:
                 YoloKeypointData((x0, (y0 + y1) / 2, YoloVisibility.LABELED_VISIBLE)),  # front keypoint
                 YoloKeypointData((x1, (y0 + y1) / 2, YoloVisibility.LABELED_VISIBLE)),  # back keypoint
             ]
-        annotation.labels.add(
+        annotation.labels.append(
             YoloKeypointAnnotation.from_corners(
                 x0=x0, y0=y0, x1=x1, y1=y1, class_index=class_index, keypoints=keypoints
             )
         )
+        self.update_annotation(image, annotation)
+        return annotation
+
+    def update_annotation(self, image: Image, annotation: YoloKeypointImage) -> None:
+        if self.selected_video is None:
+            self.logger.warning("No video selected. Cannot update annotation.")
+            return None
+
         self.annotations_cache.add_annotation(annotation)
         self.hashes_cache.add_annotation(annotation)
         self.image_keyframe_loader.add_image(self.selected_video.video_path.stem, image)
-        return annotation

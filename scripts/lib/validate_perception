@@ -18,5 +18,5 @@ for dir in ${CHECK_DIRS[@]}; do
 
     # Run formatting on python files
     ruff check .
-    mypy . --disable-error-code=import-untyped --explicit-package-bases --disable-error-code=type-abstract
+    mypy .
 done

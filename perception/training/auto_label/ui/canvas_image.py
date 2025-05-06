@@ -1,5 +1,7 @@
 # from https://stackoverflow.com/questions/41656176/tkinter-canvas-zoom-move-pan
+import logging
 import tkinter as tk
+from dataclasses import dataclass
 from tkinter import ttk
 from typing import Any
 
@@ -9,11 +11,14 @@ from PIL import Image, ImageTk
 
 class HighlightRectangleState:
     def __init__(self, canvas: tk.Canvas) -> None:
+        self.logger = logging.getLogger(self.__class__.__name__)
         self.canvas = canvas
-        self.start_x = 0
-        self.start_y = 0
-        self.end_x = 0
-        self.end_y = 0
+        self.start_x = 0.0
+        self.start_y = 0.0
+        self.unscaled_start_x = 0.0
+        self.unscaled_start_y = 0.0
+        self.end_x = 0.0
+        self.end_y = 0.0
         self.is_drawing = False
         self.is_cleared = True
         self.saved_bbox = (0.0, 0.0, 0.0, 0.0)
@@ -30,7 +35,7 @@ class HighlightRectangleState:
         self.start_x = start_x
         self.start_y = start_y
         self.is_drawing = True
-        print(f"Start drawing rectangle at ({self.start_x}, {self.start_y})")
+        self.logger.debug(f"Start drawing rectangle at ({self.start_x}, {self.start_y})")
         self.show()
 
     def update_rectangle(self, canvas_x: float, canvas_y: float) -> None:
@@ -44,7 +49,7 @@ class HighlightRectangleState:
         canvas_coords = self.canvas.coords(self.rectangle_id)
         self.saved_bbox = (canvas_coords[0], canvas_coords[1], canvas_coords[2], canvas_coords[3])
         self.is_drawing = False
-        print(f"Finish drawing rectangle at ({self.end_x}, {self.end_y})")
+        self.logger.debug(f"Finish drawing rectangle at ({self.end_x}, {self.end_y})")
         self.hide()
         self.canvas.coords(self.rectangle_id, 0.0, 0.0, 0.0, 0.0)  # hide rectangle
         self.is_cleared = False
@@ -66,11 +71,29 @@ class HighlightRectangleState:
         self.is_cleared = True
 
 
+@dataclass
+class AnnotationObjectIds:
+    rectangle: int
+    text: int
+    keypoint_circles: list[int]
+    lines: list[int]
+
+    def all_ids(self) -> list[int]:
+        return (
+            [
+                self.rectangle,
+                self.text,
+            ]
+            + self.keypoint_circles
+            + self.lines
+        )
+
+
 class CanvasImage:
     """Display and zoom image"""
 
     def __init__(self, frame: ttk.Frame) -> None:
-        """Initialize the ImageFrame"""
+        self.logger = logging.getLogger(self.__class__.__name__)
         self._delta = 1.3  # zoom magnitude
         self._filter = Image.Resampling.NEAREST  # could be: NEAREST, BOX, BILINEAR, HAMMING, BICUBIC, LANCZOS
         self._previous_state = 0  # previous state of the keyboard
@@ -103,6 +126,10 @@ class CanvasImage:
         self.h_line2_id = self.canvas.create_line(0.0, 0.0, 0.0, 0.0, fill="black", width=1)  # horizontal line
         self.v_line2_id = self.canvas.create_line(0.0, 0.0, 0.0, 0.0, fill="black", width=1)  # vertical line
 
+        self.keypoint_colors = ["orange", "blue", "green", "purple", "pink", "yellow"]
+        self.keypoint_radius = 10
+        self.selected_keypoint: tuple[int, int] | None = None
+
         # Bind events to the Canvas
         self.canvas.bind("<Configure>", self.show_image_callback)  # canvas is resized
         self.canvas.bind("<ButtonPress-3>", self.move_from_callback)  # remember canvas position
@@ -115,9 +142,10 @@ class CanvasImage:
 
         self.highlight_rectangle = HighlightRectangleState(self.canvas)
 
-        self.annotation_ids: dict[YoloKeypointAnnotation, list[int]] = {}  # annotations to canvas ids
+        self.annotation_ids: dict[int, AnnotationObjectIds] = {}  # annotations to canvas ids
 
     def set_image(self, image: Image.Image) -> None:
+        self.logger.debug("Set image")
         self._image = image
         self._width, self._height = image.size  # get image size
 
@@ -143,8 +171,12 @@ class CanvasImage:
 
     def set_annotation(self, annotation: YoloKeypointImage) -> None:
         """Set annotation to the image"""
+        self.logger.debug(f"Set annotation: {annotation}")
         self._annotation = annotation
         self._draw_annotation(self._annotation)
+
+    def get_annotation(self) -> YoloKeypointImage:
+        return self._annotation
 
     def _reset_canvas(self) -> None:
         """Move canvas to the initial position"""
@@ -216,7 +248,7 @@ class CanvasImage:
             box_scroll[3] = box_img_int[3]
 
         # Convert scroll region to tuple and to integer
-        self.canvas.configure(scrollregion=tuple(map(int, box_scroll)))  # set scroll region
+        self.canvas.configure(scrollregion=tuple(map(int, box_scroll)))  # type: ignore
         x1 = max(box_canvas[0] - box_image[0], 0)  # get coordinates (x1,y1,x2,y2) of the image tile
         y1 = max(box_canvas[1] - box_image[1], 0)
         x2 = min(box_canvas[2], box_image[2]) - box_image[0]
@@ -245,16 +277,43 @@ class CanvasImage:
         """Draw crosshair on the canvas"""
         if self.container is None:
             return
-        x_offset = self.canvas.canvasx(event.x)
-        y_offset = self.canvas.canvasy(event.y)
+        canvas_x = self.canvas.canvasx(event.x)
+        canvas_y = self.canvas.canvasy(event.y)
+
         bbox = self.canvas.coords(self.container)
-        self.canvas.coords(self.h_line1_id, bbox[0], y_offset, bbox[2], y_offset)  # horizontal line
-        self.canvas.coords(self.v_line1_id, x_offset, bbox[1], x_offset, bbox[3])  # vertical line
+        self.canvas.coords(self.h_line1_id, bbox[0], canvas_y, bbox[2], canvas_y)  # horizontal line
+        self.canvas.coords(self.v_line1_id, canvas_x, bbox[1], canvas_x, bbox[3])  # vertical line
 
-        self.canvas.coords(self.h_line2_id, bbox[0], y_offset + 1, bbox[2], y_offset + 1)  # horizontal line
-        self.canvas.coords(self.v_line2_id, x_offset + 1, bbox[1], x_offset + 1, bbox[3])  # vertical line
+        self.canvas.coords(self.h_line2_id, bbox[0], canvas_y + 1, bbox[2], canvas_y + 1)  # horizontal line
+        self.canvas.coords(self.v_line2_id, canvas_x + 1, bbox[1], canvas_x + 1, bbox[3])  # vertical line
 
-        self.highlight_rectangle.update_rectangle(x_offset, y_offset)  # update highlight rectangle
+        if self.selected_keypoint:
+            label_index, keypoint_index = self.selected_keypoint
+            self.update_selected_keypoint(label_index, keypoint_index, canvas_x, canvas_y)
+        else:
+            self.highlight_rectangle.update_rectangle(canvas_x, canvas_y)  # update highlight rectangle
+
+    def update_selected_keypoint(self, label_index: int, keypoint_index: int, canvas_x: int, canvas_y: int) -> None:
+        # move selected keypoint
+        label = self._annotation.labels[label_index]
+        label.keypoints[keypoint_index] = (canvas_x, canvas_y, label.keypoints[keypoint_index][2])
+        self.canvas.coords(
+            self.annotation_ids[label_index].keypoint_circles[keypoint_index],
+            canvas_x - self.keypoint_radius,
+            canvas_y - self.keypoint_radius,
+            canvas_x + self.keypoint_radius,
+            canvas_y + self.keypoint_radius,
+        )
+        # update lines
+        for keypoint_index in range(len(label.keypoints)):
+            if keypoint_index > 0:
+                self.canvas.coords(
+                    self.annotation_ids[label_index].lines[keypoint_index - 1],
+                    label.keypoints[keypoint_index][0],
+                    label.keypoints[keypoint_index][1],
+                    label.keypoints[keypoint_index - 1][0],
+                    label.keypoints[keypoint_index - 1][1],
+                )
 
     def outside(self, x: int, y: int) -> bool:
         """Checks if the point (x,y) is outside the image area"""
@@ -267,12 +326,31 @@ class CanvasImage:
             return
         canvas_x = self.canvas.canvasx(event.x)  # get coordinates of the event on the canvas
         canvas_y = self.canvas.canvasy(event.y)
+
+        if self.selected_keypoint is None:
+            if keypoint_result := self.get_keypoint_under_cursor(canvas_x, canvas_y):
+                self.selected_keypoint = keypoint_result
+                return
+        else:
+            self.selected_keypoint = None
+            return
+
         if self.outside(canvas_x, canvas_y):
             return
         if not self.highlight_rectangle.is_drawing:
             self.highlight_rectangle.start_drawing(canvas_x, canvas_y)  # start drawing rectangle
         else:
             self.highlight_rectangle.finish_drawing()
+
+    def get_keypoint_under_cursor(self, x: int, y: int) -> tuple[int, int] | None:
+        """Get keypoint under cursor"""
+        if not self._image_set:
+            return None
+        for label_index in self.annotation_ids.keys():
+            for keypoint_index, keypoint in enumerate(self._annotation.labels[label_index].keypoints):
+                if abs(keypoint[0] - x) < self.keypoint_radius and abs(keypoint[1] - y) < self.keypoint_radius:
+                    return label_index, keypoint_index
+        return None
 
     def get_bbox(self) -> tuple[float, float, float, float] | None:
         """Get bounding box of the rectangle"""
@@ -342,51 +420,53 @@ class CanvasImage:
         if not self._image_set:
             return
         assert self.container is not None
-        for label in annotation.labels:
-            self._draw_label(label)
+        for label_index, label in enumerate(annotation.labels):
+            if label_index in self.annotation_ids:
+                for obj_id in self.annotation_ids[label_index].all_ids():
+                    self.canvas.delete(obj_id)
+            self.annotation_ids[label_index] = self._draw_label(label)
 
-    def _draw_label(self, label: YoloKeypointAnnotation) -> None:
+    def _draw_label(self, label: YoloKeypointAnnotation) -> AnnotationObjectIds:
         """Draw label on the canvas"""
-        if not self._image_set:
-            return
         assert self.container is not None
-        bbox = self.canvas.coords(self.container)
-        x0 = int(label.x0)
-        y0 = int(label.y0)
-        x1 = int(label.x1)
-        y1 = int(label.y1)
-        x0 = max(x0, bbox[0])
-        y0 = max(y0, bbox[1])
-        x1 = min(x1, bbox[2])
-        y1 = min(y1, bbox[3])
-        if label in self.annotation_ids:
-            for annotation_id in self.annotation_ids[label]:
-                self.canvas.delete(annotation_id)
-        self.annotation_ids[label] = []
-        self.annotation_ids[label].append(self.canvas.create_rectangle(x0, y0, x1, y1, outline="red", width=2))
-        self.annotation_ids[label].append(
-            self.canvas.create_text(x0, y0 - 10, text=str(label.class_index), fill="red", font=("Arial", 12, "bold"))
+        bbox = tuple(map(int, self.canvas.coords(self.container)))
+        x0 = max(int(label.x0), bbox[0])
+        y0 = max(int(label.y0), bbox[1])
+        x1 = min(int(label.x1), bbox[2])
+        y1 = min(int(label.y1), bbox[3])
+        obj_ids = AnnotationObjectIds(
+            rectangle=self.canvas.create_rectangle(x0, y0, x1, y1, outline="red", width=2),
+            text=self.canvas.create_text(
+                x0, y0 - 10, text=str(label.class_index), fill="red", font=("Arial", 12, "bold")
+            ),
+            keypoint_circles=[],
+            lines=[],
         )
-        for keypoint in label.keypoints:
-            x = int(keypoint[0] * self._width)
-            y = int(keypoint[1] * self._height)
+        prev_x = None
+        prev_y = None
+        r = self.keypoint_radius
+        for index, keypoint in enumerate(label.keypoints):
+            color = self.keypoint_colors[index % len(self.keypoint_colors)]
+            x = int(keypoint[0])
+            y = int(keypoint[1])
             x = max(x, bbox[0])
             y = max(y, bbox[1])
             x = min(x, bbox[2])
             y = min(y, bbox[3])
-            canvas_x = self.canvas.canvasx(x)
-            canvas_y = self.canvas.canvasy(y)
-            self.annotation_ids[label].append(
-                self.canvas.create_oval(
-                    canvas_x - 3, canvas_y - 3, canvas_x + 3, canvas_y + 3, fill="red", outline="red"
-                )
+            obj_ids.keypoint_circles.append(
+                self.canvas.create_oval(x - r, y - r, x + r, y + r, fill=color, outline=color, width=1)
             )
+            if prev_x is not None and prev_y is not None:
+                obj_ids.lines.append(self.canvas.create_line(x, y, prev_x, prev_y, fill="grey", width=2))
+            prev_x = x
+            prev_y = y
+        return obj_ids
 
     def _erase_annotation(self) -> None:
         """Erase annotation from the canvas"""
-        for annotation_ids in self.annotation_ids.values():
-            for annotation_id in annotation_ids:
-                self.canvas.delete(annotation_id)
+        for obj_ids in self.annotation_ids.values():
+            for obj_id in obj_ids.all_ids():
+                self.canvas.delete(obj_id)
         self.annotation_ids = {}
         self._annotation = YoloKeypointImage()
 

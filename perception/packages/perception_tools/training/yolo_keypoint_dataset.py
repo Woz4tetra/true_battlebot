@@ -119,15 +119,6 @@ class YoloKeypointAnnotation:
             keypoints.append((x_keypoint, y_keypoint, visibility))
         return cls(class_index, bbox, keypoints)
 
-    def __hash__(self) -> int:
-        hash_value = hash(self.class_index)
-        for value in self.bbox:
-            hash_value ^= hash(value)
-        for keypoint in self.keypoints:
-            for value in keypoint:
-                hash_value ^= hash(value)
-        return hash_value
-
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, YoloKeypointAnnotation):
             return NotImplemented
@@ -143,7 +134,7 @@ class YoloKeypointAnnotation:
 @dataclass(eq=False)
 class YoloKeypointImage:
     image_id: str = ""
-    labels: set[YoloKeypointAnnotation] = field(default_factory=set)
+    labels: list[YoloKeypointAnnotation] = field(default_factory=list)
 
     def to_txt(self) -> str:
         return "".join(label.to_row() for label in self.labels)
@@ -152,14 +143,8 @@ class YoloKeypointImage:
     def from_txt(cls, image_id: str, data: str) -> YoloKeypointImage:
         self = cls(image_id=image_id)
         for line in data.splitlines():
-            self.labels.add(YoloKeypointAnnotation.from_row(line))
+            self.labels.append(YoloKeypointAnnotation.from_row(line))
         return self
-
-    def __hash__(self) -> int:
-        hash_value = hash(self.image_id)
-        for label in self.labels:
-            hash_value ^= hash(label)
-        return hash_value
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, YoloKeypointImage):
@@ -169,6 +154,17 @@ class YoloKeypointImage:
         if self.labels != other.labels:
             return False
         return True
+
+    def __hash__(self) -> int:
+        value = hash(self.image_id)
+        for label in self.labels:
+            value ^= hash(label.class_index)
+            value ^= hash(tuple(label.bbox))
+            value ^= hash(tuple(label.keypoints))
+        return value
+
+    def is_empty(self) -> bool:
+        return len(self.labels) == 0
 
 
 @dataclass

@@ -155,12 +155,15 @@ class ManualLabelPanel(Panel):
 
     def save_bbox_from_canvas(self) -> None:
         new_bbox = self.image_canvas.get_bbox()
-        if new_bbox is None:
-            return
-        self.logger.debug(f"Saving bbox {new_bbox} to backend.")
         if self.current_image is None:
             self.logger.warning("No image is currently displayed. Cannot add annotation.")
             return
+        if new_bbox is None:
+            current_annotation = self.image_canvas.get_annotation()
+            if not current_annotation.is_empty():
+                self.backend.update_annotation(self.current_image, current_annotation)
+            return
+        self.logger.debug(f"Saving bbox {new_bbox} to backend.")
         annotation = self.backend.add_annotation(self.current_image, new_bbox, 0)
         if annotation is not None:
             self.image_canvas.set_annotation(annotation)

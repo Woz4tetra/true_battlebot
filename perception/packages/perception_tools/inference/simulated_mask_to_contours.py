@@ -1,4 +1,3 @@
-import time
 from typing import Sequence
 
 import cv2
