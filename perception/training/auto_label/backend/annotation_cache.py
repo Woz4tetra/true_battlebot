@@ -35,14 +35,17 @@ class AnnotationCache:
             self._cache.popitem(last=False)
             self.logger.debug("Annotation cache size exceeded. Removing oldest annotation.")
 
+    def get_image_id(self, video_name: str, frame_num: int) -> str:
+        return f"{video_name}-{frame_num}"
+
     def get_annotation(self, video_name: str, frame_num: int) -> YoloKeypointImage | None:
-        image_id = f"{video_name}-{frame_num}"
+        image_id = self.get_image_id(video_name, frame_num)
         if image_id in self._cache:
             return self._cache[image_id]
         annotation_path = self.annotations_path / (image_id + ".txt")
         if annotation_path.exists():
             with open(annotation_path, "r") as file:
-                annotation = YoloKeypointImage.from_txt(file.read())
+                annotation = YoloKeypointImage.from_txt(image_id, file.read())
             self._add_to_cache(annotation)
             return annotation
         self.logger.warning(f"Annotation for {image_id} not found.")

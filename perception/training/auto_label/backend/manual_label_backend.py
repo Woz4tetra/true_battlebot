@@ -2,7 +2,12 @@ import logging
 from pathlib import Path
 
 from perception_tools.messages.image import Image
-from perception_tools.training.yolo_keypoint_dataset import YoloKeypointImage
+from perception_tools.training.yolo_keypoint_dataset import (
+    YoloKeypointAnnotation,
+    YoloKeypointData,
+    YoloKeypointImage,
+    YoloVisibility,
+)
 
 from auto_label.backend.annotation_cache import AnnotationCache
 from auto_label.backend.hashes_cache import HashesCache
@@ -25,7 +30,7 @@ class ManualLabelBackend:
         self.selected_video: VideoFrameCache | None = None
 
     def get_video_name(self) -> str:
-        return self.selected_video.video_path.name if self.selected_video else ""
+        return self.selected_video.video_path.stem if self.selected_video else ""
 
     def _make_dirs(self) -> None:
         if not self.root_path.exists():
@@ -53,10 +58,35 @@ class ManualLabelBackend:
             return None
         return self.selected_video.next(jump_count)
 
-    def add_annotation(self, image: Image, annotation: YoloKeypointImage) -> None:
+    def add_annotation(
+        self,
+        image: Image,
+        bbox: tuple[float, float, float, float],
+        class_index: int,
+        keypoints: list[YoloKeypointData] | None = None,
+    ) -> YoloKeypointImage | None:
         if self.selected_video is None:
             self.logger.warning("No video selected.")
-            return
+            return None
+        annotation = self.annotations_cache.get_annotation(self.selected_video.video_path.stem, image.header.seq)
+        if annotation is None:
+            image_id = self.annotations_cache.get_image_id(self.selected_video.video_path.stem, image.header.seq)
+            annotation = YoloKeypointImage(image_id=image_id, labels=set())
+        x0 = bbox[0]
+        y0 = bbox[1]
+        x1 = bbox[2]
+        y1 = bbox[3]
+        if keypoints is None:
+            keypoints = [  # placeholder keypoints to be edited later
+                YoloKeypointData((x0, (y0 + y1) / 2, YoloVisibility.LABELED_VISIBLE)),  # front keypoint
+                YoloKeypointData((x1, (y0 + y1) / 2, YoloVisibility.LABELED_VISIBLE)),  # back keypoint
+            ]
+        annotation.labels.add(
+            YoloKeypointAnnotation.from_corners(
+                x0=x0, y0=y0, x1=x1, y1=y1, class_index=class_index, keypoints=keypoints
+            )
+        )
         self.annotations_cache.add_annotation(annotation)
         self.hashes_cache.add_annotation(annotation)
         self.image_keyframe_loader.add_image(self.selected_video.video_path.stem, image)
+        return annotation

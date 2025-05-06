@@ -121,8 +121,11 @@ class YoloKeypointAnnotation:
 
     def __hash__(self) -> int:
         hash_value = hash(self.class_index)
-        hash_value ^= hash(self.bbox)
-        hash_value ^= hash(self.keypoints)
+        for value in self.bbox:
+            hash_value ^= hash(value)
+        for keypoint in self.keypoints:
+            for value in keypoint:
+                hash_value ^= hash(value)
         return hash_value
 
     def __eq__(self, other: object) -> bool:
@@ -146,8 +149,8 @@ class YoloKeypointImage:
         return "".join(label.to_row() for label in self.labels)
 
     @classmethod
-    def from_txt(cls, data: str) -> YoloKeypointImage:
-        self = cls()
+    def from_txt(cls, image_id: str, data: str) -> YoloKeypointImage:
+        self = cls(image_id=image_id)
         for line in data.splitlines():
             self.labels.add(YoloKeypointAnnotation.from_row(line))
         return self

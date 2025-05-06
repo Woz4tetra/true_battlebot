@@ -1,5 +1,4 @@
 # from https://stackoverflow.com/questions/41656176/tkinter-canvas-zoom-move-pan
-import math
 import tkinter as tk
 from tkinter import ttk
 from typing import Any
@@ -15,9 +14,9 @@ class HighlightRectangleState:
         self.start_y = 0
         self.end_x = 0
         self.end_y = 0
-        self.offset_x = 0
-        self.offset_y = 0
         self.is_drawing = False
+        self.is_cleared = True
+        self.saved_bbox = (0.0, 0.0, 0.0, 0.0)
         self.rectangle_id = self.canvas.create_rectangle(0.0, 0.0, 0.0, 0.0, outline="red", width=2)
         self.hide()
 
@@ -42,10 +41,13 @@ class HighlightRectangleState:
         self.canvas.coords(self.rectangle_id, self.start_x, self.start_y, self.end_x, self.end_y)
 
     def finish_drawing(self) -> None:
+        canvas_coords = self.canvas.coords(self.rectangle_id)
+        self.saved_bbox = (canvas_coords[0], canvas_coords[1], canvas_coords[2], canvas_coords[3])
         self.is_drawing = False
         print(f"Finish drawing rectangle at ({self.end_x}, {self.end_y})")
         self.hide()
         self.canvas.coords(self.rectangle_id, 0.0, 0.0, 0.0, 0.0)  # hide rectangle
+        self.is_cleared = False
 
     def scale(self, focal_x: float, focal_y: float, relative_scale: float) -> None:
         if not self.is_drawing:
@@ -53,11 +55,15 @@ class HighlightRectangleState:
         self.start_x = (self.start_x - focal_x) * relative_scale + focal_x
         self.start_y = (self.start_y - focal_y) * relative_scale + focal_y
 
-    def get_bbox(self) -> tuple[float, float, float, float]:
+    def get_bbox(self) -> tuple[float, float, float, float] | None:
         """Get bounding box of the rectangle"""
-        if not self.is_drawing:
-            return 0.0, 0.0, 0.0, 0.0
-        return self.start_x, self.start_y, self.end_x, self.end_y
+        if self.is_cleared:
+            return None
+        return self.saved_bbox
+
+    def clear(self) -> None:
+        self.finish_drawing()
+        self.is_cleared = True
 
 
 class CanvasImage:
@@ -97,13 +103,23 @@ class CanvasImage:
         self.h_line2_id = self.canvas.create_line(0.0, 0.0, 0.0, 0.0, fill="black", width=1)  # horizontal line
         self.v_line2_id = self.canvas.create_line(0.0, 0.0, 0.0, 0.0, fill="black", width=1)  # vertical line
 
+        # Bind events to the Canvas
+        self.canvas.bind("<Configure>", self.show_image_callback)  # canvas is resized
+        self.canvas.bind("<ButtonPress-3>", self.move_from_callback)  # remember canvas position
+        self.canvas.bind("<B3-Motion>", self.move_to_callback)  # move canvas to the new position
+        self.canvas.bind("<MouseWheel>", self.wheel_callback)  # zoom for Windows and MacOS, but not Linux
+        self.canvas.bind("<Button-5>", self.wheel_callback)  # zoom for Linux, wheel scroll down
+        self.canvas.bind("<Button-4>", self.wheel_callback)  # zoom for Linux, wheel scroll up
+        self.canvas.bind("<Motion>", self.move_callback)  # update canvas highlights
+        self.canvas.bind("<ButtonPress-1>", self.button1_click_callback)
+
         self.highlight_rectangle = HighlightRectangleState(self.canvas)
 
-        self.annotation_ids: list[int] = []  # list of annotation object ids
+        self.annotation_ids: dict[YoloKeypointAnnotation, list[int]] = {}  # annotations to canvas ids
 
-    def set_image(self, image: Image.Image, annotation: YoloKeypointImage) -> None:
+    def set_image(self, image: Image.Image) -> None:
         self._image = image
-        self._annotation = annotation
+        self._width, self._height = image.size  # get image size
 
         # Create image pyramid
         # Set ratio coefficient for image pyramid
@@ -121,12 +137,19 @@ class CanvasImage:
         self._image_set = True
         self.redraw_figures()  # method for child classes
         self._show_image()  # show image on the canvas
-        self._draw_annotation(self._annotation)  # draw annotation on the canvas
         self.canvas.focus_set()  # set focus on the canvas
+        self.highlight_rectangle.clear()
+        self._erase_annotation()
+
+    def set_annotation(self, annotation: YoloKeypointImage) -> None:
+        """Set annotation to the image"""
+        self._annotation = annotation
+        self._draw_annotation(self._annotation)
 
     def _reset_canvas(self) -> None:
         """Move canvas to the initial position"""
-        self.set_image(self._image, self._annotation)
+        self.set_image(self._image)
+        self._draw_annotation(self._annotation)
 
     def redraw_figures(self) -> None:
         """Dummy function to redraw figures in the children classes"""
@@ -242,14 +265,23 @@ class CanvasImage:
     def button1_click_callback(self, event: tk.Event) -> None:
         if not self._image_set:
             return
-        if self.outside(event.x, event.y):
+        canvas_x = self.canvas.canvasx(event.x)  # get coordinates of the event on the canvas
+        canvas_y = self.canvas.canvasy(event.y)
+        if self.outside(canvas_x, canvas_y):
             return
         if not self.highlight_rectangle.is_drawing:
-            canvas_x = self.canvas.canvasx(event.x)  # get coordinates of the event on the canvas
-            canvas_y = self.canvas.canvasy(event.y)
             self.highlight_rectangle.start_drawing(canvas_x, canvas_y)  # start drawing rectangle
         else:
             self.highlight_rectangle.finish_drawing()
+
+    def get_bbox(self) -> tuple[float, float, float, float] | None:
+        """Get bounding box of the rectangle"""
+        if not self._image_set:
+            return None
+        bbox = self.highlight_rectangle.get_bbox()
+        if bbox is not None:
+            self.highlight_rectangle.clear()
+        return bbox
 
     def wheel_callback(self, event: tk.Event) -> None:
         """Zoom with mouse wheel"""
@@ -319,26 +351,44 @@ class CanvasImage:
             return
         assert self.container is not None
         bbox = self.canvas.coords(self.container)
-        x0 = int(label.x0 * self.imwidth)
-        y0 = int(label.y0 * self.imheight)
-        x1 = int(label.x1 * self.imwidth)
-        y1 = int(label.y1 * self.imheight)
+        x0 = int(label.x0)
+        y0 = int(label.y0)
+        x1 = int(label.x1)
+        y1 = int(label.y1)
         x0 = max(x0, bbox[0])
         y0 = max(y0, bbox[1])
         x1 = min(x1, bbox[2])
         y1 = min(y1, bbox[3])
-        self.annotation_ids.append(self.canvas.create_rectangle(x0, y0, x1, y1, outline="red", width=2))
+        if label in self.annotation_ids:
+            for annotation_id in self.annotation_ids[label]:
+                self.canvas.delete(annotation_id)
+        self.annotation_ids[label] = []
+        self.annotation_ids[label].append(self.canvas.create_rectangle(x0, y0, x1, y1, outline="red", width=2))
+        self.annotation_ids[label].append(
+            self.canvas.create_text(x0, y0 - 10, text=str(label.class_index), fill="red", font=("Arial", 12, "bold"))
+        )
         for keypoint in label.keypoints:
-            x = int(keypoint[0] * self.imwidth)
-            y = int(keypoint[1] * self.imheight)
+            x = int(keypoint[0] * self._width)
+            y = int(keypoint[1] * self._height)
             x = max(x, bbox[0])
             y = max(y, bbox[1])
             x = min(x, bbox[2])
             y = min(y, bbox[3])
-            self.annotation_ids.append(self.canvas.create_oval(x - 3, y - 3, x + 3, y + 3, fill="red", outline="red"))
-        self.annotation_ids.append(
-            self.canvas.create_text(x0, y0 - 10, text=str(label.class_index), fill="red", font=("Arial", 12, "bold"))
-        )
+            canvas_x = self.canvas.canvasx(x)
+            canvas_y = self.canvas.canvasy(y)
+            self.annotation_ids[label].append(
+                self.canvas.create_oval(
+                    canvas_x - 3, canvas_y - 3, canvas_x + 3, canvas_y + 3, fill="red", outline="red"
+                )
+            )
+
+    def _erase_annotation(self) -> None:
+        """Erase annotation from the canvas"""
+        for annotation_ids in self.annotation_ids.values():
+            for annotation_id in annotation_ids:
+                self.canvas.delete(annotation_id)
+        self.annotation_ids = {}
+        self._annotation = YoloKeypointImage()
 
     def destroy(self) -> None:
         """ImageFrame destructor"""

@@ -5,7 +5,6 @@ from tkinter import Tk, filedialog, ttk
 
 import cv2
 from perception_tools.messages.image import Encoding, Image
-from perception_tools.training.yolo_keypoint_dataset import YoloKeypointImage
 from PIL import Image as PILImage
 from PIL import ImageTk
 
@@ -21,41 +20,47 @@ class ManualLabelPanel(Panel):
         self.jump_count = 1
 
         self.shown_tk_image: ImageTk.PhotoImage | None = None
+
+        self.window.rowconfigure(0, weight=1)
+        self.window.columnconfigure(0, weight=1)
+
         self.image_frame = ttk.Frame(self.window)
         self.image_frame.rowconfigure(0, weight=1)
         self.image_frame.columnconfigure(0, weight=1)
-        self.add_video_button = ttk.Button(self.window, text="Add Video", command=self.add_video_button_callback)
-        self.next_frame_button = ttk.Button(self.window, text="Next Frame", command=self.next_frame_button_callback)
-        self.prev_frame_button = ttk.Button(self.window, text="Previous Frame", command=self.prev_frame_button_callback)
+
+        self.video_manage_frame = tk.Frame(self.window)
+
+        self.add_video_button = ttk.Button(
+            self.video_manage_frame, text="Add Video", command=self.add_video_button_callback
+        )
+        self.next_frame_button = ttk.Button(
+            self.video_manage_frame, text="Next Frame", command=self.next_frame_button_callback
+        )
+        self.prev_frame_button = ttk.Button(
+            self.video_manage_frame, text="Previous Frame", command=self.prev_frame_button_callback
+        )
 
         self.selected_video_option = tk.StringVar(self.window)
-        self.videos_dropdown = ttk.OptionMenu(self.window, self.selected_video_option)
+        self.videos_dropdown = ttk.OptionMenu(self.video_manage_frame, self.selected_video_option)
         self.update_video_options()
         self.selected_video_option.set("Select a video")
-        self.available_videos_frame = tk.Frame(self.window)
 
         self.image_canvas = CanvasImage(self.image_frame)
+        self.current_image: Image | None = None
 
         self.logger = logging.getLogger(self.__class__.__name__)
 
     def pack(self) -> None:
-        self.image_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
-        self.available_videos_frame.pack()
-        self.videos_dropdown.pack(pady=10)
-        self.add_video_button.pack(pady=10)
-        self.next_frame_button.pack(pady=10)
-        self.prev_frame_button.pack(pady=10)
+        # self.image_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+        self.image_frame.grid(row=0, column=0, sticky="nsew")
+        self.video_manage_frame.grid(row=1, column=0, sticky="ew", padx=5, pady=5)
+        self.videos_dropdown.grid(row=0, column=3, sticky="ew", padx=5, pady=5)
+        self.add_video_button.grid(row=0, column=2, sticky="ew", padx=5, pady=5)
+        self.prev_frame_button.grid(row=0, column=0, sticky="ew", padx=5, pady=5)
+        self.next_frame_button.grid(row=0, column=1, sticky="ew", padx=5, pady=5)
 
-        # Bind events to the Canvas
-        self.window.bind("<Configure>", self.image_canvas.show_image_callback)  # canvas is resized
-        self.window.bind("<ButtonPress-3>", self.image_canvas.move_from_callback)  # remember canvas position
-        self.window.bind("<B3-Motion>", self.image_canvas.move_to_callback)  # move canvas to the new position
-        self.window.bind("<MouseWheel>", self.image_canvas.wheel_callback)  # zoom for Windows and MacOS, but not Linux
-        self.window.bind("<Button-5>", self.image_canvas.wheel_callback)  # zoom for Linux, wheel scroll down
-        self.window.bind("<Button-4>", self.image_canvas.wheel_callback)  # zoom for Linux, wheel scroll up
-        self.window.bind("<Motion>", self.image_canvas.move_callback)  # update canvas highlights
-        self.window.bind("<ButtonPress-1>", self.image_canvas.button1_click_callback)
-
+        # Bind events
+        self.window.bind("<ButtonPress-1>", self.button1_click_callback)
         # Handle keystrokes in idle mode, because program slows down on a weak computers,
         # when too many key stroke events in the same time
         self.window.bind("<Key>", lambda event: self.window.after_idle(self.keystroke_callback, event))
@@ -86,12 +91,16 @@ class ManualLabelPanel(Panel):
             self.logger.warning("No video selected.")
 
     def select_video_button_callback(self, video_name: str) -> None:
+        if video_name == self.backend.get_video_name():
+            self.logger.debug(f"Video {video_name} is already selected.")
+            return
         self.backend.select_video(video_name)
         self.logger.info(f"Video {video_name} selected.")
         self.selected_video_option.set(video_name)
         self.next_frame_button_callback()
 
     def next_frame_button_callback(self) -> None:
+        self.save_bbox_from_canvas()
         self.logger.debug(f"Next frame button clicked. Jumping {self.jump_count} frames.")
         image = self.backend.next_frame(jump_count=self.jump_count)
         if image is not None:
@@ -100,6 +109,7 @@ class ManualLabelPanel(Panel):
             self.logger.warning("No more frames available.")
 
     def prev_frame_button_callback(self) -> None:
+        self.save_bbox_from_canvas()
         self.logger.debug(f"Prev frame button clicked. Jumping {self.jump_count} frames.")
         image = self.backend.next_frame(jump_count=-1 * self.jump_count)
         if image is not None:
@@ -116,11 +126,12 @@ class ManualLabelPanel(Panel):
         else:
             self.logger.error(f"Unsupported image encoding: {image.encoding}")
             return
+        self.current_image = image
         annotation = self.backend.annotations_cache.get_annotation(self.backend.get_video_name(), image.header.seq)
-        if annotation is None:
-            annotation = YoloKeypointImage()
         # Convert the image to a format Tkinter can use
-        self.image_canvas.set_image(PILImage.fromarray(image_array), annotation)
+        self.image_canvas.set_image(PILImage.fromarray(image_array))
+        if annotation is not None:
+            self.image_canvas.set_annotation(annotation)
 
     def keystroke_callback(self, event: tk.Event) -> None:
         if event.keysym == "Left":
@@ -138,3 +149,18 @@ class ManualLabelPanel(Panel):
                 self.logger.debug("Jump count is already at minimum.")
         else:
             self.image_canvas.keystroke_callback(event)
+
+    def button1_click_callback(self, event: tk.Event) -> None:
+        self.save_bbox_from_canvas()
+
+    def save_bbox_from_canvas(self) -> None:
+        new_bbox = self.image_canvas.get_bbox()
+        if new_bbox is None:
+            return
+        self.logger.debug(f"Saving bbox {new_bbox} to backend.")
+        if self.current_image is None:
+            self.logger.warning("No image is currently displayed. Cannot add annotation.")
+            return
+        annotation = self.backend.add_annotation(self.current_image, new_bbox, 0)
+        if annotation is not None:
+            self.image_canvas.set_annotation(annotation)

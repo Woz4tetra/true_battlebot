@@ -49,7 +49,7 @@ class VideoSourceCollection:
             self.logger.debug(f"Video {video_name} is already selected.")
             return self._selected_video
         for video in self.videos:
-            if video.name == video_name:
+            if video.stem == video_name:
                 if self._selected_video is not None:
                     self._selected_video.close()
                 self._selected_video = VideoFrameCache(video)
@@ -59,4 +59,4 @@ class VideoSourceCollection:
         return None
 
     def list_videos(self) -> list[str]:
-        return [video.name for video in self.videos]
+        return [video.stem for video in self.videos]
