@@ -16,9 +16,10 @@ class VideoFrameCache:
     def __init__(self, video_path: Path) -> None:
         self.logger = logging.getLogger(self.__class__.__name__)
         self.video_path = video_path
-        self.current_frame = 0
+        self.current_frame = -1
         self.capture = cv2.VideoCapture(str(self.video_path))
         self._cache: OrderedDict[int, Image] = OrderedDict()
+        self.num_frames = int(self.capture.get(cv2.CAP_PROP_FRAME_COUNT))
 
     def clear(self) -> None:
         self._cache.clear()
@@ -29,6 +30,7 @@ class VideoFrameCache:
             self.current_frame += jump_count
         else:
             self.current_frame += 1
+        self.current_frame = max(0, min(self.current_frame, self.get_num_frames() - 1))
         if self.current_frame in self._cache:
             return self._cache[self.current_frame]
         if not self.capture.isOpened():
@@ -48,7 +50,7 @@ class VideoFrameCache:
         return image
 
     def get_num_frames(self) -> int:
-        return int(self.capture.get(cv2.CAP_PROP_FRAME_COUNT))
+        return self.num_frames
 
     def close(self) -> None:
         self.capture.release()
