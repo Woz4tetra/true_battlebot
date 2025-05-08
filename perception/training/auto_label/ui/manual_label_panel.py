@@ -1,4 +1,5 @@
 import logging
+import string
 import tkinter as tk
 from pathlib import Path
 from tkinter import Tk, filedialog, ttk
@@ -12,6 +13,7 @@ from PIL import ImageTk
 
 from auto_label.backend.manual_label_backend import ManualLabelBackend
 from auto_label.ui.canvas_image import CanvasImage
+from auto_label.ui.label_selection_toolbar import LabelSelectionToolbar
 from auto_label.ui.label_table import LabelTable
 from auto_label.ui.panel import Panel
 
@@ -27,7 +29,7 @@ class ManualLabelPanel(Panel):
 
         self.shown_tk_image: ImageTk.PhotoImage | None = None
 
-        self.window.rowconfigure(1, weight=1)
+        self.window.rowconfigure(2, weight=1)
         self.window.columnconfigure(0, weight=1)
 
         self.edit_frame = ttk.Frame(self.window)
@@ -40,9 +42,8 @@ class ManualLabelPanel(Panel):
         self.label_table_frame = ttk.Frame(self.edit_frame)
         self.label_table_frame.columnconfigure(0, weight=1)
 
-        self.video_manage_frame = tk.Frame(self.window)
-
-        self.frame_number_label = ttk.Label(self.video_manage_frame, text="", width=10)
+        self.video_manage_frame = ttk.Frame(self.window)
+        self.frame_number_label = ttk.Label(self.video_manage_frame, text="", width=15)
         self.skip_frame_label = ttk.Label(self.video_manage_frame, text="Skip frames:")
         self.skip_frame_entry = ttk.Entry(self.video_manage_frame, width=5)
         self.add_video_button = ttk.Button(
@@ -53,6 +54,11 @@ class ManualLabelPanel(Panel):
         )
         self.prev_frame_button = ttk.Button(
             self.video_manage_frame, text="Previous Frame", command=self.prev_frame_button_callback
+        )
+
+        self.label_selection_frame = ttk.Frame(self.window)
+        self.label_selection_toolbar = LabelSelectionToolbar(
+            self.label_selection_frame, self.keypoints_config.labels, self.on_label_selected
         )
 
         self.selected_video_option = tk.StringVar(self.window)
@@ -73,11 +79,12 @@ class ManualLabelPanel(Panel):
             self.unhighlight_annotation_callback,
         )
         self.current_image: Image | None = None
+        self.current_label_index = 0
 
         self.logger = logging.getLogger(self.__class__.__name__)
 
     def pack(self) -> None:
-        self.edit_frame.grid(row=1, column=0, sticky="nsew")
+        self.edit_frame.grid(row=2, column=0, sticky="nsew")
         self.label_table_frame.grid(row=0, column=0, sticky="nsew")
         self.image_display_frame.grid(row=0, column=1, sticky="nsew")
         self.video_manage_frame.grid(row=0, column=0, sticky="ew", padx=5, pady=5)
@@ -89,6 +96,7 @@ class ManualLabelPanel(Panel):
         self.next_frame_button.grid(row=0, column=4, sticky="ew", padx=5, pady=5)
         self.add_video_button.grid(row=0, column=5, sticky="ew", padx=5, pady=5)
         self.videos_dropdown.grid(row=0, column=6, sticky="ew", padx=5, pady=5)
+        self.label_selection_frame.grid(row=1, column=0, sticky="ew", padx=5, pady=5)
 
         # Bind events
         self.window.bind_all("<Button-1>", lambda event: event.widget.focus_set())
@@ -161,10 +169,12 @@ class ManualLabelPanel(Panel):
             self.logger.warning("No more frames available.")
 
     def update_frame_number_label(self, image: Image | None) -> None:
-        if image is not None:
-            self.frame_number_label.config(text=f"Frame: {image.header.seq}")
-        else:
+        if self.backend.selected_video is None or image is None:
             self.frame_number_label.config(text="")
+            return
+        self.frame_number_label.config(
+            text=f"Frame: {image.header.seq} / {self.backend.selected_video.get_num_frames()}"
+        )
 
     def display_image(self, image: Image) -> None:
         self.logger.debug(f"Displaying image {image.header.seq}")
@@ -192,6 +202,11 @@ class ManualLabelPanel(Panel):
         elif event.keysym == "Down" or event.keysym == "s":
             self.update_jump_count(self.jump_count - 1)
             self.update_skip_frame_entry()
+        elif event.keysym in string.digits:
+            index = int(event.keysym) - 1
+            if index == -1:
+                index = 10
+            self.label_selection_toolbar.set_label(index)
         else:
             self.image_canvas.keystroke_callback(event)
 
@@ -227,7 +242,7 @@ class ManualLabelPanel(Panel):
                 self.backend.update_annotation(self.current_image, current_annotation)
             return
         self.logger.debug(f"Saving bbox {new_bbox} to backend.")
-        annotation = self.backend.add_annotation(self.current_image, new_bbox, 0)
+        annotation = self.backend.add_annotation(self.current_image, new_bbox, self.current_label_index)
         self.update_annotation(annotation)
 
     def update_annotation(self, annotation: YoloKeypointImage | None) -> None:
@@ -280,3 +295,6 @@ class ManualLabelPanel(Panel):
             self.logger.warning("No annotation found. Cannot unhighlight.")
             return
         self.image_canvas.hide_highlight()
+
+    def on_label_selected(self, label_index: int) -> None:
+        self.current_label_index = label_index
