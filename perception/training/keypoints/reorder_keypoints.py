@@ -47,13 +47,14 @@ def main() -> None:
                 annotation_paths[name] = Path(os.path.join(dirpath, filename))
 
     with tqdm(total=len(images_paths)) as pbar:
-        for image_path in images_paths:
+        for index, image_path in enumerate(images_paths):
             pbar.update(1)
             name = image_path.stem
             annotation_path = annotation_paths[name]
+            image_id = f"{name}-{index}"
 
             with open(annotation_path) as file:
-                annotations = YoloKeypointImage.from_txt(file.read())
+                annotations = YoloKeypointImage.from_txt(image_id, file.read())
 
             for annotation in annotations.labels:
                 label = old_config.labels[annotation.class_index]
