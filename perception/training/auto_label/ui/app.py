@@ -6,6 +6,7 @@ import sv_ttk
 from perception_tools.directories.config_directory import ConfigType, load_config_as_dict
 from perception_tools.directories.data_directory import get_data_directory
 from perception_tools.initialize_logger import initialize
+from perception_tools.training.keypoints_config import load_keypoints_config
 
 from auto_label.backend.manual_label_backend import ManualLabelBackend
 from auto_label.command_line_args import CommandLineArgs
@@ -22,6 +23,7 @@ class App:
     def __init__(self, args: CommandLineArgs) -> None:
         self.logger = logging.getLogger(self.__class__.__name__)
         self.config = load_config(args.config)
+        self.keypoints_config = load_keypoints_config(args.keypoints_config)
         initialize(self.config.log_level)
         self.window = tk.Tk()
         self.window.tk.call("tk", "scaling", 1.0)
@@ -36,7 +38,7 @@ class App:
         self.set_icon()
 
         manual_label_backend = ManualLabelBackend(Path(self.config.data_root_directory))
-        panels = [ManualLabelPanel(self.window, manual_label_backend)]
+        panels = [ManualLabelPanel(self.window, manual_label_backend, self.keypoints_config)]
         for panel in panels:
             panel.pack()
 

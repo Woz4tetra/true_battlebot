@@ -74,6 +74,10 @@ class YoloKeypointAnnotation:
     def y1(self) -> float:
         return self.center_y + self.height / 2
 
+    @property
+    def corners(self) -> tuple[float, float, float, float]:
+        return self.x0, self.y0, self.x1, self.y1
+
     @classmethod
     def from_corners(
         cls, x0: float, y0: float, x1: float, y1: float, class_index: int, keypoints: list | None = None

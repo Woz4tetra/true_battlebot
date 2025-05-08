@@ -69,6 +69,7 @@ class AnnotationObjectIds:
     rectangle: int
     text: int
     keypoint_circles: list[int]
+    keypoint_text: list[int]
     lines: list[int]
 
     def all_ids(self) -> list[int]:
@@ -85,7 +86,7 @@ class AnnotationObjectIds:
 class CanvasImage:
     """Display and zoom image"""
 
-    def __init__(self, frame: ttk.Frame) -> None:
+    def __init__(self, frame: ttk.Frame, class_map: list[str], keypoint_names: dict[str, list[str]]) -> None:
         self.logger = logging.getLogger(self.__class__.__name__)
         self._delta = 1.3  # zoom magnitude
         self._filter = Image.Resampling.NEAREST  # could be: NEAREST, BOX, BILINEAR, HAMMING, BICUBIC, LANCZOS
@@ -103,6 +104,9 @@ class CanvasImage:
         self.vbar = ttk.Scrollbar(self._imframe, orient="vertical")
         self.hbar.grid(row=1, column=0, sticky="we")
         self.vbar.grid(row=0, column=1, sticky="ns")
+
+        self.canvas_offset = 0.0, 0.0
+        self.canvas_scale = 1.0, 1.0
 
         # Create canvas and bind it with scrollbars. Public for outer classes
         self.canvas = tk.Canvas(
@@ -122,6 +126,8 @@ class CanvasImage:
         self.keypoint_colors = ["orange", "blue", "green", "purple", "pink", "yellow"]
         self.keypoint_radius = 10
         self.selected_keypoint: tuple[int, int] | None = None
+        self.class_map: list[str] = class_map
+        self.keypoint_names: dict[str, list[str]] = keypoint_names
 
         # Bind events to the Canvas
         self.canvas.bind("<Configure>", self.show_image_callback)  # canvas is resized
@@ -289,23 +295,27 @@ class CanvasImage:
     def update_selected_keypoint(self, label_index: int, keypoint_index: int, canvas_x: int, canvas_y: int) -> None:
         # move selected keypoint
         label = self._annotation.labels[label_index]
-        label.keypoints[keypoint_index] = (canvas_x, canvas_y, label.keypoints[keypoint_index][2])
+        image_x = self._x_scaled_canvas_to_image(canvas_x)
+        image_y = self._y_scaled_canvas_to_image(canvas_y)
+        label.keypoints[keypoint_index] = (image_x, image_y, label.keypoints[keypoint_index][2])
+        r_scaled = self.keypoint_radius * self._scale
         self.canvas.coords(
             self.annotation_ids[label_index].keypoint_circles[keypoint_index],
-            canvas_x - self.keypoint_radius,
-            canvas_y - self.keypoint_radius,
-            canvas_x + self.keypoint_radius,
-            canvas_y + self.keypoint_radius,
+            canvas_x - self.keypoint_radius * r_scaled,
+            canvas_y - self.keypoint_radius * r_scaled,
+            canvas_x + self.keypoint_radius * r_scaled,
+            canvas_y + self.keypoint_radius * r_scaled,
         )
+        self.canvas.coords(self.annotation_ids[label_index].keypoint_text[keypoint_index], canvas_x, canvas_y)
         # update lines
         for keypoint_index in range(len(label.keypoints)):
             if keypoint_index > 0:
                 self.canvas.coords(
                     self.annotation_ids[label_index].lines[keypoint_index - 1],
-                    label.keypoints[keypoint_index][0],
-                    label.keypoints[keypoint_index][1],
-                    label.keypoints[keypoint_index - 1][0],
-                    label.keypoints[keypoint_index - 1][1],
+                    self._x_image_to_scaled_canvas(label.keypoints[keypoint_index][0]),
+                    self._y_image_to_scaled_canvas(label.keypoints[keypoint_index][1]),
+                    self._x_image_to_scaled_canvas(label.keypoints[keypoint_index - 1][0]),
+                    self._y_image_to_scaled_canvas(label.keypoints[keypoint_index - 1][1]),
                 )
 
     def outside(self, x: int, y: int) -> bool:
@@ -341,7 +351,9 @@ class CanvasImage:
             return None
         for label_index in self.annotation_ids.keys():
             for keypoint_index, keypoint in enumerate(self._annotation.labels[label_index].keypoints):
-                if abs(keypoint[0] - x) < self.keypoint_radius and abs(keypoint[1] - y) < self.keypoint_radius:
+                canvas_x = self._x_image_to_scaled_canvas(keypoint[0])
+                canvas_y = self._y_image_to_scaled_canvas(keypoint[1])
+                if abs(canvas_x - x) < self.keypoint_radius and abs(canvas_y - y) < self.keypoint_radius:
                     return label_index, keypoint_index
         return None
 
@@ -351,6 +363,7 @@ class CanvasImage:
             return None
         bbox = self.highlight_rectangle.get_bbox()
         if bbox is not None:
+            bbox = self._bbox_scaled_canvas_to_image(bbox)
             self.logger.debug(f"Get bounding box: {bbox}")
             self.highlight_rectangle.clear()
         return bbox
@@ -381,9 +394,47 @@ class CanvasImage:
 
     def _set_position_and_scale(self, focal_x: float, focal_y: float, relative_scale: float) -> None:
         self.canvas.scale("all", focal_x, focal_y, relative_scale, relative_scale)  # rescale all objects
+        self.canvas_offset = (
+            self.canvas_offset[0] * relative_scale + focal_x * (1 - relative_scale),
+            self.canvas_offset[1] * relative_scale + focal_y * (1 - relative_scale),
+        )
+        self.canvas_scale = (
+            self.canvas_scale[0] * relative_scale,
+            self.canvas_scale[1] * relative_scale,
+        )
         # Redraw some figures before showing image on the screen
         self.redraw_figures()  # method for child classes
         self._show_image()
+
+    def _x_scaled_canvas_to_image(self, x: float) -> float:
+        return (x - self.canvas_offset[0]) / self.canvas_scale[0]
+
+    def _y_scaled_canvas_to_image(self, y: float) -> float:
+        return (y - self.canvas_offset[1]) / self.canvas_scale[1]
+
+    def _x_image_to_scaled_canvas(self, x: float) -> float:
+        return x * self.canvas_scale[0] + self.canvas_offset[0]
+
+    def _y_image_to_scaled_canvas(self, y: float) -> float:
+        return y * self.canvas_scale[1] + self.canvas_offset[1]
+
+    def _bbox_scaled_canvas_to_image(self, bbox: tuple[float, ...]) -> tuple[float, float, float, float]:
+        """Convert coordinates from scaled canvas to image coordinates"""
+        x0, y0, x1, y1 = bbox
+        x0_new = self._x_scaled_canvas_to_image(x0)
+        y0_new = self._y_scaled_canvas_to_image(y0)
+        x1_new = self._x_scaled_canvas_to_image(x1)
+        y1_new = self._y_scaled_canvas_to_image(y1)
+        return x0_new, y0_new, x1_new, y1_new
+
+    def _bbox_image_to_scaled_canvas(self, bbox: tuple[float, ...]) -> tuple[float, float, float, float]:
+        """Convert coordinates from image to scaled canvas coordinates"""
+        x0, y0, x1, y1 = bbox
+        x0_new = self._x_image_to_scaled_canvas(x0)
+        y0_new = self._y_image_to_scaled_canvas(y0)
+        x1_new = self._x_image_to_scaled_canvas(x1)
+        y1_new = self._y_image_to_scaled_canvas(y1)
+        return x0_new, y0_new, x1_new, y1_new
 
     def keystroke_callback(self, event: tk.Event) -> None:
         """Scrolling with the keyboard.
@@ -403,7 +454,7 @@ class CanvasImage:
         elif event.keysym == "s":
             self._scroll_y("scroll", 1, "unit", event=event)
         elif event.keysym == "Escape":
-            self.highlight_rectangle.finish_drawing()
+            self.highlight_rectangle.clear()
         elif event.keysym == "r":
             self._reset_canvas()
             self._show_image()
@@ -422,18 +473,22 @@ class CanvasImage:
     def _draw_label(self, label: YoloKeypointAnnotation) -> AnnotationObjectIds:
         """Draw label on the canvas"""
         assert self.container is not None
-        bbox = tuple(map(int, self.canvas.coords(self.container)))
-        x0 = max(int(label.x0), bbox[0])
-        y0 = max(int(label.y0), bbox[1])
-        x1 = min(int(label.x1), bbox[2])
-        y1 = min(int(label.y1), bbox[3])
+        canvas_border = tuple(map(int, self.canvas.coords(self.container)))
+        bbox = label.corners
+        bbox = self._bbox_image_to_scaled_canvas(bbox)
+        x0 = max(int(bbox[0]), canvas_border[0])
+        y0 = max(int(bbox[1]), canvas_border[1])
+        x1 = min(int(bbox[2]), canvas_border[2])
+        y1 = min(int(bbox[3]), canvas_border[3])
+        canvas_border = self._bbox_image_to_scaled_canvas(canvas_border)
         self.logger.debug(f"Draw label: {label} with bbox: {(x0, y0, x1, y1)}")
         obj_ids = AnnotationObjectIds(
             rectangle=self.canvas.create_rectangle(x0, y0, x1, y1, outline="red", width=2),
             text=self.canvas.create_text(
-                x0, y0 - 10, text=str(label.class_index), fill="red", font=("Arial", 12, "bold")
+                x0, y0 - 10, text=self._get_class_name(label.class_index), fill="red", font=("Arial", 12, "bold")
             ),
             keypoint_circles=[],
+            keypoint_text=[],
             lines=[],
         )
         prev_x = None
@@ -441,20 +496,45 @@ class CanvasImage:
         r = self.keypoint_radius
         for index, keypoint in enumerate(label.keypoints):
             color = self.keypoint_colors[index % len(self.keypoint_colors)]
-            x = int(keypoint[0])
-            y = int(keypoint[1])
-            x = max(x, bbox[0])
-            y = max(y, bbox[1])
-            x = min(x, bbox[2])
-            y = min(y, bbox[3])
+            x = int(self._x_image_to_scaled_canvas(keypoint[0]))
+            y = int(self._y_image_to_scaled_canvas(keypoint[1]))
+            x = min(max(x, canvas_border[0]), canvas_border[2])
+            y = min(max(y, canvas_border[1]), canvas_border[3])
             obj_ids.keypoint_circles.append(
                 self.canvas.create_oval(x - r, y - r, x + r, y + r, fill=color, outline=color, width=1)
+            )
+            obj_ids.keypoint_text.append(
+                self.canvas.create_text(
+                    x,
+                    y,
+                    text=self._get_keypoint_name(label.class_index, index),
+                    fill=color,
+                    font=("Arial", 12),
+                )
             )
             if prev_x is not None and prev_y is not None:
                 obj_ids.lines.append(self.canvas.create_line(x, y, prev_x, prev_y, fill="grey", width=2))
             prev_x = x
             prev_y = y
         return obj_ids
+
+    def _get_class_name(self, class_index: int) -> str:
+        """Get class name from the class index"""
+        if class_index < len(self.class_map):
+            return self.class_map[class_index]
+        return str(class_index)
+
+    def _get_keypoint_name(self, class_index: int, keypoint_index: int) -> str:
+        """Get keypoint name from the class index and keypoint index"""
+        if class_index >= len(self.class_map):
+            return str(keypoint_index)
+        class_name = self.class_map[class_index]
+        if class_name not in self.keypoint_names:
+            return str(keypoint_index)
+        keypoint_names = self.keypoint_names[class_name]
+        if keypoint_index >= len(keypoint_names):
+            return str(keypoint_index)
+        return keypoint_names[keypoint_index]
 
     def _erase_annotation(self) -> None:
         """Erase annotation from the canvas"""

@@ -5,6 +5,7 @@ from tkinter import Tk, filedialog, ttk
 
 import cv2
 from perception_tools.messages.image import Encoding, Image
+from perception_tools.training.keypoints_config import KeypointsConfig
 from PIL import Image as PILImage
 from PIL import ImageTk
 
@@ -14,9 +15,10 @@ from auto_label.ui.panel import Panel
 
 
 class ManualLabelPanel(Panel):
-    def __init__(self, window: Tk, backend: ManualLabelBackend) -> None:
+    def __init__(self, window: Tk, backend: ManualLabelBackend, keypoints_config: KeypointsConfig) -> None:
         super().__init__(window)
         self.backend = backend
+        self.keypoints_config = keypoints_config
         self.jump_count = 1
 
         self.shown_tk_image: ImageTk.PhotoImage | None = None
@@ -45,7 +47,11 @@ class ManualLabelPanel(Panel):
         self.update_video_options()
         self.selected_video_option.set("Select a video")
 
-        self.image_canvas = CanvasImage(self.image_frame)
+        self.image_canvas = CanvasImage(
+            self.image_frame,
+            [label.value for label in self.keypoints_config.labels],
+            self.keypoints_config.keypoint_names,
+        )
         self.current_image: Image | None = None
 
         self.logger = logging.getLogger(self.__class__.__name__)
