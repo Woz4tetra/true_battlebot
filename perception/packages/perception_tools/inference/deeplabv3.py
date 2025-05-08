@@ -12,11 +12,14 @@ PAD_SIZE = 20
 
 
 class SquarePad:
-    def __call__(self, image, pad_size: int):
+    def __call__(self, image: np.ndarray, pad_size: int) -> np.ndarray:
         return np.pad(image, ((pad_size, pad_size), (pad_size, pad_size), (0, 0)), mode="constant", constant_values=0)
 
 
-def common_transforms(mean=(0.4611, 0.4359, 0.3905), std=(0.2193, 0.2150, 0.2109)) -> transforms.Compose:
+def common_transforms(
+    mean: tuple[float, float, float] = (0.4611, 0.4359, 0.3905),
+    std: tuple[float, float, float] = (0.2193, 0.2150, 0.2109),
+) -> transforms.Compose:
     return transforms.Compose(
         [
             transforms.ToPILImage(),
@@ -39,7 +42,7 @@ class DeepLabV3Inference:
         image_resized = cv2.resize(image_rgb, (IMAGE_SIZE, IMAGE_SIZE), interpolation=cv2.INTER_NEAREST)
 
         image_model = self.preprocess(image_resized)
-        image_model = torch.unsqueeze(image_model, dim=0)  # type: ignore
+        image_model = torch.unsqueeze(image_model, dim=0)
         image_model = image_model.to(self.device)
 
         with torch.no_grad():
@@ -61,7 +64,7 @@ class DeepLabV3Inference:
         else:
             cropped_mask = out_mask
         resized_mask = cv2.resize(cropped_mask, (width, height), interpolation=cv2.INTER_NEAREST)
-        return resized_mask
+        return np.array(resized_mask)
 
     def draw_debug_image(self, mask: np.ndarray, metadata: ModelMetadata) -> np.ndarray:
         color_seg = np.zeros((mask.shape[0], mask.shape[1], 3), dtype=np.uint8)

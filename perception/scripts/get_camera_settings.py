@@ -1,6 +1,6 @@
 import pyzed.sl as sl
 import toml
-from app.camera.zed.video_settings import Zed2iVideoSettings
+from app.camera.zed.zed_video_settings import Zed2iVideoSettings
 
 
 def main() -> None:

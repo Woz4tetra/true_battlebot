@@ -2,6 +2,7 @@ import numpy as np
 from app.config.keypoint_config.pattern_finder_config.noop_pattern_finder_config import NoopPatternFinderConfig
 from app.keypoint.pattern_finder.pattern_finder import PatternFinder
 from bw_interfaces.msg import UVKeypoint
+from perception_tools.messages.image import Image
 
 
 class NoopPatternFinder(PatternFinder):
@@ -9,6 +10,6 @@ class NoopPatternFinder(PatternFinder):
         self.config = config
 
     def find(
-        self, gray_image: np.ndarray, contour: np.ndarray, debug_image: np.ndarray | None = None
+        self, gray_image: np.ndarray, contour: np.ndarray, debug_image: Image | None = None
     ) -> tuple[UVKeypoint | None, UVKeypoint | None]:
         return None, None

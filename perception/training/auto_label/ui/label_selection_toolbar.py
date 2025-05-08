@@ -24,7 +24,7 @@ class LabelSelectionToolbar:
                 text=label.value,
                 variable=self.radio_var,
                 value=index,
-                command=lambda index=index: self.on_label_selected(index),
+                command=lambda index=index: self.on_label_selected(index),  # type: ignore
             )
             radio_button.pack(side=tk.LEFT, padx=5)
             self.radio_buttons.append(radio_button)

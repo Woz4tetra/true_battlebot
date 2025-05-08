@@ -92,7 +92,7 @@ class YoloKeypoint(KeypointInterface):
                 keypoint_instances.append(
                     KeypointInstance(
                         keypoints=[named_keypoints[keypoint_name] for keypoint_name in keypoint_names],
-                        names=[name.value for name in keypoint_names],  # type: ignore
+                        names=[name.value for name in keypoint_names],
                         label=label.value,
                         class_index=system_label_class_idx,
                         object_index=object_counts[label],

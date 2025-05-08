@@ -7,7 +7,7 @@ from pathlib import Path
 from perception_tools.training.instance_helpers import load_dataset, write_dataset
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(description="Split a dataset")
     parser.add_argument(
         "source_path",

@@ -26,7 +26,7 @@ def copy_to_data(prefix: str, model_path: str, model: YOLO, config: KeypointsCon
 
     default_color = LabelColor(r=0.0, g=0.0, b=0.0, a=0.0)
 
-    label_index_pairs = [(index, name) for index, name in model.names.items()]  # type: ignore
+    label_index_pairs = [(index, name) for index, name in model.names.items()]
     labels = [ModelLabel(name) for _, name in label_index_pairs]
     colors = [LABEL_COLORS.get(label, default_color) for label in labels]
 

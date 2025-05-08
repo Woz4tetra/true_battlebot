@@ -58,9 +58,9 @@ class LabelTable:
             text="Delete",
         )
         row = LabelTableRow(row_index, label, delete_button)
-        delete_button.config(command=lambda row=row: self.delete_annotation(row))
-        delete_button.bind("<Enter>", lambda event, row=row: self.highlight_callback(row.row_index))
-        delete_button.bind("<Leave>", lambda event, row=row: self.unhighlight_callback(row.row_index))
+        delete_button.config(command=lambda row=row: self.delete_annotation(row))  # type: ignore
+        delete_button.bind("<Enter>", lambda event, row=row: self.highlight_callback(row.row_index))  # type: ignore
+        delete_button.bind("<Leave>", lambda event, row=row: self.unhighlight_callback(row.row_index))  # type: ignore
         self.logger.debug(f"Adding label: {label_name} at index {row_index}")
         return row
 

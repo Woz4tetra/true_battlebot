@@ -85,7 +85,7 @@ class ModelBase(ABC):
 
     def teleport(self, pose: PoseWithCovariance, twist: TwistWithCovariance = TwistWithCovariance()) -> None:
         if all([c == 0 for c in twist.covariance]):
-            twist.covariance = np.eye(6).flatten().tolist()  # type: ignore
+            twist.covariance = np.eye(6).flatten().tolist()
         initial_pose, pose_noise = pose_to_measurement(pose)
         initial_twist, twist_noise = twist_to_measurement(twist)
         self.state = np.zeros(NUM_STATES)
@@ -105,7 +105,7 @@ class ModelBase(ABC):
 
     def is_in_bounds(self, field_bounds_2d: FieldBounds2D) -> bool:
         lower_bound, upper_bound = field_bounds_2d
-        return lower_bound.x <= self.state[0] <= upper_bound.x and lower_bound.y <= self.state[1] <= upper_bound.y
+        return bool(lower_bound.x <= self.state[0] <= upper_bound.x and lower_bound.y <= self.state[1] <= upper_bound.y)
 
     def is_initialized(self) -> bool:
         return self._is_initialized

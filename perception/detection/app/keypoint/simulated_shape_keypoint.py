@@ -147,7 +147,7 @@ class SimulatedShapeKeypoint(KeypointInterface):
             keypoint_instances.append(
                 KeypointInstance(
                     keypoints=[front_pixel, back_pixel],
-                    names=self.keypoint_names,  # type: ignore
+                    names=self.keypoint_names,
                     score=1.0,
                     label=label.value,
                     class_index=self.class_indices[label],

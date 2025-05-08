@@ -7,7 +7,7 @@ import cv2
 import numpy as np
 import toml
 from app.camera.camera_interface import CameraMode
-from app.camera.zed.video_settings import Zed2iVideoSettings
+from app.camera.zed.zed_video_settings import Zed2iVideoSettings
 from app.camera.zed_camera import ZedCamera, ZedCameraConfig
 from app.config.config_loader import load_config
 from bw_shared.radio.transmitter.frsky import FrSkyTransmitter

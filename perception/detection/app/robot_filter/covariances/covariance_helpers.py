@@ -18,7 +18,7 @@ def get_pose_distance(pose: Pose) -> float:
 def pose_distance_covariance_scale(distance: float) -> float:
     if distance < 0.25:
         return 10.0
-    return 0.25 * distance**2.0
+    return float(0.25 * distance**2.0)
 
 
 def pose_angle_covariance_scale(pose: Pose) -> float:

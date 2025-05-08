@@ -41,7 +41,7 @@ class ModelMetadata:
     colors: list[LabelColor] = field(default_factory=list)
     keypoints: list[list[KeypointName]] = field(default_factory=list)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if not self.colors:
             self.colors = [LABEL_COLORS[label] for label in self.labels]
         if self.keypoints:

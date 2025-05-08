@@ -24,7 +24,7 @@ def load_image(image_name: str) -> Image:
 
 
 @pytest.mark.parametrize("image_path", TEST_IMAGES)
-def test_semantic_segmentation(image_path: str, semantic_segmentation: SemanticSegmentation):
+def test_semantic_segmentation(image_path: str, semantic_segmentation: SemanticSegmentation) -> None:
     image = load_image(image_path)
     result, debug_msg = semantic_segmentation.process_image(image)
     assert result is not None and len(result.instances) == 1

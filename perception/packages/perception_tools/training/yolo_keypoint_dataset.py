@@ -25,7 +25,7 @@ class YoloKeypointAnnotation:
     bbox: list[float] = field(default_factory=lambda: [0, 0, 0, 0])
     keypoints: list[YoloKeypointData] = field(default_factory=list)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if len(self.bbox) != 4:
             raise ValueError("bbox must have 4 elements")
 
@@ -34,7 +34,7 @@ class YoloKeypointAnnotation:
         return self.bbox[0]
 
     @center_x.setter
-    def center_x(self, value: float):
+    def center_x(self, value: float) -> None:
         self.bbox[0] = value
 
     @property
@@ -42,7 +42,7 @@ class YoloKeypointAnnotation:
         return self.bbox[1]
 
     @center_y.setter
-    def center_y(self, value: float):
+    def center_y(self, value: float) -> None:
         self.bbox[1] = value
 
     @property
@@ -50,7 +50,7 @@ class YoloKeypointAnnotation:
         return self.bbox[2]
 
     @width.setter
-    def width(self, value: float):
+    def width(self, value: float) -> None:
         self.bbox[2] = value
 
     @property
@@ -58,7 +58,7 @@ class YoloKeypointAnnotation:
         return self.bbox[3]
 
     @height.setter
-    def height(self, value: float):
+    def height(self, value: float) -> None:
         self.bbox[3] = value
 
     @property

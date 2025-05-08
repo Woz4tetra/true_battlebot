@@ -1,6 +1,7 @@
 import cv2
 import pytest
 from app.keypoint.yolo_keypoint import YoloKeypoint
+from bw_shared.messages.field import Field
 from bw_shared.messages.header import Header
 from perception_tools.directories.data_directory import get_data_directory
 from perception_tools.messages.image import Image
@@ -28,7 +29,7 @@ def load_image(image_name: str) -> Image:
 
 
 @pytest.mark.parametrize("image_path", TEST_IMAGES)
-def test_yolo_keypoint(image_path: str, yolo_keypoint: YoloKeypoint, camera_info: CameraInfo):
+def test_yolo_keypoint(image_path: str, yolo_keypoint: YoloKeypoint, camera_info: CameraInfo) -> None:
     image = load_image(image_path)
-    result, debug_msg = yolo_keypoint.process_image(camera_info, image)
+    result, debug_msg = yolo_keypoint.process_image(camera_info, image, Field())
     assert result is not None and len(result.instances) >= 1

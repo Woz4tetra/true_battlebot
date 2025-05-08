@@ -12,10 +12,10 @@ from tf2_msgs.msg import TFMessage
 
 
 def load_from_bag(bag_file: str, cloud_topic: str, image_topic: str, info_topic: str) -> tuple[CameraData, Transform3D]:
-    tf_buffer = tf2_py.BufferCore(cache_time=rospy.Duration.from_sec(1000000))  # type: ignore
+    tf_buffer = tf2_py.BufferCore(cache_time=rospy.Duration.from_sec(1000000))
 
     def update_buffer(msg: TFMessage) -> None:
-        for msg_tf in msg.transforms:  # type: ignore
+        for msg_tf in msg.transforms:
             tf_buffer.set_transform_static(msg_tf, "default_authority")
 
     point_cloud: PointCloud | None = None
@@ -23,7 +23,7 @@ def load_from_bag(bag_file: str, cloud_topic: str, image_topic: str, info_topic:
     camera_info: CameraInfo | None = None
     with Bag(bag_file, "r") as bag:
         start_time = rospy.Time(bag.get_start_time())
-        for topic, msg, timestamp in bag.read_messages(  # type: ignore
+        for topic, msg, timestamp in bag.read_messages(
             topics=[cloud_topic, image_topic, info_topic, "/tf", "/tf_static"]
         ):
             point_cloud_found = point_cloud is not None

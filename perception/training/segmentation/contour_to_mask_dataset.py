@@ -13,7 +13,7 @@ from perception_tools.training.instance_helpers import (
 from perception_tools.training.semantic_helpers import write_classes
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(description="Convert to semantic segmentation dataset")
     parser.add_argument(
         "dataset_path",

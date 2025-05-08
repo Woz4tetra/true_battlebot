@@ -107,7 +107,7 @@ def record_image_and_keypoints(output_dir: Path, data_snapshot: RobotDataShapsho
             return False
         logger.info(f"Adding annotation for label: {robot.label}")
 
-        image_annotation.labels.add(annotation)
+        image_annotation.labels.append(annotation)
 
     image_path = str(output_dir / f"{filename}.jpg")
     logger.info(f"Saving image to {image_path}")

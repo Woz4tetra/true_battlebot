@@ -10,13 +10,15 @@ class Zed2iResolutions(str, EnumAutoLowerStr):
     MODE_HD2K = auto()
 
     def to_zed(self) -> int:
-        return {
-            Zed2iResolutions.MODE_AUTO: sl.RESOLUTION.AUTO,
-            Zed2iResolutions.MODE_VGA: sl.RESOLUTION.VGA,
-            Zed2iResolutions.MODE_HD720: sl.RESOLUTION.HD720,
-            Zed2iResolutions.MODE_HD1080: sl.RESOLUTION.HD1080,
-            Zed2iResolutions.MODE_HD2K: sl.RESOLUTION.HD2K,
-        }[self]
+        return int(
+            {
+                Zed2iResolutions.MODE_AUTO: sl.RESOLUTION.AUTO,
+                Zed2iResolutions.MODE_VGA: sl.RESOLUTION.VGA,
+                Zed2iResolutions.MODE_HD720: sl.RESOLUTION.HD720,
+                Zed2iResolutions.MODE_HD1080: sl.RESOLUTION.HD1080,
+                Zed2iResolutions.MODE_HD2K: sl.RESOLUTION.HD2K,
+            }[self]
+        )
 
     def to_dims(self) -> tuple[int, int]:
         return {

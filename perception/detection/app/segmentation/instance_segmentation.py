@@ -1,6 +1,6 @@
 import logging
 import time
-from typing import Callable
+from typing import Callable, cast
 
 import cv2
 import numpy as np
@@ -51,10 +51,10 @@ class InstanceSegmentation(SegmentationInterface):
     def load_model(self, model_path: str) -> Callable:
         self.logger.info(f"Loading model from {model_path}")
         t0 = time.perf_counter()
-        model = torch.jit.load(model_path).to(self.device)  # type: ignore
+        model = torch.jit.load(model_path).to(self.device)
         t1 = time.perf_counter()
         self.logger.info(f"Loaded model in {t1 - t0} seconds")
-        return model
+        return cast(Callable, model)
 
     def warmup(self) -> None:
         self.logger.info("Warming up model")

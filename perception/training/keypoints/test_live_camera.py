@@ -1,6 +1,7 @@
 import argparse
 import os
 import time
+from typing import Any
 
 import cv2
 import numpy as np
@@ -10,7 +11,7 @@ from perception_tools.inference.common import load_metadata
 from ultralytics import YOLO
 
 
-def draw_keypoints(result, metadata: ModelMetadata) -> np.ndarray:
+def draw_keypoints(result: Any, metadata: ModelMetadata) -> np.ndarray:
     ids = result.boxes.cpu().cls.int().numpy()  # get the class ids
     keypoints = result.keypoints.cpu().xy.int().numpy()  # get the keypoints
     labels = [result.names[index] for index in ids]
@@ -39,7 +40,7 @@ def draw_keypoints(result, metadata: ModelMetadata) -> np.ndarray:
             (255, 255, 255),
             1,
         )
-    return img_array
+    return np.array(img_array)
 
 
 def main() -> None:

@@ -77,7 +77,7 @@ def simulated_mask_to_contours(
         mask = cv2.inRange(layer_image, color_lower, color_upper)
         mask = bridge_gaps(mask, erode_dilate_size)
         contours, hierarchy = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
-        if hierarchy is None:  # empty mask
+        if hierarchy.size == 0:
             exc = EmptyMaskError(f"Empty mask for label {label}")
             exceptions[color] = exc
             segmentation = SegmentationInstance(
@@ -89,7 +89,7 @@ def simulated_mask_to_contours(
                 has_holes=False,
             )
         else:
-            has_holes = bool((hierarchy.reshape(-1, 4)[:, 3] >= 0).sum() > 0)  # type: ignore
+            has_holes = bool((hierarchy.reshape(-1, 4)[:, 3] >= 0).sum() > 0)
             segmentation = SegmentationInstance(
                 contours=[to_contours_msg(contour) for contour in contours],
                 score=1.0,

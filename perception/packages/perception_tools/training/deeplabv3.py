@@ -2,7 +2,12 @@ from pathlib import Path
 
 import numpy as np
 import torch
-from torchvision.models.segmentation import deeplabv3_mobilenet_v3_large, deeplabv3_resnet50, deeplabv3_resnet101
+from torchvision.models.segmentation import (
+    DeepLabV3,
+    deeplabv3_mobilenet_v3_large,
+    deeplabv3_resnet50,
+    deeplabv3_resnet101,
+)
 
 from perception_tools.config.model_metadata import FIELD_SEMANTIC_MODEL_METADATA
 from perception_tools.inference.deeplabv3 import IMAGE_SIZE
@@ -15,10 +20,10 @@ def seed_everything(seed_value: int) -> None:
     torch.backends.cudnn.benchmark = True
 
 
-def load_model(checkpoint_path: Path, device: torch.device):
+def load_model(checkpoint_path: Path, device: torch.device) -> DeepLabV3:
     num_classes = len(FIELD_SEMANTIC_MODEL_METADATA.labels)
     model_name = checkpoint_path.stem.split("_")[1]
-    model = {
+    model: DeepLabV3 = {
         "mbv3": deeplabv3_mobilenet_v3_large,
         "r50": deeplabv3_resnet50,
         "r101": deeplabv3_resnet101,

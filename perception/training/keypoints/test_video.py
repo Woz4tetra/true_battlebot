@@ -1,6 +1,7 @@
 import argparse
 import time
 from pathlib import Path
+from typing import Any
 
 import cv2
 import numpy as np
@@ -10,7 +11,7 @@ from tqdm import tqdm
 from ultralytics import YOLO
 
 
-def draw_keypoints(result, metadata: ModelMetadata) -> np.ndarray:
+def draw_keypoints(result: Any, metadata: ModelMetadata) -> np.ndarray:
     ids = result.boxes.cpu().cls.int().numpy()  # get the class ids
     keypoints = result.keypoints.cpu().xy.int().numpy()  # get the keypoints
     labels = [result.names[index] for index in ids]
@@ -39,7 +40,7 @@ def draw_keypoints(result, metadata: ModelMetadata) -> np.ndarray:
             (255, 255, 255),
             1,
         )
-    return img_array
+    return np.array(img_array)
 
 
 def main() -> None:
@@ -91,7 +92,7 @@ def main() -> None:
 
         assert skip_frames >= 0, "Skip frames must be greater than or equal to 0"
 
-        in_video = cv2.VideoCapture(str(video_path))  # type: ignore
+        in_video = cv2.VideoCapture(str(video_path))
         out_video: cv2.VideoWriter | None = None
         video_fps = in_video.get(cv2.CAP_PROP_FPS) / (1 + skip_frames)
         num_frames = int(in_video.get(cv2.CAP_PROP_FRAME_COUNT))

@@ -18,7 +18,7 @@ NUM_STATES_1ST_ORDER = 3
 
 
 @njit(cache=True)
-def kf_state_transition(state, dt):
+def kf_state_transition(state: np.ndarray, dt: float) -> np.ndarray:
     x = state[STATE_x]
     y = state[STATE_y]
     theta = normalize_theta(state[STATE_t])

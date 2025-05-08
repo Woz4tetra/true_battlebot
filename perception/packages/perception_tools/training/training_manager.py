@@ -104,7 +104,7 @@ class TrainingManager:
         self.cfg.SOLVER.MAX_ITER = 60000
         self.cfg.MODEL.ROI_HEADS.NUM_CLASSES = len(self.train_dataset.dataset.categories)
 
-    def train(self, output_path: str):
+    def train(self, output_path: str) -> None:
         self.cfg.OUTPUT_DIR = output_path
         os.makedirs(output_path, exist_ok=True)
         tb_thread = Thread(target=self.launch_tensorboard, args=(output_path,))
@@ -164,14 +164,14 @@ class TrainingManager:
         model: ScriptModule,
         metadata: ModelMetadata,
         image: np.ndarray,
-        device,
+        device: torch.device,
         threshold: float,
         nms_threshold: float = 0.8,
         mask_conversion_threshold: float = 0.5,
     ) -> np.ndarray:
         h, w = image.shape[:2]
         debug_image = np.copy(image)
-        with torch.jit.optimized_execution(True):  # type: ignore
+        with torch.jit.optimized_execution(True):
             with torch.no_grad():
                 # Convert to channels first, convert to float datatype. Convert (H, W, C) to (C, H, W)
                 image_tensor = torch.from_numpy(image).to(device).permute(2, 0, 1).float()
@@ -247,7 +247,7 @@ class TrainingManager:
             cv2.imwrite(out_path, viz_image)
             print("Wrote", out_path)
 
-    def launch_tensorboard(self, output_path: str):
+    def launch_tensorboard(self, output_path: str) -> None:
         tb = program.TensorBoard()
         tb.configure(argv=[None, "--logdir", output_path])
         url = tb.launch()

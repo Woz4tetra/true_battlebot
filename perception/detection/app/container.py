@@ -1,4 +1,4 @@
-from typing import Any, TypeVar
+from typing import Any, TypeVar, cast
 
 T = TypeVar("T")
 
@@ -15,7 +15,7 @@ class Container:
         self._object_registry[register_key] = obj
 
     def resolve(self, cls: type[T]) -> T:
-        return self._object_registry[cls]
+        return cast(T, self._object_registry[cls])
 
     def resolve_by_name(self, name: str) -> Any:
         return self._object_registry[name]

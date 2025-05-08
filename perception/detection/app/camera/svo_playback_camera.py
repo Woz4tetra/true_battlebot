@@ -190,7 +190,7 @@ class SvoPlaybackCamera(CameraInterface):
 
         if self.bag and camera_data:
             while self.bag_time < camera_data.color_image.header.stamp:
-                topic, msg, timestamp = next(self.bag_iters)  # type: ignore
+                topic, msg, timestamp = next(self.bag_iters)
                 self.bag_publishers[topic].publish(msg)
                 self.logger.debug(f"Published message from bag: {topic}")
                 self.bag_time = timestamp.to_sec()
@@ -232,7 +232,7 @@ class SvoPlaybackCamera(CameraInterface):
 
     def _open_camera(self) -> bool:
         status = self.camera.open()
-        success = status == sl.ERROR_CODE.SUCCESS
+        success = bool(status == sl.ERROR_CODE.SUCCESS)
         if not success:
             self.logger.error(f"Failed to open camera: {zed_status_to_str(status)}")
         return success

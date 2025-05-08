@@ -12,3 +12,6 @@ aprilgrid
 pyserial
 blobconverter
 sv-ttk
+types-tqdm
+types-toml
+types-PyYAML

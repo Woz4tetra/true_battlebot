@@ -42,7 +42,7 @@ class TrianglePatternFinder(PatternFinder):
 
         if debug_image is not None:
             approx_absolute = approx + np.array([crop[0], crop[1]])
-            cv2.drawContours(debug_image.data, [approx_absolute], -1, (0, 255, 0), 3)  # type: ignore
+            cv2.drawContours(debug_image.data, [approx_absolute], -1, (0, 255, 0), 3)
 
         approx_reduced = approx[:, 0]
         lengths = [np.linalg.norm(approx_reduced[(i + 1) % num_points] - approx_reduced[i]) for i in range(num_points)]

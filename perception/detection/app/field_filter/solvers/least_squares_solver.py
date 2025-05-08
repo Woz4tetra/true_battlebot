@@ -26,7 +26,7 @@ class LeastSquaresSolver(BasePlaneSolver):
         )
         z_points = flattened_points[:, 2]
         z_points -= np.mean(z_points)
-        return np.abs(z_points) < threshold
+        return np.array(np.abs(z_points) < threshold)
 
     def solve(self, points: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         data_x = np.c_[points[:, 0], points[:, 1], np.ones(points.shape[0])]

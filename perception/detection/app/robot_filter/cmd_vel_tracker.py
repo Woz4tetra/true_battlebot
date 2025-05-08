@@ -14,7 +14,7 @@ class CmdVelTracker:
         self.last_command = TwistStamped(header=rospy.Header(stamp=rospy.Time.now()), twist=command)
 
     def is_timed_out(self) -> bool:
-        return rospy.Time.now() - self.last_command.header.stamp > self.command_timeout
+        return bool(rospy.Time.now() - self.last_command.header.stamp > self.command_timeout)
 
     def get_velocity(self) -> TwistWithCovariance:
         if self.is_timed_out():

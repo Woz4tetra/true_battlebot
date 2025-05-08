@@ -3,6 +3,7 @@ from dataclasses import dataclass, field
 from bw_shared.enums.frame_id import FrameId
 from bw_shared.geometry.transform3d import Transform3D
 from bw_shared.geometry.transform3d_stamped import Transform3DStamped
+from bw_shared.messages.header import Header
 from sensor_msgs.msg import CameraInfo, Imu
 
 from perception_tools.messages.image import Image
@@ -18,7 +19,7 @@ class CameraData:
     tf_camera_from_world: Transform3D | None = None
     world_frame_id: FrameId = FrameId.WORLD_CAMERA_0
 
-    def set_header(self, header):
+    def set_header(self, header: Header) -> None:
         self.color_image.header = header
         self.point_cloud.header = header
         self.camera_info.header = header

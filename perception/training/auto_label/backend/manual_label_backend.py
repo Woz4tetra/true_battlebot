@@ -78,8 +78,8 @@ class ManualLabelBackend:
         y1 = bbox[3]
         if keypoints is None:
             keypoints = [  # placeholder keypoints to be edited later
-                YoloKeypointData((x0, (y0 + y1) / 2, YoloVisibility.LABELED_VISIBLE)),  # front keypoint
-                YoloKeypointData((x1, (y0 + y1) / 2, YoloVisibility.LABELED_VISIBLE)),  # back keypoint
+                ((x0, (y0 + y1) / 2, YoloVisibility.LABELED_VISIBLE)),  # front keypoint
+                ((x1, (y0 + y1) / 2, YoloVisibility.LABELED_VISIBLE)),  # back keypoint
             ]
         annotation.labels.append(
             YoloKeypointAnnotation.from_corners(

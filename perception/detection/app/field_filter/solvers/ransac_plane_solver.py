@@ -7,12 +7,14 @@ from sklearn.linear_model import RANSACRegressor
 class RansacPlaneSolver(BasePlaneSolver):
     def __init__(self, config: RansacPlaneSolverConfig) -> None:
         self.config = config
+        max_skips = int(config.max_skips) if config.max_skips else np.inf
+        stop_n_inliers = int(config.stop_n_inliers) if config.stop_n_inliers else np.inf
         self.ransac = RANSACRegressor(
             min_samples=config.min_samples,
             residual_threshold=config.residual_threshold,
             max_trials=config.max_trials,
-            max_skips=config.max_skips if config.max_skips else np.inf,  # type: ignore
-            stop_n_inliers=config.stop_n_inliers if config.stop_n_inliers else np.inf,  # type: ignore
+            max_skips=max_skips,
+            stop_n_inliers=stop_n_inliers,
             stop_score=config.stop_score,
             stop_probability=config.stop_probability,
             loss=config.loss,

@@ -22,7 +22,7 @@ class MetricsToolConfig:
     field: FieldConfig = dataclass_field(default_factory=FieldConfig)
     tracker: TrackerConfig = dataclass_field(default_factory=Sam2TrackerConfig)
 
-    def to_dict(self):
+    def to_dict(self) -> dict:
         return to_dict(self)
 
     @classmethod

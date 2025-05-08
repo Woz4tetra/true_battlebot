@@ -91,7 +91,7 @@ def from_uint32_color(colors_uint32: np.ndarray, color_order: str) -> np.ndarray
     # Convert to float and scale to [0, 1]
     colors = colors_uint8.astype(np.float32) / 255.0
 
-    return colors
+    return np.array(colors)
 
 
 def fields_to_dtype(fields: list[PointField], point_step: int) -> dict[str, list[Any]]:
@@ -129,9 +129,9 @@ def fields_to_dtype(fields: list[PointField], point_step: int) -> dict[str, list
     return type_def
 
 
-def rospointcloud_to_array(cloud_msg: RosPointCloud):
+def rospointcloud_to_array(cloud_msg: RosPointCloud) -> np.ndarray:
     # construct a numpy record type equivalent to the point type of this cloud
-    type_def = fields_to_dtype(cloud_msg.fields, cloud_msg.point_step)  # type: ignore
+    type_def = fields_to_dtype(cloud_msg.fields, cloud_msg.point_step)
 
     np_dtype = np.dtype(type_def)  # type: ignore
     np_dtype = np_dtype.newbyteorder("<" if cloud_msg.is_bigendian else ">")
@@ -152,12 +152,12 @@ class PointCloud:
     def masked_points(self, mask: np.ndarray) -> np.ndarray:
         filtered_points = np.copy(self.points)
         filtered_points[np.bitwise_not(mask)] = np.nan
-        return np.ma.masked_invalid(filtered_points)
+        return np.array(np.ma.masked_invalid(filtered_points))
 
     def filtered_points(self, mask: np.ndarray) -> np.ndarray:
         filtered_points = self.points[mask]
         valid_mask = np.all(np.isfinite(filtered_points), axis=-1)
-        return filtered_points[valid_mask]
+        return np.array(filtered_points[valid_mask])
 
     @classmethod
     def from_depth(cls, depth: Image, camera_info: CameraInfo, depth_scale: float = 1000.0) -> PointCloud:
@@ -263,7 +263,7 @@ class PointCloud:
         points = np.stack((x, y, z), axis=-1)
         colors = np.array([], dtype=np.uint32)
         for color_field in SUPPORTED_COLOR_FIELDS:
-            if color_field in cloud_array.dtype.names:  # type: ignore
+            if color_field in cloud_array.dtype.names:
                 colors = from_uint32_color(cloud_array[color_field].view(np.uint32), color_field)
                 break
         return PointCloud(

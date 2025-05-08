@@ -9,6 +9,7 @@ exclude = [
     "__pycache__",
     "build",
     "dist",
+    "bw_interfaces",
 ]
 lint.ignore = [
     "E402", # Module level import not at top of file

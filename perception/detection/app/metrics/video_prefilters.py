@@ -55,8 +55,10 @@ def compute_static_background(
     images.append(first_image.data.astype(np.float32))
     for image in image_iter:
         images.append(image.data.astype(np.float32))
-    images = np.array(images)[np.linspace(0, len(images) - 1, video_filter_config.median_window_size).astype(np.int32)]
-    median_image = np.median(images, axis=0).astype(np.uint8)
+    images_array = np.array(images)[
+        np.linspace(0, len(images) - 1, video_filter_config.median_window_size).astype(np.int32)
+    ]
+    median_image = np.median(images_array, axis=0).astype(np.uint8)
     if start_header is None:
         raise RuntimeError("No images found in video")
     return Image(start_header, median_image)

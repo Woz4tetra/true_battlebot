@@ -28,12 +28,12 @@ def augment_dataset_image(
         polygons_transformed = np.array(aug_transform.apply_polygons(segmentations))
 
         all_coords = []
-        for segmentation in polygons_transformed:
+        for segmentation_array in polygons_transformed:
             coords = [
-                np.min(segmentation[:, 0]),
-                np.min(segmentation[:, 1]),
-                np.max(segmentation[:, 0]),
-                np.max(segmentation[:, 1]),
+                np.min(segmentation_array[:, 0]),
+                np.min(segmentation_array[:, 1]),
+                np.max(segmentation_array[:, 0]),
+                np.max(segmentation_array[:, 1]),
             ]
             all_coords.append(coords)
         fitted_coords = [

@@ -152,6 +152,7 @@ class RobotFilter:
 
     def _init_filters(self, robot_fleet: list[RobotConfig]) -> list[ModelBase]:
         filters: list[ModelBase] = []
+        robot_filter: ModelBase
         for robot_config in robot_fleet:
             if robot_config.team == RobotTeam.OUR_TEAM:
                 robot_filter = DriveKalmanModel(
@@ -288,7 +289,7 @@ class RobotFilter:
         self.logger.info(f"Initialized {robot_filter.config.name}.")
 
     def _field_received(self) -> bool:
-        return self.field.header.stamp != rospy.Time(0)
+        return bool(self.field.header.stamp != rospy.Time(0))
 
     def _transform_measurement_in_camera_to_map(self, robot: EstimatedObject, field: Field) -> Optional[Pose]:
         if not self._field_received():

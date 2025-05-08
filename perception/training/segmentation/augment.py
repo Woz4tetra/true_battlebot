@@ -16,7 +16,7 @@ from perception_tools.training.instance_helpers import (
 )
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(description="Augment a dataset")
     parser.add_argument(
         "images_path",
@@ -54,7 +54,7 @@ def main():
     images_to_augment = random.sample(metadataset.dataset.images, augmented_size)
     images_to_augment = metadataset.dataset.images * dataset_repetitions + images_to_augment
 
-    augmented_ids = {}
+    augmented_ids: dict[int, int] = {}
     try:
         with tqdm.tqdm(total=len(images_to_augment)) as pbar:
             for dataset_image in images_to_augment:

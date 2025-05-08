@@ -29,7 +29,7 @@ class Sam2Tracker(TrackerInterface):
             raise RuntimeError("Tracker is not initialized")
         assert self.predictor is not None
         self.images_dir = images_dir
-        self.inference_state = self.predictor.init_state(video_path=str(images_dir))
+        self.inference_state = self.predictor.init_state(video_path=str(images_dir))  # type: ignore
 
     def add_track_points(self, frame_num: int, object_id: int, points: list[tuple[int, int]]) -> None:
         self._add_points(frame_num, object_id, points, 1)
@@ -47,7 +47,7 @@ class Sam2Tracker(TrackerInterface):
 
         # for labels, `1` means positive click and `0` means negative click
         labels = np.array([label for _ in range(len(points))], np.int32)
-        _, out_obj_ids, out_mask_logits = self.predictor.add_new_points_or_box(
+        _, out_obj_ids, out_mask_logits = self.predictor.add_new_points_or_box(  # type: ignore
             inference_state=self.inference_state,
             frame_idx=frame_num,
             obj_id=object_id,
@@ -61,9 +61,9 @@ class Sam2Tracker(TrackerInterface):
             raise RuntimeError("Tracker is not initialized")
         assert self.predictor is not None
 
-        for out_frame_idx, out_obj_ids, out_mask_logits in self.predictor.propagate_in_video(self.inference_state):
+        for out_frame_idx, out_obj_ids, out_mask_logits in self.predictor.propagate_in_video(self.inference_state):  # type: ignore
             self._set_tracking_data(out_frame_idx, out_obj_ids, out_mask_logits)
-        for out_frame_idx, out_obj_ids, out_mask_logits in self.predictor.propagate_in_video(
+        for out_frame_idx, out_obj_ids, out_mask_logits in self.predictor.propagate_in_video(  # type: ignore
             self.inference_state, reverse=True
         ):
             self._set_tracking_data(out_frame_idx, out_obj_ids, out_mask_logits)
@@ -95,7 +95,7 @@ class Sam2Tracker(TrackerInterface):
             raise RuntimeError("Tracker is not initialized")
         assert self.predictor is not None
 
-        self.predictor.reset_state(self.inference_state)
+        self.predictor.reset_state(self.inference_state)  # type: ignore
         self.tracking_data = {}
         self.tracked_points = {}
 

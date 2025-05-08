@@ -54,15 +54,15 @@ def load_keypoint(container: Container, config: KeypointConfig) -> KeypointImple
         return YoloKeypoint(config)
     elif isinstance(config, SimulatedKeypointConfig):
         if container.is_registered(GroundTruthManager):
-            manager = container.resolve(GroundTruthManager)
+            ground_truth_manager = container.resolve(GroundTruthManager)
         else:
-            manager = load_ground_truth_manager(container)
-            container.register(manager)
-        return SimulatedKeypoint(config, manager)
+            ground_truth_manager = load_ground_truth_manager(container)
+            container.register(ground_truth_manager)
+        return SimulatedKeypoint(config, ground_truth_manager)
     elif isinstance(config, SimulatedShapeKeypointConfig):
-        manager = load_simulated_segmentation_manager(container)
+        segmentation_manager = load_simulated_segmentation_manager(container)
         pattern_finder = load_pattern_finder(container, config.pattern_finder)
-        return SimulatedShapeKeypoint(config, manager, pattern_finder)
+        return SimulatedShapeKeypoint(config, segmentation_manager, pattern_finder)
     else:
         raise ValueError(f"Unknown keypoint config type: {type(config)}")
 

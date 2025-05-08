@@ -17,7 +17,7 @@ from bw_shared.geometry.rpy import RPY
 from bw_shared.geometry.transform3d import Transform3D
 from geometry_msgs.msg import Vector3
 from image_geometry import PinholeCameraModel
-from open3d.visualization import Visualizer  # type: ignore
+from open3d.visualization import Visualizer
 from perception_tools.geometry.xyzquat_to_matrix import xyzquat_to_matrix
 from perception_tools.messages.camera_data import CameraData
 
@@ -48,6 +48,8 @@ def cost_function(
 
 
 class NhrlCamLabelApp(FieldLabelApp):
+    config: NhrlCamLabelConfig
+
     def __init__(
         self,
         config: NhrlCamLabelConfig,

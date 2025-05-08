@@ -53,7 +53,7 @@ def msg_to_mask(contour: Contour, width: int, height: int) -> np.ndarray:
     mask = np.zeros((height, width), dtype=np.uint8)
     points = np.array([[point.x, point.y] for point in contour.points], dtype=np.int32)
     mask = cv2.fillPoly(mask, [points], (1,))  # type: ignore
-    return mask != 0
+    return np.array(mask != 0)
 
 
 def multi_msg_to_mask(contours: list[Contour], width: int, height: int) -> np.ndarray:

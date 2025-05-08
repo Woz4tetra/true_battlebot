@@ -1,6 +1,7 @@
 import argparse
 import warnings
 from pathlib import Path
+from typing import Any, Generator
 
 import cv2
 import matplotlib
@@ -16,7 +17,12 @@ from perception_tools.training.deeplabv3 import seed_everything
 from torch.nn import functional
 from torch.utils.data import DataLoader, Dataset
 from torchmetrics import MeanMetric
-from torchvision.models.segmentation import deeplabv3_mobilenet_v3_large, deeplabv3_resnet50, deeplabv3_resnet101
+from torchvision.models.segmentation import (
+    DeepLabV3,
+    deeplabv3_mobilenet_v3_large,
+    deeplabv3_resnet50,
+    deeplabv3_resnet101,
+)
 from tqdm import tqdm
 
 matplotlib.use("agg")
@@ -24,8 +30,13 @@ matplotlib.use("agg")
 
 class SegDataset(Dataset):
     def __init__(
-        self, *, img_paths: list[Path], mask_paths: list[Path], image_size=(IMAGE_SIZE, IMAGE_SIZE), data_type="train"
-    ):
+        self,
+        *,
+        img_paths: list[Path],
+        mask_paths: list[Path],
+        image_size: tuple[int, int] = (IMAGE_SIZE, IMAGE_SIZE),
+        data_type: str = "train",
+    ) -> None:
         self.data_type = data_type
         self.img_paths = img_paths
         self.mask_paths = mask_paths
@@ -33,16 +44,16 @@ class SegDataset(Dataset):
 
         self.transforms = common_transforms()
 
-    def read_file(self, path: Path):
+    def read_file(self, path: Path) -> np.ndarray:
         image = cv2.imread(str(path))
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         image = cv2.resize(image, self.image_size, interpolation=cv2.INTER_NEAREST)
-        return image
+        return np.array(image)
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.img_paths)
 
-    def __getitem__(self, index: int):
+    def __getitem__(self, index: int) -> tuple[np.ndarray, torch.Tensor]:
         image_path = self.img_paths[index]
         image = self.read_file(image_path)
         image = self.transforms(image)
@@ -82,7 +93,7 @@ def get_training_set_paths(data_directory: Path) -> tuple[list[Path], list[Path]
     return filtered_image_paths, annotation_paths
 
 
-def get_dataset(data_directory: Path, batch_size: int, num_workers: int):
+def get_dataset(data_directory: Path, batch_size: int, num_workers: int) -> tuple[DataLoader, DataLoader]:
     train_img_dir = data_directory / "train"
     valid_img_dir = data_directory / "val"
 
@@ -98,10 +109,10 @@ def get_dataset(data_directory: Path, batch_size: int, num_workers: int):
     return train_loader, valid_loader
 
 
-def prepare_model(backbone_model: str, num_classes: int):
+def prepare_model(backbone_model: str, num_classes: int) -> DeepLabV3:
     # Initialize model with pre-trained weights.
     weights = "DEFAULT"
-    model = {
+    model: DeepLabV3 = {
         "mbv3": deeplabv3_mobilenet_v3_large,
         "r50": deeplabv3_resnet50,
         "r101": deeplabv3_resnet101,
@@ -109,12 +120,18 @@ def prepare_model(backbone_model: str, num_classes: int):
 
     # Update the number of output channels for the output layer.
     # This will remove the pre-trained weights for the last layer.
-    model.classifier[4] = nn.LazyConv2d(num_classes, 1)  # type: ignore
-    model.aux_classifier[4] = nn.LazyConv2d(num_classes, 1)  # type: ignore
+    model.classifier[4] = nn.LazyConv2d(num_classes, 1)
+    model.aux_classifier[4] = nn.LazyConv2d(num_classes, 1)
     return model
 
 
-def intermediate_metric_calculation(predictions, targets, use_dice=False, smooth=1e-6, dims=(2, 3)):
+def intermediate_metric_calculation(
+    predictions: torch.Tensor,
+    targets: torch.Tensor,
+    use_dice: bool = False,
+    smooth: float = 1e-6,
+    dims: tuple[int, int] = (2, 3),
+) -> torch.Tensor:
     # dimscorresponding to image height and width: [B, C, H, W].
 
     # Intersection: |G ∩ P|. Shape: (batch_size, num_classes)
@@ -141,12 +158,12 @@ def intermediate_metric_calculation(predictions, targets, use_dice=False, smooth
 
 
 class Loss(nn.Module):
-    def __init__(self, smooth=1e-6, use_dice=False):
+    def __init__(self, smooth: float = 1e-6, use_dice: bool = False) -> None:
         super().__init__()
         self.smooth = smooth
         self.use_dice = use_dice
 
-    def forward(self, predictions, targets):
+    def forward(self, predictions: torch.Tensor, targets: torch.Tensor) -> Any:
         # predictions --> (B, #C, H, W) unnormalized
         # targets     --> (B, #C, H, W) one-hot encoded
 
@@ -164,7 +181,7 @@ class Loss(nn.Module):
         return total_loss
 
 
-def convert_2_onehot(matrix, num_classes=3):
+def convert_2_onehot(matrix: torch.Tensor, num_classes: int = 3) -> torch.Tensor:
     """
     Perform one-hot encoding across the channel dimension.
     """
@@ -177,13 +194,13 @@ def convert_2_onehot(matrix, num_classes=3):
 
 
 class Metric(nn.Module):
-    def __init__(self, num_classes=3, smooth=1e-6, use_dice=False):
+    def __init__(self, num_classes: int = 3, smooth: float = 1e-6, use_dice: bool = False):
         super().__init__()
         self.num_classes = num_classes
         self.smooth = smooth
         self.use_dice = use_dice
 
-    def forward(self, predictions, targets):
+    def forward(self, predictions: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
         # predictions  --> (B, #C, H, W) unnormalized
         # targets      --> (B, #C, H, W) one-hot encoded
 
@@ -197,7 +214,7 @@ class Metric(nn.Module):
         return metric
 
 
-def to_device(data, device):
+def to_device(data: Any, device: torch.device) -> Any:
     """Move tensor(s) to chosen device"""
     if isinstance(data, (list, tuple)):
         return [to_device(x, device) for x in data]
@@ -207,35 +224,35 @@ def to_device(data, device):
 class DeviceDataLoader:
     """Wrap a dataloader to move data to a device"""
 
-    def __init__(self, dl, device):
+    def __init__(self, dl: Any, device: torch.device) -> None:
         self.dl = dl
         self.device = device
 
-    def __iter__(self):
+    def __iter__(self) -> Generator[Any, None, None]:
         """Yield a batch of data after moving it to device"""
         for b in self.dl:
             yield to_device(b, self.device)
 
-    def __len__(self):
+    def __len__(self) -> int:
         """Number of batches"""
         return len(self.dl)
 
 
 class TrainingStepInterface:
-    def __init__(self, model) -> None:
+    def __init__(self, model: nn.Module) -> None:
         self.model = model
 
-    def step(self, data) -> tuple[torch.Tensor, torch.Tensor]:
+    def step(self, data: Any) -> tuple[torch.Tensor, torch.Tensor]:
         raise NotImplementedError
 
 
 class TrainStep(TrainingStepInterface):
-    def __init__(self, model, optimizer_fn, loss_fn) -> None:
+    def __init__(self, model: nn.Module, optimizer_fn: torch.optim.Optimizer, loss_fn: nn.Module) -> None:
         super().__init__(model)
         self.optimizer_fn = optimizer_fn
         self.loss_fn = loss_fn
 
-    def step(self, data) -> tuple[torch.Tensor, torch.Tensor]:
+    def step(self, data: Any) -> tuple[torch.Tensor, torch.Tensor]:
         preds = self.model(data[0])["out"]
 
         loss = self.loss_fn(preds, data[1])
@@ -247,11 +264,11 @@ class TrainStep(TrainingStepInterface):
 
 
 class ValidationStep(TrainingStepInterface):
-    def __init__(self, model, loss_fn) -> None:
+    def __init__(self, model: nn.Module, loss_fn: nn.Module) -> None:
         super().__init__(model)
         self.loss_fn = loss_fn
 
-    def step(self, data) -> tuple[torch.Tensor, torch.Tensor]:
+    def step(self, data: Any) -> tuple[torch.Tensor, torch.Tensor]:
         with torch.no_grad():
             preds = self.model(data[0])["out"].detach()
 
@@ -260,7 +277,13 @@ class ValidationStep(TrainingStepInterface):
         return preds, loss
 
 
-def step(epoch_num: int, loader: DeviceDataLoader, step_interface: TrainingStepInterface, metric_fn, step_name):
+def step(
+    epoch_num: int,
+    loader: DeviceDataLoader,
+    step_interface: TrainingStepInterface,
+    metric_fn: nn.Module,
+    step_name: str,
+) -> tuple[torch.Tensor, torch.Tensor]:
     loss_record = MeanMetric()
     metric_record = MeanMetric()
 
@@ -381,11 +404,11 @@ def main() -> None:
     optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
 
     liveloss = PlotLosses(
-        outputs=[MatplotlibPlot(figpath=str(fig_path)), "ExtremaPrinter"],  # type: ignore
+        outputs=[MatplotlibPlot(figpath=str(fig_path)), "ExtremaPrinter"],
         mode="script",
     )
 
-    best_metric = 0.0
+    best_metric: float | torch.Tensor = 0.0
     train_step = TrainStep(model, optimizer, loss_fn)
     valid_step = ValidationStep(model, loss_fn)
 

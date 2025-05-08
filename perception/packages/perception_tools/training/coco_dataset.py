@@ -16,7 +16,7 @@ class DatasetCategory:
     name: str
     supercategory: str
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return self.id
 
     def __eq__(self, __value: object) -> bool:
@@ -99,7 +99,7 @@ class CocoMetaDataset:
     dataset: CocoDataset = field(default_factory=CocoDataset)
     image_id_to_annotations: Dict[int, List[int]] = field(default_factory=dict)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         for annotation in self.dataset.annotations:
             if annotation.image_id not in self.image_id_to_annotations:
                 self.image_id_to_annotations[annotation.image_id] = []
@@ -113,7 +113,7 @@ class CocoMetaDataset:
         annotation_ids = self.image_id_to_annotations[image_id]
         return [self.dataset.get_annotation_by_id(annotation_id) for annotation_id in annotation_ids]
 
-    def add_annotation(self, image: DatasetImage, annotations: List[DatasetAnnotation]):
+    def add_annotation(self, image: DatasetImage, annotations: List[DatasetAnnotation]) -> None:
         image = copy.deepcopy(image)
         image.id = self._next_image_id()
         self.dataset.images.append(image)
@@ -165,9 +165,9 @@ class CocoMetaDataset:
         for image in other.dataset.images:
             try:
                 annotations = other.get_annotations(image.id)
+                self.add_annotation(image, annotations)
             except KeyError:
                 warnings.warn(f"Image {image} has no annotations")
-            self.add_annotation(image, annotations)
 
     def remove_images(self, image_ids: List[int]) -> None:
         for image_id in image_ids:

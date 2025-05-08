@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Literal
 
-from app.camera.zed.video_settings import Zed2iVideoSettings
+from app.camera.zed.zed_video_settings import Zed2iVideoSettings
 from perception_tools.camera.zed_resolutions import Zed2iResolutions
 
 

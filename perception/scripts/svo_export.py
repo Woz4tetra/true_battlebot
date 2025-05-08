@@ -27,7 +27,7 @@ import numpy as np
 import pyzed.sl as sl
 
 
-def progress_bar(percent_done, bar_length=50):
+def progress_bar(percent_done: float, bar_length: int = 50) -> None:
     # Display a progress bar
     done_length = int(bar_length * percent_done / 100)
     bar = "=" * done_length + "-" * (bar_length - done_length)
@@ -35,7 +35,7 @@ def progress_bar(percent_done, bar_length=50):
     sys.stdout.flush()
 
 
-def main(opt: argparse.Namespace):
+def main(opt: argparse.Namespace) -> None:
     # Get input parameters
     svo_files = opt.svo_files
     channel = opt.channel

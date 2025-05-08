@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from dataclasses import dataclass
 from typing import TypeVar
 
@@ -20,7 +18,7 @@ class FieldLabelConfig:
     num_extra_points: int = 0
     start_time: float = 0.0
 
-    def to_dict(self):
+    def to_dict(self) -> dict:
         return to_dict(self)
 
     @classmethod

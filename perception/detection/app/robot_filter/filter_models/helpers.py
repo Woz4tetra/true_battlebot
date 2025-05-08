@@ -54,7 +54,7 @@ def measurement_to_pose(state: np.ndarray, covariance: np.ndarray) -> PoseWithCo
     ros_covariance = [0 for _ in range(NUM_POSE_STATES_ROS * NUM_POSE_STATES_ROS)]
     for mat_index, msg_index in POSE_COVARIANCE_INDICES.items():
         ros_covariance[msg_index] = covariance[mat_index]
-    pose.covariance = ros_covariance  # type: ignore
+    pose.covariance = ros_covariance
     return pose
 
 
@@ -76,7 +76,7 @@ def measurement_to_twist(state: np.ndarray, covariance: np.ndarray) -> TwistWith
     ros_covariance = [0 for _ in range(NUM_POSE_STATES_ROS * NUM_POSE_STATES_ROS)]
     for mat_index, msg_index in TWIST_COVARIANCE_INDICES.items():
         ros_covariance[msg_index] = covariance[mat_index]
-    twist.covariance = ros_covariance  # type: ignore
+    twist.covariance = ros_covariance
     return twist
 
 
@@ -117,9 +117,10 @@ def input_modulus(value: float, min_value: float, max_value: float) -> float:
 
 
 @njit(cache=True)
-def normalize_theta(theta):
+def normalize_theta(theta: float) -> float:
     # normalize theta to -pi..pi
-    return input_modulus(theta, -math.pi, math.pi)
+    normalized: float = input_modulus(theta, -math.pi, math.pi)
+    return normalized
 
 
 @njit(cache=True)

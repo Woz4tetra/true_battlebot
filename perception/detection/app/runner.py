@@ -54,9 +54,9 @@ class Runner:
         self.container = container
         self.config = self.container.resolve(Config)
         self.heartbeat_publisher: RosPublisher[Heartbeat] = self.container.resolve_by_name("heartbeat_publisher")
-        self.camera = self.container.resolve(CameraInterface)
+        self.camera: CameraInterface = self.container.resolve_by_name("camera")
 
-        self.field_filter = self.container.resolve(FieldFilterInterface)
+        self.field_filter: FieldFilterInterface = self.container.resolve_by_name("field_filter")
         self.field_request_handler = self.container.resolve(FieldRequestHandler)
 
         self.field_segmentation: SegmentationInterface = self.container.resolve_by_name("field_segmentation")
@@ -237,7 +237,7 @@ def make_camera(container: Container) -> None:
     logger = logging.getLogger("make_camera")
     config = container.resolve(Config)
     camera = load_camera(config.camera, container)
-    container.register(camera, CameraInterface)
+    container.register(camera, "camera")
 
     logger.info(f"Camera: {camera}")
 
@@ -304,7 +304,7 @@ def make_field_interface(container: Container) -> None:
     logger = logging.getLogger("make_field_interface")
     config = container.resolve(Config)
     field_filter = load_field_filter(config.field_filter, container)
-    container.register(field_filter, FieldFilterInterface)
+    container.register(field_filter, "field_filter")
 
     global_field_manager = load_global_field_transformer(config.global_field_manager, container)
     container.register(global_field_manager, GlobalFieldTransformer)

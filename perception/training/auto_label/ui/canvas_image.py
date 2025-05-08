@@ -549,7 +549,7 @@ class CanvasImage:
         y0 = max(int(bbox[1]), canvas_border[1])
         x1 = min(int(bbox[2]), canvas_border[2])
         y1 = min(int(bbox[3]), canvas_border[3])
-        canvas_border = self._bbox_image_to_scaled_canvas(canvas_border)
+        canvas_border_scaled = self._bbox_image_to_scaled_canvas(canvas_border)
         self.logger.debug(f"Draw label: {label} with bbox: {(x0, y0, x1, y1)}")
         color = self.label_colors[label.class_index % len(self.label_colors)]
         obj_ids = AnnotationObjectIds(
@@ -568,8 +568,8 @@ class CanvasImage:
             color = self.keypoint_colors[index % len(self.keypoint_colors)]
             x = int(self._x_norm_to_scaled_canvas(keypoint[0]))
             y = int(self._y_norm_to_scaled_canvas(keypoint[1]))
-            x = min(max(x, canvas_border[0]), canvas_border[2])
-            y = min(max(y, canvas_border[1]), canvas_border[3])
+            x = int(min(max(x, canvas_border_scaled[0]), canvas_border_scaled[2]))
+            y = int(min(max(y, canvas_border_scaled[1]), canvas_border_scaled[3]))
             obj_ids.keypoint_circles.append(
                 self.canvas.create_oval(x - r, y - r, x + r, y + r, fill=color, outline=color, width=1)
             )

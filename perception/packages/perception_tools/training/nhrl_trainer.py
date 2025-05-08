@@ -3,10 +3,12 @@ import json
 import logging
 import os
 import time
+from typing import Any
 
 import detectron2.utils.comm as comm
 import numpy as np
 import torch
+from detectron2.config import CfgNode
 from detectron2.data import DatasetMapper, MetadataCatalog, build_detection_test_loader
 from detectron2.engine import DefaultTrainer
 from detectron2.engine.hooks import HookBase
@@ -16,7 +18,7 @@ from matplotlib import pyplot as plt
 from torch.utils.data import DataLoader
 
 
-def load_json_arr(json_path):
+def load_json_arr(json_path: str) -> list[dict]:
     lines = []
     with open(json_path, "r") as f:
         for line in f:
@@ -25,24 +27,24 @@ def load_json_arr(json_path):
 
 
 class LossEvalHook(HookBase):
-    def __init__(self, eval_period, model, data_loader: DataLoader, metrics_path: str):
+    def __init__(self, eval_period: int, model: Any, data_loader: DataLoader, metrics_path: str) -> None:
         self._model = model
         self._period = eval_period
         self._data_loader = data_loader
         self.metrics_path = metrics_path
 
-    def _do_loss_eval(self):
+    def _do_loss_eval(self) -> list[float]:
         # Copying inference_on_dataset from evaluator.py
         total = len(self._data_loader)
         num_warmup = min(5, total - 1)
 
         start_time = time.perf_counter()
-        total_compute_time = 0
+        total_compute_time = 0.0
         losses = []
         for idx, inputs in enumerate(self._data_loader):
             if idx == num_warmup:
                 start_time = time.perf_counter()
-                total_compute_time = 0
+                total_compute_time = 0.0
             start_compute_time = time.perf_counter()
             if torch.cuda.is_available():
                 torch.cuda.synchronize()
@@ -89,16 +91,16 @@ class LossEvalHook(HookBase):
 
         return losses
 
-    def _get_loss(self, data):
+    def _get_loss(self, data: Any) -> float:
         # How loss is calculated on train_loop
         metrics_dict = self._model(data)
         metrics_dict = {
             k: v.detach().cpu().item() if isinstance(v, torch.Tensor) else float(v) for k, v in metrics_dict.items()
         }
         total_losses_reduced = sum(loss for loss in metrics_dict.values())
-        return total_losses_reduced
+        return float(total_losses_reduced)
 
-    def after_step(self):
+    def after_step(self) -> None:
         next_iter = self.trainer.iter + 1
         is_final = next_iter == self.trainer.max_iter
         if is_final or (self._period > 0 and next_iter % self._period == 0):
@@ -115,7 +117,7 @@ class NhrlTrainer(DefaultTrainer):
     """
 
     @classmethod
-    def build_evaluator(cls, cfg, dataset_name, output_folder=None):
+    def build_evaluator(cls, cfg: CfgNode, dataset_name: str, output_folder: str | None = None) -> list[COCOEvaluator]:
         if output_folder is None:
             output_folder = os.path.join(cfg.OUTPUT_DIR, "inference")
         evaluator_list = []
@@ -132,8 +134,8 @@ class NhrlTrainer(DefaultTrainer):
             evaluator_list.append(COCOEvaluator(dataset_name, output_dir=output_folder))
         return evaluator_list
 
-    def build_hooks(self):
-        hooks = super().build_hooks()
+    def build_hooks(self) -> list[HookBase]:
+        hooks: list[HookBase] = super().build_hooks()
         hooks.insert(
             -1,
             LossEvalHook(

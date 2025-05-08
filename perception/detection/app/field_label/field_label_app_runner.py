@@ -18,7 +18,6 @@ from app.field_label.util.load_from_bag import load_from_bag
 from app.field_label.util.load_from_svo import load_from_svo
 from app.field_label.util.load_from_topics import load_from_topics
 from app.field_label.util.load_from_video import load_from_video
-from bw_interfaces.msg import EstimatedObject
 from bw_shared.geometry.transform3d import Transform3D
 from perception_tools.rosbridge.ros_poll_subscriber import RosPollSubscriber
 from perception_tools.rosbridge.ros_publisher import RosPublisher
@@ -51,7 +50,6 @@ def run_topic(args: TopicCommandLineArgs) -> None:
     image_subscriber = RosPollSubscriber(config.image_topic, RosImage)
     info_subscriber = RosPollSubscriber(config.info_topic, CameraInfo)
     request_publisher = RosPublisher(config.field_request_topic, Empty)
-    response_publisher = RosPublisher(config.field_response_topic, EstimatedObject)
     tf_buffer = Buffer()
     TransformListener(tf_buffer)
 
@@ -65,8 +63,8 @@ def run_topic(args: TopicCommandLineArgs) -> None:
     )
     app = FieldLabelApp(config, args, camera_data, tf_pointcloud_from_camera)
     response = app.label_camera_data()
-    if response is not None:
-        response_publisher.publish(response)
+    # TODO publish response
+    print("Response:", response)
 
 
 def load_nhrl_label_config(path: str) -> NhrlCamLabelConfig:

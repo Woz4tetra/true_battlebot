@@ -7,7 +7,7 @@ import pyzed.sl as sl
 import rospy
 from app.camera.camera_interface import CameraInterface, CameraMode
 from app.camera.zed.helpers import zed_status_to_str, zed_to_ros_camera_info, zed_to_ros_imu
-from app.camera.zed.video_settings import Zed2iVideoSettings, ZedParameterError
+from app.camera.zed.zed_video_settings import Zed2iVideoSettings, ZedParameterError
 from app.config.camera.zed_camera_config import ZedCameraConfig
 from app.config.camera_topic_config import CameraTopicConfig
 from bw_interfaces.msg import ControlRecording
@@ -135,8 +135,7 @@ class ZedCamera(CameraInterface):
 
     def next_header(self) -> Header:
         image_time = self.camera.get_timestamp(sl.TIME_REFERENCE.IMAGE).get_nanoseconds()
-        self.header.stamp = image_time * 1e-9
-        self.header.seq += 1
+        self.header = Header(image_time * 1e-9, self.camera_topic_config.frame_id, self.header.seq + 1)
         return copy.copy(self.header)
 
     def _poll_recording(self) -> None:

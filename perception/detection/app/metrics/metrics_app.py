@@ -77,7 +77,7 @@ class MetricsApp:
         self.window_name = "metrics"
         cv2.namedWindow(self.window_name)
         self.did_initialize = False
-        self.color_cache = {}
+        self.color_cache: dict[int, tuple[int, ...]] = {}
 
     def _load_interesting_images(self) -> None:
         if self.cached_image_dir.exists():
@@ -126,8 +126,8 @@ class MetricsApp:
         if not self.did_initialize:
             self.tracker.initialize(self.cached_image_dir)
             self.did_initialize = True
-        for object_id, points in points.items():
-            self.tracker.add_track_points(first_image.header.seq, object_id, points)
+        for object_id, obj_points in points.items():
+            self.tracker.add_track_points(first_image.header.seq, object_id, obj_points)
 
     def _update_tracking(self) -> None:
         self.tracker.compute()
@@ -163,7 +163,7 @@ class MetricsApp:
         return all_data
 
     def _draw_historic_tracking_data(self, frame: np.ndarray, all_data: list[TrackingData]) -> None:
-        points = {}
+        points: dict[int, list[np.ndarray]] = {}
         for tracking_data in all_data:
             for obj_id, contours in tracking_data.contours.items():
                 for contour in contours:
@@ -181,7 +181,7 @@ class MetricsApp:
                 if len(contours) == 0:
                     continue
                 camera_point, centroid = self._contour_to_camera_point(contours[0])
-                camera_pixels[obj_id] = centroid
+                camera_pixels[obj_id] = XYZ(*centroid)
                 map_points[obj_id] = self._camera_to_map_point(camera_point)
             return map_points, camera_pixels
         else:

@@ -19,4 +19,4 @@ class RobotDistanceHeuristics(CovarianceHeuristics[EstimatedObject]):
         covariance = np.copy(self.base_covariance)
         covariance *= pose_distance_covariance_scale(distance)
         covariance[5, 5] = self.yaw_covariance
-        return covariance.flatten().tolist()
+        return list(covariance.flatten().tolist())

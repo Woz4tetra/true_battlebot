@@ -45,9 +45,6 @@ class SimulatedKeypoint(KeypointInterface):
         if not (model := self.model_loader.get_model()):
             self.logger.debug("Camera model not loaded")
             return None, None
-        if robots is None:
-            self.logger.debug("No robots found")
-            return None, None
 
         array = KeypointInstanceArray(header=camera_info.header, height=camera_info.height, width=camera_info.width)
         debug_image = Image.from_other(rgb_image) if self.debug else None
@@ -106,7 +103,7 @@ class SimulatedKeypoint(KeypointInterface):
 
         return KeypointInstance(
             keypoints=[front_pixel, back_pixel],
-            names=self.keypoint_names,  # type: ignore
+            names=self.keypoint_names,
             score=1.0,
             label=label.value,
             class_index=self.class_indices[label],

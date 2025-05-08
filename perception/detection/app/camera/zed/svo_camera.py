@@ -37,7 +37,8 @@ class SvoCamera:
         self.color_image = sl.Mat()
         self.point_cloud = sl.Mat()
         self.camera_info = CameraInfo()
-        self.header = Header(0.0, frame_id, 0)
+        self.frame_id = frame_id
+        self.header = Header(0.0, self.frame_id, 0)
 
     def get_rgb_data(self) -> tuple[CameraData | None, sl.ERROR_CODE]:
         t0 = time.perf_counter()
@@ -94,11 +95,10 @@ class SvoCamera:
 
     def get_svo_time(self) -> float:
         image_time = self.camera.get_timestamp(sl.TIME_REFERENCE.IMAGE).get_nanoseconds()
-        return image_time * 1e-9
+        return float(image_time) * 1e-9
 
     def next_header(self) -> Header:
-        self.header.stamp = self.get_svo_time()
-        self.header.seq += 1
+        self.header = Header(self.get_svo_time(), self.frame_id, self.header.seq + 1)
         return self.header
 
     def open(self) -> sl.ERROR_CODE:
@@ -110,7 +110,7 @@ class SvoCamera:
         return status
 
     def get_number_of_frames(self) -> int:
-        return self.camera.get_svo_number_of_frames()
+        return int(self.camera.get_svo_number_of_frames())
 
     def _grab(self) -> None:
         status = self.camera.grab(self.runtime_parameters)

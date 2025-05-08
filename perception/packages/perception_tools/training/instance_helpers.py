@@ -32,10 +32,10 @@ def plot_annotated_image(metadataset: CocoMetaDataset, image: np.ndarray, annota
             ]
         ).astype(int)
         for segmentation in annotation.segmentation:
-            segmentation = np.array(segmentation).reshape(-1, 2)
-            segmentation = np.append(segmentation, [segmentation[0]], axis=0)
-            cv2.polylines(image, [segmentation.astype(int)], isClosed=True, color=color, thickness=2)
-        cv2.rectangle(image, (coords[0], coords[1]), (coords[2], coords[3]), color, 2)  # type: ignore
+            segmentation_array = np.array(segmentation).reshape(-1, 2)
+            segmentation_array = np.append(segmentation_array, [segmentation_array[0]], axis=0)
+            cv2.polylines(image, [segmentation_array.astype(int)], isClosed=True, color=color, thickness=2)
+        cv2.rectangle(image, (coords[0], coords[1]), (coords[2], coords[3]), color, 2)
         cv2.putText(image, label, (coords[0], coords[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1)
 
 

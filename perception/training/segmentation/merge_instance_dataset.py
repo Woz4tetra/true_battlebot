@@ -18,7 +18,7 @@ def save_annotations(annotations: CocoMetaDataset, annotations_path: str) -> Non
         json.dump(annotations.to_json(), f)
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(description="Merge a dataset into a single directory")
     parser.add_argument(
         "images_path",

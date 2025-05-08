@@ -68,8 +68,8 @@ def main() -> None:
         "test": all_image_paths[num_train + num_val : selected_images],
     }
 
-    for subdir_key, dataset in datasets.items():
-        for image_path in dataset:
+    for subdir_key, sub_dataset in datasets.items():
+        for image_path in sub_dataset:
             annotation_path = image_path.with_suffix(".txt")
             shutil.copyfile(image_path, output_path / subdir_key / "images" / image_path.name)
             shutil.copyfile(annotation_path, output_path / subdir_key / "labels" / annotation_path.name)

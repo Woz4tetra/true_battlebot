@@ -7,7 +7,7 @@ from bw_interfaces.msg import EstimatedObject
 
 class RobotStaticHeuristics(CovarianceHeuristics[EstimatedObject]):
     def __init__(self, linear_covariance_scalar: float, angular_covariance: float) -> None:
-        self.base_covariance = (
+        self.base_covariance = list(
             np.diag(
                 [
                     linear_covariance_scalar,

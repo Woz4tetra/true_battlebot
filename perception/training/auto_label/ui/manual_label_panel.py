@@ -311,5 +311,5 @@ class ManualLabelPanel(Panel):
     def on_label_selected(self, label_index: int) -> None:
         self.current_label_index = label_index
 
-    def interpolate_button_callback(self, event: tk.Event) -> None:
+    def interpolate_button_callback(self) -> None:
         self.ai_interpolator.interpolate_from_current_frame()

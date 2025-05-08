@@ -3,7 +3,7 @@ import logging
 
 
 class CustomJsonFormatter(logging.Formatter):
-    def format(self, record: logging.LogRecord) -> str:  # type: ignore[override]
+    def format(self, record: logging.LogRecord) -> str:
         return json.dumps(
             {
                 "time": float(record.created),

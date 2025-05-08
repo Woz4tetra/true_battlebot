@@ -14,7 +14,7 @@ from bw_interfaces.msg import EstimatedObject
 from bw_shared.geometry.camera.image_rectifier import ImageRectifier
 from bw_shared.geometry.transform3d import Transform3D
 from bw_shared.math.nearest_square import nearest_square
-from open3d.visualization import Visualizer  # type: ignore
+from open3d.visualization import Visualizer
 from perception_tools.messages.camera_data import CameraData
 from perception_tools.messages.point_cloud import PointCloud
 from perception_tools.messages.transform_point_cloud import transform_point_cloud
