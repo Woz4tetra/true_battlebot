@@ -11,6 +11,7 @@ from perception_tools.training.yolo_keypoint_dataset import YoloKeypointImage
 from PIL import Image as PILImage
 from PIL import ImageTk
 
+from auto_label.ai_interpolator.ai_interpolator import AiInterpolator
 from auto_label.backend.manual_label_backend import ManualLabelBackend
 from auto_label.ui.canvas_image import CanvasImage
 from auto_label.ui.label_selection_toolbar import LabelSelectionToolbar
@@ -20,12 +21,18 @@ from auto_label.ui.panel import Panel
 
 class ManualLabelPanel(Panel):
     def __init__(
-        self, window: Tk, default_jump_count: int, backend: ManualLabelBackend, keypoints_config: KeypointsConfig
+        self,
+        window: Tk,
+        default_jump_count: int,
+        backend: ManualLabelBackend,
+        keypoints_config: KeypointsConfig,
+        ai_interpolator: AiInterpolator,
     ) -> None:
         super().__init__(window)
         self.backend = backend
         self.keypoints_config = keypoints_config
         self.jump_count = default_jump_count
+        self.ai_interpolator = ai_interpolator
 
         self.shown_tk_image: ImageTk.PhotoImage | None = None
 
@@ -66,6 +73,10 @@ class ManualLabelPanel(Panel):
         self.update_video_options()
         self.selected_video_option.set("Select a video")
 
+        self.ai_interpolate_button = ttk.Button(
+            self.video_manage_frame, text="Interpolate", command=self.interpolate_button_callback
+        )
+
         self.image_canvas = CanvasImage(
             self.image_display_frame,
             [label.value for label in self.keypoints_config.labels],
@@ -94,8 +105,9 @@ class ManualLabelPanel(Panel):
         self.skip_frame_entry.grid(row=0, column=2, sticky="ew", padx=5, pady=5)
         self.prev_frame_button.grid(row=0, column=3, sticky="ew", padx=5, pady=5)
         self.next_frame_button.grid(row=0, column=4, sticky="ew", padx=5, pady=5)
-        self.add_video_button.grid(row=0, column=5, sticky="ew", padx=5, pady=5)
-        self.videos_dropdown.grid(row=0, column=6, sticky="ew", padx=5, pady=5)
+        self.ai_interpolate_button.grid(row=0, column=5, sticky="ew", padx=5, pady=5)
+        self.add_video_button.grid(row=0, column=6, sticky="ew", padx=5, pady=5)
+        self.videos_dropdown.grid(row=0, column=7, sticky="ew", padx=5, pady=5)
         self.label_selection_frame.grid(row=1, column=0, sticky="ew", padx=5, pady=5)
 
         # Bind events
@@ -298,3 +310,6 @@ class ManualLabelPanel(Panel):
 
     def on_label_selected(self, label_index: int) -> None:
         self.current_label_index = label_index
+
+    def interpolate_button_callback(self, event: tk.Event) -> None:
+        self.ai_interpolator.interpolate_from_current_frame()

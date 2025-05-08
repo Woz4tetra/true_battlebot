@@ -8,6 +8,7 @@ from perception_tools.directories.data_directory import get_data_directory
 from perception_tools.initialize_logger import initialize
 from perception_tools.training.keypoints_config import load_keypoints_config
 
+from auto_label.ai_interpolator.ai_interpolator import AiInterpolator
 from auto_label.backend.manual_label_backend import ManualLabelBackend
 from auto_label.command_line_args import CommandLineArgs
 from auto_label.config.auto_label_config import AutoLabelConfig
@@ -24,7 +25,12 @@ class App:
         self.logger = logging.getLogger(self.__class__.__name__)
         self.config = load_config(args.config)
         self.keypoints_config = load_keypoints_config(args.keypoints_config)
+        self.auto_fill_inbetween = args.fill
+        self.manual_label_backend = ManualLabelBackend(Path(self.config.data_root_directory))
+        self.ai_interpolator = AiInterpolator(self.manual_label_backend, self.keypoints_config)
         initialize(self.config.log_level)
+
+    def run_ui(self) -> None:
         self.window = tk.Tk()
         self.window.tk.call("tk", "scaling", 1.0)
 
@@ -37,14 +43,17 @@ class App:
 
         self.set_icon()
 
-        manual_label_backend = ManualLabelBackend(Path(self.config.data_root_directory))
-        panels = [
-            ManualLabelPanel(self.window, self.config.default_jump_count, manual_label_backend, self.keypoints_config)
-        ]
-        for panel in panels:
-            panel.pack()
+        panel = ManualLabelPanel(
+            self.window,
+            self.config.default_jump_count,
+            self.manual_label_backend,
+            self.keypoints_config,
+            self.ai_interpolator,
+        )
+        panel.pack()
 
         sv_ttk.set_theme("light")
+        self.window.mainloop()
 
     def get_screen_size(self) -> tuple[int, int]:
         screen_width = self.window.winfo_screenwidth()
@@ -60,4 +69,8 @@ class App:
             self.logger.warning(f"Icon path {icon_path} does not exist")
 
     def run(self) -> None:
-        self.window.mainloop()
+        if self.auto_fill_inbetween:
+            self.logger.info("Auto fill in between is enabled")
+            self.ai_interpolator.interpolate_all_keyframes()
+        else:
+            self.run_ui()

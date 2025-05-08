@@ -23,6 +23,12 @@ def parse_args() -> CommandLineArgs:
         nargs="?",
         dest="keypoints_config",
     )
+    parser.add_argument(
+        "-f",
+        "--fill",
+        action="store_true",
+        help="Automatically annotate the images in between the labeled key frames.",
+    )
 
     argcomplete.autocomplete(parser)
 
