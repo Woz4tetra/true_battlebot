@@ -26,9 +26,14 @@ class ManualLabelPanel(Panel):
         self.window.rowconfigure(0, weight=1)
         self.window.columnconfigure(0, weight=1)
 
-        self.image_frame = ttk.Frame(self.window)
-        self.image_frame.rowconfigure(0, weight=1)
-        self.image_frame.columnconfigure(0, weight=1)
+        self.edit_frame = ttk.Frame(self.window)
+        self.edit_frame.rowconfigure(0, weight=1)
+        self.edit_frame.columnconfigure(0, weight=2)
+        self.edit_frame.columnconfigure(1, weight=8)
+        self.image_display_frame = ttk.Frame(self.edit_frame)
+        self.image_display_frame.rowconfigure(0, weight=1)
+        self.image_display_frame.columnconfigure(0, weight=1)
+        self.label_table_frame = ttk.Frame(self.edit_frame)
 
         self.video_manage_frame = tk.Frame(self.window)
 
@@ -48,7 +53,7 @@ class ManualLabelPanel(Panel):
         self.selected_video_option.set("Select a video")
 
         self.image_canvas = CanvasImage(
-            self.image_frame,
+            self.image_display_frame,
             [label.value for label in self.keypoints_config.labels],
             self.keypoints_config.keypoint_names,
         )
@@ -57,8 +62,9 @@ class ManualLabelPanel(Panel):
         self.logger = logging.getLogger(self.__class__.__name__)
 
     def pack(self) -> None:
-        # self.image_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
-        self.image_frame.grid(row=0, column=0, sticky="nsew")
+        self.edit_frame.grid(row=0, column=0, sticky="nsew")
+        self.label_table_frame.grid(row=0, column=0, sticky="nsew")
+        self.image_display_frame.grid(row=0, column=1, sticky="nsew")
         self.video_manage_frame.grid(row=1, column=0, sticky="ew", padx=5, pady=5)
         self.videos_dropdown.grid(row=0, column=3, sticky="ew", padx=5, pady=5)
         self.add_video_button.grid(row=0, column=2, sticky="ew", padx=5, pady=5)

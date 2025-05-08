@@ -86,7 +86,7 @@ class AnnotationObjectIds:
 class CanvasImage:
     """Display and zoom image"""
 
-    def __init__(self, frame: ttk.Frame, class_map: list[str], keypoint_names: dict[str, list[str]]) -> None:
+    def __init__(self, frame: ttk.Frame, label_map: list[str], keypoint_names: dict[str, list[str]]) -> None:
         self.logger = logging.getLogger(self.__class__.__name__)
         self._delta = 1.3  # zoom magnitude
         self._filter = Image.Resampling.NEAREST  # could be: NEAREST, BOX, BILINEAR, HAMMING, BICUBIC, LANCZOS
@@ -123,11 +123,14 @@ class CanvasImage:
         self.h_line2_id = self.canvas.create_line(0.0, 0.0, 0.0, 0.0, fill="black", width=1)  # horizontal line
         self.v_line2_id = self.canvas.create_line(0.0, 0.0, 0.0, 0.0, fill="black", width=1)  # vertical line
 
+        self.label_colors = ["red", "blue", "green", "purple", "pink", "yellow", "orange", "brown", "gray", "black"]
+        self.label_map: list[str] = label_map
+
         self.keypoint_colors = ["orange", "blue", "green", "purple", "pink", "yellow"]
         self.keypoint_radius = 10
-        self.selected_keypoint: tuple[int, int] | None = None
-        self.class_map: list[str] = class_map
         self.keypoint_names: dict[str, list[str]] = keypoint_names
+
+        self.selected_keypoint: tuple[int, int] | None = None
 
         # Bind events to the Canvas
         self.canvas.bind("<Configure>", self.show_image_callback)  # canvas is resized
@@ -301,10 +304,10 @@ class CanvasImage:
         r_scaled = self.keypoint_radius * self._scale
         self.canvas.coords(
             self.annotation_ids[label_index].keypoint_circles[keypoint_index],
-            canvas_x - self.keypoint_radius * r_scaled,
-            canvas_y - self.keypoint_radius * r_scaled,
-            canvas_x + self.keypoint_radius * r_scaled,
-            canvas_y + self.keypoint_radius * r_scaled,
+            canvas_x - r_scaled,
+            canvas_y - r_scaled,
+            canvas_x + r_scaled,
+            canvas_y + r_scaled,
         )
         self.canvas.coords(self.annotation_ids[label_index].keypoint_text[keypoint_index], canvas_x, canvas_y)
         # update lines
@@ -349,11 +352,12 @@ class CanvasImage:
         """Get keypoint under cursor"""
         if not self._image_set:
             return None
+        r_scaled = self.keypoint_radius * self._scale
         for label_index in self.annotation_ids.keys():
             for keypoint_index, keypoint in enumerate(self._annotation.labels[label_index].keypoints):
                 canvas_x = self._x_image_to_scaled_canvas(keypoint[0])
                 canvas_y = self._y_image_to_scaled_canvas(keypoint[1])
-                if abs(canvas_x - x) < self.keypoint_radius and abs(canvas_y - y) < self.keypoint_radius:
+                if abs(canvas_x - x) < r_scaled and abs(canvas_y - y) < r_scaled:
                     return label_index, keypoint_index
         return None
 
@@ -482,10 +486,11 @@ class CanvasImage:
         y1 = min(int(bbox[3]), canvas_border[3])
         canvas_border = self._bbox_image_to_scaled_canvas(canvas_border)
         self.logger.debug(f"Draw label: {label} with bbox: {(x0, y0, x1, y1)}")
+        color = self.label_colors[label.class_index % len(self.label_colors)]
         obj_ids = AnnotationObjectIds(
-            rectangle=self.canvas.create_rectangle(x0, y0, x1, y1, outline="red", width=2),
+            rectangle=self.canvas.create_rectangle(x0, y0, x1, y1, outline=color, width=2),
             text=self.canvas.create_text(
-                x0, y0 - 10, text=self._get_class_name(label.class_index), fill="red", font=("Arial", 12, "bold")
+                x0, y0 - 10, text=self._get_class_name(label.class_index), fill=color, font=("Arial", 12, "bold")
             ),
             keypoint_circles=[],
             keypoint_text=[],
@@ -520,15 +525,15 @@ class CanvasImage:
 
     def _get_class_name(self, class_index: int) -> str:
         """Get class name from the class index"""
-        if class_index < len(self.class_map):
-            return self.class_map[class_index]
+        if class_index < len(self.label_map):
+            return self.label_map[class_index]
         return str(class_index)
 
     def _get_keypoint_name(self, class_index: int, keypoint_index: int) -> str:
         """Get keypoint name from the class index and keypoint index"""
-        if class_index >= len(self.class_map):
+        if class_index >= len(self.label_map):
             return str(keypoint_index)
-        class_name = self.class_map[class_index]
+        class_name = self.label_map[class_index]
         if class_name not in self.keypoint_names:
             return str(keypoint_index)
         keypoint_names = self.keypoint_names[class_name]
