@@ -13,6 +13,7 @@ class AutoLabelConfig:
     max_size: tuple[int, int] = (3200, 2400)
     default_size: tuple[int, int] | None = None
     data_root_directory: str = ""
+    default_jump_count: int = 300
 
     @classmethod
     def from_dict(cls, config_dict: dict) -> AutoLabelConfig:

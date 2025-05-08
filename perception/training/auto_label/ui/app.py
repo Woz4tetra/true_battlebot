@@ -38,7 +38,9 @@ class App:
         self.set_icon()
 
         manual_label_backend = ManualLabelBackend(Path(self.config.data_root_directory))
-        panels = [ManualLabelPanel(self.window, manual_label_backend, self.keypoints_config)]
+        panels = [
+            ManualLabelPanel(self.window, self.config.default_jump_count, manual_label_backend, self.keypoints_config)
+        ]
         for panel in panels:
             panel.pack()
 

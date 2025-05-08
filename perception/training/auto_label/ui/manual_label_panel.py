@@ -17,11 +17,13 @@ from auto_label.ui.panel import Panel
 
 
 class ManualLabelPanel(Panel):
-    def __init__(self, window: Tk, backend: ManualLabelBackend, keypoints_config: KeypointsConfig) -> None:
+    def __init__(
+        self, window: Tk, default_jump_count: int, backend: ManualLabelBackend, keypoints_config: KeypointsConfig
+    ) -> None:
         super().__init__(window)
         self.backend = backend
         self.keypoints_config = keypoints_config
-        self.jump_count = 1
+        self.jump_count = default_jump_count
 
         self.shown_tk_image: ImageTk.PhotoImage | None = None
 
@@ -41,6 +43,8 @@ class ManualLabelPanel(Panel):
         self.video_manage_frame = tk.Frame(self.window)
 
         self.frame_number_label = ttk.Label(self.video_manage_frame, text="", width=10)
+        self.skip_frame_label = ttk.Label(self.video_manage_frame, text="Skip frames:")
+        self.skip_frame_entry = ttk.Entry(self.video_manage_frame, width=5)
         self.add_video_button = ttk.Button(
             self.video_manage_frame, text="Add Video", command=self.add_video_button_callback
         )
@@ -79,12 +83,19 @@ class ManualLabelPanel(Panel):
         self.video_manage_frame.grid(row=0, column=0, sticky="ew", padx=5, pady=5)
 
         self.frame_number_label.grid(row=0, column=0, sticky="ew", padx=5, pady=5)
-        self.prev_frame_button.grid(row=0, column=1, sticky="ew", padx=5, pady=5)
-        self.next_frame_button.grid(row=0, column=2, sticky="ew", padx=5, pady=5)
-        self.add_video_button.grid(row=0, column=3, sticky="ew", padx=5, pady=5)
-        self.videos_dropdown.grid(row=0, column=4, sticky="ew", padx=5, pady=5)
+        self.skip_frame_label.grid(row=0, column=1, sticky="ew", padx=5, pady=5)
+        self.skip_frame_entry.grid(row=0, column=2, sticky="ew", padx=5, pady=5)
+        self.prev_frame_button.grid(row=0, column=3, sticky="ew", padx=5, pady=5)
+        self.next_frame_button.grid(row=0, column=4, sticky="ew", padx=5, pady=5)
+        self.add_video_button.grid(row=0, column=5, sticky="ew", padx=5, pady=5)
+        self.videos_dropdown.grid(row=0, column=6, sticky="ew", padx=5, pady=5)
 
         # Bind events
+        self.window.bind_all("<Button-1>", lambda event: event.widget.focus_set())
+
+        self.skip_frame_entry.bind("<Return>", self.skip_frame_entry_callback)
+        self.update_skip_frame_entry()
+
         self.window.bind("<ButtonPress-1>", self.button1_click_callback)
         # Handle keystrokes in idle mode, because program slows down on a weak computers,
         # when too many key stroke events in the same time
@@ -110,7 +121,7 @@ class ManualLabelPanel(Panel):
             video_path_obj = Path(video_path)
             self.backend.add_video(video_path_obj)
             self.update_video_options()
-            self.next_frame_button_callback()
+            self.reload_image()
             self.logger.info(f"Video {video_path} added.")
         else:
             self.logger.warning("No video selected.")
@@ -122,7 +133,12 @@ class ManualLabelPanel(Panel):
         self.backend.select_video(video_name)
         self.logger.info(f"Video {video_name} selected.")
         self.selected_video_option.set(video_name)
-        self.next_frame_button_callback()
+        self.reload_image()
+
+    def reload_image(self) -> None:
+        if image := self.backend.next_frame():
+            self.display_image(image)
+        self.update_frame_number_label(image)
 
     def next_frame_button_callback(self) -> None:
         self.save_bbox_from_canvas()
@@ -148,7 +164,7 @@ class ManualLabelPanel(Panel):
         if image is not None:
             self.frame_number_label.config(text=f"Frame: {image.header.seq}")
         else:
-            self.frame_number_label.config(text="No image available.")
+            self.frame_number_label.config(text="")
 
     def display_image(self, image: Image) -> None:
         self.logger.debug(f"Displaying image {image.header.seq}")
@@ -171,16 +187,31 @@ class ManualLabelPanel(Panel):
         elif event.keysym == "Right" or event.keysym == "d":
             self.next_frame_button_callback()
         elif event.keysym == "Up" or event.keysym == "w":
-            self.jump_count += 1
-            self.logger.debug(f"Jump count increased to {self.jump_count}.")
+            self.update_jump_count(self.jump_count + 1)
+            self.update_skip_frame_entry()
         elif event.keysym == "Down" or event.keysym == "s":
-            if self.jump_count > 1:
-                self.jump_count -= 1
-                self.logger.debug(f"Jump count decreased to {self.jump_count}.")
-            else:
-                self.logger.debug("Jump count is already at minimum.")
+            self.update_jump_count(self.jump_count - 1)
+            self.update_skip_frame_entry()
         else:
             self.image_canvas.keystroke_callback(event)
+
+    def update_jump_count(self, jump_count: int) -> None:
+        if jump_count > 0:
+            self.jump_count = jump_count
+            self.logger.debug(f"Jump count updated to {self.jump_count}.")
+
+        self.skip_frame_entry.delete(0, tk.END)
+        self.skip_frame_entry.insert(0, str(self.jump_count))
+
+    def update_skip_frame_entry(self) -> None:
+        self.skip_frame_entry.delete(0, tk.END)
+        self.skip_frame_entry.insert(0, str(self.jump_count))
+
+    def skip_frame_entry_callback(self, event: tk.Event) -> None:
+        self.update_jump_count(int(self.skip_frame_entry.get()))
+
+        # unselect the entry
+        self.skip_frame_entry.selection_clear()
 
     def button1_click_callback(self, event: tk.Event) -> None:
         self.save_bbox_from_canvas()
