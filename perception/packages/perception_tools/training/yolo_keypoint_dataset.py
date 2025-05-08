@@ -19,6 +19,9 @@ YoloKeypointData = tuple[float, float, YoloVisibility]
 @dataclass(eq=False)
 class YoloKeypointAnnotation:
     class_index: int = -1
+
+    # bounding box format: [center_x, center_y, width, height]
+    # all values are in relative coordinates (0-1)
     bbox: list[float] = field(default_factory=lambda: [0, 0, 0, 0])
     keypoints: list[YoloKeypointData] = field(default_factory=list)
 

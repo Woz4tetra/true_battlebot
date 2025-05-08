@@ -317,8 +317,8 @@ class CanvasImage:
     def update_selected_keypoint(self, label_index: int, keypoint_index: int, canvas_x: float, canvas_y: float) -> None:
         # move selected keypoint
         label = self._annotation.labels[label_index]
-        image_x = self._x_scaled_canvas_to_image(canvas_x)
-        image_y = self._y_scaled_canvas_to_image(canvas_y)
+        image_x = self._x_scaled_canvas_to_norm(canvas_x)
+        image_y = self._y_scaled_canvas_to_norm(canvas_y)
         self.selected_keypoint_coords = image_x, image_y
         r_scaled = self.keypoint_radius * self._scale
         self.canvas.coords(
@@ -334,19 +334,19 @@ class CanvasImage:
         if prev_index >= 0:
             self.canvas.coords(
                 self.annotation_ids[label_index].lines[prev_index],
-                self._x_image_to_scaled_canvas(self.selected_keypoint_coords[0]),
-                self._y_image_to_scaled_canvas(self.selected_keypoint_coords[1]),
-                self._x_image_to_scaled_canvas(label.keypoints[prev_index][0]),
-                self._y_image_to_scaled_canvas(label.keypoints[prev_index][1]),
+                self._x_norm_to_scaled_canvas(self.selected_keypoint_coords[0]),
+                self._y_norm_to_scaled_canvas(self.selected_keypoint_coords[1]),
+                self._x_norm_to_scaled_canvas(label.keypoints[prev_index][0]),
+                self._y_norm_to_scaled_canvas(label.keypoints[prev_index][1]),
             )
         next_index = keypoint_index + 1
         if next_index < len(label.keypoints):
             self.canvas.coords(
                 self.annotation_ids[label_index].lines[keypoint_index],
-                self._x_image_to_scaled_canvas(self.selected_keypoint_coords[0]),
-                self._y_image_to_scaled_canvas(self.selected_keypoint_coords[1]),
-                self._x_image_to_scaled_canvas(label.keypoints[next_index][0]),
-                self._y_image_to_scaled_canvas(label.keypoints[next_index][1]),
+                self._x_norm_to_scaled_canvas(self.selected_keypoint_coords[0]),
+                self._y_norm_to_scaled_canvas(self.selected_keypoint_coords[1]),
+                self._x_norm_to_scaled_canvas(label.keypoints[next_index][0]),
+                self._y_norm_to_scaled_canvas(label.keypoints[next_index][1]),
             )
 
     def outside(self, x: int, y: int) -> bool:
@@ -397,8 +397,8 @@ class CanvasImage:
         r_scaled = self.keypoint_radius * self._scale
         for label_index in self.annotation_ids.keys():
             for keypoint_index, keypoint in enumerate(self._annotation.labels[label_index].keypoints):
-                canvas_x = self._x_image_to_scaled_canvas(keypoint[0])
-                canvas_y = self._y_image_to_scaled_canvas(keypoint[1])
+                canvas_x = self._x_norm_to_scaled_canvas(keypoint[0])
+                canvas_y = self._y_norm_to_scaled_canvas(keypoint[1])
                 if abs(canvas_x - x) < r_scaled and abs(canvas_y - y) < r_scaled:
                     return label_index, keypoint_index
         return None
@@ -409,7 +409,7 @@ class CanvasImage:
             return None
         bbox = self.draw_rectangle.get_bbox()
         if bbox is not None:
-            bbox = self._bbox_scaled_canvas_to_image(bbox)
+            bbox = self._bbox_scaled_canvas_to_norm(bbox)
             self.logger.debug(f"Get bounding box: {bbox}")
             self.draw_rectangle.clear()
         return bbox
@@ -458,23 +458,44 @@ class CanvasImage:
     def _y_scaled_canvas_to_image(self, y: float) -> float:
         return (y - self.canvas_offset[1]) / self.canvas_scale[1]
 
+    def _x_scaled_canvas_to_norm(self, x: float) -> float:
+        return self._x_scaled_canvas_to_image(x) / self._width
+
+    def _y_scaled_canvas_to_norm(self, y: float) -> float:
+        return self._y_scaled_canvas_to_image(y) / self._height
+
     def _x_image_to_scaled_canvas(self, x: float) -> float:
         return x * self.canvas_scale[0] + self.canvas_offset[0]
 
     def _y_image_to_scaled_canvas(self, y: float) -> float:
         return y * self.canvas_scale[1] + self.canvas_offset[1]
 
-    def _bbox_scaled_canvas_to_image(self, bbox: tuple[float, ...]) -> tuple[float, float, float, float]:
-        """Convert coordinates from scaled canvas to image coordinates"""
+    def _x_norm_to_scaled_canvas(self, x: float) -> float:
+        return self._x_image_to_scaled_canvas(x * self._width)
+
+    def _y_norm_to_scaled_canvas(self, y: float) -> float:
+        return self._y_image_to_scaled_canvas(y * self._height)
+
+    def _bbox_scaled_canvas_to_norm(self, bbox: tuple[float, ...]) -> tuple[float, float, float, float]:
+        """Convert coordinates from scaled canvas to normalized image (0..1)"""
         x0, y0, x1, y1 = bbox
-        x0_new = self._x_scaled_canvas_to_image(x0)
-        y0_new = self._y_scaled_canvas_to_image(y0)
-        x1_new = self._x_scaled_canvas_to_image(x1)
-        y1_new = self._y_scaled_canvas_to_image(y1)
+        x0_new = self._x_scaled_canvas_to_norm(x0)
+        y0_new = self._y_scaled_canvas_to_norm(y0)
+        x1_new = self._x_scaled_canvas_to_norm(x1)
+        y1_new = self._y_scaled_canvas_to_norm(y1)
+        return x0_new, y0_new, x1_new, y1_new
+
+    def _bbox_norm_to_scaled_canvas(self, bbox: tuple[float, ...]) -> tuple[float, float, float, float]:
+        """Convert coordinates from normalized image (0..1) to scaled canvas coordinates"""
+        x0, y0, x1, y1 = bbox
+        x0_new = self._x_norm_to_scaled_canvas(x0)
+        y0_new = self._y_norm_to_scaled_canvas(y0)
+        x1_new = self._x_norm_to_scaled_canvas(x1)
+        y1_new = self._y_norm_to_scaled_canvas(y1)
         return x0_new, y0_new, x1_new, y1_new
 
     def _bbox_image_to_scaled_canvas(self, bbox: tuple[float, ...]) -> tuple[float, float, float, float]:
-        """Convert coordinates from image to scaled canvas coordinates"""
+        """Convert coordinates from image pixels to scaled canvas coordinates"""
         x0, y0, x1, y1 = bbox
         x0_new = self._x_image_to_scaled_canvas(x0)
         y0_new = self._y_image_to_scaled_canvas(y0)
@@ -523,7 +544,7 @@ class CanvasImage:
         assert self.container is not None
         canvas_border = tuple(map(int, self.canvas.coords(self.container)))
         bbox = label.corners
-        bbox = self._bbox_image_to_scaled_canvas(bbox)
+        bbox = self._bbox_norm_to_scaled_canvas(bbox)
         x0 = max(int(bbox[0]), canvas_border[0])
         y0 = max(int(bbox[1]), canvas_border[1])
         x1 = min(int(bbox[2]), canvas_border[2])
@@ -545,8 +566,8 @@ class CanvasImage:
         r = self.keypoint_radius
         for index, keypoint in enumerate(label.keypoints):
             color = self.keypoint_colors[index % len(self.keypoint_colors)]
-            x = int(self._x_image_to_scaled_canvas(keypoint[0]))
-            y = int(self._y_image_to_scaled_canvas(keypoint[1]))
+            x = int(self._x_norm_to_scaled_canvas(keypoint[0]))
+            y = int(self._y_norm_to_scaled_canvas(keypoint[1]))
             x = min(max(x, canvas_border[0]), canvas_border[2])
             y = min(max(y, canvas_border[1]), canvas_border[3])
             obj_ids.keypoint_circles.append(
@@ -595,8 +616,8 @@ class CanvasImage:
         label = self._annotation.labels[label_index]
         image_x = label.keypoints[keypoint_index][0]
         image_y = label.keypoints[keypoint_index][1]
-        canvas_x = self._x_image_to_scaled_canvas(image_x)
-        canvas_y = self._y_image_to_scaled_canvas(image_y)
+        canvas_x = self._x_norm_to_scaled_canvas(image_x)
+        canvas_y = self._y_norm_to_scaled_canvas(image_y)
         self.update_selected_keypoint(label_index, keypoint_index, canvas_x, canvas_y)
 
         self.selected_keypoint_ids = None
