@@ -6,8 +6,8 @@ from threading import Lock, Thread
 import pyzed.sl as sl
 import rospy
 from app.camera.camera_interface import CameraInterface, CameraMode
-from app.camera.zed.helpers import zed_status_to_str
 from app.camera.zed.svo_camera import SvoCamera
+from app.camera.zed.zed_helpers import zed_status_to_str
 from app.config.camera.svo_playback_camera_config import SvoPlaybackCameraConfig
 from app.config.camera_topic_config import CameraTopicConfig
 from bw_interfaces.msg import ControlRecording

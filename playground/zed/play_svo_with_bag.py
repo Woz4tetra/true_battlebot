@@ -7,7 +7,7 @@ from pathlib import Path
 import argcomplete
 import pyzed.sl as sl
 import rospy
-from app.camera.zed.helpers import zed_status_to_str
+from app.camera.zed.zed_helpers import zed_status_to_str
 from bw_interfaces.msg import CageCorner
 from bw_shared.script_tools.directories import BAGS_DIR, SVO_DIR
 from bw_shared.script_tools.list_files import list_files
