@@ -20,8 +20,7 @@
         "ms-vscode-remote.remote-containers",
         "timonwong.shellcheck",
         "charliermarsh.ruff",
-        "matangover.mypy",
-        "ms-python.black-formatter",
+        "ms-python.mypy-type-checker",
         "twxs.cmake",
         "ms-vscode.cpptools-extension-pack",
         "redhat.vscode-xml"
