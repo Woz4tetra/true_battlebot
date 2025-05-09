@@ -12,7 +12,7 @@ from perception_tools.training.yolo_keypoint_dataset import (
 from auto_label.backend.annotation_cache import AnnotationCache
 from auto_label.backend.hashes_cache import HashesCache
 from auto_label.backend.image_keyframe_loader import ImageKeyframeLoader
-from auto_label.backend.video_frame_database import VideoFrameCache
+from auto_label.backend.video_frame_database import VideoFrameDatabase
 from auto_label.backend.video_source_collection import VideoSourceCollection
 
 
@@ -27,7 +27,7 @@ class ManualLabelBackend:
         self.annotations_cache = AnnotationCache(self.annotations_path)
         self.hashes_cache = HashesCache(self.hashes_path)
         self.image_keyframe_loader = ImageKeyframeLoader(self.annotations_path)
-        self.selected_video: VideoFrameCache | None = None
+        self.selected_video: VideoFrameDatabase | None = None
 
     def get_video_name(self) -> str:
         return self.selected_video.video_path.stem if self.selected_video else ""
@@ -58,11 +58,29 @@ class ManualLabelBackend:
             return None
         return self.selected_video.next(jump_count)
 
-    def jump_to_frame(self, frame_num: int) -> None:
+    def jump_to_frame(self, frame_num: int) -> Image | None:
         if self.selected_video is None:
             self.logger.warning("No video selected.")
             return None
-        self.selected_video.jump_to(frame_num)
+        return self.selected_video.jump_to(frame_num)
+
+    def list_annotation_indices_for_selected(self) -> list[int]:
+        if self.selected_video is None:
+            self.logger.warning("No video selected.")
+            return []
+        annotation_ids = self.annotations_cache.list_annotations()
+        if not annotation_ids:
+            self.logger.warning("No annotations found.")
+            return []
+        indices = []
+        for video_name, frame_index in annotation_ids:
+            if video_name == self.selected_video.video_path.stem:
+                indices.append(frame_index)
+        if not indices:
+            self.logger.warning("No annotations found for the selected video.")
+            return []
+        indices.sort()
+        return indices
 
     def get_annotation(self, frame_num: int) -> YoloKeypointImage | None:
         if self.selected_video is None:

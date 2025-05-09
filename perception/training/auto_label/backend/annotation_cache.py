@@ -38,6 +38,13 @@ class AnnotationCache:
     def get_image_id(self, video_name: str, frame_num: int) -> str:
         return f"{video_name}-{frame_num}"
 
+    def parse_image_id(self, image_id: str) -> tuple[str, int]:
+        image_id_split = image_id.split("-")
+        video_name = "-".join(image_id_split[:-1])
+        frame_num_str = image_id_split[-1]
+        frame_num = int(frame_num_str)
+        return video_name, frame_num
+
     def get_annotation(self, video_name: str, frame_num: int) -> YoloKeypointImage | None:
         image_id = self.get_image_id(video_name, frame_num)
         if image_id in self._cache:
@@ -48,12 +55,11 @@ class AnnotationCache:
                 annotation = YoloKeypointImage.from_txt(image_id, file.read())
             self._add_to_cache(annotation)
             return annotation
-        self.logger.warning(f"Annotation for {image_id} not found.")
         return None
 
-    def list_annotations(self) -> list[str]:
+    def list_annotations(self) -> list[tuple[str, int]]:
         annotations = []
         for annotation in self.annotations_path.iterdir():
             if annotation.is_file() and annotation.suffix == ".txt":
-                annotations.append(annotation.stem)
+                annotations.append(self.parse_image_id(annotation.stem))
         return annotations

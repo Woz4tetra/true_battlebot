@@ -48,4 +48,6 @@ class InterpolationProcessManager:
             self.temp_image_manager.ai_workspace_dir, annotation, (image.width, image.height)
         )
         self.manual_label_backend.hashes_cache.add_annotation(annotation)
+        self.temp_image_manager.copy_batch_to_dataset(start_frame)
+
         self.logger.info(f"Interpolation complete for frame {start_frame}.")

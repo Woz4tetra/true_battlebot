@@ -12,6 +12,7 @@ class HashesCache:
         self._cache: OrderedDict[str, int] = OrderedDict()
         self.logger = logging.getLogger(self.__class__.__name__)
         self.hashes_path.mkdir(parents=True, exist_ok=True)
+        self._load_cache()
 
     def clear(self) -> None:
         self._cache.clear()
@@ -26,6 +27,14 @@ class HashesCache:
         annotation_hash = hash(annotation)
         self._save_hash(annotation, annotation_hash)
         self._add_to_cache(annotation, annotation_hash)
+
+    def _load_cache(self) -> None:
+        for annotation in self.hashes_path.iterdir():
+            if annotation.is_file() and annotation.suffix == ".txt":
+                with open(annotation, "r") as file:
+                    hash_value = int(file.read().strip())
+                    self._cache[annotation.stem] = hash_value
+        self.logger.debug("Loaded hashes cache.")
 
     def _add_to_cache(self, annotation: YoloKeypointImage, annotation_hash: int) -> None:
         if self.cache_size <= 1:

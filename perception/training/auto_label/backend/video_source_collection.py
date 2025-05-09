@@ -1,7 +1,7 @@
 import logging
 from pathlib import Path
 
-from auto_label.backend.video_frame_database import VideoFrameCache
+from auto_label.backend.video_frame_database import VideoFrameDatabase
 
 ALLOWED_VIDEO_EXTENSIONS = {".mp4", ".avi", ".mov", ".mkv"}
 
@@ -11,7 +11,7 @@ class VideoSourceCollection:
         self.logger = logging.getLogger(self.__class__.__name__)
         self.root_path = root_path
         self.videos: list[Path] = []
-        self._selected_video: VideoFrameCache | None = None
+        self._selected_video: VideoFrameDatabase | None = None
         self._load_videos()
 
     def clear_selected(self) -> None:
@@ -44,7 +44,7 @@ class VideoSourceCollection:
         symlink_path.symlink_to(video_path)
         self.videos.append(video_path)
 
-    def select_video(self, video_name: str) -> VideoFrameCache | None:
+    def select_video(self, video_name: str) -> VideoFrameDatabase | None:
         if self._selected_video is not None and self._selected_video.video_path.name == video_name:
             self.logger.debug(f"Video {video_name} is already selected.")
             return self._selected_video
@@ -52,7 +52,7 @@ class VideoSourceCollection:
             if video.stem == video_name:
                 if self._selected_video is not None:
                     self._selected_video.close()
-                self._selected_video = VideoFrameCache(video)
+                self._selected_video = VideoFrameDatabase(video)
                 self.logger.info(f"Selected video: {video_name}.")
                 return self._selected_video
         self.logger.warning(f"Video {video_name} not found in the database.")

@@ -62,6 +62,12 @@ class ManualLabelPanel(Panel):
         self.prev_frame_button = ttk.Button(
             self.video_manage_frame, text="Previous Frame", command=self.prev_frame_button_callback
         )
+        self.next_annotation_button = ttk.Button(
+            self.video_manage_frame, text="Next Annotation", command=self.next_annotation_button_callback
+        )
+        self.prev_annotation_button = ttk.Button(
+            self.video_manage_frame, text="Previous Annotation", command=self.prev_annotation_button_callback
+        )
 
         self.label_selection_frame = ttk.Frame(self.window)
         self.label_selection_toolbar = LabelSelectionToolbar(
@@ -105,9 +111,11 @@ class ManualLabelPanel(Panel):
         self.skip_frame_entry.grid(row=0, column=2, sticky="ew", padx=5, pady=5)
         self.prev_frame_button.grid(row=0, column=3, sticky="ew", padx=5, pady=5)
         self.next_frame_button.grid(row=0, column=4, sticky="ew", padx=5, pady=5)
-        self.ai_interpolate_button.grid(row=0, column=5, sticky="ew", padx=5, pady=5)
-        self.add_video_button.grid(row=0, column=6, sticky="ew", padx=5, pady=5)
-        self.videos_dropdown.grid(row=0, column=7, sticky="ew", padx=5, pady=5)
+        self.prev_annotation_button.grid(row=0, column=5, sticky="ew", padx=5, pady=5)
+        self.next_annotation_button.grid(row=0, column=6, sticky="ew", padx=5, pady=5)
+        self.ai_interpolate_button.grid(row=0, column=7, sticky="ew", padx=5, pady=5)
+        self.add_video_button.grid(row=0, column=8, sticky="ew", padx=5, pady=5)
+        self.videos_dropdown.grid(row=0, column=9, sticky="ew", padx=5, pady=5)
         self.label_selection_frame.grid(row=1, column=0, sticky="ew", padx=5, pady=5)
 
         # Bind events
@@ -179,6 +187,38 @@ class ManualLabelPanel(Panel):
             self.display_image(image)
         else:
             self.logger.warning("No more frames available.")
+
+    def next_annotation_button_callback(self) -> None:
+        if self.current_image is None:
+            self.logger.warning("No image is currently displayed. Cannot go to next annotation.")
+            return
+        indices = self.backend.list_annotation_indices_for_selected()
+        current_index = self.current_image.header.seq
+        for index in indices:
+            if index > current_index:
+                image = self.backend.jump_to_frame(index)
+                if image is not None:
+                    self.update_frame_number_label(image)
+                    self.display_image(image)
+                break
+        else:
+            self.backend.next_frame()
+
+    def prev_annotation_button_callback(self) -> None:
+        if self.current_image is None:
+            self.logger.warning("No image is currently displayed. Cannot go to next annotation.")
+            return
+        indices = self.backend.list_annotation_indices_for_selected()
+        current_index = self.current_image.header.seq
+        for index in indices[::-1]:
+            if index < current_index:
+                image = self.backend.jump_to_frame(index)
+                if image is not None:
+                    self.update_frame_number_label(image)
+                    self.display_image(image)
+                break
+        else:
+            self.backend.next_frame(-1)
 
     def update_frame_number_label(self, image: Image | None) -> None:
         if self.backend.selected_video is None or image is None:

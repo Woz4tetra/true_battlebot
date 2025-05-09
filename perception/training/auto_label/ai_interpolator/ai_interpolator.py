@@ -3,7 +3,6 @@ from pathlib import Path
 import cv2
 import numpy as np
 import torch
-import tqdm
 from perception_tools.training.keypoints_config import KeypointsConfig
 from perception_tools.training.yolo_keypoint_dataset import YoloKeypointAnnotation, YoloKeypointImage
 from sam2.build_sam import build_sam2_video_predictor
@@ -43,6 +42,19 @@ class AiInterpolator:
             frame_idx=0,
             obj_id=object_id,
             box=box_array,
+        )
+
+    def _add_point(self, object_id: int, point: tuple[float, float]) -> None:
+        if self.predictor is None:
+            raise RuntimeError("Predictor is not initialized")
+        points = np.array([point], dtype=np.float32)
+        labels = np.array([1], np.int32)
+        self.predictor.add_new_points_or_box(
+            self.inference_state,
+            frame_idx=0,
+            obj_id=object_id,
+            points=points,
+            labels=labels,
         )
 
     def _convert_to_annotation(
@@ -110,3 +122,9 @@ class AiInterpolator:
             self._save_annotation(images_dir, interpolated_annotation)
         del self.predictor
         self.predictor = None
+
+        # deinitialize cuda
+        torch.cuda.empty_cache()
+        torch.cuda.synchronize()
+        torch.cuda.reset_peak_memory_stats()
+        torch.cuda.reset_accumulated_memory_stats()

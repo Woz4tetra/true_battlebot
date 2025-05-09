@@ -60,6 +60,8 @@ class DrawRectangleState:
         return self.saved_bbox
 
     def clear(self) -> None:
+        if self.is_cleared:
+            return
         self.finish_drawing()
         self.is_cleared = True
 
