@@ -11,7 +11,7 @@ from perception_tools.training.yolo_keypoint_dataset import YoloKeypointImage
 from PIL import Image as PILImage
 from PIL import ImageTk
 
-from auto_label.ai_interpolator.ai_interpolator import AiInterpolator
+from auto_label.ai_interpolator.interpolation_process_manager import InterpolationProcessManager
 from auto_label.backend.manual_label_backend import ManualLabelBackend
 from auto_label.ui.canvas_image import CanvasImage
 from auto_label.ui.label_selection_toolbar import LabelSelectionToolbar
@@ -26,13 +26,13 @@ class ManualLabelPanel(Panel):
         default_jump_count: int,
         backend: ManualLabelBackend,
         keypoints_config: KeypointsConfig,
-        ai_interpolator: AiInterpolator,
+        interpolation_process: InterpolationProcessManager,
     ) -> None:
         super().__init__(window)
         self.backend = backend
         self.keypoints_config = keypoints_config
         self.jump_count = default_jump_count
-        self.ai_interpolator = ai_interpolator
+        self.interpolation_process = interpolation_process
 
         self.shown_tk_image: ImageTk.PhotoImage | None = None
 
@@ -312,4 +312,10 @@ class ManualLabelPanel(Panel):
         self.current_label_index = label_index
 
     def interpolate_button_callback(self) -> None:
-        self.ai_interpolator.interpolate_from_current_frame()
+        if self.current_image is None:
+            self.logger.warning("No image is currently displayed. Cannot interpolate.")
+            return
+        if self.interpolation_process.interpolate((self.current_image.header.seq,)):
+            self.logger.info(f"Interpolating from frame {self.current_image.header.seq}.")
+        else:
+            self.logger.warning("Interpolation process is already running.")

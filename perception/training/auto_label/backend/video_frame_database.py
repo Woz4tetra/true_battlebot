@@ -25,6 +25,12 @@ class VideoFrameCache:
         self._cache.clear()
         self.logger.info("Cleared video frame cache.")
 
+    def jump_to(self, frame_num: int) -> None:
+        if frame_num < 0 or frame_num >= self.get_num_frames():
+            raise ValueError(f"Frame number {frame_num} is out of bounds.")
+        self.current_frame = frame_num
+        self.capture.set(cv2.CAP_PROP_POS_FRAMES, self.current_frame)
+
     def next(self, jump_count: int | None = None) -> Image | None:
         if jump_count is not None and jump_count != 1:
             self.current_frame += jump_count
@@ -36,8 +42,7 @@ class VideoFrameCache:
         if not self.capture.isOpened():
             return None
         if jump_count is not None and jump_count != 1:
-            jump_to = self.current_frame + jump_count
-            self.capture.set(cv2.CAP_PROP_POS_FRAMES, jump_to)
+            self.capture.set(cv2.CAP_PROP_POS_FRAMES, self.current_frame)
         video_time = self.capture.get(cv2.CAP_PROP_POS_MSEC) / 1000.0
         ret, frame = self.capture.read()
         if not ret:
