@@ -1,3 +1,5 @@
+import gc
+import logging
 from pathlib import Path
 
 import cv2
@@ -15,47 +17,8 @@ class AiInterpolator:
     def __init__(self, config: TrackerConfig, keypoints_config: KeypointsConfig) -> None:
         self.config = config
         self.keypoints_config = keypoints_config
-        self.predictor: SAM2VideoPredictor | None = None
         self.inference_state: dict = {}
-
-    def _initialize(self, images_dir: str) -> None:
-        if not torch.cuda.is_available():
-            raise RuntimeError("CUDA is not available")
-        device = torch.device("cuda")
-
-        # use bfloat16
-        torch.autocast("cuda", dtype=torch.bfloat16).__enter__()
-        # turn on tfloat32 for Ampere GPUs (https://pytorch.org/docs/stable/notes/cuda.html#tensorfloat-32-tf32-on-ampere-devices)
-        if torch.cuda.get_device_properties(0).major >= 8:
-            torch.backends.cuda.matmul.allow_tf32 = True
-            torch.backends.cudnn.allow_tf32 = True
-
-        self.predictor = build_sam2_video_predictor(self.config.sam2_model_config_path, self.config.checkpoint, device)
-        self.inference_state = self.predictor.init_state(video_path=str(images_dir))
-
-    def _add_box(self, object_id: int, box: tuple[float, float, float, float]) -> None:
-        if self.predictor is None:
-            raise RuntimeError("Predictor is not initialized")
-        box_array = np.array(box, dtype=np.float32)
-        self.predictor.add_new_points_or_box(
-            self.inference_state,
-            frame_idx=0,
-            obj_id=object_id,
-            box=box_array,
-        )
-
-    def _add_point(self, object_id: int, point: tuple[float, float]) -> None:
-        if self.predictor is None:
-            raise RuntimeError("Predictor is not initialized")
-        points = np.array([point], dtype=np.float32)
-        labels = np.array([1], np.int32)
-        self.predictor.add_new_points_or_box(
-            self.inference_state,
-            frame_idx=0,
-            obj_id=object_id,
-            points=points,
-            labels=labels,
-        )
+        self.logger = logging.getLogger(self.__class__.__name__)
 
     def _convert_to_annotation(
         self,
@@ -65,8 +28,6 @@ class AiInterpolator:
         obj_id_to_class_index: list[int],
         frame_dimensions: tuple[int, int],
     ) -> YoloKeypointImage:
-        if self.predictor is None:
-            raise RuntimeError("Predictor is not initialized")
         annotation = YoloKeypointImage(image_id=image_id, labels=[])
         for index, out_obj_id in enumerate(out_obj_ids):
             mask = (out_mask_logits[index] > 0.0).cpu().numpy().astype(np.uint8)
@@ -98,32 +59,70 @@ class AiInterpolator:
         with open(annotation_path, "w") as file:
             file.write(annotation.to_txt())
 
+    def _propagate_object_in_video(
+        self,
+        predictor: SAM2VideoPredictor,
+        state: dict,
+        obj_id_to_class_index: list[int],
+        frame_dimensions: tuple[int, int],
+    ) -> list[YoloKeypointImage]:
+        annotations: list[YoloKeypointImage] = []
+        for frame_idx, out_obj_ids, out_mask_logits in predictor.propagate_in_video(state):
+            image_id = f"{frame_idx:06d}"
+            interpolated_annotation_single = self._convert_to_annotation(
+                image_id, out_obj_ids, out_mask_logits, obj_id_to_class_index, frame_dimensions
+            )
+            annotations.append(interpolated_annotation_single)
+        return annotations
+
+    def _merge_annotations(self, separate_annotations: dict[int, list[YoloKeypointImage]]) -> list[YoloKeypointImage]:
+        merged_annotations: list[YoloKeypointImage] = [
+            YoloKeypointImage(image_id=annotations.image_id, labels=[])
+            for annotations in next(iter(separate_annotations.values()))
+        ]
+        for object_id, annotations in separate_annotations.items():
+            for frame_index, annotation in enumerate(annotations):
+                merged_annotations[frame_index].labels.append(annotation.labels[0])
+        return merged_annotations
+
     def interpolate(
         self, images_dir: Path, start_annotation: YoloKeypointImage, frame_dimensions: tuple[int, int]
     ) -> None:
-        self._initialize(str(images_dir))
-        assert self.predictor is not None
-        obj_id_to_class_index = [label.class_index for label in start_annotation.labels]
-        for object_id, label in enumerate(start_annotation.labels):
-            corners_relative = label.corners
-            corners_absolute = (
-                corners_relative[0] * frame_dimensions[0],
-                corners_relative[1] * frame_dimensions[1],
-                corners_relative[2] * frame_dimensions[0],
-                corners_relative[3] * frame_dimensions[1],
-            )
-            self._add_box(object_id, corners_absolute)
+        if not torch.cuda.is_available():
+            raise RuntimeError("CUDA is not available")
+        device = torch.device("cuda")
+        predictor = build_sam2_video_predictor(
+            self.config.sam2_model_config_path, self.config.checkpoint, device=device
+        )
 
-        for out_frame_idx, out_obj_ids, out_mask_logits in self.predictor.propagate_in_video(self.inference_state):
-            image_id = f"{out_frame_idx:06d}"
-            interpolated_annotation = self._convert_to_annotation(
-                image_id, out_obj_ids, out_mask_logits, obj_id_to_class_index, frame_dimensions
-            )
-            self._save_annotation(images_dir, interpolated_annotation)
-        del self.predictor
-        self.predictor = None
+        obj_id_to_class_index = [label.class_index for label in start_annotation.labels]
+        with torch.inference_mode(), torch.autocast("cuda", dtype=torch.float16):
+            state = predictor.init_state(str(images_dir), offload_video_to_cpu=True)
+            separate_annotations: dict[int, list[YoloKeypointImage]] = {}
+            for object_id, label in enumerate(start_annotation.labels):
+                self.logger.info(f"Interpolating object {object_id + 1} of {len(start_annotation.labels)}")
+                corners_relative = label.corners
+                corners_absolute = (
+                    corners_relative[0] * frame_dimensions[0],
+                    corners_relative[1] * frame_dimensions[1],
+                    corners_relative[2] * frame_dimensions[0],
+                    corners_relative[3] * frame_dimensions[1],
+                )
+                predictor.add_new_points_or_box(state, box=corners_absolute, frame_idx=0, obj_id=0)
+                single_annotations = self._propagate_object_in_video(
+                    predictor, state, obj_id_to_class_index, frame_dimensions
+                )
+
+                separate_annotations[object_id] = single_annotations
+                predictor.reset_state(state)
+            interpolated_annotations = self._merge_annotations(separate_annotations)
+            for annotation in interpolated_annotations:
+                self._save_annotation(images_dir, annotation)
 
         # deinitialize cuda
+        del predictor
+        del state
+        gc.collect()
         torch.cuda.empty_cache()
         torch.cuda.synchronize()
         torch.cuda.reset_peak_memory_stats()
