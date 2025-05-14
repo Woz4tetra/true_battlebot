@@ -119,7 +119,7 @@ class ManualLabelPanel(Panel):
         self.label_selection_frame.grid(row=1, column=0, sticky="ew", padx=5, pady=5)
 
         # Bind events
-        self.window.bind_all("<Button-1>", lambda event: event.widget.focus_set())
+        self.window.bind_all("<Button-1>", self.focus_widget_callback)
 
         self.skip_frame_entry.bind("<Return>", self.skip_frame_entry_callback)
         self.update_skip_frame_entry()
@@ -291,7 +291,7 @@ class ManualLabelPanel(Panel):
         if new_bbox is None:
             current_annotation = self.image_canvas.get_annotation()
             if not current_annotation.is_empty():
-                self.backend.update_annotation(self.current_image, current_annotation)
+                self.backend.update_annotation(self.backend.get_current_frame_path(), current_annotation)
             return
         self.logger.debug(f"Saving bbox {new_bbox} to backend.")
         annotation = self.backend.add_annotation(self.current_image, new_bbox, self.current_label_index)
@@ -324,7 +324,7 @@ class ManualLabelPanel(Panel):
             self.logger.warning("No annotation found. Cannot delete.")
             return None
         annotation.labels.pop(row_index)
-        self.backend.update_annotation(self.current_image, annotation)
+        self.backend.update_annotation(self.backend.get_current_frame_path(), annotation)
         self.update_annotation(annotation)
         return annotation
 
@@ -359,3 +359,8 @@ class ManualLabelPanel(Panel):
             self.logger.info(f"Interpolating from frame {self.current_image.header.seq}.")
         else:
             self.logger.warning("Interpolation process is already running.")
+
+    def focus_widget_callback(self, event: tk.Event) -> None:
+        widget = event.widget
+        if hasattr(widget, "focus_set"):
+            widget.focus_set()

@@ -1,8 +1,6 @@
 import logging
 import shutil
-
-import cv2
-import numpy as np
+from pathlib import Path
 
 from auto_label.backend.manual_label_backend import ManualLabelBackend
 from auto_label.config.auto_label_config import TrackerConfig
@@ -45,7 +43,7 @@ class TempImageManager:
                 self.logger.debug(f"Annotation found for frame {seq_num}.")
                 break
             relative_index = seq_num - start_frame - 1
-            self._save_image(image.data, f"{relative_index:06d}.jpg")
+            self._link_image(self.backend.get_current_frame_path(), f"{relative_index:06d}.jpg")
         return True
 
     def _clear_images(self) -> None:
@@ -55,17 +53,20 @@ class TempImageManager:
                 self.logger.debug(f"Deleted image {path.name}")
         self.logger.debug("Cleared all images from workspace.")
 
-    def _save_image(self, image: np.ndarray, image_name: str) -> None:
-        image_path = self.ai_workspace_dir / image_name
-        cv2.imwrite(str(image_path), image)
-        self.logger.info(f"Saved image to {image_path}")
+    def _link_image(self, image_path: Path, image_name: str) -> None:
+        temp_image_path = self.ai_workspace_dir / image_name
+        if temp_image_path.exists():
+            self.logger.warning(f"Image {temp_image_path} already exists. Skipping.")
+            return
+        temp_image_path.symlink_to(image_path)
+        self.logger.info(f"Linked image to {image_path}")
 
     def copy_batch_to_dataset(self, start_frame: int) -> None:
         selected_video = self.backend.selected_video
         if selected_video is None:
             self.logger.warning("No video selected.")
             return
-        video_name = selected_video.video_path.stem
+        video_name = selected_video.images_path.stem
         for path in self.ai_workspace_dir.iterdir():
             if not path.is_file():
                 continue
@@ -84,8 +85,6 @@ class TempImageManager:
             self.backend.annotations_cache.annotations_path / f"{original_annotation.image_id}.txt",
             annotation_path,
         )
-        image_path = self.dataset_dir / f"{original_annotation.image_id}.jpg"
-        shutil.copyfile(
-            self.backend.annotations_cache.annotations_path / f"{original_annotation.image_id}.jpg",
-            image_path,
-        )
+        original_image_path = selected_video.images_path / f"{original_annotation.image_id}.jpg"
+        database_image_path = self.dataset_dir / f"{original_annotation.image_id}.jpg"
+        original_image_path.symlink_to(database_image_path)
