@@ -87,4 +87,8 @@ class TempImageManager:
         )
         original_image_path = selected_video.images_path / f"{original_annotation.image_id}.jpg"
         database_image_path = self.dataset_dir / f"{original_annotation.image_id}.jpg"
-        original_image_path.symlink_to(database_image_path)
+        try:
+            database_image_path.symlink_to(original_image_path)
+        except FileExistsError:
+            self.logger.debug(f"Image {database_image_path} already exists. Skipping.")
+            return
