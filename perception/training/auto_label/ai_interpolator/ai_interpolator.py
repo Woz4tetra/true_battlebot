@@ -74,26 +74,6 @@ class AiInterpolator:
             input_coordinates.append(label_coordinates)
         return input_coordinates
 
-    # def _fill_out_bounding_boxes(
-    #     self, frames: list[np.ndarray], annotations: list[YoloKeypointImage], images_width: int, images_height: int
-    # ) -> None:
-    #     for frame, annotation in zip(frames, annotations):
-    #         for label in annotation.labels:
-    #             keypoint_contours = [
-    #                 (keypoint[0] * images_width, keypoint[1] * images_height) for keypoint in label.keypoints
-    #             ]
-    #             keypoint_bounding_box = cv2.boundingRect(np.array(keypoint_contours, dtype=np.float32))
-    #             relative_xywh = (
-    #                 keypoint_bounding_box[0] / images_width,
-    #                 keypoint_bounding_box[1] / images_height,
-    #                 keypoint_bounding_box[2] / images_width,
-    #                 keypoint_bounding_box[3] / images_height,
-    #             )
-    #             center_x = relative_xywh[0] + relative_xywh[2] / 2
-    #             center_y = relative_xywh[1] + relative_xywh[3] / 2
-    #             box = (center_x, center_y, relative_xywh[2], relative_xywh[3])
-    #             label.bbox = box
-
     def _fill_out_bounding_boxes(
         self, frames: list[np.ndarray], annotations: list[YoloKeypointImage], images_width: int, images_height: int
     ) -> None:
@@ -115,21 +95,15 @@ class AiInterpolator:
             pbar = tqdm.tqdm(total=num_frames, desc="Filling out bounding boxes", unit="frame")
             for frame, annotation in zip(frames, annotations):
                 pbar.update(1)
+                per_object_coordinates = self._annotation_keypoints_to_input_coordinates(
+                    annotation, images_width, images_height
+                )
+                input_coordinates = np.array(per_object_coordinates, dtype=np.float32)
+                input_labels = np.array([[1] * len(keypoints) for keypoints in per_object_coordinates])
                 predictor.set_image(frame)
-                input_boxes = []
-                for label in annotation.labels:
-                    keypoint_contours = [
-                        (keypoint[0] * images_width, keypoint[1] * images_height) for keypoint in label.keypoints
-                    ]
-                    keypoint_bounding_box = cv2.boundingRect(np.array(keypoint_contours, dtype=np.float32))
-                    x0 = keypoint_bounding_box[0]
-                    y0 = keypoint_bounding_box[1]
-                    x1 = keypoint_bounding_box[0] + keypoint_bounding_box[2]
-                    y1 = keypoint_bounding_box[1] + keypoint_bounding_box[3]
-                    input_boxes.append((x0, y0, x1, y1))
-                print(input_boxes)
                 batch_masks, batch_scores, batch_logits = predictor.predict(
-                    box=np.array(input_boxes),
+                    point_coords=input_coordinates,
+                    point_labels=input_labels,
                     multimask_output=True,
                 )
                 all_masks = []
@@ -140,7 +114,15 @@ class AiInterpolator:
                     mask = masks[max_index]
                     mask_image = mask.astype(np.uint8).reshape(frame.shape[0], frame.shape[1], 1) * 255
                     contours, hierarchy = cv2.findContours(mask_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
-                    absolute_xywh = cv2.boundingRect(contours[0])
+
+                    max_area_index = 0
+                    max_area = 0
+                    for contour_index in range(len(contours)):
+                        area = cv2.contourArea(contours[contour_index])
+                        if area > max_area:
+                            max_area = area
+                            max_area_index = contour_index
+                    absolute_xywh = cv2.boundingRect(contours[max_area_index])
 
                     relative_xywh = (
                         absolute_xywh[0] / images_width,
