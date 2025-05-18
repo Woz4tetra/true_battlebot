@@ -308,9 +308,7 @@ class ManualLabelPanel(Panel):
         if self.current_image is None:
             self.logger.warning("No image is currently displayed. Cannot get annotation.")
             return None
-        annotation = self.backend.annotations_cache.get_annotation(
-            self.backend.get_video_name(), self.current_image.header.seq
-        )
+        annotation = self.backend.get_annotation(self.current_image.header.seq)
         if annotation is not None:
             return annotation
         return None

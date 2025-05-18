@@ -98,8 +98,20 @@ class AiInterpolator:
                 per_object_coordinates = self._annotation_keypoints_to_input_coordinates(
                     annotation, images_width, images_height
                 )
-                input_coordinates = np.array(per_object_coordinates, dtype=np.float32)
-                input_labels = np.array([[1] * len(keypoints) for keypoints in per_object_coordinates])
+                input_coordinates = []
+                input_labels = []
+                for main_index in range(len(per_object_coordinates)):
+                    object_row = []
+                    label_row = []
+                    for sub_index in range(len(per_object_coordinates)):
+                        object_coordinates = per_object_coordinates[sub_index]
+                        object_row.extend(object_coordinates)
+                        if sub_index == main_index:
+                            label_row.extend([1] * len(object_coordinates))
+                        else:
+                            label_row.extend([0] * len(object_coordinates))
+                    input_coordinates.append(object_row)
+                    input_labels.append(label_row)
                 predictor.set_image(frame)
                 batch_masks, batch_scores, batch_logits = predictor.predict(
                     point_coords=input_coordinates,

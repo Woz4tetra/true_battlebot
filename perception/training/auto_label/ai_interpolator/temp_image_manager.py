@@ -10,8 +10,8 @@ class TempImageManager:
     def __init__(self, config: TrackerConfig, manual_label_backend: ManualLabelBackend) -> None:
         self.config = config
         self.backend = manual_label_backend
-        self.ai_workspace_dir = manual_label_backend.root_path / "ai_workspace"
-        self.dataset_dir = manual_label_backend.root_path / "dataset"
+        self.ai_workspace_dir = self.backend.root_path / "ai_workspace"
+        self.dataset_dir = self.backend.root_path / "dataset"
         self.ai_workspace_dir.mkdir(parents=True, exist_ok=True)
         self.dataset_dir.mkdir(parents=True, exist_ok=True)
         self.logger = logging.getLogger(self.__class__.__name__)

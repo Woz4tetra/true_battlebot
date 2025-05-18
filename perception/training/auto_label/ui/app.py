@@ -47,7 +47,7 @@ class App:
 
         panel = ManualLabelPanel(
             self.window,
-            self.config.default_jump_count,
+            self.config.tracker.interpolation_max_length,
             self.manual_label_backend,
             self.keypoints_config,
             self.interpolation_process,
