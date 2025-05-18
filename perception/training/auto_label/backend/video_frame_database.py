@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-from collections import OrderedDict
 from pathlib import Path
 
 import cv2
@@ -16,8 +15,6 @@ class VideoFrameDatabase:
         self.images_path = images_path
         self.current_frame = 0
         self.num_frames = len(list(images_path.glob("*.jpg")))
-        self.cache: OrderedDict[int, Image] = OrderedDict()
-        self.cache_size = 1000
 
     def clear(self) -> None:
         pass
@@ -34,8 +31,6 @@ class VideoFrameDatabase:
             self.current_frame += 1
         self.current_frame = max(0, min(self.current_frame, self.get_num_frames() - 1))
 
-        if self.current_frame in self.cache:
-            return self.cache[self.current_frame]
         frame_path = self.images_path / f"{self.current_frame:06d}.jpg"
         if not frame_path.exists():
             self.logger.error(f"Frame {self.current_frame} does not exist at {frame_path}.")
@@ -47,10 +42,6 @@ class VideoFrameDatabase:
 
         header = Header(stamp=0.0, frame_id="", seq=self.current_frame)
         image = Image(header=header, data=np.array(frame))
-        self.cache[self.current_frame] = image
-        if len(self.cache) > self.cache_size:
-            self.cache.popitem(last=False)
-
         return image
 
     def get_num_frames(self) -> int:

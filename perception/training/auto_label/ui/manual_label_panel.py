@@ -97,6 +97,7 @@ class ManualLabelPanel(Panel):
         )
         self.current_image: Image | None = None
         self.current_label_index = 0
+        self.last_manually_labeled_annotation: YoloKeypointImage | None = None
 
         self.logger = logging.getLogger(self.__class__.__name__)
 
@@ -289,12 +290,19 @@ class ManualLabelPanel(Panel):
             self.logger.warning("No image is currently displayed. Cannot add annotation.")
             return
         if new_bbox is None:
-            current_annotation = self.image_canvas.get_annotation()
-            if not current_annotation.is_empty():
+            if self.image_canvas.did_edit_annotation():
+                current_annotation = self.image_canvas.get_annotation()
+            else:
+                current_annotation = self.last_manually_labeled_annotation
+            if current_annotation is not None and not current_annotation.is_empty():
                 self.backend.update_annotation(self.backend.get_current_frame_path(), current_annotation)
             return
         self.logger.debug(f"Saving bbox {new_bbox} to backend.")
+        current_annotation = self.image_canvas.get_annotation()
+        if current_annotation is not None:
+            self.backend.update_annotation(self.backend.get_current_frame_path(), current_annotation)
         annotation = self.backend.add_annotation(self.current_image, new_bbox, self.current_label_index)
+
         self.update_annotation(annotation)
 
     def update_annotation(self, annotation: YoloKeypointImage | None) -> None:
@@ -308,7 +316,8 @@ class ManualLabelPanel(Panel):
         if self.current_image is None:
             self.logger.warning("No image is currently displayed. Cannot get annotation.")
             return None
-        annotation = self.backend.get_annotation(self.current_image.header.seq)
+        annotation, was_manually_labeled = self.backend.get_annotation_from_dataset(self.current_image.header.seq)
+        self.last_manually_labeled_annotation = annotation if was_manually_labeled else None
         if annotation is not None:
             return annotation
         return None
@@ -324,6 +333,7 @@ class ManualLabelPanel(Panel):
         annotation.labels.pop(row_index)
         self.backend.update_annotation(self.backend.get_current_frame_path(), annotation)
         self.update_annotation(annotation)
+        self.last_manually_labeled_annotation = annotation
         return annotation
 
     def highlight_annotation_callback(self, row_index: int) -> None:

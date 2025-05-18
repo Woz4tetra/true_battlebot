@@ -44,6 +44,10 @@ class TempImageManager:
                 break
             relative_index = seq_num - start_frame - 1
             self._link_image(self.backend.get_current_frame_path(), f"{relative_index:06d}.jpg")
+
+        # jump back to the start frame
+        self.backend.jump_to_frame(start_frame)
+
         return True
 
     def _clear_images(self) -> None:

@@ -1,6 +1,5 @@
 import gc
 import logging
-import os
 from pathlib import Path
 
 import cv2
@@ -93,60 +92,75 @@ class AiInterpolator:
 
             num_frames = len(frames)
             pbar = tqdm.tqdm(total=num_frames, desc="Filling out bounding boxes", unit="frame")
-            for frame, annotation in zip(frames, annotations):
-                pbar.update(1)
-                per_object_coordinates = self._annotation_keypoints_to_input_coordinates(
-                    annotation, images_width, images_height
-                )
-                input_coordinates = []
-                input_labels = []
-                for main_index in range(len(per_object_coordinates)):
-                    object_row = []
-                    label_row = []
-                    for sub_index in range(len(per_object_coordinates)):
-                        object_coordinates = per_object_coordinates[sub_index]
-                        object_row.extend(object_coordinates)
-                        if sub_index == main_index:
-                            label_row.extend([1] * len(object_coordinates))
-                        else:
-                            label_row.extend([0] * len(object_coordinates))
-                    input_coordinates.append(object_row)
-                    input_labels.append(label_row)
-                predictor.set_image(frame)
-                batch_masks, batch_scores, batch_logits = predictor.predict(
-                    point_coords=input_coordinates,
-                    point_labels=input_labels,
+            for index in range(0, num_frames, self.config.sam2_batch_size):
+                pbar.update(self.config.sam2_batch_size)
+                all_coordinates = []
+                all_labels = []
+                for batch_index in range(self.config.sam2_batch_size):
+                    batch_frame_index = index + batch_index
+                    if batch_frame_index >= num_frames:
+                        break
+                    annotation = annotations[batch_frame_index]
+                    per_object_coordinates = self._annotation_keypoints_to_input_coordinates(
+                        annotation, images_width, images_height
+                    )
+                    input_coordinates = []
+                    input_labels = []
+                    for main_index in range(len(per_object_coordinates)):
+                        object_row = []
+                        label_row = []
+                        for sub_index in range(len(per_object_coordinates)):
+                            object_coordinates = per_object_coordinates[sub_index]
+                            object_row.extend(object_coordinates)
+                            if sub_index == main_index:
+                                label_row.extend([1] * len(object_coordinates))
+                            else:
+                                label_row.extend([0] * len(object_coordinates))
+                        input_coordinates.append(object_row)
+                        input_labels.append(label_row)
+                    all_coordinates.append(input_coordinates)
+                    all_labels.append(input_labels)
+                predictor.set_image_batch(frames[index : index + self.config.sam2_batch_size])
+                batch_masks, batch_scores, batch_logits = predictor.predict_batch(
+                    point_coords_batch=all_coordinates,
+                    point_labels_batch=all_labels,
                     multimask_output=True,
                 )
                 all_masks = []
-                for index in range(len(batch_masks)):
-                    masks = batch_masks[index]
-                    scores = batch_scores[index]
-                    max_index = np.argmax(scores)
-                    mask = masks[max_index]
-                    mask_image = mask.astype(np.uint8).reshape(frame.shape[0], frame.shape[1], 1) * 255
-                    contours, hierarchy = cv2.findContours(mask_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+                for batch_index in range(self.config.sam2_batch_size):
+                    batch_frame_index = index + batch_index
+                    if batch_frame_index >= num_frames:
+                        break
+                    for mask_index in range(len(batch_masks[batch_index])):
+                        frame = frames[batch_frame_index]
+                        annotation = annotations[batch_frame_index]
+                        masks = batch_masks[batch_index][mask_index]
+                        scores = batch_scores[batch_index][mask_index]
+                        max_index = np.argmax(scores)
+                        mask = masks[max_index]
+                        mask_image = mask.astype(np.uint8).reshape(frame.shape[0], frame.shape[1], 1) * 255
+                        contours, hierarchy = cv2.findContours(mask_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
 
-                    max_area_index = 0
-                    max_area = 0
-                    for contour_index in range(len(contours)):
-                        area = cv2.contourArea(contours[contour_index])
-                        if area > max_area:
-                            max_area = area
-                            max_area_index = contour_index
-                    absolute_xywh = cv2.boundingRect(contours[max_area_index])
+                        max_area_index = 0
+                        max_area = 0
+                        for contour_index in range(len(contours)):
+                            area = cv2.contourArea(contours[contour_index])
+                            if area > max_area:
+                                max_area = area
+                                max_area_index = contour_index
+                        absolute_xywh = cv2.boundingRect(contours[max_area_index])
 
-                    relative_xywh = (
-                        absolute_xywh[0] / images_width,
-                        absolute_xywh[1] / images_height,
-                        absolute_xywh[2] / images_width,
-                        absolute_xywh[3] / images_height,
-                    )
-                    center_x = relative_xywh[0] + relative_xywh[2] / 2
-                    center_y = relative_xywh[1] + relative_xywh[3] / 2
-                    box = (center_x, center_y, relative_xywh[2], relative_xywh[3])
-                    all_masks.append(mask)
-                    annotation.labels[index].bbox = box
+                        relative_xywh = (
+                            absolute_xywh[0] / images_width,
+                            absolute_xywh[1] / images_height,
+                            absolute_xywh[2] / images_width,
+                            absolute_xywh[3] / images_height,
+                        )
+                        center_x = relative_xywh[0] + relative_xywh[2] / 2
+                        center_y = relative_xywh[1] + relative_xywh[3] / 2
+                        box = (center_x, center_y, relative_xywh[2], relative_xywh[3])
+                        all_masks.append(mask)
+                        annotation.labels[mask_index].bbox = box
 
     def _interpolate_keypoints(
         self, frames: list[np.ndarray], start_annotation: YoloKeypointImage, images_width: int, images_height: int

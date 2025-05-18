@@ -11,7 +11,8 @@ class TrackerConfig:
     sam2_model_config_path: str = "configs/sam2.1/sam2.1_hiera_l.yaml"
     sam2_checkpoint: str = "/home/bwbots/.cache/sam2/sam2.1_hiera_large.pt"
     cotracker_checkpoint: str = "/home/bwbots/.cache/co-tracker/scaled_offline.pth"
-    interpolation_max_length: int = 100
+    interpolation_max_length: int = 30
+    sam2_batch_size: int = 10
 
 
 @dataclass
@@ -21,6 +22,7 @@ class AutoLabelConfig:
     max_size: tuple[int, int] = (3200, 2400)
     default_size: tuple[int, int] | None = None
     data_root_directory: str = ""
+    default_jump_count: int = 1
     tracker: TrackerConfig = field(default_factory=TrackerConfig)
 
     @classmethod

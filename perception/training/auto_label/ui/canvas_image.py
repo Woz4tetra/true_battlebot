@@ -95,6 +95,7 @@ class CanvasImage:
         self._filter = Image.Resampling.NEAREST  # could be: NEAREST, BOX, BILINEAR, HAMMING, BICUBIC, LANCZOS
         self._previous_state = 0  # previous state of the keyboard
         self._image_set = False
+        self._did_edit_annotation = False
 
         # Create ImageFrame in placeholder widget
         self._imframe = frame
@@ -130,11 +131,13 @@ class CanvasImage:
         self.label_map: list[str] = label_map
 
         self.keypoint_colors = ["orange", "blue", "green", "purple", "pink", "yellow"]
-        self.keypoint_radius = 10
+        self.keypoint_radius = 20
         self.keypoint_names: dict[str, list[str]] = keypoint_names
 
-        self.selected_keypoint_ids: tuple[int, int] | None = None
+        self.selected_keypoint_ids: tuple[int, int] | None = None  # label index, keypoint index
         self.selected_keypoint_coords: tuple[float, float] | None = None
+
+        self.selected_box_ids: tuple[int, int] | None = None  # label index, corner index
 
         # Bind events to the Canvas
         self.canvas.bind("<Configure>", self.show_image_callback)  # canvas is resized
@@ -182,7 +185,8 @@ class CanvasImage:
 
     def set_annotation(self, annotation: YoloKeypointImage) -> None:
         """Set annotation to the image"""
-        self.logger.debug(f"Set annotation: {annotation}")
+        self.logger.debug(f"Set annotation: {annotation.image_id}")
+        self._did_edit_annotation = False
         self._annotation = annotation
         self._draw_annotation(self._annotation)
 
@@ -276,16 +280,15 @@ class CanvasImage:
         y1 = max(box_canvas[1] - box_image[1], 0)
         x2 = min(box_canvas[2], box_image[2]) - box_image[0]
         y2 = min(box_canvas[3], box_image[3]) - box_image[1]
-        if int(x2 - x1) > 0 and int(y2 - y1) > 0:  # show image if it's in the visible area
-            image = self._image.crop(
-                (int(x1 / self._scale), int(y1 / self._scale), int(x2 / self._scale), int(y2 / self._scale))
-            )
-            imagetk = ImageTk.PhotoImage(image.resize((int(x2 - x1), int(y2 - y1)), self._filter))
-            imageid = self.canvas.create_image(
-                max(box_canvas[0], box_img_int[0]), max(box_canvas[1], box_img_int[1]), anchor="nw", image=imagetk
-            )
-            self.canvas.lower(imageid)  # set image into background
-            self._cropped_image = imagetk  # keep an extra reference to prevent garbage-collection
+        image = self._image.crop(
+            (int(x1 / self._scale), int(y1 / self._scale), int(x2 / self._scale), int(y2 / self._scale))
+        )
+        imagetk = ImageTk.PhotoImage(image.resize((int(x2 - x1), int(y2 - y1)), self._filter))
+        imageid = self.canvas.create_image(
+            max(box_canvas[0], box_img_int[0]), max(box_canvas[1], box_img_int[1]), anchor="nw", image=imagetk
+        )
+        self.canvas.lower(imageid)  # set image into background
+        self._cropped_image = imagetk  # keep an extra reference to prevent garbage-collection
 
     def move_from_callback(self, event: tk.Event) -> None:
         """Remember previous coordinates for scrolling with the mouse"""
@@ -312,17 +315,22 @@ class CanvasImage:
 
         if self.selected_keypoint_ids:
             label_index, keypoint_index = self.selected_keypoint_ids
-            self.update_selected_keypoint(label_index, keypoint_index, canvas_x, canvas_y)
+            self._update_selected_keypoint(label_index, keypoint_index, canvas_x, canvas_y)
+        elif self.selected_box_ids:
+            label_index, corner_index = self.selected_box_ids
+            self._update_selected_box(label_index, corner_index, canvas_x, canvas_y)
         else:
             self.draw_rectangle.update_rectangle(canvas_x, canvas_y)  # update draw rectangle
 
-    def update_selected_keypoint(self, label_index: int, keypoint_index: int, canvas_x: float, canvas_y: float) -> None:
+    def _update_selected_keypoint(
+        self, label_index: int, keypoint_index: int, canvas_x: float, canvas_y: float
+    ) -> None:
         # move selected keypoint
         label = self._annotation.labels[label_index]
         image_x = self._x_scaled_canvas_to_norm(canvas_x)
         image_y = self._y_scaled_canvas_to_norm(canvas_y)
         self.selected_keypoint_coords = image_x, image_y
-        r_scaled = self.keypoint_radius * self._scale
+        r_scaled = self.keypoint_radius
         self.canvas.coords(
             self.annotation_ids[label_index].keypoint_circles[keypoint_index],
             canvas_x - r_scaled,
@@ -351,6 +359,38 @@ class CanvasImage:
                 self._y_norm_to_scaled_canvas(label.keypoints[next_index][1]),
             )
 
+    def _update_selected_box(self, label_index: int, corner_index: int, canvas_x: float, canvas_y: float) -> None:
+        # move selected box corner
+        label = self._annotation.labels[label_index]
+        image_x = self._x_scaled_canvas_to_norm(canvas_x)
+        image_y = self._y_scaled_canvas_to_norm(canvas_y)
+        corners = list(label.corners)
+        if corner_index == 0:
+            corners[0] = image_x
+            corners[1] = image_y
+        elif corner_index == 1:
+            corners[2] = image_x
+            corners[3] = image_y
+        elif corner_index == 2:
+            corners[0] = image_x
+            corners[3] = image_y
+        elif corner_index == 3:
+            corners[2] = image_x
+            corners[1] = image_y
+
+        self.canvas.coords(
+            self.annotation_ids[label_index].rectangle,
+            self._x_norm_to_scaled_canvas(corners[0]),
+            self._y_norm_to_scaled_canvas(corners[1]),
+            self._x_norm_to_scaled_canvas(corners[2]),
+            self._y_norm_to_scaled_canvas(corners[3]),
+        )
+        self.canvas.coords(
+            self.annotation_ids[label_index].text,
+            self._x_norm_to_scaled_canvas(corners[0]),
+            self._y_norm_to_scaled_canvas(corners[1]) - 10,
+        )
+
     def outside(self, x: int, y: int) -> bool:
         """Checks if the point (x,y) is outside the image area"""
         assert self.container is not None
@@ -373,6 +413,15 @@ class CanvasImage:
             self.selected_keypoint_coords = None
             return
 
+        if self.selected_box_ids is None:
+            if box_result := self.get_box_corner_under_cursor(canvas_x, canvas_y):
+                self.selected_box_ids = box_result
+                return
+        else:
+            self._update_annotation_with_selected_box()
+            self.selected_box_ids = None
+            return
+
         if self.outside(canvas_x, canvas_y):
             return
         if not self.draw_rectangle.is_drawing:
@@ -386,17 +435,38 @@ class CanvasImage:
             return
         label_index, keypoint_index = self.selected_keypoint_ids
         label = self._annotation.labels[label_index]
+        self.logger.debug(f"Update annotation with selected keypoint: {label_index}, {keypoint_index}")
         label.keypoints[keypoint_index] = (
             self.selected_keypoint_coords[0],
             self.selected_keypoint_coords[1],
             label.keypoints[keypoint_index][2],
         )
+        self._did_edit_annotation = True
+
+    def _update_annotation_with_selected_box(self) -> None:
+        """Update annotation with selected box"""
+        if self.selected_box_ids is None:
+            return
+        label_index, corner_index = self.selected_box_ids
+        label = self._annotation.labels[label_index]
+        self.logger.debug(f"Update annotation with selected box: {label_index}, {corner_index}")
+        new_rectangle = self.canvas.coords(self.annotation_ids[label_index].rectangle)
+        new_bbox = self._bbox_scaled_canvas_to_norm(new_rectangle)
+        self._annotation.labels[label_index] = YoloKeypointAnnotation.from_corners(
+            x0=new_bbox[0],
+            y0=new_bbox[1],
+            x1=new_bbox[2],
+            y1=new_bbox[3],
+            class_index=label.class_index,
+            keypoints=label.keypoints,
+        )
+        self._did_edit_annotation = True
 
     def get_keypoint_under_cursor(self, x: int, y: int) -> tuple[int, int] | None:
         """Get keypoint under cursor"""
         if not self._image_set:
             return None
-        r_scaled = self.keypoint_radius * self._scale
+        r_scaled = self.keypoint_radius
         for label_index in self.annotation_ids.keys():
             for keypoint_index, keypoint in enumerate(self._annotation.labels[label_index].keypoints):
                 canvas_x = self._x_norm_to_scaled_canvas(keypoint[0])
@@ -404,6 +474,33 @@ class CanvasImage:
                 if abs(canvas_x - x) < r_scaled and abs(canvas_y - y) < r_scaled:
                     return label_index, keypoint_index
         return None
+
+    def get_box_corner_under_cursor(self, x: int, y: int) -> tuple[int, int] | None:
+        """Get box corner under cursor"""
+        if not self._image_set:
+            return None
+        r_scaled = self.keypoint_radius
+        for label_index in self.annotation_ids.keys():
+            label = self._annotation.labels[label_index]
+            corners = label.corners
+            canvas_x0 = self._x_norm_to_scaled_canvas(corners[0])
+            canvas_y0 = self._y_norm_to_scaled_canvas(corners[1])
+            canvas_x1 = self._x_norm_to_scaled_canvas(corners[2])
+            canvas_y1 = self._y_norm_to_scaled_canvas(corners[3])
+            all_points = [
+                (canvas_x0, canvas_y0),
+                (canvas_x1, canvas_y1),
+                (canvas_x0, canvas_y1),
+                (canvas_x1, canvas_y0),
+            ]
+            for corner_index, point in enumerate(all_points):
+                if abs(point[0] - x) < r_scaled and abs(point[1] - y) < r_scaled:
+                    return label_index, corner_index
+        return None
+
+    def did_edit_annotation(self) -> bool:
+        """Check if annotation was edited"""
+        return self._did_edit_annotation
 
     def get_bbox(self) -> tuple[float, float, float, float] | None:
         """Get bounding box of the rectangle"""
@@ -450,6 +547,19 @@ class CanvasImage:
             self.canvas_scale[0] * relative_scale,
             self.canvas_scale[1] * relative_scale,
         )
+        # redraw keypoint circles to be the same size
+        for label_index, label in enumerate(self._annotation.labels):
+            for keypoint_index, keypoint in enumerate(label.keypoints):
+                x = int(self._x_norm_to_scaled_canvas(keypoint[0]))
+                y = int(self._y_norm_to_scaled_canvas(keypoint[1]))
+                r_scaled = self.keypoint_radius
+                self.canvas.coords(
+                    self.annotation_ids[label_index].keypoint_circles[keypoint_index],
+                    x - r_scaled,
+                    y - r_scaled,
+                    x + r_scaled,
+                    y + r_scaled,
+                )
         # Redraw some figures before showing image on the screen
         self.redraw_figures()  # method for child classes
         self._show_image()
@@ -552,7 +662,7 @@ class CanvasImage:
         x1 = min(int(bbox[2]), canvas_border[2])
         y1 = min(int(bbox[3]), canvas_border[3])
         canvas_border_scaled = self._bbox_image_to_scaled_canvas(canvas_border)
-        self.logger.debug(f"Draw label: {label} with bbox: {(x0, y0, x1, y1)}")
+        self.logger.debug(f"Draw label: {label.class_index} with bbox: {(x0, y0, x1, y1)}")
         color = self.label_colors[label.class_index % len(self.label_colors)]
         obj_ids = AnnotationObjectIds(
             rectangle=self.canvas.create_rectangle(x0, y0, x1, y1, outline=color, width=2),
@@ -620,7 +730,7 @@ class CanvasImage:
         image_y = label.keypoints[keypoint_index][1]
         canvas_x = self._x_norm_to_scaled_canvas(image_x)
         canvas_y = self._y_norm_to_scaled_canvas(image_y)
-        self.update_selected_keypoint(label_index, keypoint_index, canvas_x, canvas_y)
+        self._update_selected_keypoint(label_index, keypoint_index, canvas_x, canvas_y)
 
         self.selected_keypoint_ids = None
 

@@ -17,7 +17,11 @@ class ImageKeyframeLoader:
         if linked_image_path.exists():
             self.logger.warning(f"Image {image_name} already exists. Skipping.")
             return
-        linked_image_path.symlink_to(image_path)
+        try:
+            linked_image_path.symlink_to(image_path)
+        except FileExistsError as e:
+            self.logger.warning(f"Failed to create symlink for {image_name}: {e}")
+            return
         self.logger.info(f"Linked image to {linked_image_path}")
 
     def add_image(self, video_name: str, image_path: Path) -> None:

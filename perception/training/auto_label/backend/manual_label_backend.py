@@ -94,6 +94,21 @@ class ManualLabelBackend:
             return None
         return self.annotations_cache.get_annotation(self.selected_video.images_path.stem, frame_num)
 
+    def get_annotation_from_dataset(self, frame_num: int) -> tuple[YoloKeypointImage | None, bool]:
+        if manually_labeled_annotation := self.get_annotation(frame_num):
+            return manually_labeled_annotation, True
+        if self.selected_video is None:
+            self.logger.warning("No video selected.")
+            return None
+        image_id = self.annotations_cache.get_image_id(self.selected_video.images_path.stem, frame_num)
+        annotation_path = self.root_path / "dataset" / (image_id + ".txt")
+        if annotation_path.exists():
+            with open(annotation_path, "r") as file:
+                annotation = YoloKeypointImage.from_txt(image_id, file.read())
+            return annotation, False
+        else:
+            return None, False
+
     def did_annotation_change(self, annotation: YoloKeypointImage) -> bool:
         return hash(annotation) != self.hashes_cache.get_saved_hash(annotation.image_id)
 
