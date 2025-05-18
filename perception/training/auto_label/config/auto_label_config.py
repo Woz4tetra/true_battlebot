@@ -8,9 +8,9 @@ from bw_shared.messages.dataclass_utils import from_dict, to_dict
 
 @dataclass
 class TrackerConfig:
-    sam2_model_config_path = "configs/samurai/sam2.1_hiera_l.yaml"
-    sam2_checkpoint = "/home/bwbots/.cache/sam2/sam2.1_hiera_large.pt"
-    cotracker_checkpoint = "/home/bwbots/.cache/co-tracker/scaled_offline.pth"
+    sam2_model_config_path: str = "configs/sam2.1/sam2.1_hiera_l.yaml"
+    sam2_checkpoint: str = "/home/bwbots/.cache/sam2/sam2.1_hiera_large.pt"
+    cotracker_checkpoint: str = "/home/bwbots/.cache/co-tracker/scaled_offline.pth"
     interpolation_max_length: int = 500
 
 

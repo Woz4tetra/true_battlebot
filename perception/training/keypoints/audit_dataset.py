@@ -57,6 +57,10 @@ def main() -> None:
         elif key == "a":
             current_index = (current_index - 1) % len(images_paths)
         elif image is not None:
+            # check if opencv window is closed
+            if cv2.getWindowProperty("image", cv2.WND_PROP_VISIBLE) < 1:
+                break
+
             continue
 
         image_path = images_paths[current_index]

@@ -45,7 +45,7 @@ class InterpolationProcessManager:
             self.logger.warning(f"No image found for frame {start_frame}.")
             return
         self.ai_interpolator.interpolate(
-            self.temp_image_manager.ai_workspace_dir, annotation, (image.width, image.height)
+            self.temp_image_manager.ai_workspace_dir, annotation, image.width, image.height
         )
         self.manual_label_backend.hashes_cache.add_annotation(annotation)
         self.temp_image_manager.copy_batch_to_dataset(start_frame)

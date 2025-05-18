@@ -1,5 +1,6 @@
 import gc
 import logging
+import os
 from pathlib import Path
 
 import cv2
@@ -25,36 +26,14 @@ class AiInterpolator:
     def _load_images_alphabetically(self, images_dir: Path) -> list[np.ndarray]:
         images = []
         for image_path in sorted(images_dir.iterdir()):
-            if image_path.suffix.lower() in {".jpg", ".png"}:
-                image = cv2.imread(str(image_path))
-                if image is None:
-                    self.logger.warning(f"Failed to read image: {image_path}")
-                    continue
-                images.append(image)
+            if image_path.suffix.lower() not in {".jpg", ".png"}:
+                continue
+            image = cv2.imread(str(image_path))
+            if image is None:
+                self.logger.warning(f"Failed to read image: {image_path}")
+                continue
+            images.append(image)
         return images
-
-    def _convert_to_boxes(
-        self,
-        out_mask_logits: np.ndarray,
-        frame_dimensions: tuple[int, int],
-    ) -> list[tuple[float, float, float, float]]:
-        boxes = []
-        for index in range(len(out_mask_logits)):
-            mask = (out_mask_logits[index] > 0.0).astype(np.uint8)
-            height, width = mask.shape[-2:]
-            mask_image = mask.reshape(height, width, 1) * 255
-            contours, hierarchy = cv2.findContours(mask_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
-            absolute_xywh = cv2.boundingRect(contours[0])
-            relative_xywh = (
-                absolute_xywh[0] / frame_dimensions[0],
-                absolute_xywh[1] / frame_dimensions[1],
-                absolute_xywh[2] / frame_dimensions[0],
-                absolute_xywh[3] / frame_dimensions[1],
-            )
-            center_x = relative_xywh[0] + relative_xywh[2] / 2
-            center_y = relative_xywh[1] + relative_xywh[3] / 2
-            boxes.append((center_x, center_y, relative_xywh[2], relative_xywh[3]))
-        return boxes
 
     def _save_annotation(self, images_dir: Path, annotation: YoloKeypointImage) -> None:
         annotation_path = images_dir / f"{annotation.image_id}.txt"
@@ -72,73 +51,117 @@ class AiInterpolator:
         return merged_annotations
 
     def interpolate(
-        self, images_dir: Path, start_annotation: YoloKeypointImage, frame_dimensions: tuple[int, int]
+        self, images_dir: Path, start_annotation: YoloKeypointImage, images_width: int, images_height: int
     ) -> None:
         if not torch.cuda.is_available():
             raise RuntimeError("CUDA is not available")
         frames = self._load_images_alphabetically(images_dir)
 
-        interpolated_annotations = self._interpolate_keypoints(frames, start_annotation, frame_dimensions)
-        self._fill_out_bounding_boxes(frames, interpolated_annotations, frame_dimensions)
+        interpolated_annotations = self._interpolate_keypoints(frames, start_annotation, images_width, images_height)
+        self._fill_out_bounding_boxes(frames, interpolated_annotations, images_width, images_height)
         for annotation in interpolated_annotations:
             self._save_annotation(images_dir, annotation)
 
     def _annotation_keypoints_to_input_coordinates(
-        self, annotation: YoloKeypointImage, frame_dimensions: tuple[int, int]
+        self, annotation: YoloKeypointImage, images_width: int, images_height: int
     ) -> list[tuple[float, float]]:
         input_coordinates = []
-        width, height = frame_dimensions
         for label in annotation.labels:
             keypoints = label.keypoints
             label_coordinates = []
             for keypoint in keypoints:
-                label_coordinates.append((keypoint[0] * width, keypoint[1] * height))
+                label_coordinates.append((keypoint[0] * images_width, keypoint[1] * images_height))
             input_coordinates.append(label_coordinates)
         return input_coordinates
 
+    # def _fill_out_bounding_boxes(
+    #     self, frames: list[np.ndarray], annotations: list[YoloKeypointImage], images_width: int, images_height: int
+    # ) -> None:
+    #     for frame, annotation in zip(frames, annotations):
+    #         for label in annotation.labels:
+    #             keypoint_contours = [
+    #                 (keypoint[0] * images_width, keypoint[1] * images_height) for keypoint in label.keypoints
+    #             ]
+    #             keypoint_bounding_box = cv2.boundingRect(np.array(keypoint_contours, dtype=np.float32))
+    #             relative_xywh = (
+    #                 keypoint_bounding_box[0] / images_width,
+    #                 keypoint_bounding_box[1] / images_height,
+    #                 keypoint_bounding_box[2] / images_width,
+    #                 keypoint_bounding_box[3] / images_height,
+    #             )
+    #             center_x = relative_xywh[0] + relative_xywh[2] / 2
+    #             center_y = relative_xywh[1] + relative_xywh[3] / 2
+    #             box = (center_x, center_y, relative_xywh[2], relative_xywh[3])
+    #             label.bbox = box
+
     def _fill_out_bounding_boxes(
-        self, frames: list[np.ndarray], annotations: list[YoloKeypointImage], frame_dimensions: tuple[int, int]
+        self, frames: list[np.ndarray], annotations: list[YoloKeypointImage], images_width: int, images_height: int
     ) -> None:
-        if not torch.cuda.is_available():
-            raise RuntimeError("CUDA is not available")
+        # select the device for computation
         device = torch.device("cuda")
 
-        model = build_sam2(
-            config_file=self.config.sam2_model_config_path,
-            checkpoint=self.config.sam2_checkpoint,
-            device=device,
-        )
-        predictor = SAM2ImagePredictor(model)
-        num_frames = len(frames)
-        pbar = tqdm.tqdm(total=num_frames, desc="Filling out bounding boxes", unit="frame")
-        for frame, annotation in zip(frames, annotations):
-            pbar.update(1)
-            input_coordinates = np.array(self._annotation_keypoints_to_input_coordinates(annotation, frame_dimensions))
-            input_labels = np.array([[1] * len(label.keypoints) for label in annotation.labels])
-            predictor.set_image(frame)
-            masks, iou, low_res_mask = predictor.predict(
-                point_coords=input_coordinates,
-                point_labels=input_labels,
-                multimask_output=True,
-            )
-            breakpoint()
-            boxes = self._convert_to_boxes(masks, frame_dimensions)
-            for label, box in zip(annotation.labels, boxes):
-                label.bbox = box
-        pbar.close()
+        # use bfloat16 for the entire notebook
+        with torch.autocast("cuda", dtype=torch.bfloat16):
+            # turn on tfloat32 for Ampere GPUs (https://pytorch.org/docs/stable/notes/cuda.html#tensorfloat-32-tf32-on-ampere-devices)
+            if torch.cuda.get_device_properties(0).major >= 8:
+                torch.backends.cuda.matmul.allow_tf32 = True
+                torch.backends.cudnn.allow_tf32 = True
 
-        # deinitialize cuda
-        gc.collect()
-        torch.cuda.empty_cache()
-        torch.cuda.synchronize()
-        torch.cuda.reset_peak_memory_stats()
-        torch.cuda.reset_accumulated_memory_stats()
+            sam2_model = build_sam2(self.config.sam2_model_config_path, self.config.sam2_checkpoint, device=device)
+
+            predictor = SAM2ImagePredictor(sam2_model)
+
+            num_frames = len(frames)
+            pbar = tqdm.tqdm(total=num_frames, desc="Filling out bounding boxes", unit="frame")
+            for frame, annotation in zip(frames, annotations):
+                pbar.update(1)
+                per_object_coordinates = self._annotation_keypoints_to_input_coordinates(
+                    annotation, images_width, images_height
+                )
+                input_coordinates = []
+                input_labels = []
+                for main_index in range(len(per_object_coordinates)):
+                    object_row = []
+                    label_row = []
+                    for sub_index in range(len(per_object_coordinates)):
+                        object_coordinates = per_object_coordinates[sub_index]
+                        object_row.extend(object_coordinates)
+                        if sub_index == main_index:
+                            label_row.extend([1] * len(object_coordinates))
+                        else:
+                            label_row.extend([0] * len(object_coordinates))
+                    input_coordinates.append(object_row)
+                    input_labels.append(label_row)
+                predictor.set_image(frame)
+                batch_masks, batch_scores, batch_logits = predictor.predict(
+                    point_coords=input_coordinates,
+                    point_labels=input_labels,
+                    multimask_output=True,
+                )
+                all_masks = []
+                for index in range(len(batch_masks)):
+                    masks = batch_masks[index]
+                    scores = batch_scores[index]
+                    max_index = np.argmax(scores)
+                    mask = masks[max_index]
+                    mask_image = mask.astype(np.uint8).reshape(frame.shape[0], frame.shape[1], 1) * 255
+                    contours, hierarchy = cv2.findContours(mask_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+                    absolute_xywh = cv2.boundingRect(contours[0])
+
+                    relative_xywh = (
+                        absolute_xywh[0] / images_width,
+                        absolute_xywh[1] / images_height,
+                        absolute_xywh[2] / images_width,
+                        absolute_xywh[3] / images_height,
+                    )
+                    center_x = relative_xywh[0] + relative_xywh[2] / 2
+                    center_y = relative_xywh[1] + relative_xywh[3] / 2
+                    box = (center_x, center_y, relative_xywh[2], relative_xywh[3])
+                    all_masks.append(mask)
+                    annotation.labels[index].bbox = box
 
     def _interpolate_keypoints(
-        self,
-        frames: list[np.ndarray],
-        start_annotation: YoloKeypointImage,
-        frame_dimensions: tuple[int, int],
+        self, frames: list[np.ndarray], start_annotation: YoloKeypointImage, images_width: int, images_height: int
     ) -> list[YoloKeypointImage]:
         if not torch.cuda.is_available():
             raise RuntimeError("CUDA is not available")
@@ -160,8 +183,8 @@ class AiInterpolator:
                 query_coordinates.append(
                     [
                         0,  # frame index is always 0
-                        keypoint[0] * frame_dimensions[0],
-                        keypoint[1] * frame_dimensions[1],
+                        keypoint[0] * images_width,
+                        keypoint[1] * images_height,
                     ]
                 )
         query = torch.tensor(np.array(query_coordinates, dtype=np.float32)).to(device)
@@ -178,8 +201,8 @@ class AiInterpolator:
                 object_keypoint = pred_tracks_cpu[frame_index][query_index]
                 object_keypoint_visibility = pred_visibility_cpu[frame_index][query_index]
                 keypoint_data = (
-                    float(object_keypoint[0] / frame_dimensions[0]),
-                    float(object_keypoint[1] / frame_dimensions[1]),
+                    float(object_keypoint[0] / images_width),
+                    float(object_keypoint[1] / images_height),
                     YoloVisibility.LABELED_VISIBLE
                     if object_keypoint_visibility
                     else YoloVisibility.LABELED_NOT_VISIBLE,
@@ -205,9 +228,9 @@ class AiInterpolator:
         del model
         del video_tensor
         gc.collect()
-        torch.cuda.empty_cache()
-        torch.cuda.synchronize()
-        torch.cuda.reset_peak_memory_stats()
-        torch.cuda.reset_accumulated_memory_stats()
+        # torch.cuda.empty_cache()
+        # torch.cuda.synchronize()
+        # torch.cuda.reset_peak_memory_stats()
+        # torch.cuda.reset_accumulated_memory_stats()
 
         return annotations
