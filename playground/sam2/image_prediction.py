@@ -1,9 +1,6 @@
-import gc
-
 import cv2
 import numpy as np
 import torch
-from cotracker.predictor import CoTrackerPredictor
 from sam2.build_sam import build_sam2
 from sam2.sam2_image_predictor import SAM2ImagePredictor
 
@@ -61,44 +58,15 @@ def main() -> None:
     sam2_model = build_sam2(model_cfg, sam2_checkpoint, device=device)
 
     predictor = SAM2ImagePredictor(sam2_model)
-    cotracker = CoTrackerPredictor(checkpoint="/home/bwbots/.cache/co-tracker/scaled_offline.pth")
-    cotracker = cotracker.to(device)
-    query_coordinates = [
-        [0, 711.6411894483497, 158.9850087293696],
-        [0, 686.7800441243893, 140.54632594743234],
-        [0, 598.2737293058256, 215.01613373587767],
-        [0, 576.5999103054498, 194.29851263257734],
-        [0, 442.33599276935877, 853.776873706832],
-        [0, 294.9321903814872, 968.9689188032922],
-        [0, 1463.207818441351, 754.5927407814276],
-        [0, 1537.6196291496547, 786.9563619132103],
-        [0, 1407.78010052413, 933.3764146649078],
-        [0, 1460.370984863277, 959.512490518302],
-    ]
-    query = torch.tensor(np.array(query_coordinates, dtype=np.float32)).to(device)
-    video_tensor = torch.from_numpy(np.stack([image])).permute(0, 3, 1, 2)[None].float()
-    video_tensor = video_tensor.to(device)
-    pred_tracks, pred_visibility = cotracker(video_tensor, queries=query[None])
-    del cotracker
-    del video_tensor
-    gc.collect()
 
-    input_point = np.array(
-        [
-            [[711.6411743164062, 158.98501586914062], [686.780029296875, 140.54632568359375]],
-            [[598.2737426757812, 215.01614379882812], [576.5999145507812, 194.2985076904297]],
-            [[442.33599853515625, 853.77685546875], [294.93218994140625, 968.968994140625]],
-            [[1463.207763671875, 754.5927124023438], [1537.61962890625, 786.9564208984375]],
-            [[1407.7801513671875, 933.3764038085938], [1460.3709716796875, 959.512451171875]],
-        ],
+    input_box = np.array(
+        [(687, 138, 28, 20), (576, 194, 23, 22), (294, 853, 149, 116), (1463, 754, 75, 33), (1407, 933, 54, 27)],
         dtype=np.float32,
     )
-    input_label = np.array([[1, 1], [1, 1], [1, 1], [1, 1], [1, 1]], dtype=np.int32)
 
     predictor.set_image(image)
     batch_masks, batch_scores, batch_logits = predictor.predict(
-        point_coords=input_point,
-        point_labels=input_label,
+        box=input_box,
         multimask_output=True,
     )
     all_masks = []

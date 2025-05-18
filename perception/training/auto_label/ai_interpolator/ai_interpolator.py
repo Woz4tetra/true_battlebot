@@ -115,27 +115,21 @@ class AiInterpolator:
             pbar = tqdm.tqdm(total=num_frames, desc="Filling out bounding boxes", unit="frame")
             for frame, annotation in zip(frames, annotations):
                 pbar.update(1)
-                per_object_coordinates = self._annotation_keypoints_to_input_coordinates(
-                    annotation, images_width, images_height
-                )
-                input_coordinates = []
-                input_labels = []
-                for main_index in range(len(per_object_coordinates)):
-                    object_row = []
-                    label_row = []
-                    for sub_index in range(len(per_object_coordinates)):
-                        object_coordinates = per_object_coordinates[sub_index]
-                        object_row.extend(object_coordinates)
-                        if sub_index == main_index:
-                            label_row.extend([1] * len(object_coordinates))
-                        else:
-                            label_row.extend([0] * len(object_coordinates))
-                    input_coordinates.append(object_row)
-                    input_labels.append(label_row)
                 predictor.set_image(frame)
+                input_boxes = []
+                for label in annotation.labels:
+                    keypoint_contours = [
+                        (keypoint[0] * images_width, keypoint[1] * images_height) for keypoint in label.keypoints
+                    ]
+                    keypoint_bounding_box = cv2.boundingRect(np.array(keypoint_contours, dtype=np.float32))
+                    x0 = keypoint_bounding_box[0]
+                    y0 = keypoint_bounding_box[1]
+                    x1 = keypoint_bounding_box[0] + keypoint_bounding_box[2]
+                    y1 = keypoint_bounding_box[1] + keypoint_bounding_box[3]
+                    input_boxes.append((x0, y0, x1, y1))
+                print(input_boxes)
                 batch_masks, batch_scores, batch_logits = predictor.predict(
-                    point_coords=input_coordinates,
-                    point_labels=input_labels,
+                    box=np.array(input_boxes),
                     multimask_output=True,
                 )
                 all_masks = []
