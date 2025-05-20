@@ -1,5 +1,6 @@
 import gc
 import logging
+import sys
 from pathlib import Path
 
 import cv2
@@ -13,6 +14,16 @@ from sam2.build_sam import build_sam2
 from sam2.sam2_image_predictor import SAM2ImagePredictor
 
 from auto_label.config.auto_label_config import TrackerConfig
+
+
+def list_stdout_handlers():
+    stdout_handlers = []
+    for name, logger in logging.Logger.manager.loggerDict.items():
+        if isinstance(logger, logging.Logger):
+            for handler in logger.handlers:
+                if isinstance(handler, logging.StreamHandler) and handler.stream == sys.stdout:
+                    stdout_handlers.append((name, handler))
+    return stdout_handlers
 
 
 class AiInterpolator:
@@ -60,6 +71,17 @@ class AiInterpolator:
         self._fill_out_bounding_boxes(frames, interpolated_annotations, images_width, images_height)
         for annotation in interpolated_annotations:
             self._save_annotation(images_dir, annotation)
+        self._remove_pytorch_loggers()
+
+    def _remove_pytorch_loggers(self) -> None:
+        for logger_name in ["root", "torch", "torchvision", "cotracker", "LoggingTensor", "hydra", "networkx"]:
+            logger = logging.getLogger(logger_name)
+            if not logger:
+                self.logger.warning(f"Logger {logger_name} not found")
+                continue
+            logger.setLevel(logging.WARNING)
+            for handler in logger.handlers:
+                logger.removeHandler(handler)
 
     def _annotation_keypoints_to_input_coordinates(
         self, annotation: YoloKeypointImage, images_width: int, images_height: int

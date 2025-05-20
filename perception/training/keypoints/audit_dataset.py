@@ -67,6 +67,16 @@ def main() -> None:
         print("Current index:", current_index)
         print(f"Current image: {image_path}")
         name = os.path.basename(os.path.splitext(image_path)[0])
+        if name not in annotation_paths:
+            print(f"Annotation not found for {image_path}. Would you like to delete it? (y/n)")
+            response = input()
+            if response.lower() == "y":
+                print(f"Deleting {image_path}")
+                os.remove(image_path)
+                images_paths.pop(current_index)
+                current_index = current_index % len(images_paths)
+            continue
+
         annotation_path = annotation_paths[name]
         image_id = f"{image_path.stem}-{current_index}"
         with open(annotation_path) as file:
@@ -108,6 +118,15 @@ def main() -> None:
                     (0, 0, 255),
                     1,
                 )
+        cv2.putText(
+            image,
+            f"Image: {image_path.name} | Index: {current_index}",
+            (10, 30),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.5,
+            (255, 255, 255),
+            1,
+        )
 
         cv2.imshow("image", image)
 

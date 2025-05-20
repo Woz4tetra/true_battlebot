@@ -29,7 +29,7 @@ class VideoFrameDatabase:
             self.current_frame += jump_count
         else:
             self.current_frame += 1
-        self.current_frame = max(0, min(self.current_frame, self.get_num_frames() - 1))
+        self.current_frame = max(0, min(self.current_frame, self.get_num_frames() - 2))
 
         frame_path = self.images_path / f"{self.current_frame:06d}.jpg"
         if not frame_path.exists():

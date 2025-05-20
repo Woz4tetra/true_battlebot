@@ -6,12 +6,12 @@ from perception_tools.training.yolo_keypoint_dataset import YoloKeypointImage
 
 
 class AnnotationCache:
-    def __init__(self, annotations_path: Path, cache_size: int = 1000) -> None:
+    def __init__(self, annotations_path: Path, dataset_path: Path, cache_size: int = 1000) -> None:
         self.annotations_path = annotations_path
+        self.dataset_path = dataset_path
         self.cache_size = cache_size
         self._cache: OrderedDict[str, YoloKeypointImage] = OrderedDict()
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.annotations_path.mkdir(parents=True, exist_ok=True)
 
     def clear(self) -> None:
         self._cache.clear()
@@ -21,7 +21,10 @@ class AnnotationCache:
         annotation_path = self.annotations_path / (annotation.image_id + ".txt")
         with open(annotation_path, "w") as file:
             file.write(annotation.to_txt())
-        self.logger.info(f"Saved annotation to {annotation_path}")
+        dataset_path = self.dataset_path / (annotation.image_id + ".txt")
+        with open(dataset_path, "w") as file:
+            file.write(annotation.to_txt())
+        self.logger.info(f"Saved annotation to {annotation_path} and {dataset_path}.")
 
     def add_annotation(self, annotation: YoloKeypointImage) -> None:
         self._save_annotation(annotation)
@@ -36,7 +39,7 @@ class AnnotationCache:
             self.logger.debug("Annotation cache size exceeded. Removing oldest annotation.")
 
     def get_image_id(self, video_name: str, frame_num: int) -> str:
-        return f"{video_name}-{frame_num}"
+        return f"{video_name}-{frame_num:06d}"
 
     def parse_image_id(self, image_id: str) -> tuple[str, int]:
         image_id_split = image_id.split("-")
@@ -63,3 +66,17 @@ class AnnotationCache:
             if annotation.is_file() and annotation.suffix == ".txt":
                 annotations.append(self.parse_image_id(annotation.stem))
         return annotations
+
+    def _delete_annotation_in_dir(self, directory: Path, video_name: str, frame_num: int) -> None:
+        image_id = self.get_image_id(video_name, frame_num)
+        annotation_path = directory / (image_id + ".txt")
+        if annotation_path.exists():
+            annotation_path.unlink()
+            self._cache.pop(image_id, None)
+            self.logger.info(f"Deleted annotation {image_id}.")
+        else:
+            self.logger.warning(f"Annotation {image_id} in {directory} not found.")
+
+    def delete_annotation(self, video_name: str, frame_num: int) -> None:
+        self._delete_annotation_in_dir(self.annotations_path, video_name, frame_num)
+        self._delete_annotation_in_dir(self.dataset_path, video_name, frame_num)

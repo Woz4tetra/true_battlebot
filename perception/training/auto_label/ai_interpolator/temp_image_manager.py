@@ -11,7 +11,7 @@ class TempImageManager:
         self.config = config
         self.backend = manual_label_backend
         self.ai_workspace_dir = self.backend.root_path / "ai_workspace"
-        self.dataset_dir = self.backend.root_path / "dataset"
+        self.dataset_dir = self.backend.dataset_path
         self.ai_workspace_dir.mkdir(parents=True, exist_ok=True)
         self.dataset_dir.mkdir(parents=True, exist_ok=True)
         self.logger = logging.getLogger(self.__class__.__name__)
@@ -30,23 +30,23 @@ class TempImageManager:
 
         self._clear_images()
         self.logger.debug(f"Creating batch for frame {start_frame}.")
-        self.backend.jump_to_frame(start_frame)
+        self.backend.jump_to_frame(start_frame - 1)
         while image := self.backend.next_frame():
             seq_num = image.header.seq
-            if seq_num == start_frame:
-                self.logger.debug(f"Skipping frame {start_frame}.")
-                continue
             if seq_num > start_frame + self.config.interpolation_max_length:
                 self.logger.debug(f"Reached end of batch at frame {seq_num}.")
                 break
-            if self.backend.get_annotation(seq_num) is not None:
+            if self.backend.get_annotation(seq_num) is not None and seq_num != start_frame:
                 self.logger.debug(f"Annotation found for frame {seq_num}.")
                 break
-            relative_index = seq_num - start_frame - 1
-            self._link_image(self.backend.get_current_frame_path(), f"{relative_index:06d}.jpg")
+            relative_index = seq_num - start_frame
+            batch_image_name = f"{relative_index:06d}.jpg"
+            self.logger.debug(f"Linking image {batch_image_name} for frame {seq_num}.")
+            self._link_image(self.backend.get_current_frame_path(), batch_image_name)
 
         # jump back to the start frame
         self.backend.jump_to_frame(start_frame)
+        self.logger.debug(f"Jumped back to frame {start_frame}.")
 
         return True
 
@@ -78,21 +78,3 @@ class TempImageManager:
             extension = path.suffix[1:]
             image_id = self.backend.annotations_cache.get_image_id(video_name, start_frame + index)
             path.rename(self.dataset_dir / f"{image_id}.{extension}")
-
-        # copy the original annotation and image to the dataset directory
-        original_annotation = self.backend.get_annotation(start_frame)
-        if original_annotation is None:
-            self.logger.warning(f"No annotation found for frame {start_frame}.")
-            return
-        annotation_path = self.dataset_dir / f"{original_annotation.image_id}.txt"
-        shutil.copyfile(
-            self.backend.annotations_cache.annotations_path / f"{original_annotation.image_id}.txt",
-            annotation_path,
-        )
-        original_image_path = selected_video.images_path / f"{original_annotation.image_id}.jpg"
-        database_image_path = self.dataset_dir / f"{original_annotation.image_id}.jpg"
-        try:
-            database_image_path.symlink_to(original_image_path)
-        except FileExistsError:
-            self.logger.debug(f"Image {database_image_path} already exists. Skipping.")
-            return

@@ -1,4 +1,5 @@
 # from https://stackoverflow.com/questions/41656176/tkinter-canvas-zoom-move-pan
+import gc
 import logging
 import tkinter as tk
 from dataclasses import dataclass
@@ -96,21 +97,57 @@ class CanvasImage:
         self._previous_state = 0  # previous state of the keyboard
         self._image_set = False
         self._did_edit_annotation = False
+        self._scale = 1.0
+
+        self.canvas_offset = 0.0, 0.0
+        self.canvas_scale = 1.0, 1.0
+        self._width = 0
+        self._height = 0
 
         # Create ImageFrame in placeholder widget
         self._imframe = frame
+        self._annotation = YoloKeypointImage(image_id="")
 
         # Container for the image
         self.container: int | None = None
 
+        self.label_colors = ["red", "blue", "green", "purple", "pink", "yellow", "orange", "brown", "gray", "black"]
+        self.label_map: list[str] = label_map
+
+        self.keypoint_colors = ["orange", "blue", "green", "purple", "pink", "yellow"]
+        self.keypoint_radius = 20
+        self.keypoint_names: dict[str, list[str]] = keypoint_names
+
+        self.selected_keypoint_ids: tuple[int, int] | None = None  # label index, keypoint index
+        self.selected_keypoint_coords: tuple[float, float] | None = None
+
+        self.selected_box_ids: tuple[int, int] | None = None  # label index, corner index
+
+        self.annotation_ids: dict[int, AnnotationObjectIds] = {}  # annotations to canvas ids
+
+    def _reset_ui(self) -> None:
+        if self._image_set:
+            self.canvas.delete(self.container)
+            self._image_set = False
+            self._scale = 1.0
+            self._width = 0
+            self._height = 0
+            self.canvas_offset = 0.0, 0.0
+            self.canvas_scale = 1.0, 1.0
+            self.canvas.delete("all")  # delete all objects on the canvas
+            self.canvas.configure(scrollregion=(0, 0, 0, 0))  # reset scroll region
+            self.canvas.xview_moveto(0)  # reset horizontal scroll
+            self.canvas.yview_moveto(0)  # reset vertical scroll
+            self.canvas.update()  # update canvas
+            del self.canvas
+            del self.hbar
+            del self.vbar
+            gc.collect()
         # Vertical and horizontal scrollbars for canvas
         self.hbar = ttk.Scrollbar(self._imframe, orient="horizontal")
         self.vbar = ttk.Scrollbar(self._imframe, orient="vertical")
         self.hbar.grid(row=1, column=0, sticky="we")
         self.vbar.grid(row=0, column=1, sticky="ns")
-
-        self.canvas_offset = 0.0, 0.0
-        self.canvas_scale = 1.0, 1.0
 
         # Create canvas and bind it with scrollbars. Public for outer classes
         self.canvas = tk.Canvas(
@@ -127,18 +164,6 @@ class CanvasImage:
         self.h_line2_id = self.canvas.create_line(0.0, 0.0, 0.0, 0.0, fill="black", width=1)  # horizontal line
         self.v_line2_id = self.canvas.create_line(0.0, 0.0, 0.0, 0.0, fill="black", width=1)  # vertical line
 
-        self.label_colors = ["red", "blue", "green", "purple", "pink", "yellow", "orange", "brown", "gray", "black"]
-        self.label_map: list[str] = label_map
-
-        self.keypoint_colors = ["orange", "blue", "green", "purple", "pink", "yellow"]
-        self.keypoint_radius = 20
-        self.keypoint_names: dict[str, list[str]] = keypoint_names
-
-        self.selected_keypoint_ids: tuple[int, int] | None = None  # label index, keypoint index
-        self.selected_keypoint_coords: tuple[float, float] | None = None
-
-        self.selected_box_ids: tuple[int, int] | None = None  # label index, corner index
-
         # Bind events to the Canvas
         self.canvas.bind("<Configure>", self.show_image_callback)  # canvas is resized
         self.canvas.bind("<ButtonPress-3>", self.move_from_callback)  # remember canvas position
@@ -154,34 +179,32 @@ class CanvasImage:
             0.0, 0.0, 0.0, 0.0, outline="red", width=10, state="hidden"
         )
 
-        self.annotation_ids: dict[int, AnnotationObjectIds] = {}  # annotations to canvas ids
-
     def set_image(self, image: Image.Image) -> None:
         self.logger.debug("Set image")
+
         self._image = image
-        self._width, self._height = image.size  # get image size
+        self._redraw_image()
+        self.erase_annotation()
 
-        # Create image pyramid
-        # Set ratio coefficient for image pyramid
-        self._scale = 1.0  # scale for the canvas image zoom, public for outer classes
-        self.canvas_offset = 0.0, 0.0
-        self.canvas_scale = 1.0, 1.0
+    def _redraw_image(self) -> None:
+        new_width, new_height = self._image.size
 
-        # Decide if this image huge or not
-        width, height = self._image.size  # public for outer classes
+        if self._width != new_width or self._height != new_height:
+            self._reset_ui()
 
-        if self.container is not None:
-            self.canvas.delete(self.container)
+            # Put image into container rectangle and use it to set proper coordinates to the image
+            self.container = self.canvas.create_rectangle((0, 0, new_width, new_height), width=0)
+        else:
+            self._set_position_and_scale(0, 0, 1.0)
 
-        # Put image into container rectangle and use it to set proper coordinates to the image
-        self.container = self.canvas.create_rectangle((0, 0, width, height), width=0)
+        self._width = new_width
+        self._height = new_height
 
         self._image_set = True
         self.redraw_figures()  # method for child classes
         self._show_image()  # show image on the canvas
         self.canvas.focus_set()  # set focus on the canvas
         self.draw_rectangle.clear()
-        self._erase_annotation()
 
     def set_annotation(self, annotation: YoloKeypointImage) -> None:
         """Set annotation to the image"""
@@ -204,11 +227,6 @@ class CanvasImage:
 
     def get_annotation(self) -> YoloKeypointImage:
         return self._annotation
-
-    def _reset_canvas(self) -> None:
-        """Move canvas to the initial position"""
-        self.set_image(self._image)
-        self._draw_annotation(self._annotation)
 
     def redraw_figures(self) -> None:
         """Dummy function to redraw figures in the children classes"""
@@ -254,6 +272,7 @@ class CanvasImage:
             self.canvas.canvasx(self.canvas.winfo_width()),
             self.canvas.canvasy(self.canvas.winfo_height()),
         )
+        self.logger.debug(f"Canvas coordinates: {box_canvas}")
         box_img_int = tuple(map(int, box_image))  # convert to integer or it will not work properly
 
         # Get scroll region box
@@ -280,9 +299,9 @@ class CanvasImage:
         y1 = max(box_canvas[1] - box_image[1], 0)
         x2 = min(box_canvas[2], box_image[2]) - box_image[0]
         y2 = min(box_canvas[3], box_image[3]) - box_image[1]
-        image = self._image.crop(
-            (int(x1 / self._scale), int(y1 / self._scale), int(x2 / self._scale), int(y2 / self._scale))
-        )
+        crop_box = (int(x1 / self._scale), int(y1 / self._scale), int(x2 / self._scale), int(y2 / self._scale))
+        self.logger.debug(f"Image crop box: {crop_box}")
+        image = self._image.crop(crop_box)
         imagetk = ImageTk.PhotoImage(image.resize((int(x2 - x1), int(y2 - y1)), self._filter))
         imageid = self.canvas.create_image(
             max(box_canvas[0], box_img_int[0]), max(box_canvas[1], box_img_int[1]), anchor="nw", image=imagetk
@@ -636,8 +655,9 @@ class CanvasImage:
             self.draw_rectangle.clear()
             self._reset_selected_keypoint()
         elif event.keysym == "r":
-            self._reset_canvas()
-            self._show_image()
+            self._reset_ui()
+            self._redraw_image()
+            self._draw_annotation(self._annotation)
 
     def _draw_annotation(self, annotation: YoloKeypointImage) -> None:
         """Draw annotation on the canvas"""
@@ -734,7 +754,7 @@ class CanvasImage:
 
         self.selected_keypoint_ids = None
 
-    def _erase_annotation(self) -> None:
+    def erase_annotation(self) -> None:
         """Erase annotation from the canvas"""
         for obj_ids in self.annotation_ids.values():
             for obj_id in obj_ids.all_ids():

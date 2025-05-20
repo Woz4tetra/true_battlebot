@@ -60,3 +60,14 @@ class HashesCache:
             if annotation.is_file() and annotation.suffix == ".txt":
                 annotations.append(annotation.stem)
         return annotations
+
+    def delete_annotation(self, image_id: str) -> None:
+        if image_id in self._cache:
+            del self._cache[image_id]
+        hash_path = self.hashes_path / (image_id + ".hash.txt")
+        if hash_path.exists():
+            hash_path.unlink()
+            self.logger.info(f"Deleted hash file {hash_path}.")
+        else:
+            self.logger.warning(f"Hash file {hash_path} does not exist.")
+        self.logger.info(f"Deleted hash for {image_id}.")

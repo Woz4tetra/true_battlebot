@@ -21,12 +21,13 @@ class ManualLabelBackend:
         self.logger = logging.getLogger(self.__class__.__name__)
         self.root_path = root_path
         self.annotations_path = root_path / "annotations"
+        self.dataset_path = root_path / "dataset"
         self.hashes_path = root_path / "hashes"
         self._make_dirs()
         self.video_source = VideoSourceCollection(root_path)
-        self.annotations_cache = AnnotationCache(self.annotations_path)
+        self.annotations_cache = AnnotationCache(self.annotations_path, self.dataset_path)
         self.hashes_cache = HashesCache(self.hashes_path)
-        self.image_keyframe_loader = ImageKeyframeLoader(self.annotations_path)
+        self.image_keyframe_loader = ImageKeyframeLoader(self.annotations_path, self.dataset_path)
         self.selected_video: VideoFrameDatabase | None = None
 
     def get_video_name(self) -> str:
@@ -38,6 +39,7 @@ class ManualLabelBackend:
             self.root_path.mkdir(parents=True, exist_ok=True)
         self.annotations_path.mkdir(parents=True, exist_ok=True)
         self.hashes_path.mkdir(parents=True, exist_ok=True)
+        self.dataset_path.mkdir(parents=True, exist_ok=True)
 
     def add_video(self, video_path: Path) -> None:
         self.video_source.add_video(video_path)
@@ -152,3 +154,12 @@ class ManualLabelBackend:
 
         self.annotations_cache.add_annotation(annotation)
         self.image_keyframe_loader.add_image(self.selected_video.images_path.stem, image_path)
+
+    def delete_annotation(self, frame_num: int) -> None:
+        if self.selected_video is None:
+            self.logger.warning("No video selected. Cannot delete annotation.")
+            return None
+        self.annotations_cache.delete_annotation(self.selected_video.images_path.stem, frame_num)
+        image_id = self.annotations_cache.get_image_id(self.selected_video.images_path.stem, frame_num)
+        self.hashes_cache.delete_annotation(image_id)
+        self.image_keyframe_loader.delete_image(image_id)

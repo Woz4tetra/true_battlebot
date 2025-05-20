@@ -1,3 +1,4 @@
+import copy
 import logging
 import string
 import tkinter as tk
@@ -36,7 +37,7 @@ class ManualLabelPanel(Panel):
 
         self.shown_tk_image: ImageTk.PhotoImage | None = None
 
-        self.window.rowconfigure(2, weight=1)
+        self.window.rowconfigure(3, weight=1)
         self.window.columnconfigure(0, weight=1)
 
         self.edit_frame = ttk.Frame(self.window)
@@ -68,6 +69,22 @@ class ManualLabelPanel(Panel):
         self.prev_annotation_button = ttk.Button(
             self.video_manage_frame, text="Previous Annotation", command=self.prev_annotation_button_callback
         )
+        self.first_frame_button = ttk.Button(
+            self.video_manage_frame, text="First Frame", command=self.first_frame_button_callback
+        )
+        self.last_frame_button = ttk.Button(
+            self.video_manage_frame, text="Last Frame", command=self.last_frame_button_callback
+        )
+        self.is_manual_label = ttk.Label(self.video_manage_frame, text="Manually labeled", width=15)
+        self.copy_prev_annotation_button = ttk.Button(
+            self.video_manage_frame, text="Copy Previous Annotation", command=self.copy_prev_annotation_callback
+        )
+        self.copy_next_annotation_button = ttk.Button(
+            self.video_manage_frame, text="Copy Next Annotation", command=self.copy_next_annotation_callback
+        )
+        self.delete_annotation_button = ttk.Button(
+            self.video_manage_frame, text="Delete Annotation", command=self.delete_annotation_callback
+        )
 
         self.label_selection_frame = ttk.Frame(self.window)
         self.label_selection_toolbar = LabelSelectionToolbar(
@@ -91,7 +108,7 @@ class ManualLabelPanel(Panel):
         self.label_table = LabelTable(
             self.label_table_frame,
             self.keypoints_config,
-            self.delete_annotation_callback,
+            self.delete_single_annotation_callback,
             self.highlight_annotation_callback,
             self.unhighlight_annotation_callback,
         )
@@ -102,7 +119,7 @@ class ManualLabelPanel(Panel):
         self.logger = logging.getLogger(self.__class__.__name__)
 
     def pack(self) -> None:
-        self.edit_frame.grid(row=2, column=0, sticky="nsew")
+        self.edit_frame.grid(row=3, column=0, sticky="nsew")
         self.label_table_frame.grid(row=0, column=0, sticky="nsew")
         self.image_display_frame.grid(row=0, column=1, sticky="nsew")
         self.video_manage_frame.grid(row=0, column=0, sticky="ew", padx=5, pady=5)
@@ -117,7 +134,13 @@ class ManualLabelPanel(Panel):
         self.ai_interpolate_button.grid(row=0, column=7, sticky="ew", padx=5, pady=5)
         self.add_video_button.grid(row=0, column=8, sticky="ew", padx=5, pady=5)
         self.videos_dropdown.grid(row=0, column=9, sticky="ew", padx=5, pady=5)
+        self.first_frame_button.grid(row=1, column=3, sticky="ew", padx=5, pady=5)
+        self.last_frame_button.grid(row=1, column=4, sticky="ew", padx=5, pady=5)
+        self.copy_prev_annotation_button.grid(row=1, column=5, sticky="ew", padx=5, pady=5)
+        self.copy_next_annotation_button.grid(row=1, column=6, sticky="ew", padx=5, pady=5)
+        self.delete_annotation_button.grid(row=1, column=7, sticky="ew", padx=5, pady=5)
         self.label_selection_frame.grid(row=1, column=0, sticky="ew", padx=5, pady=5)
+        self.is_manual_label.grid(row=1, column=0, sticky="ew", padx=5, pady=5)
 
         # Bind events
         self.window.bind_all("<Button-1>", self.focus_widget_callback)
@@ -223,10 +246,9 @@ class ManualLabelPanel(Panel):
 
     def update_frame_number_label(self, image: Image | None) -> None:
         if self.backend.selected_video is None or image is None:
-            self.frame_number_label.config(text="")
             return
         self.frame_number_label.config(
-            text=f"Frame: {image.header.seq} / {self.backend.selected_video.get_num_frames()}"
+            text=f"Frame: {image.header.seq} / {self.backend.selected_video.get_num_frames() - 1}"
         )
 
     def display_image(self, image: Image) -> None:
@@ -242,7 +264,7 @@ class ManualLabelPanel(Panel):
         annotation = self.get_current_annotation()
         # Convert the image to a format Tkinter can use
         self.image_canvas.set_image(PILImage.fromarray(image_array))
-        self.update_annotation(annotation)
+        self.update_annotation_ui(annotation)
 
     def keystroke_callback(self, event: tk.Event) -> None:
         if event.keysym == "Left" or event.keysym == "a":
@@ -285,6 +307,7 @@ class ManualLabelPanel(Panel):
         self.save_bbox_from_canvas()
 
     def save_bbox_from_canvas(self) -> None:
+        self.update_manual_label(True)
         new_bbox = self.image_canvas.get_bbox()
         if self.current_image is None:
             self.logger.warning("No image is currently displayed. Cannot add annotation.")
@@ -303,9 +326,9 @@ class ManualLabelPanel(Panel):
             self.backend.update_annotation(self.backend.get_current_frame_path(), current_annotation)
         annotation = self.backend.add_annotation(self.current_image, new_bbox, self.current_label_index)
 
-        self.update_annotation(annotation)
+        self.update_annotation_ui(annotation)
 
-    def update_annotation(self, annotation: YoloKeypointImage | None) -> None:
+    def update_annotation_ui(self, annotation: YoloKeypointImage | None) -> None:
         if annotation is not None:
             self.label_table.populate_table(annotation)
             self.image_canvas.set_annotation(annotation)
@@ -318,11 +341,15 @@ class ManualLabelPanel(Panel):
             return None
         annotation, was_manually_labeled = self.backend.get_annotation_from_dataset(self.current_image.header.seq)
         self.last_manually_labeled_annotation = annotation if was_manually_labeled else None
+        self.update_manual_label(was_manually_labeled)
         if annotation is not None:
             return annotation
         return None
 
-    def delete_annotation_callback(self, row_index: int) -> YoloKeypointImage | None:
+    def update_manual_label(self, was_manually_labeled: bool) -> None:
+        self.is_manual_label.config(text="Manually labeled" if was_manually_labeled else "Auto labeled")
+
+    def delete_single_annotation_callback(self, row_index: int) -> YoloKeypointImage | None:
         if self.current_image is None:
             self.logger.warning("No image is currently displayed. Cannot delete annotation.")
             return None
@@ -332,8 +359,9 @@ class ManualLabelPanel(Panel):
             return None
         annotation.labels.pop(row_index)
         self.backend.update_annotation(self.backend.get_current_frame_path(), annotation)
-        self.update_annotation(annotation)
+        self.update_annotation_ui(annotation)
         self.last_manually_labeled_annotation = annotation
+        self.update_manual_label(True)
         return annotation
 
     def highlight_annotation_callback(self, row_index: int) -> None:
@@ -372,3 +400,75 @@ class ManualLabelPanel(Panel):
         widget = event.widget
         if hasattr(widget, "focus_set"):
             widget.focus_set()
+
+    def first_frame_button_callback(self) -> None:
+        if self.backend.selected_video is None:
+            self.logger.warning("No video selected. Cannot go to first frame.")
+            return
+        image = self.backend.jump_to_frame(0)
+        if image is not None:
+            self.update_frame_number_label(image)
+            self.display_image(image)
+        else:
+            self.logger.warning("No more frames available.")
+
+    def last_frame_button_callback(self) -> None:
+        if self.backend.selected_video is None:
+            self.logger.warning("No video selected. Cannot go to last frame.")
+            return
+        image = self.backend.jump_to_frame(self.backend.selected_video.get_num_frames() - 1)
+        if image is not None:
+            self.update_frame_number_label(image)
+            self.display_image(image)
+        else:
+            self.logger.warning("No more frames available.")
+
+    def copy_prev_annotation_callback(self) -> None:
+        if self.current_image is None:
+            self.logger.warning("No image is currently displayed. Cannot copy previous annotation.")
+            return
+        annotation = self.backend.get_annotation(self.current_image.header.seq - 1)
+        if annotation is not None:
+            self.overwrite_annotation(annotation)
+        else:
+            self.logger.warning("No previous annotation found. Cannot copy.")
+
+    def copy_next_annotation_callback(self) -> None:
+        if self.current_image is None:
+            self.logger.warning("No image is currently displayed. Cannot copy next annotation.")
+            return
+        annotation = self.backend.get_annotation(self.current_image.header.seq + 1)
+        if annotation is not None:
+            self.overwrite_annotation(annotation)
+        else:
+            self.logger.warning("No previous annotation found. Cannot copy.")
+
+    def overwrite_annotation(self, annotation: YoloKeypointImage) -> None:
+        if self.backend.selected_video is None:
+            self.logger.warning("No video selected. Cannot overwrite annotation.")
+            return
+        new_annotation = copy.deepcopy(annotation)
+        new_annotation.image_id = self.backend.annotations_cache.get_image_id(
+            self.backend.selected_video.images_path.stem, self.current_image.header.seq
+        )
+        self.image_canvas.set_annotation(new_annotation)
+        self.update_annotation_ui(new_annotation)
+        self.backend.update_annotation(self.backend.get_current_frame_path(), new_annotation)
+        self.update_manual_label(True)
+        self.last_manually_labeled_annotation = new_annotation
+
+    def delete_annotation_callback(self) -> None:
+        if self.current_image is None:
+            self.logger.warning("No image is currently displayed. Cannot delete annotation.")
+            return
+        annotation = self.get_current_annotation()
+        if annotation is None:
+            self.logger.warning("No annotation found. Cannot delete.")
+            return
+        self.logger.debug(f"Deleting annotation {annotation.image_id}.")
+        self.update_annotation_ui(None)
+        self.last_manually_labeled_annotation = None
+        self.update_manual_label(False)
+        self.backend.delete_annotation(self.current_image.header.seq)
+        self.display_image(self.current_image)
+        self.image_canvas.erase_annotation()
