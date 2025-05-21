@@ -90,7 +90,9 @@ class AnnotationObjectIds:
 class CanvasImage:
     """Display and zoom image"""
 
-    def __init__(self, frame: ttk.Frame, label_map: list[str], keypoint_names: dict[str, list[str]]) -> None:
+    def __init__(
+        self, frame: ttk.Frame, label_map: list[str], keypoint_names: dict[str, list[str]], ui_scale: float
+    ) -> None:
         self.logger = logging.getLogger(self.__class__.__name__)
         self._delta = 1.3  # zoom magnitude
         self._filter = Image.Resampling.NEAREST  # could be: NEAREST, BOX, BILINEAR, HAMMING, BICUBIC, LANCZOS
@@ -98,6 +100,7 @@ class CanvasImage:
         self._image_set = False
         self._did_edit_annotation = False
         self._scale = 1.0
+        self.ui_scale = ui_scale
 
         self.canvas_offset = 0.0, 0.0
         self.canvas_scale = 1.0, 1.0
@@ -115,7 +118,7 @@ class CanvasImage:
         self.label_map: list[str] = label_map
 
         self.keypoint_colors = ["orange", "blue", "green", "purple", "pink", "yellow"]
-        self.keypoint_radius = 20
+        self.keypoint_radius = 10 * self.ui_scale
         self.keypoint_names: dict[str, list[str]] = keypoint_names
 
         self.selected_keypoint_ids: tuple[int, int] | None = None  # label index, keypoint index
@@ -203,7 +206,7 @@ class CanvasImage:
         self._image_set = True
         self.redraw_figures()  # method for child classes
         self._show_image()  # show image on the canvas
-        self.canvas.focus_set()  # set focus on the canvas
+        # self.canvas.focus_set()  # set focus on the canvas
         self.draw_rectangle.clear()
 
     def set_annotation(self, annotation: YoloKeypointImage) -> None:
@@ -681,7 +684,6 @@ class CanvasImage:
         y0 = max(int(bbox[1]), canvas_border[1])
         x1 = min(int(bbox[2]), canvas_border[2])
         y1 = min(int(bbox[3]), canvas_border[3])
-        canvas_border_scaled = self._bbox_image_to_scaled_canvas(canvas_border)
         self.logger.debug(f"Draw label: {label.class_index} with bbox: {(x0, y0, x1, y1)}")
         color = self.label_colors[label.class_index % len(self.label_colors)]
         obj_ids = AnnotationObjectIds(
@@ -700,8 +702,6 @@ class CanvasImage:
             color = self.keypoint_colors[index % len(self.keypoint_colors)]
             x = int(self._x_norm_to_scaled_canvas(keypoint[0]))
             y = int(self._y_norm_to_scaled_canvas(keypoint[1]))
-            x = int(min(max(x, canvas_border_scaled[0]), canvas_border_scaled[2]))
-            y = int(min(max(y, canvas_border_scaled[1]), canvas_border_scaled[3]))
             obj_ids.keypoint_circles.append(
                 self.canvas.create_oval(x - r, y - r, x + r, y + r, fill=color, outline=color, width=1)
             )

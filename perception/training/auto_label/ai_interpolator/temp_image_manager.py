@@ -33,7 +33,7 @@ class TempImageManager:
         self.backend.jump_to_frame(start_frame - 1)
         while image := self.backend.next_frame():
             seq_num = image.header.seq
-            if seq_num > start_frame + self.config.interpolation_max_length:
+            if seq_num > start_frame + self.config.interpolation_max_length - 1:
                 self.logger.debug(f"Reached end of batch at frame {seq_num}.")
                 break
             if self.backend.get_annotation(seq_num) is not None and seq_num != start_frame:

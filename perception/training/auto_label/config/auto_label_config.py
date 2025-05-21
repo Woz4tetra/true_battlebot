@@ -11,7 +11,7 @@ class TrackerConfig:
     sam2_model_config_path: str = "configs/sam2.1/sam2.1_hiera_l.yaml"
     sam2_checkpoint: str = "/home/bwbots/.cache/sam2/sam2.1_hiera_large.pt"
     cotracker_checkpoint: str = "/home/bwbots/.cache/co-tracker/scaled_offline.pth"
-    interpolation_max_length: int = 30
+    interpolation_max_length: int = 20
     sam2_batch_size: int = 10
 
 

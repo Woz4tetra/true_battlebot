@@ -34,10 +34,13 @@ class App:
 
     def run_ui(self) -> None:
         self.window = tk.Tk()
-        self.window.tk.call("tk", "scaling", 1.0)
+        screen_width, screen_height = self.get_screen_size()
+        ui_scale = 2.0 if (screen_width > 2000 or screen_height > 1500) else 1.0
+        self.window.tk.call("tk", "scaling", 1 / ui_scale)
 
         self.window.title("Auto Label Tool")
-        default_size = self.config.default_size if self.config.default_size else self.get_screen_size()
+        default_size = self.config.default_size if self.config.default_size else (screen_width, screen_height)
+        self.logger.info(f"Setting window size to {default_size}. UI scale: {ui_scale}")
         self.window.geometry(f"{default_size[0]}x{default_size[1]}")
         self.window.resizable(True, True)
         self.window.minsize(self.config.min_size[0], self.config.min_size[1])
@@ -51,6 +54,7 @@ class App:
             self.manual_label_backend,
             self.keypoints_config,
             self.interpolation_process,
+            ui_scale,
         )
         panel.pack()
 

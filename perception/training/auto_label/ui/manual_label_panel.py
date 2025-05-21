@@ -28,6 +28,7 @@ class ManualLabelPanel(Panel):
         backend: ManualLabelBackend,
         keypoints_config: KeypointsConfig,
         interpolation_process: InterpolationProcessManager,
+        ui_scale: float,
     ) -> None:
         super().__init__(window)
         self.backend = backend
@@ -51,9 +52,9 @@ class ManualLabelPanel(Panel):
         self.label_table_frame.columnconfigure(0, weight=1)
 
         self.video_manage_frame = ttk.Frame(self.window)
-        self.frame_number_label = ttk.Label(self.video_manage_frame, text="", width=15)
-        self.skip_frame_label = ttk.Label(self.video_manage_frame, text="Skip frames:")
-        self.skip_frame_entry = ttk.Entry(self.video_manage_frame, width=5)
+        self.current_frame_var = tk.StringVar(self.video_manage_frame)
+        self.total_frame_number_label = ttk.Label(self.video_manage_frame, text="", width=15)
+        self.current_frame_entry = ttk.Entry(self.video_manage_frame, width=5, textvariable=self.current_frame_var)
         self.add_video_button = ttk.Button(
             self.video_manage_frame, text="Add Video", command=self.add_video_button_callback
         )
@@ -104,6 +105,7 @@ class ManualLabelPanel(Panel):
             self.image_display_frame,
             [label.value for label in self.keypoints_config.labels],
             self.keypoints_config.keypoint_names,
+            ui_scale,
         )
         self.label_table = LabelTable(
             self.label_table_frame,
@@ -124,9 +126,8 @@ class ManualLabelPanel(Panel):
         self.image_display_frame.grid(row=0, column=1, sticky="nsew")
         self.video_manage_frame.grid(row=0, column=0, sticky="ew", padx=5, pady=5)
 
-        self.frame_number_label.grid(row=0, column=0, sticky="ew", padx=5, pady=5)
-        self.skip_frame_label.grid(row=0, column=1, sticky="ew", padx=5, pady=5)
-        self.skip_frame_entry.grid(row=0, column=2, sticky="ew", padx=5, pady=5)
+        self.current_frame_entry.grid(row=0, column=0, sticky="ew", padx=5, pady=5)
+        self.total_frame_number_label.grid(row=0, column=1, sticky="ew", padx=5, pady=5)
         self.prev_frame_button.grid(row=0, column=3, sticky="ew", padx=5, pady=5)
         self.next_frame_button.grid(row=0, column=4, sticky="ew", padx=5, pady=5)
         self.prev_annotation_button.grid(row=0, column=5, sticky="ew", padx=5, pady=5)
@@ -145,8 +146,7 @@ class ManualLabelPanel(Panel):
         # Bind events
         self.window.bind_all("<Button-1>", self.focus_widget_callback)
 
-        self.skip_frame_entry.bind("<Return>", self.skip_frame_entry_callback)
-        self.update_skip_frame_entry()
+        self.current_frame_var.trace_add("write", lambda *args: self.jump_frame_entry_callback(args[0]))
 
         self.window.bind("<ButtonPress-1>", self.button1_click_callback)
         # Handle keystrokes in idle mode, because program slows down on a weak computers,
@@ -196,21 +196,21 @@ class ManualLabelPanel(Panel):
         self.save_bbox_from_canvas()
         self.logger.debug(f"Next frame button clicked. Jumping {self.jump_count} frames.")
         image = self.backend.next_frame(jump_count=self.jump_count)
-        self.update_frame_number_label(image)
-        if image is not None:
-            self.display_image(image)
-        else:
-            self.logger.warning("No more frames available.")
+        self.refresh_image(image)
 
     def prev_frame_button_callback(self) -> None:
         self.save_bbox_from_canvas()
         self.logger.debug(f"Prev frame button clicked. Jumping {self.jump_count} frames.")
         image = self.backend.next_frame(jump_count=-1 * self.jump_count)
-        self.update_frame_number_label(image)
-        if image is not None:
-            self.display_image(image)
-        else:
+        self.refresh_image(image)
+
+    def refresh_image(self, image: Image | None) -> None:
+        if image is None:
             self.logger.warning("No more frames available.")
+            return
+        self.update_frame_number_label(image)
+        self.display_image(image)
+        self.update_jump_frame_entry()
 
     def next_annotation_button_callback(self) -> None:
         if self.current_image is None:
@@ -221,9 +221,7 @@ class ManualLabelPanel(Panel):
         for index in indices:
             if index > current_index:
                 image = self.backend.jump_to_frame(index)
-                if image is not None:
-                    self.update_frame_number_label(image)
-                    self.display_image(image)
+                self.refresh_image(image)
                 break
         else:
             self.backend.next_frame()
@@ -237,9 +235,7 @@ class ManualLabelPanel(Panel):
         for index in indices[::-1]:
             if index < current_index:
                 image = self.backend.jump_to_frame(index)
-                if image is not None:
-                    self.update_frame_number_label(image)
-                    self.display_image(image)
+                self.refresh_image(image)
                 break
         else:
             self.backend.next_frame(-1)
@@ -247,9 +243,7 @@ class ManualLabelPanel(Panel):
     def update_frame_number_label(self, image: Image | None) -> None:
         if self.backend.selected_video is None or image is None:
             return
-        self.frame_number_label.config(
-            text=f"Frame: {image.header.seq} / {self.backend.selected_video.get_num_frames() - 1}"
-        )
+        self.total_frame_number_label.config(text=f"of {self.backend.selected_video.get_num_frames() - 1}")
 
     def display_image(self, image: Image) -> None:
         self.logger.debug(f"Displaying image {image.header.seq}")
@@ -271,12 +265,6 @@ class ManualLabelPanel(Panel):
             self.prev_frame_button_callback()
         elif event.keysym == "Right" or event.keysym == "d":
             self.next_frame_button_callback()
-        elif event.keysym == "Up" or event.keysym == "w":
-            self.update_jump_count(self.jump_count + 1)
-            self.update_skip_frame_entry()
-        elif event.keysym == "Down" or event.keysym == "s":
-            self.update_jump_count(self.jump_count - 1)
-            self.update_skip_frame_entry()
         elif event.keysym in string.digits:
             index = int(event.keysym) - 1
             if index == -1:
@@ -290,24 +278,31 @@ class ManualLabelPanel(Panel):
             self.jump_count = jump_count
             self.logger.debug(f"Jump count updated to {self.jump_count}.")
 
-        self.skip_frame_entry.delete(0, tk.END)
-        self.skip_frame_entry.insert(0, str(self.jump_count))
+    def update_jump_frame_entry(self) -> None:
+        image = self.current_image
+        if image is None:
+            self.logger.warning("No image is currently displayed. Cannot update jump frame entry.")
+            return
 
-    def update_skip_frame_entry(self) -> None:
-        self.skip_frame_entry.delete(0, tk.END)
-        self.skip_frame_entry.insert(0, str(self.jump_count))
+        self.current_frame_var.set(str(image.header.seq))
 
-    def skip_frame_entry_callback(self, event: tk.Event) -> None:
-        self.update_jump_count(int(self.skip_frame_entry.get()))
+    def jump_frame_entry_callback(self, event: tk.Event) -> None:
+        if self.backend.selected_video is None:
+            self.logger.warning("No video selected. Cannot skip frame.")
+            return
 
-        # unselect the entry
-        self.skip_frame_entry.selection_clear()
+        frame_num = self.current_frame_var.get()
+        if not frame_num.isdigit():
+            self.logger.warning(f"Invalid frame number: '{frame_num}'. Must be a digit.")
+            return
+        image = self.backend.jump_to_frame(int(frame_num))
+        self.refresh_image(image)
+        self.logger.debug(f"Jumping to frame {frame_num}.")
 
     def button1_click_callback(self, event: tk.Event) -> None:
         self.save_bbox_from_canvas()
 
     def save_bbox_from_canvas(self) -> None:
-        self.update_manual_label(True)
         new_bbox = self.image_canvas.get_bbox()
         if self.current_image is None:
             self.logger.warning("No image is currently displayed. Cannot add annotation.")
@@ -318,6 +313,7 @@ class ManualLabelPanel(Panel):
             else:
                 current_annotation = self.last_manually_labeled_annotation
             if current_annotation is not None and not current_annotation.is_empty():
+                self.update_manual_label(True)
                 self.backend.update_annotation(self.backend.get_current_frame_path(), current_annotation)
             return
         self.logger.debug(f"Saving bbox {new_bbox} to backend.")
@@ -325,6 +321,7 @@ class ManualLabelPanel(Panel):
         if current_annotation is not None:
             self.backend.update_annotation(self.backend.get_current_frame_path(), current_annotation)
         annotation = self.backend.add_annotation(self.current_image, new_bbox, self.current_label_index)
+        self.update_manual_label(True)
 
         self.update_annotation_ui(annotation)
 

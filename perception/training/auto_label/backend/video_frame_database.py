@@ -48,4 +48,4 @@ class VideoFrameDatabase:
         return self.num_frames
 
     def close(self) -> None:
-        self.capture.release()
+        pass
