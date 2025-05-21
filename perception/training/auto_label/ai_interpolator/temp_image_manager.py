@@ -1,5 +1,4 @@
 import logging
-import shutil
 from pathlib import Path
 
 from auto_label.backend.manual_label_backend import ManualLabelBackend

@@ -36,7 +36,7 @@ class App:
         self.window = tk.Tk()
         screen_width, screen_height = self.get_screen_size()
         ui_scale = 2.0 if (screen_width > 2000 or screen_height > 1500) else 1.0
-        self.window.tk.call("tk", "scaling", 1 / ui_scale)
+        self.window.tk.call("tk", "scaling", 1.0)
 
         self.window.title("Auto Label Tool")
         default_size = self.config.default_size if self.config.default_size else (screen_width, screen_height)
