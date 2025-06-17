@@ -1,0 +1,20 @@
+{
+    "cage": {
+        "dims": {
+            "x": 2.35,
+            "y": 2.35
+        }
+    },
+    "actors": [
+        {
+            "name": "slow_camera",
+            "model": "ZED 2i",
+            "objective": "blue_slow_camera"
+        },
+        {
+            "name": "mini_bot",
+            "model": "STAB RAVE OMNI",
+            "objective": "keyboard_center"
+        }
+    ]
+}

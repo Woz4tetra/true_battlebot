@@ -64,5 +64,6 @@
     "python.analysis.extraPaths": [
         "/home/ben/ros_ws/devel/lib/python3.8/site-packages",
         "/home/ben/base_ws/lib/python3/dist-packages"
-    ]
+    ],
+    "prettier.tabWidth": 4
 }
