@@ -65,20 +65,53 @@ class TriOmniController : MonoBehaviour, ControllerInterface
         updateCommand();
     }
 
-    private void updateCommand()
+    private void ApplyWheelSpeeds(TwistMsg twist)
     {
-        TwistMsg twist = ComputeControl(setpoint);
         float linearXVelocity = (float)twist.linear.x;  // m/s
         float linearYVelocity = (float)twist.linear.y;  // m/s
         float angularVelocity = (float)twist.angular.z;  // rad/s
 
-        Debug.Log($"TriOmniController: linearXVelocity={linearXVelocity}, linearYVelocity={linearYVelocity}, angularVelocity={angularVelocity}");
+        float leftSpeed = -1 * linearXVelocity * Mathf.Sin(wheelAngles[0] * Mathf.Deg2Rad) + linearYVelocity * Mathf.Cos(wheelAngles[0] * Mathf.Deg2Rad) + angularVelocity * wheelBaseRadius;
+        float rightSpeed = -1 * linearXVelocity * Mathf.Sin(wheelAngles[1] * Mathf.Deg2Rad) + linearYVelocity * Mathf.Cos(wheelAngles[1] * Mathf.Deg2Rad) + angularVelocity * wheelBaseRadius;
+        float backSpeed = -1 * linearXVelocity * Mathf.Sin(wheelAngles[2] * Mathf.Deg2Rad) + linearYVelocity * Mathf.Cos(wheelAngles[2] * Mathf.Deg2Rad) + angularVelocity * wheelBaseRadius;
+        if (reverseLeft)
+            leftSpeed *= -1;
+        if (reverseRight)
+            rightSpeed *= -1;
+        if (reverseBack)
+            backSpeed *= -1;
+
+        leftWheel.setVelocity(leftSpeed);
+        rightWheel.setVelocity(rightSpeed);
+        backWheel.setVelocity(backSpeed);
+    }
+
+    private void ApplyForceToBody(TwistMsg twist)
+    {
+        float linearXVelocity = (float)twist.linear.x;  // m/s
+        float linearYVelocity = (float)twist.linear.y;  // m/s
+        float angularVelocity = (float)twist.angular.z;  // rad/s
+
+        TwistMsg groundTruth = GetGroundTruthVelocity();
+        float groundTruthLinearX = (float)groundTruth.linear.x;  // m/s
+        float groundTruthLinearY = (float)groundTruth.linear.y;  // m/s
+        float groundTruthAngular = (float)groundTruth.angular.z;  // rad/s
+
+        float dx = linearXVelocity - groundTruthLinearX;
+        float dy = linearYVelocity - groundTruthLinearY;
+        float dAngular = angularVelocity - groundTruthAngular;
 
         // Apply force to the body
-        Vector3 force = new Vector3(linearXVelocity, 0.0f, linearYVelocity);
-        Vector3 torque = new Vector3(0.0f, angularVelocity, 0.0f);
-        body.AddForce(force, ForceMode.VelocityChange);
-        body.AddTorque(torque, ForceMode.VelocityChange);
+        Vector3 force = new Vector3(dx, 0.0f, dy);
+        Vector3 torque = new Vector3(0.0f, dAngular, 0.0f);
+        body.AddRelativeForce(force, ForceMode.VelocityChange);
+        body.AddRelativeTorque(torque, ForceMode.VelocityChange);
+    }
+
+    private void updateCommand()
+    {
+        TwistMsg twist = ComputeControl(setpoint);
+        ApplyForceToBody(twist);
     }
 
     public OdometryMsg GetGroundTruth()
@@ -137,7 +170,7 @@ class TriOmniController : MonoBehaviour, ControllerInterface
     private TwistMsg GetGroundTruthVelocity()
     {
         Vector3 localVelocity = GetRelativeVelocity();  // m/s
-        Vector3 angularVelocity = -1 * body.angularVelocity;  // rad/s
+        Vector3 angularVelocity = body.angularVelocity;  // rad/s
 
         return new TwistMsg
         {
@@ -168,8 +201,8 @@ class TriOmniController : MonoBehaviour, ControllerInterface
 
         return new TwistMsg
         {
-            linear = new Vector3Msg { x = linear_x_out, y = linear_y_out },
-            angular = new Vector3Msg { z = angular_out }
+            linear = new Vector3Msg { x = -1 * linear_x_out, y = -1 * linear_y_out },
+            angular = new Vector3Msg { z = -1 * angular_out }
         };
     }
 

@@ -1182,7 +1182,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4859914119972843653, guid: 5bd45563ec35d1d669fbeb2538f27a1c, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5290591740318533916, guid: 5bd45563ec35d1d669fbeb2538f27a1c, type: 3}
       propertyPath: m_RootOrder
@@ -1474,6 +1474,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: MR STABS A-02 Bizarro
       objectReference: {fileID: 0}
+    - target: {fileID: 3603318423262771975, guid: 92ef453437936aa8fba1669e05f666d6, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1737,6 +1741,22 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 1568327040338405728, guid: bf0b2451407da9dcda7c173c79bb2de0, type: 3}
+      propertyPath: m_ParentAnchorRotation.w
+      value: 0.6123724
+      objectReference: {fileID: 0}
+    - target: {fileID: 1568327040338405728, guid: bf0b2451407da9dcda7c173c79bb2de0, type: 3}
+      propertyPath: m_ParentAnchorRotation.x
+      value: 0.35355338
+      objectReference: {fileID: 0}
+    - target: {fileID: 1568327040338405728, guid: bf0b2451407da9dcda7c173c79bb2de0, type: 3}
+      propertyPath: m_ParentAnchorRotation.y
+      value: 0.35355338
+      objectReference: {fileID: 0}
+    - target: {fileID: 1568327040338405728, guid: bf0b2451407da9dcda7c173c79bb2de0, type: 3}
+      propertyPath: m_ParentAnchorRotation.z
+      value: 0.6123724
+      objectReference: {fileID: 0}
     - target: {fileID: 4152997164187769119, guid: bf0b2451407da9dcda7c173c79bb2de0, type: 3}
       propertyPath: m_Name
       value: STAB RAVE OMNI
@@ -1779,6 +1799,38 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5926316408702800141, guid: bf0b2451407da9dcda7c173c79bb2de0, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5965041966408365859, guid: bf0b2451407da9dcda7c173c79bb2de0, type: 3}
+      propertyPath: m_ParentAnchorRotation.w
+      value: 0.6123724
+      objectReference: {fileID: 0}
+    - target: {fileID: 5965041966408365859, guid: bf0b2451407da9dcda7c173c79bb2de0, type: 3}
+      propertyPath: m_ParentAnchorRotation.x
+      value: -0.35355338
+      objectReference: {fileID: 0}
+    - target: {fileID: 5965041966408365859, guid: bf0b2451407da9dcda7c173c79bb2de0, type: 3}
+      propertyPath: m_ParentAnchorRotation.y
+      value: -0.35355338
+      objectReference: {fileID: 0}
+    - target: {fileID: 5965041966408365859, guid: bf0b2451407da9dcda7c173c79bb2de0, type: 3}
+      propertyPath: m_ParentAnchorRotation.z
+      value: 0.6123724
+      objectReference: {fileID: 0}
+    - target: {fileID: 8554244237634023562, guid: bf0b2451407da9dcda7c173c79bb2de0, type: 3}
+      propertyPath: m_ParentAnchorRotation.w
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8554244237634023562, guid: bf0b2451407da9dcda7c173c79bb2de0, type: 3}
+      propertyPath: m_ParentAnchorRotation.x
+      value: 0.70710677
+      objectReference: {fileID: 0}
+    - target: {fileID: 8554244237634023562, guid: bf0b2451407da9dcda7c173c79bb2de0, type: 3}
+      propertyPath: m_ParentAnchorRotation.y
+      value: 0.70710677
+      objectReference: {fileID: 0}
+    - target: {fileID: 8554244237634023562, guid: bf0b2451407da9dcda7c173c79bb2de0, type: 3}
+      propertyPath: m_ParentAnchorRotation.z
       value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
@@ -2336,6 +2388,10 @@ PrefabInstance:
     - target: {fileID: 4620375775225958716, guid: 250d37cd9e31845e88b5989a64f48e32, type: 3}
       propertyPath: m_RootOrder
       value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 5216086362637302625, guid: 250d37cd9e31845e88b5989a64f48e32, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5414332063139294573, guid: 250d37cd9e31845e88b5989a64f48e32, type: 3}
       propertyPath: m_RootOrder

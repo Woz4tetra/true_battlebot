@@ -1,5 +1,14 @@
 #!/bin/bash
 
+ZED_VERSION_MAJOR=5
+ZED_VERSION_MINOR=0
+ZED_PATCH_VERSION=2
+TENSOR_RT_VERSION_MAJOR=10
+TENSOR_RT_VERSION_MINOR=9
+CUDA_VERSION_MAJOR=12
+CUDA_VERSION_MINOR=8
+UBUNTU_VERSION_MAJOR=22
+
 set -e
 
 sudo apt-get update || true
@@ -12,7 +21,7 @@ sudo apt-get install --yes lsb-release wget less udev sudo build-essential cmake
 sudo mkdir -p /tmp
 sudo sudo chown -R 1000:1000 /tmp
 
-ZED_SDK_URL="https://download.stereolabs.com/zedsdk/${ZED_VERSION_MAJOR}.${ZED_VERSION_MINOR}/cu${CUDA_VERSION_MAJOR}${CUDA_VERSION_MINOR}/ubuntu${UBUNTU_VERSION_MAJOR}"
+ZED_SDK_URL="https://stereolabs.sfo2.cdn.digitaloceanspaces.com/zedsdk/${ZED_VERSION_MAJOR}.${ZED_VERSION_MINOR}/ZED_SDK_Ubuntu${UBUNTU_VERSION_MAJOR}_cuda${CUDA_VERSION_MAJOR}.${CUDA_VERSION_MINOR}_tensorrt${TENSOR_RT_VERSION_MAJOR}.${TENSOR_RT_VERSION_MINOR}_v${ZED_VERSION_MAJOR}.${ZED_VERSION_MINOR}.${ZED_PATCH_VERSION}.zstd.run"
 echo "Using ZED SDK URL: ${ZED_SDK_URL}"
 cd /tmp
 wget -q -O ZED_SDK_Linux_Ubuntu.run ${ZED_SDK_URL}

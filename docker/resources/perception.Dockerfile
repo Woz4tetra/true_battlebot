@@ -6,13 +6,6 @@ ARG ORGANIZATION
 ENV PROJECT_NAME=${PROJECT_NAME}
 ENV ORGANIZATION=${ORGANIZATION}
 ENV PYTHON_INSTALL_VERSION=3.11
-ENV UBUNTU_VERSION_MAJOR=22
-ENV UBUNTU_VERSION_MINOR=04
-ENV CUDA_VERSION_MAJOR=12
-ENV CUDA_VERSION_MINOR=1
-ENV CUDNN_VERSION_MAJOR=8
-ENV ZED_VERSION_MAJOR=4
-ENV ZED_VERSION_MINOR=1
 
 ENV DEBIAN_FRONTEND=noninteractive \
     SHELL=/bin/bash
@@ -78,11 +71,6 @@ COPY --chown=1000:1000 \
     ./install/install_apriltag.sh \
     /opt/${ORGANIZATION}/install/
 RUN bash /opt/${ORGANIZATION}/install/install_apriltag.sh
-
-COPY --chown=1000:1000 \
-    ./install/ros/install_depthai.sh \
-    /opt/${ORGANIZATION}/install/
-RUN bash /opt/${ORGANIZATION}/install/install_depthai.sh
 
 RUN sudo mkdir -p ${HOME}/.local && sudo chown -R 1000:1000 ${HOME}/.local
 

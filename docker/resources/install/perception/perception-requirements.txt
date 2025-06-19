@@ -1,10 +1,10 @@
 open3d
 ultralytics==8.3.5
 
---find-links https://download.pytorch.org/whl/cu121/torch_stable.html
-torch==2.2.2+cu121
-torchvision==0.17.2+cu121
-segmentation_models-pytorch==0.3.3
+--find-links https://download.pytorch.org/whl/torch/
+torch==2.7.1+cu126
+--find-links https://download.pytorch.org/whl/torchvision/
+torchvision==0.22.1+cu126
 
 pytorch-lightning
 transformers
@@ -16,5 +16,3 @@ livelossplot
 
 onnx
 onnxscript
-
-pyphysx @ git+https://github.com/Woz4tetra/pyphysx.git/@b0a9d6fc4cb0876aca09256dd0542af2235ba4d4
