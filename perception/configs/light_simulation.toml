@@ -35,7 +35,6 @@ exclude_filters = [
 
 [robot_keypoint]
 type = "SimulatedKeypoint"
-debug = false
 
 [robot_keypoint.model_to_system_labels.mapping]
 "mr_stabs_mk1" = "robot"

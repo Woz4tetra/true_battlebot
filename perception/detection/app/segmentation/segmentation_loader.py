@@ -1,6 +1,5 @@
 from typing import Union
 
-from app.config.segmentation.instance_segmentation_config import InstanceSegmentationConfig
 from app.config.segmentation.noop_segmentation_config import NoopSegmentationConfig
 from app.config.segmentation.segmentation_types import SegmentationConfig
 from app.config.segmentation.semantic_segmentation_config import SemanticSegmentationConfig
@@ -9,12 +8,10 @@ from app.container import Container
 from app.segmentation.load_simulated_segmentation_manager import load_simulated_segmentation_manager
 from app.segmentation.semantic_segmentation import SemanticSegmentation
 
-from .instance_segmentation import InstanceSegmentation
 from .noop_segmentation import NoopSegmentation
 from .simulated_segmentation import SimulatedSegmentation
 
 SegmentationImplementation = Union[
-    InstanceSegmentation,
     NoopSegmentation,
     SimulatedSegmentation,
     SemanticSegmentation,
@@ -27,9 +24,7 @@ def load_simulated_segmentation(container: Container, config: SimulatedSegmentat
 
 
 def load_segmentation(container: Container, config: SegmentationConfig) -> SegmentationImplementation:
-    if isinstance(config, InstanceSegmentationConfig):
-        return InstanceSegmentation(config)
-    elif isinstance(config, NoopSegmentationConfig):
+    if isinstance(config, NoopSegmentationConfig):
         return NoopSegmentation(config)
     elif isinstance(config, SimulatedSegmentationConfig):
         return load_simulated_segmentation(container, config)
