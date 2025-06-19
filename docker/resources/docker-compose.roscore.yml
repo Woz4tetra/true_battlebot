@@ -1,5 +1,3 @@
-version: "3"
-
 services:
     roscore:
         image: ${IMAGE_VERSION}

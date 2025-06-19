@@ -33,11 +33,11 @@ apt-get update
 . /etc/os-release
 if [ "$VERSION_ID" = "22.04" ]; then
   apt-get install -y \
-    docker-buildx-plugin=0.16.2-1~ubuntu.22.04~jammy \
-    docker-ce-rootless-extras=5:27.1.2-1~ubuntu.22.04~jammy \
-    docker-ce=5:27.1.2-1~ubuntu.22.04~jammy \
-    docker-ce-cli=5:27.1.2-1~ubuntu.22.04~jammy \
-    containerd.io=1.6.24-1
+    docker-buildx-plugin=0.24.0-1~ubuntu.22.04~jammy \
+    docker-ce-rootless-extras=5:28.2.2-1~ubuntu.22.04~jammy \
+    docker-ce=5:28.2.2-1~ubuntu.22.04~jammy \
+    docker-ce-cli=5:28.2.2-1~ubuntu.22.04~jammy \
+    containerd.io=1.7.27-1
 elif [ "$VERSION_ID" = "20.04" ]; then
   apt-get install -y \
     docker-buildx-plugin=0.16.2-1~ubuntu.20.04~focal \
@@ -52,7 +52,7 @@ fi
 
 #Install Docker Compose
 export DOCKER_COMPOSE_INSTALL_PATH=/usr/local/lib/docker/cli-plugins
-export DOCKER_COMPOSE_URL=https://github.com/docker/compose/releases/download/v2.29.7/docker-compose-linux-x86_64
+export DOCKER_COMPOSE_URL=https://github.com/docker/compose/releases/download/v2.37.1/docker-compose-linux-x86_64
 
 sudo mkdir -p ${DOCKER_COMPOSE_INSTALL_PATH}
 sudo curl -SL ${DOCKER_COMPOSE_URL} -o ${DOCKER_COMPOSE_INSTALL_PATH}/docker-compose

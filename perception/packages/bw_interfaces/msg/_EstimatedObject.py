@@ -95,8 +95,8 @@ float64[36] covariance
 ================================================================================
 MSG: geometry_msgs/Twist
 # This expresses velocity in free space broken into its linear and angular parts.
-Vector3  linear
-Vector3  angular
+Vector3 linear
+Vector3 angular
 
 ================================================================================
 MSG: geometry_msgs/Vector3

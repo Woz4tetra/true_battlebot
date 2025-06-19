@@ -1,4 +1,4 @@
-FROM nvidia/cuda:12.1.1-cudnn8-devel-ubuntu22.04
+FROM nvidia/cuda:12.8.1-cudnn-devel-ubuntu22.04
 
 ARG PROJECT_NAME
 ARG ORGANIZATION
@@ -40,7 +40,7 @@ RUN sudo chown -R 1000:1000 /opt/${ORGANIZATION}/
 
 COPY --chown=1000:1000 ./install/install_basic_tools.sh /opt/${ORGANIZATION}/install/
 RUN bash /opt/${ORGANIZATION}/install/install_basic_tools.sh
-    
+
 # ---
 # ZED SDK
 # ---
@@ -137,10 +137,10 @@ COPY --chown=1000:1000 \
     ./launch/perception.sh \
     /opt/${ORGANIZATION}/
 
-COPY --chown=1000:1000 \
-    ./install/perception/make_perception_symlinks.sh \
-    /opt/${ORGANIZATION}/install/
-RUN bash /opt/${ORGANIZATION}/install/make_perception_symlinks.sh
+# COPY --chown=1000:1000 \
+#     ./install/perception/make_perception_symlinks.sh \
+#     /opt/${ORGANIZATION}/install/
+# RUN bash /opt/${ORGANIZATION}/install/make_perception_symlinks.sh
 
 WORKDIR /opt/${ORGANIZATION}/${PROJECT_NAME}
 
