@@ -113,9 +113,11 @@ class Runner:
         self.heartbeat_publisher.publish(Heartbeat(header=Header.auto().to_msg(), node_name="perception"))
         if self.field_request_handler.has_request():
             self.is_field_request_active = True
+            self.logger.debug("Field request received, processing field")
         if self.is_field_request_active:
             if self.perceive_field():
                 self.is_field_request_active = False
+                self.logger.debug("Field request processed successfully")
         else:
             self.perceive_robot()
         self.transform_broadcaster.send_pending_transforms()
@@ -142,11 +144,13 @@ class Runner:
             return
         camera_data = self.camera.poll()
         if camera_data is None or camera_data.color_image.data.size == 0:
+            self.logger.warning("No camera data received. Skipping robot perception.")
             return
         self.camera_data = camera_data
         if tfstamped_camera_from_world := self.camera_data.tfstamped_camera_from_world:
             self.global_field_transformer.update_camera_transform(tfstamped_camera_from_world)
         if not (field := self.global_field_transformer.get_field()):
+            self.logger.debug("No field available for robot perception. Skipping.")
             return
         tf_camera_from_map = field.tfstamped_camera_from_map
         with ContextTimer("robot_keypoint.process_image"):

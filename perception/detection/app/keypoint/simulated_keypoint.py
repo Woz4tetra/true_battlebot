@@ -39,6 +39,7 @@ class SimulatedKeypoint(KeypointInterface):
         robots = self.ground_truth_manager.get_robots()
         stamps = set([robot.header.stamp.to_sec() for robot in robots])
         if stamps == self.prev_stamps:
+            self.logger.debug("No new robots detected, skipping processing")
             return None, None
         self.prev_stamps = stamps
         self.model_loader.update_model(camera_info)

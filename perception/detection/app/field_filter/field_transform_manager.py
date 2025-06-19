@@ -1,3 +1,5 @@
+import logging
+
 from bw_interfaces.msg import EstimatedObject
 from bw_shared.geometry.transform3d_stamped import Transform3DStamped
 from bw_shared.messages.field import Field
@@ -7,16 +9,19 @@ class FieldTransformManager:
     def __init__(self) -> None:
         self.field: Field | None = None
         self.tf_worldstart_from_camera: Transform3DStamped | None = None
+        self.logger = logging.getLogger(self.__class__.__name__)
 
     def update_field(self, msg: EstimatedObject) -> None:
         self.field = Field.from_msg(msg)
         self.tf_worldstart_from_camera = None
+        self.logger.debug(f"Updated field: {self.field}")
 
     def update_camera_transform(self, camera_transform: Transform3DStamped) -> None:
         self.tf_worldstart_from_camera = camera_transform
 
     def get_field(self) -> Field | None:
         if self.tf_worldstart_from_camera is None or self.field is None:
+            self.logger.debug("Field or camera transform not set, cannot get field.")
             return None
         tf_map_from_camerastart = self.field.tf_map_from_camera
         tf_map_from_camera = tf_map_from_camerastart.transform_by(self.tf_worldstart_from_camera.transform)

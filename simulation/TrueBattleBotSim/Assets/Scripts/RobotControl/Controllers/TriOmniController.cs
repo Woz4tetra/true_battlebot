@@ -208,7 +208,7 @@ class TriOmniController : MonoBehaviour, ControllerInterface
 
     public void SetCommand(TwistMsg twist)
     {
-        if (IsUpsideDown())
+        if (!IsUpsideDown())
         {
             twist.linear.x *= -1;
             twist.linear.y *= -1;

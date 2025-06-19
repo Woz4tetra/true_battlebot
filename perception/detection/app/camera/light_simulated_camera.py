@@ -4,6 +4,7 @@ import numpy as np
 from app.camera.camera_interface import CameraInterface, CameraMode
 from app.config.camera.light_simulated_camera_config import LightSimulatedCameraConfig
 from app.config.camera_topic_config import CameraTopicConfig
+from bw_shared.geometry.transform3d import Transform3D
 from bw_shared.messages.header import Header
 from perception_tools.messages.camera_data import CameraData
 from perception_tools.messages.image import Image
@@ -44,6 +45,7 @@ class LightSimulatedCamera(CameraInterface):
                 np.zeros((camera_info.height, camera_info.width, 3), dtype=np.uint8),
             )
             self.camera_data.point_cloud.header = Header.from_msg(camera_info.header)
+            self.camera_data.tf_camera_from_world = Transform3D.identity()
         return self.camera_data
 
     def close(self) -> None:
