@@ -10,7 +10,7 @@ from bw_shared.configs.maps_config import MapConfig, MapsConfig
 from bw_shared.configs.robot_fleet_config import RobotFleetConfig
 from bw_shared.enums.field_type import FieldType
 from bw_shared.enums.label import Label
-from bw_shared.environment import get_project_dir
+from bw_shared.environment import get_project_dir, get_robot
 
 
 @dataclass
@@ -27,7 +27,7 @@ class SharedConfig:
         if not map_path:
             map_path = os.path.join(get_project_dir(), "shared", "configs", "maps.toml")
         if not robot_config:
-            robot_config = os.path.join(get_project_dir(), "shared", "configs", "robots.toml")
+            robot_config = os.path.join(get_project_dir(), "shared", "configs", get_robot(), "robots.toml")
         if not label_config:
             label_config = os.path.join(get_project_dir(), "shared", "configs", "labels.toml")
         if not opponent_templates:

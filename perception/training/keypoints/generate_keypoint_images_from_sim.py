@@ -39,6 +39,7 @@ MODEL_LABEL_TO_SEGMENTATION_LABEL_MAP = {
     ModelLabel.MRS_BUFF_MK2: ModelLabel.MAIN_BOT,
     ModelLabel.ROBOT: ModelLabel.ROBOT,
     ModelLabel.REFEREE: ModelLabel.REFEREE,
+    ModelLabel.OMNI_BOT: ModelLabel.OMNI_BOT,
 }
 SEGMENTATION_LABELS = tuple(set(MODEL_LABEL_TO_SEGMENTATION_LABEL_MAP.values()))
 

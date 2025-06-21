@@ -1,0 +1,5 @@
+<launch>
+    <node name="crsf_bridge" pkg="bw_teleop" type="crsf_bridge.py" output="screen"
+        respawn="true" clear_params="true">
+    </node>
+</launch>

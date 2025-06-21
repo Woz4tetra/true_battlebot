@@ -10,10 +10,12 @@
         <include file="$(find bw_teleop)/launch/tank_teleop.launch" />
         <include file="$(find bw_bringup)/launch/subsystems/twist_mux.launch" />
     </group>
-    <group ns="mini_bot">
+    <group ns="omni_bot">
         <include file="$(find bw_bringup)/launch/subsystems/twist_mux.launch" />
     </group>
     <include file="$(find bw_bringup)/launch/subsystems/simulation_static_transforms.launch" />
     <node pkg="bw_command_center" type="simulation_pause_relay.py" name="simulation_pause_relay" />
-    <include file="$(find bw_navigation)/launch/bw_navigation.launch" />
+    <include file="$(find bw_navigation)/launch/bw_navigation.launch">
+        <arg name="planner" value="HolonomicTrajectoryPlanner" />
+    </include>
 </launch>

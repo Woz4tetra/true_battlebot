@@ -32,6 +32,7 @@ LABEL_COLORS = {
     ModelLabel.MINI_BOT: LabelColor(0.0, 0.115, 1.0),
     ModelLabel.OPPONENT_1: LabelColor(1.0, 0.61, 0.0),
     ModelLabel.OPPONENT_2: LabelColor(1.0, 0.71, 0.1),
+    ModelLabel.OMNI_BOT: LabelColor(0.0, 0.115, 1.0),
 }
 
 

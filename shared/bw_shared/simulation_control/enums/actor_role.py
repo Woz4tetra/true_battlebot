@@ -9,3 +9,4 @@ class ActorRole(str, Enum):
     REFEREE = "referee"
     CAMERA_1 = "camera_1"
     CAMERA_2 = "camera_2"
+    OMNI_BOT = "omni_bot"

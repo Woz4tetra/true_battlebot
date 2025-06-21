@@ -1,3 +1,0 @@
-plugins:
-    - { name: static, type: "costmap_2d::StaticLayer" }
-    - { name: inflation, type: "costmap_2d::InflationLayer" }

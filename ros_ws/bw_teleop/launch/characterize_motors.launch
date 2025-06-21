@@ -8,7 +8,7 @@
             <param name="sensor_path"
                 value="/dev/serial/by-id/usb-Silicon_Labs_CP2104_USB_to_UART_Bridge_Controller_0161856F-if00-port0" />
         </node>
-        <include file="$(find bw_teleop)/launch/mini_bot_bridge.launch">
+        <include file="$(find bw_teleop)/launch/crsf_bridge.launch">
             <param name="lookup_table" value="passthrough" />
         </include>
         <node pkg="rosbag" type="record" name="rosbag_characterize_motors"

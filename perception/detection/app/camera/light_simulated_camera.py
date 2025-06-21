@@ -46,6 +46,7 @@ class LightSimulatedCamera(CameraInterface):
             )
             self.camera_data.point_cloud.header = Header.from_msg(camera_info.header)
             self.camera_data.tf_camera_from_world = Transform3D.identity()
+        self.camera_data.set_header(Header.auto(self.camera_data.camera_info.header.frame_id))
         return self.camera_data
 
     def close(self) -> None:

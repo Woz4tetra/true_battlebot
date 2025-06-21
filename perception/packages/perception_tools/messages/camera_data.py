@@ -22,7 +22,7 @@ class CameraData:
     def set_header(self, header: Header) -> None:
         self.color_image.header = header
         self.point_cloud.header = header
-        self.camera_info.header = header
+        self.camera_info.header = header.to_msg()
         self.imu.header = header
 
     @property

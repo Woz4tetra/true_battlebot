@@ -1,0 +1,60 @@
+target_tick_rate = 120.0
+
+[camera]
+type = "SimulatedCamera"
+
+[field_request]
+stale_image_timeout = 2.0
+
+[field_filter]
+type = "PointCloudFieldFilter"
+
+[field_segmentation]
+type = "SemanticSegmentation"
+debug = true
+model_path = "field_deeplabv3_r50_2024-09-05.torchscript"
+
+[field_segmentation.model_to_system_labels.mapping]
+"field" = "field"
+"background" = "background"
+
+[ros]
+log = true
+exclude_filters = [
+    "/camera_0/simulated_segmentation",
+    "/camera_0/robot/debug_image",
+    "/camera_0/rgb/camera_info",
+    "/camera_0/rgb/image_raw",
+    "/camera_0/layer/image_raw",
+    "/camera_0/depth/depth_registered",
+    "/camera_0/robot/segmentation",
+    "/camera_0/robot/keypoints",
+    "/perception/heartbeat",
+    "/camera_0/simulated_field_result",
+    "/camera_0/ground_truth/robots",
+    "/filtered_states",
+    "/mini_bot/odom",
+    "/main_bot/odom",
+    "/referee/odom",
+    "/opponent_3lb/odom",
+    "/omni_bot/odom",
+]
+
+[robot_keypoint]
+type = "YoloKeypoint"
+debug_image = true
+threshold = 0.75
+model_path = "yolo11n-pose_2024-10-09.pt"
+
+[robot_keypoint.model_to_system_labels.mapping]
+"mr_stabs_mk1" = "robot"
+"mr_stabs_mk2" = "friendly_robot"
+"mrs_buff_mk1" = "friendly_robot"
+"mrs_buff_mk2" = "friendly_robot"
+"mini_bot" = "friendly_robot"
+"main_bot" = "friendly_robot"
+"omni_bot" = "controlled_robot"
+"stab_rave_omni" = "controlled_robot"
+"robot" = "robot"
+"opponent_1" = "robot"
+"referee" = "referee"

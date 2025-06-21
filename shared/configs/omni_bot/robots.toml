@@ -1,0 +1,18 @@
+[[robots]]
+name = "omni_bot"
+radius = 0.15
+is_controlled = true
+
+[[robots]]
+name = "main_bot"
+radius = 0.15
+
+[[robots]]
+name = "referee"
+team = "referee"
+radius = 0.25
+
+[[robots]]
+name = "opponent_3lb"
+team = "their_team"
+radius = 0.1

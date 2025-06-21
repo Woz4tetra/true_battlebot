@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
+	<arg name="planner" default="TrajectoryPlanner" />
 	<node name="bw_navigation" pkg="bw_navigation" type="bw_navigation_node.py" output="screen"
 		required="true">
-		<!-- <param name="planner" value="PidPlanner" /> -->
-		<param name="planner" value="TrajectoryPlanner" />
+		<param name="planner" value="$(arg planner)" />
 	</node>
 </launch>

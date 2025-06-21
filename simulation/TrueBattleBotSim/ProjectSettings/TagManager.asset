@@ -2,7 +2,7 @@
 %TAG !u! tag:unity3d.com,2011:
 --- !u!78 &1
 TagManager:
-  serializedVersion: 2
+  serializedVersion: 3
   tags:
   - Weapon
   - Main bot
@@ -15,6 +15,7 @@ TagManager:
   - mrs_buff_mk1
   - mrs_buff_mk2
   - robot
+  - stab_rave_omni
   layers:
   - Default
   - TransparentFX
@@ -36,7 +37,7 @@ TagManager:
   - PostProcessingTrackingCam
   - Field Object
   - indicators
-  - 
+  - omni_bot
   - 
   - 
   - 
@@ -52,3 +53,5 @@ TagManager:
   - name: Default
     uniqueID: 0
     locked: 0
+  m_RenderingLayers:
+  - Default

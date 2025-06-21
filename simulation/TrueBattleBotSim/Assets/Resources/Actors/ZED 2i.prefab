@@ -251,7 +251,7 @@ Camera:
   m_Depth: 0
   m_CullingMask:
     serializedVersion: 2
-    m_Bits: 330441
+    m_Bits: 1379017
   m_RenderingPath: 1
   m_TargetTexture: {fileID: 0}
   m_TargetDisplay: 1
@@ -531,7 +531,7 @@ MonoBehaviour:
   maxDistance: 5
   layerMask:
     serializedVersion: 2
-    m_Bits: 2248
+    m_Bits: 1050824
   debugRayCast: 0
   publishRate: 30
   viewAngleThreshold: 180

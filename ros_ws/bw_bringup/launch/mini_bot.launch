@@ -8,7 +8,7 @@
         <arg name="camera_name" value="camera_1" />
     </include> -->
     <group ns="mini_bot">
-        <include file="$(find bw_teleop)/launch/mini_bot_bridge.launch" />
+        <include file="$(find bw_teleop)/launch/crsf_bridge.launch" />
         <include file="$(find bw_bringup)/launch/subsystems/twist_mux.launch" />
     </group>
     <group ns="main_bot">
@@ -16,4 +16,5 @@
         <include file="$(find bw_bringup)/launch/subsystems/twist_mux.launch" />
     </group>
     <include file="$(find bw_bringup)/launch/subsystems/mini_bot_static_transforms.launch" />
+    <include file="$(find bw_navigation)/launch/bw_navigation.launch" />
 </launch>

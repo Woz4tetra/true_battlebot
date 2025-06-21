@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 8055119822167480549}
   - component: {fileID: 8554244237634023562}
   - component: {fileID: 8158215670322410526}
-  m_Layer: 3
+  m_Layer: 20
   m_Name: Wheel Back
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -113,7 +113,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8ded925f1af29c171ab41237d10cdbe4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxWheelSpeedRpm: 2305
+  maxWheelSpeedRpm: 10000
   wheelRadius: 0.025
 --- !u!1 &420236417038972668
 GameObject:
@@ -126,7 +126,7 @@ GameObject:
   - component: {fileID: 8461678278345271412}
   - component: {fileID: 5965041966408365859}
   - component: {fileID: 7834816382933198102}
-  m_Layer: 3
+  m_Layer: 20
   m_Name: Wheel Left
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -228,7 +228,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8ded925f1af29c171ab41237d10cdbe4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxWheelSpeedRpm: 2305
+  maxWheelSpeedRpm: 10000
   wheelRadius: 0.025
 --- !u!1 &880780492703385582
 GameObject:
@@ -240,7 +240,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4340160947250870693}
   - component: {fileID: 3268756982980990426}
-  m_Layer: 3
+  m_Layer: 20
   m_Name: Mr Stabs Mk2 Wheel Collision
   m_TagString: Mini bot
   m_Icon: {fileID: 0}
@@ -292,7 +292,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5498646263195724065}
-  m_Layer: 3
+  m_Layer: 20
   m_Name: Collisions
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -324,7 +324,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5442030797307985992}
-  m_Layer: 3
+  m_Layer: 20
   m_Name: Collisions
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -357,7 +357,7 @@ GameObject:
   - component: {fileID: 7451374697715717589}
   - component: {fileID: 889546686442395868}
   - component: {fileID: 3675788228353813795}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: Stab Rave Omni Wheels
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -442,7 +442,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8879010748337512971}
   - component: {fileID: 3135032826810897672}
-  m_Layer: 3
+  m_Layer: 20
   m_Name: Sphere Collision
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -494,7 +494,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5580994482115948198}
-  m_Layer: 3
+  m_Layer: 20
   m_Name: Visuals
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -526,7 +526,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4649289414299889578}
-  m_Layer: 3
+  m_Layer: 20
   m_Name: Collisions
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -560,7 +560,7 @@ GameObject:
   - component: {fileID: 5045162558324940674}
   - component: {fileID: 1568327040338405728}
   - component: {fileID: 2721420407315137860}
-  m_Layer: 3
+  m_Layer: 20
   m_Name: Wheel Right
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -662,7 +662,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8ded925f1af29c171ab41237d10cdbe4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxWheelSpeedRpm: 2305
+  maxWheelSpeedRpm: 10000
   wheelRadius: 0.025
 --- !u!1 &3627857566088745046
 GameObject:
@@ -675,7 +675,7 @@ GameObject:
   - component: {fileID: 2781519237430449597}
   - component: {fileID: 1563863437830482690}
   - component: {fileID: 4063233960970367886}
-  m_Layer: 3
+  m_Layer: 20
   m_Name: IMU
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -778,7 +778,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7098195264351040586}
-  m_Layer: 3
+  m_Layer: 20
   m_Name: Visuals
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -827,9 +827,9 @@ GameObject:
   - component: {fileID: 1498270708510770579}
   - component: {fileID: 5012898795798865119}
   - component: {fileID: 8210140245578514557}
-  m_Layer: 3
+  m_Layer: 20
   m_Name: STAB RAVE OMNI
-  m_TagString: mr_stabs_mk2
+  m_TagString: stab_rave_omni
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -931,7 +931,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0232fa7b7e9e02367953dd82fa8d1141, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  robotName: mini_bot
+  robotName: omni_bot
   parentFrame: map
   leftWheel: {fileID: 7834816382933198102}
   rightWheel: {fileID: 2721420407315137860}
@@ -986,7 +986,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cdcdcfb4a221bb3b68e7574f1643d4ad, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  frameId: mini_bot
+  frameId: omni_bot
 --- !u!114 &4167154824022869920
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -999,8 +999,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1cfaef01096bc8508a46259d2d63ff08, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  linearScale: 1
-  angularScale: 10
+  linearScale: 3
+  angularScale: 20
   useJoystick: 0
 --- !u!114 &5618555918961677165
 MonoBehaviour:
@@ -1039,7 +1039,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ec44692c016b38f2fa5a1ac478811855, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  baseTopic: mini_bot
+  baseTopic: omni_bot
   commandTimeout: 0.1
 --- !u!114 &7698774717823770960
 MonoBehaviour:
@@ -1190,7 +1190,7 @@ GameObject:
   - component: {fileID: 4470196733066976628}
   - component: {fileID: 5849354279816379772}
   - component: {fileID: 1801910843695822900}
-  m_Layer: 3
+  m_Layer: 20
   m_Name: Image Synthesis
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1297,7 +1297,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7992222062456822538}
   - component: {fileID: 2871515821501111776}
-  m_Layer: 3
+  m_Layer: 20
   m_Name: Origin
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1354,7 +1354,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1389143735472322187}
-  m_Layer: 3
+  m_Layer: 20
   m_Name: Front Keypoint
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1387,7 +1387,7 @@ GameObject:
   - component: {fileID: 709678819377230386}
   - component: {fileID: 3873094163889677569}
   - component: {fileID: 6853282232599514770}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: Stab Rave Omni Wheels
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1473,7 +1473,7 @@ GameObject:
   - component: {fileID: 434084283030579619}
   - component: {fileID: 3410696459336251016}
   - component: {fileID: 6354846028668472159}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: Stab Rave Omni Wheels
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1557,7 +1557,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 883988231601178199}
-  m_Layer: 3
+  m_Layer: 20
   m_Name: Visuals
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1590,7 +1590,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6493020340557351439}
   - component: {fileID: 2473423437597584412}
-  m_Layer: 3
+  m_Layer: 20
   m_Name: Mr Stabs Mk2 Wheel Collision
   m_TagString: Mini bot
   m_Icon: {fileID: 0}
@@ -1642,7 +1642,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2587247603607045725}
-  m_Layer: 3
+  m_Layer: 20
   m_Name: SpawnHere
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1673,7 +1673,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1646085922053452781}
-  m_Layer: 3
+  m_Layer: 20
   m_Name: Visuals
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1707,7 +1707,7 @@ GameObject:
   - component: {fileID: 981209382733149153}
   - component: {fileID: 5679844939321193617}
   - component: {fileID: 8165055022611723896}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: Stab Rave Omni Chassis
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1792,7 +1792,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8148397086310626411}
   - component: {fileID: 877935793479722761}
-  m_Layer: 3
+  m_Layer: 20
   m_Name: Mr Stabs Mk2 Wheel Collision
   m_TagString: Mini bot
   m_Icon: {fileID: 0}
@@ -1846,7 +1846,7 @@ GameObject:
   - component: {fileID: 7955299199653573411}
   - component: {fileID: 6469770425047186566}
   - component: {fileID: 9092146035724322892}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: Stab Rave Omni Front
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1930,7 +1930,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4598897521984779}
-  m_Layer: 3
+  m_Layer: 20
   m_Name: Back Keypoint
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1961,7 +1961,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 377899069255985063}
-  m_Layer: 3
+  m_Layer: 20
   m_Name: Orientation Viz
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1993,7 +1993,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7136928281469313346}
-  m_Layer: 3
+  m_Layer: 20
   m_Name: Collisions
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2026,7 +2026,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6225103695260038869}
   - component: {fileID: 8319720415799005311}
-  m_Layer: 3
+  m_Layer: 20
   m_Name: Invisible Caster
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2126,7 +2126,7 @@ GameObject:
   - component: {fileID: 5829967736029571169}
   - component: {fileID: 3271547917905417310}
   - component: {fileID: 7580826472952703012}
-  m_Layer: 3
+  m_Layer: 20
   m_Name: Triangle
   m_TagString: Untagged
   m_Icon: {fileID: 0}

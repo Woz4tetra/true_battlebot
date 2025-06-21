@@ -26,7 +26,8 @@ from visualization_msgs.msg import MarkerArray
 
 from bw_navigation.exceptions import NavigationError
 from bw_navigation.goal_supplier import FixedPoseSupplier, GoalSupplierInterface, TrackedTargetSupplier
-from bw_navigation.planners import PidPlanner, PlannerInterface, TrajectoryPlanner
+from bw_navigation.planners import HolonomicTrajectoryPlanner, PidPlanner, PlannerInterface, TrajectoryPlanner
+from bw_navigation.planners.engines.config.holonomic_trajectory_planner_config import HolonomicTrajectoryPlannerConfig
 from bw_navigation.planners.engines.config.pid_planner_config import PidPlannerConfig
 from bw_navigation.planners.engines.config.trajectory_planner_config import TrajectoryPlannerConfig
 
@@ -35,22 +36,23 @@ class BwNavigationNode:
     def __init__(self) -> None:
         shared_config = get_shared_config()
 
-        self.controlled_robot = get_param("~controlled_robot", "mini_bot")
         self.tick_rate = get_param("~tick_rate", 100.0)
         self.friendly_fire = get_param("~friendly_fire", False)
         self.try_again_if_not_in_tolerance = get_param("~try_again_if_not_in_tolerance", True)
-        self.planner_name = get_param("~planner", PidPlannerConfig.type)
+        self.planner_name = get_param("~planner", HolonomicTrajectoryPlannerConfig.type)
 
         robot_configs = {robot.name: robot for robot in shared_config.robots.robots}
-        if self.controlled_robot not in robot_configs:
-            raise ValueError(f"Controlled robot {self.controlled_robot} not found in shared config")
+        controlled_robots = [robot for robot in robot_configs.values() if robot.is_controlled]
+        if len(controlled_robots) != 1:
+            raise ValueError(
+                "No controlled robot found" if not controlled_robots else "Multiple controlled robots found"
+            )
+        self.controlled_robot = controlled_robots[0].name
+        rospy.loginfo(f"Controlled robot: {self.controlled_robot}")
 
         self.non_opponent_robot_configs = [
             robot for robot in shared_config.robots.robots if robot.team != RobotTeam.THEIR_TEAM
         ]
-
-        if not robot_configs[self.controlled_robot].is_controlled:
-            raise ValueError(f"Controlled robot {self.controlled_robot} is not marked as controlled in shared config")
 
         self.goal_server = SimpleActionServer(
             "go_to_goal", GoToGoalAction, execute_cb=self.go_to_goal_callback, auto_start=False
@@ -109,6 +111,10 @@ class BwNavigationNode:
             )
         elif self.planner_name == PidPlannerConfig.type:
             self.planner = PidPlanner(self.controlled_robot, friendly_robot_name, avoid_robot_names, PidPlannerConfig())
+        elif self.planner_name == HolonomicTrajectoryPlannerConfig.type:
+            self.planner = HolonomicTrajectoryPlanner(
+                self.controlled_robot, friendly_robot_name, avoid_robot_names, HolonomicTrajectoryPlannerConfig()
+            )
         self.should_cancel = True
         rospy.loginfo(f"Initialized {len(self.goal_suppliers)} goal suppliers")
 

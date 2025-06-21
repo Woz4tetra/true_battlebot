@@ -2,7 +2,7 @@
     <node pkg="bw_shared_config" type="shared_config_node.py" name="shared_config_node"
         output="screen" clear_params="true" />
     <group ns="mini_bot">
-        <include file="$(find bw_teleop)/launch/mini_bot_bridge.launch" />
+        <include file="$(find bw_teleop)/launch/crsf_bridge.launch" />
         <include file="$(find bw_teleop)/launch/simple_teleop.launch" />
         <include file="$(find bw_bringup)/launch/subsystems/twist_mux.launch" />
     </group>

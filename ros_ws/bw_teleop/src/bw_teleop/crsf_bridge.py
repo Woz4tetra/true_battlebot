@@ -77,7 +77,7 @@ class PrefittedLookup(LookupInterface):
         return linear_x_command, angular_z_command
 
 
-class MiniBotBridge:
+class CrsfBridge:
     def __init__(self) -> None:
         self.mini_bot_config = load_rosparam_robot_config(get_param("~robot_name", "mini_bot"))
 
@@ -211,8 +211,8 @@ class MiniBotBridge:
 
 
 def main() -> None:
-    rospy.init_node("mini_bot_bridge", log_level=rospy.DEBUG)
-    node = MiniBotBridge()
+    rospy.init_node("crsf_bridge", log_level=rospy.DEBUG)
+    node = CrsfBridge()
     rospy.on_shutdown(node.shutdown)
     node.run()
 
