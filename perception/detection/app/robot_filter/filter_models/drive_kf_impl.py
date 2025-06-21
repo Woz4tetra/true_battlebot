@@ -24,7 +24,7 @@ def kf_state_transition(state: np.ndarray, dt: float) -> np.ndarray:
     theta = normalize_theta(state[STATE_t])
 
     vx_prev = state[STATE_vx]
-    vy_prev = 0.0  # state[STATE_vy]
+    vy_prev = state[STATE_vy]
 
     vx = vx_prev * math.cos(theta) - vy_prev * math.sin(theta)
     vy = vx_prev * math.sin(theta) + vy_prev * math.cos(theta)

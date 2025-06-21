@@ -36,7 +36,7 @@ class BwNavigationNode:
     def __init__(self) -> None:
         shared_config = get_shared_config()
 
-        self.tick_rate = get_param("~tick_rate", 100.0)
+        self.tick_rate = get_param("~tick_rate", 50.0)
         self.friendly_fire = get_param("~friendly_fire", False)
         self.try_again_if_not_in_tolerance = get_param("~try_again_if_not_in_tolerance", True)
         self.planner_name = get_param("~planner", HolonomicTrajectoryPlannerConfig.type)
@@ -104,6 +104,7 @@ class BwNavigationNode:
             GoalType.TRACKED_TARGET: TrackedTargetSupplier(self.controlled_robot, opponent_names),
         }
         friendly_robot_name = friendly_robot_names[0]  # TODO: Support multiple friendly robots
+        rospy.loginfo(f"Friendly robot: {friendly_robot_name}")
         self.planner: PlannerInterface
         if self.planner_name == TrajectoryPlannerConfig.type:
             self.planner = TrajectoryPlanner(
@@ -116,7 +117,8 @@ class BwNavigationNode:
                 self.controlled_robot, friendly_robot_name, avoid_robot_names, HolonomicTrajectoryPlannerConfig()
             )
         self.should_cancel = True
-        rospy.loginfo(f"Initialized {len(self.goal_suppliers)} goal suppliers")
+        rospy.loginfo(f"Initialized {len(self.goal_suppliers)} goal suppliers.")
+        rospy.loginfo(f"Using planner: {self.planner_name}")
 
     def estimated_field_callback(self, estimated_field: EstimatedObject) -> None:
         if not self.field.header.frame_id:
