@@ -1,8 +1,10 @@
+import math
 from typing import Optional, Tuple
 
 import rospy
 from bw_interfaces.msg import EstimatedObject, GoalEngineConfig
 from bw_shared.geometry.field_bounds import FieldBounds2D
+from bw_shared.geometry.in_plane import nearest_projected_point
 from bw_shared.geometry.xy import XY
 from bw_tools.messages.goal_strategy import GoalStrategy
 from geometry_msgs.msg import Twist
@@ -16,6 +18,7 @@ from bw_navigation.planners.engines.holonomic_trajectory_planner_engine import H
 from bw_navigation.planners.engines.trajectory_helpers import trajectory_to_msg
 from bw_navigation.planners.planner_interface import PlannerInterface
 from bw_navigation.planners.shared.compute_mirrored_goal import compute_mirrored_state
+from bw_navigation.planners.shared.get_bounded_match_state import get_bounded_match_state
 from bw_navigation.planners.shared.goal_progress import GoalProgress
 from bw_navigation.planners.shared.is_in_bounds import is_goal_in_bounds
 from bw_navigation.planners.shared.match_state import MatchState
@@ -69,9 +72,11 @@ class HolonomicTrajectoryPlanner(PlannerInterface):
             avoid_robot_names=self.avoid_robot_names,
         )
         if goal_strategy == GoalStrategy.MIRROR_FRIENDLY:
-            mirrored_match_state = compute_mirrored_state(match_state)
+            mirrored_match_state = compute_mirrored_state(match_state, math.pi / 2)
             if is_goal_in_bounds(self.buffer_xy, mirrored_match_state):
                 match_state = mirrored_match_state
+            else:
+                match_state = get_bounded_match_state(self.buffer_xy, match_state)
 
         twist = Twist()
         goal_progress = GoalProgress(is_done=False)

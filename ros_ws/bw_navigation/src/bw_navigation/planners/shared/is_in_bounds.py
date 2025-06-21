@@ -1,9 +1,10 @@
+from bw_shared.geometry.field_bounds import FieldBounds2D
 from bw_shared.geometry.xy import XY
 
 from bw_navigation.planners.shared.match_state import MatchState
 
 
-def get_inset_field(buffer_xy: XY, match_state: MatchState) -> tuple[XY, XY]:
+def get_inset_field(buffer_xy: XY, match_state: MatchState) -> FieldBounds2D:
     field = match_state.field_bounds
     controlled_robot_size = max(match_state.controlled_robot.size.x, match_state.controlled_robot.size.y)
     controlled_robot_size_half = controlled_robot_size / 2

@@ -3,38 +3,28 @@ import math
 from bw_interfaces.msg import EstimatedObject
 from bw_shared.geometry.polar import Polar
 from bw_shared.geometry.pose2d import Pose2D
-from geometry_msgs.msg import PoseWithCovariance, Twist
+from geometry_msgs.msg import Twist
 
 from bw_navigation.planners.engines.config.overlay_velocity_config import OverlayVelocityConfig
+from bw_navigation.planners.shared.goal_target_from_pose import goal_target_from_pose
 from bw_navigation.planners.shared.match_state import MatchState
 
 
-def compute_mirrored_goal(match_state: MatchState) -> EstimatedObject:
+def compute_mirrored_goal(match_state: MatchState, angle_offset: float) -> EstimatedObject:
     goal_point = match_state.goal_point
     friendly_point = match_state.friendly_robot_point
-    goal_target = match_state.goal_target
     relative_friendly_point = friendly_point - goal_point
     relative_friendly_polar = Polar.from_xy(relative_friendly_point)
-    mirrored_polar = Polar(-1 * relative_friendly_polar.radius, relative_friendly_polar.theta)
+    mirrored_polar = Polar(relative_friendly_polar.radius, relative_friendly_polar.theta + angle_offset)
     mirrored_point = mirrored_polar.to_xy() + goal_point
-    mirrored_theta = match_state.friendly_robot_pose.theta + math.pi
+    mirrored_theta = match_state.friendly_robot_pose.theta - angle_offset
     mirrored_pose = Pose2D(mirrored_point.x, mirrored_point.y, mirrored_theta)
-    return EstimatedObject(
-        header=goal_target.header,
-        child_frame_id=goal_target.child_frame_id,
-        pose=PoseWithCovariance(pose=mirrored_pose.to_msg(), covariance=goal_target.pose.covariance),
-        twist=goal_target.twist,
-        size=goal_target.size,
-        label=goal_target.label,
-        keypoints=goal_target.keypoints,
-        keypoint_names=goal_target.keypoint_names,
-        score=goal_target.score,
-    )
+    return goal_target_from_pose(mirrored_pose, match_state)
 
 
-def compute_mirrored_state(match_state: MatchState) -> MatchState:
+def compute_mirrored_state(match_state: MatchState, angle_offset: float = math.pi) -> MatchState:
     return MatchState(
-        goal_target=compute_mirrored_goal(match_state),
+        goal_target=compute_mirrored_goal(match_state, angle_offset),
         robot_states=match_state.robot_states,
         field_bounds=match_state.field_bounds,
         controlled_robot_name=match_state.controlled_robot_name,
