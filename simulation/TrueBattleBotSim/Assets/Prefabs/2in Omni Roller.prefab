@@ -42,7 +42,7 @@ ArticulationBody:
   m_GameObject: {fileID: 5584504393520092257}
   m_Enabled: 1
   serializedVersion: 5
-  m_Mass: 0.0000001
+  m_Mass: 0.00226705
   m_ParentAnchorPosition: {x: -0.012367297, y: 0.012367297, z: -0.00625}
   m_ParentAnchorRotation: {x: 0.27059817, y: 0.65328157, z: 0.65328157, w: 0.27059817}
   m_AnchorPosition: {x: 0, y: 0, z: 0}
@@ -86,7 +86,7 @@ ArticulationBody:
   m_AngularDamping: 0
   m_JointFriction: 0.05
   m_CenterOfMass: {x: 0, y: 0, z: 0}
-  m_InertiaTensor: {x: 0.000000001, y: 0.000000001, z: 0.000000001}
+  m_InertiaTensor: {x: 8.612e-11, y: 5.733e-11, z: 8.612e-11}
   m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
   m_IncludeLayers:
     serializedVersion: 2
@@ -112,7 +112,6 @@ GameObject:
   - component: {fileID: 7323578511457326700}
   - component: {fileID: 7121770957875649473}
   - component: {fileID: 5780245630895348073}
-  - component: {fileID: 9203251142087720736}
   m_Layer: 21
   m_Name: 2in Omni 14mm Hex Roller
   m_TagString: Untagged
@@ -233,69 +232,3 @@ CapsuleCollider:
   m_Height: 0.022
   m_Direction: 2
   m_Center: {x: -0.0000002384197, y: -0.000012540026, z: -0.00000011920984}
---- !u!171741748 &9203251142087720736
-ArticulationBody:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7938212613466290469}
-  m_Enabled: 1
-  serializedVersion: 5
-  m_Mass: 0.0000001
-  m_ParentAnchorPosition: {x: -0.000000048894442, y: 0.00000001862645, z: -0.000000019557774}
-  m_ParentAnchorRotation: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
-  m_AnchorPosition: {x: 0, y: 0, z: 0}
-  m_AnchorRotation: {x: 0, y: 0.70710677, z: 0, w: 0.70710677}
-  m_MatchAnchors: 1
-  m_ArticulationJointType: 2
-  m_LinearX: 2
-  m_LinearY: 2
-  m_LinearZ: 2
-  m_SwingY: 2
-  m_SwingZ: 2
-  m_Twist: 2
-  m_XDrive:
-    lowerLimit: 0
-    upperLimit: 0
-    stiffness: 0
-    damping: 0
-    forceLimit: 3.4028235e+38
-    target: 0
-    targetVelocity: 0
-    driveType: 0
-  m_YDrive:
-    lowerLimit: 0
-    upperLimit: 0
-    stiffness: 0
-    damping: 0
-    forceLimit: 3.4028235e+38
-    target: 0
-    targetVelocity: 0
-    driveType: 0
-  m_ZDrive:
-    lowerLimit: 0
-    upperLimit: 0
-    stiffness: 0
-    damping: 0
-    forceLimit: 3.4028235e+38
-    target: 0
-    targetVelocity: 0
-    driveType: 0
-  m_LinearDamping: 0.05
-  m_AngularDamping: 0.05
-  m_JointFriction: 0.05
-  m_CenterOfMass: {x: 0, y: 0, z: 0}
-  m_InertiaTensor: {x: 1e-12, y: 1e-12, z: 1e-12}
-  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ImplicitCom: 1
-  m_ImplicitTensor: 0
-  m_Immovable: 0
-  m_UseGravity: 1
-  m_CollisionDetectionMode: 0

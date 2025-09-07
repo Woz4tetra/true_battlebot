@@ -351,7 +351,7 @@ ArticulationBody:
   m_GameObject: {fileID: 5105299951841042410}
   m_Enabled: 1
   serializedVersion: 5
-  m_Mass: 0.01948
+  m_Mass: 0.034
   m_ParentAnchorPosition: {x: 0, y: 0, z: 0}
   m_ParentAnchorRotation: {x: 0, y: 0, z: 0.7071068, w: 0.7071068}
   m_AnchorPosition: {x: 0, y: 0, z: 0}
@@ -553,6 +553,18 @@ PrefabInstance:
       value: 2in Omni Roller
       objectReference: {fileID: 0}
     - target: {fileID: 9203251142087720736, guid: 597331e0c4c4cd7b392239a19401812b, type: 3}
+      propertyPath: m_ParentAnchorPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9203251142087720736, guid: 597331e0c4c4cd7b392239a19401812b, type: 3}
+      propertyPath: m_ParentAnchorPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9203251142087720736, guid: 597331e0c4c4cd7b392239a19401812b, type: 3}
+      propertyPath: m_ParentAnchorPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9203251142087720736, guid: 597331e0c4c4cd7b392239a19401812b, type: 3}
       propertyPath: m_ParentAnchorRotation.w
       value: 0.7071068
       objectReference: {fileID: 0}
@@ -647,6 +659,18 @@ PrefabInstance:
       value: 2in Omni Roller
       objectReference: {fileID: 0}
     - target: {fileID: 9203251142087720736, guid: 597331e0c4c4cd7b392239a19401812b, type: 3}
+      propertyPath: m_ParentAnchorPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9203251142087720736, guid: 597331e0c4c4cd7b392239a19401812b, type: 3}
+      propertyPath: m_ParentAnchorPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9203251142087720736, guid: 597331e0c4c4cd7b392239a19401812b, type: 3}
+      propertyPath: m_ParentAnchorPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9203251142087720736, guid: 597331e0c4c4cd7b392239a19401812b, type: 3}
       propertyPath: m_ParentAnchorRotation.w
       value: 0.7071068
       objectReference: {fileID: 0}
@@ -737,12 +761,24 @@ PrefabInstance:
       value: 2in Omni Roller
       objectReference: {fileID: 0}
     - target: {fileID: 9203251142087720736, guid: 597331e0c4c4cd7b392239a19401812b, type: 3}
+      propertyPath: m_ParentAnchorPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9203251142087720736, guid: 597331e0c4c4cd7b392239a19401812b, type: 3}
       propertyPath: m_ParentAnchorPosition.y
       value: 0.0000000037252903
       objectReference: {fileID: 0}
     - target: {fileID: 9203251142087720736, guid: 597331e0c4c4cd7b392239a19401812b, type: 3}
       propertyPath: m_ParentAnchorPosition.z
       value: -3.1401849e-16
+      objectReference: {fileID: 0}
+    - target: {fileID: 9203251142087720736, guid: 597331e0c4c4cd7b392239a19401812b, type: 3}
+      propertyPath: m_ParentAnchorRotation.w
+      value: 0.70710695
+      objectReference: {fileID: 0}
+    - target: {fileID: 9203251142087720736, guid: 597331e0c4c4cd7b392239a19401812b, type: 3}
+      propertyPath: m_ParentAnchorRotation.y
+      value: 0.70710695
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -952,6 +988,14 @@ PrefabInstance:
       propertyPath: m_ParentAnchorPosition.z
       value: -5.360631e-16
       objectReference: {fileID: 0}
+    - target: {fileID: 9203251142087720736, guid: 597331e0c4c4cd7b392239a19401812b, type: 3}
+      propertyPath: m_ParentAnchorRotation.w
+      value: 0.70710695
+      objectReference: {fileID: 0}
+    - target: {fileID: 9203251142087720736, guid: 597331e0c4c4cd7b392239a19401812b, type: 3}
+      propertyPath: m_ParentAnchorRotation.y
+      value: 0.70710695
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1013,6 +1057,26 @@ PrefabInstance:
     - target: {fileID: 5584504393520092257, guid: 597331e0c4c4cd7b392239a19401812b, type: 3}
       propertyPath: m_Name
       value: 2in Omni Roller
+      objectReference: {fileID: 0}
+    - target: {fileID: 9203251142087720736, guid: 597331e0c4c4cd7b392239a19401812b, type: 3}
+      propertyPath: m_ParentAnchorPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9203251142087720736, guid: 597331e0c4c4cd7b392239a19401812b, type: 3}
+      propertyPath: m_ParentAnchorPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9203251142087720736, guid: 597331e0c4c4cd7b392239a19401812b, type: 3}
+      propertyPath: m_ParentAnchorPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9203251142087720736, guid: 597331e0c4c4cd7b392239a19401812b, type: 3}
+      propertyPath: m_ParentAnchorRotation.w
+      value: 0.70710695
+      objectReference: {fileID: 0}
+    - target: {fileID: 9203251142087720736, guid: 597331e0c4c4cd7b392239a19401812b, type: 3}
+      propertyPath: m_ParentAnchorRotation.y
+      value: 0.70710695
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1116,6 +1180,14 @@ PrefabInstance:
       propertyPath: m_ParentAnchorPosition.z
       value: -9.1973855e-17
       objectReference: {fileID: 0}
+    - target: {fileID: 9203251142087720736, guid: 597331e0c4c4cd7b392239a19401812b, type: 3}
+      propertyPath: m_ParentAnchorRotation.w
+      value: 0.70710695
+      objectReference: {fileID: 0}
+    - target: {fileID: 9203251142087720736, guid: 597331e0c4c4cd7b392239a19401812b, type: 3}
+      propertyPath: m_ParentAnchorRotation.y
+      value: 0.70710695
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1205,6 +1277,18 @@ PrefabInstance:
     - target: {fileID: 5584504393520092257, guid: 597331e0c4c4cd7b392239a19401812b, type: 3}
       propertyPath: m_Name
       value: 2in Omni Roller
+      objectReference: {fileID: 0}
+    - target: {fileID: 9203251142087720736, guid: 597331e0c4c4cd7b392239a19401812b, type: 3}
+      propertyPath: m_ParentAnchorPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9203251142087720736, guid: 597331e0c4c4cd7b392239a19401812b, type: 3}
+      propertyPath: m_ParentAnchorPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9203251142087720736, guid: 597331e0c4c4cd7b392239a19401812b, type: 3}
+      propertyPath: m_ParentAnchorPosition.z
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 9203251142087720736, guid: 597331e0c4c4cd7b392239a19401812b, type: 3}
       propertyPath: m_ParentAnchorRotation.w
