@@ -111,7 +111,7 @@ class TriOmniController : MonoBehaviour, ControllerInterface
     private void updateCommand()
     {
         TwistMsg twist = ComputeControl(setpoint);
-        ApplyForceToBody(twist);
+        ApplyWheelSpeeds(twist);
     }
 
     public OdometryMsg GetGroundTruth()
