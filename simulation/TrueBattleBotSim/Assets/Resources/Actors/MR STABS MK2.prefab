@@ -16,7 +16,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &6718991273911544174
 Transform:
   m_ObjectHideFlags: 0
@@ -340,7 +340,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &8676081764063987344
 Transform:
   m_ObjectHideFlags: 0
@@ -1260,6 +1260,69 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: 10210, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &2582612680388900850
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7254249380143710371}
+  - component: {fileID: 9086847830601752483}
+  - component: {fileID: 4683252253056135550}
+  m_Layer: 3
+  m_Name: Mr Stabs Gum Rubber Wheel Tread
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7254249380143710371
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2582612680388900850}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.5, y: 0.5, z: 0.5, w: 0.5}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6246463308904787609}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!33 &9086847830601752483
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2582612680388900850}
+  m_Mesh: {fileID: 8068843790670580906, guid: 949301e5d0cec4dfaa26e7bca25a868f, type: 3}
+--- !u!64 &4683252253056135550
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2582612680388900850}
+  m_Material: {fileID: 13400000, guid: 60539c86c5d0075898a851531bd1e109, type: 2}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 5
+  m_Convex: 1
+  m_CookingOptions: 30
+  m_Mesh: {fileID: 8068843790670580906, guid: 949301e5d0cec4dfaa26e7bca25a868f, type: 3}
 --- !u!1 &2693556107192469902
 GameObject:
   m_ObjectHideFlags: 0
@@ -2421,6 +2484,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 8676081764063987344}
+  - {fileID: 7254249380143710371}
   m_Father: {fileID: 3875976903753494110}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &4559022204252941409
@@ -2539,6 +2603,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 6718991273911544174}
+  - {fileID: 4072725466450307396}
   m_Father: {fileID: 6608441765089771077}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &5062803442546305349
@@ -2815,7 +2880,7 @@ MonoBehaviour:
     i_max: 0
     epsilon: 0.000000001
     tolerance: 0
-  enablePid: 1
+  enablePid: 0
   reverseLeft: 1
   reverseRight: 0
   referenceObject: {fileID: 0}
@@ -3938,6 +4003,69 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!1 &7764168241035401426
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4072725466450307396}
+  - component: {fileID: 5922440868513931339}
+  - component: {fileID: 8809845653855527671}
+  m_Layer: 3
+  m_Name: Mr Stabs Gum Rubber Wheel Tread
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4072725466450307396
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7764168241035401426}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.5, y: 0.5, z: 0.5, w: 0.5}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 923386783887826921}
+  m_LocalEulerAnglesHint: {x: 0, y: 90, z: 90}
+--- !u!33 &5922440868513931339
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7764168241035401426}
+  m_Mesh: {fileID: 8068843790670580906, guid: 949301e5d0cec4dfaa26e7bca25a868f, type: 3}
+--- !u!64 &8809845653855527671
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7764168241035401426}
+  m_Material: {fileID: 13400000, guid: 60539c86c5d0075898a851531bd1e109, type: 2}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 5
+  m_Convex: 1
+  m_CookingOptions: 30
+  m_Mesh: {fileID: 8068843790670580906, guid: 949301e5d0cec4dfaa26e7bca25a868f, type: 3}
 --- !u!1 &7985113771665196913
 GameObject:
   m_ObjectHideFlags: 0
@@ -4000,10 +4128,10 @@ ArticulationBody:
     upperLimit: 0
     stiffness: 1
     damping: 1000
-    forceLimit: 100
+    forceLimit: 3.4028235e+38
     target: 0
     targetVelocity: 0
-    driveType: 0
+    driveType: 3
   m_YDrive:
     lowerLimit: 0
     upperLimit: 0
@@ -4026,7 +4154,7 @@ ArticulationBody:
   m_AngularDamping: 0
   m_JointFriction: 0
   m_CenterOfMass: {x: -0.00152, y: 0, z: 0}
-  m_InertiaTensor: {x: 0.000002365622, y: 0.000002365622, z: 0.00000431825}
+  m_InertiaTensor: {x: 0.0000001365622, y: 0.000002365622, z: 0.00000431825}
   m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
   m_IncludeLayers:
     serializedVersion: 2
@@ -4038,7 +4166,7 @@ ArticulationBody:
   m_ImplicitTensor: 0
   m_Immovable: 0
   m_UseGravity: 1
-  m_CollisionDetectionMode: 0
+  m_CollisionDetectionMode: 1
 --- !u!114 &2438036507904052247
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4053,6 +4181,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxWheelSpeedRpm: 2305
   wheelRadius: 0.025
+  accelerationRpmPerSec: 1000
+  decelerationRpmPerSec: 10000
 --- !u!1 &8024367215400735757
 GameObject:
   m_ObjectHideFlags: 0
@@ -4488,10 +4618,10 @@ ArticulationBody:
     upperLimit: 0
     stiffness: 1
     damping: 1000
-    forceLimit: 100
+    forceLimit: 3.4028235e+38
     target: 0
     targetVelocity: 0
-    driveType: 0
+    driveType: 3
   m_YDrive:
     lowerLimit: 0
     upperLimit: 0
@@ -4514,7 +4644,7 @@ ArticulationBody:
   m_AngularDamping: 0
   m_JointFriction: 0
   m_CenterOfMass: {x: -0.00152, y: 0, z: 0}
-  m_InertiaTensor: {x: 0.000002365622, y: 0.000002365622, z: 0.00000431825}
+  m_InertiaTensor: {x: 0.0000001365622, y: 0.000002365622, z: 0.00000431825}
   m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
   m_IncludeLayers:
     serializedVersion: 2
@@ -4526,7 +4656,7 @@ ArticulationBody:
   m_ImplicitTensor: 0
   m_Immovable: 0
   m_UseGravity: 1
-  m_CollisionDetectionMode: 0
+  m_CollisionDetectionMode: 1
 --- !u!114 &2285173173366205031
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4541,6 +4671,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxWheelSpeedRpm: 2305
   wheelRadius: 0.025
+  accelerationRpmPerSec: 1000
+  decelerationRpmPerSec: 10000
 --- !u!1001 &722341230885471445
 PrefabInstance:
   m_ObjectHideFlags: 0

@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 3082207112056096432}
   - component: {fileID: 771966497806363370}
   - component: {fileID: 830102212904855190}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: 2in Omni 14mm Hex Hub
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -118,7 +118,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7209884233540193191}
-  m_Layer: 0
+  m_Layer: 21
   m_Name: Virtual Spoke 8
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -150,7 +150,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6001823483754620380}
-  m_Layer: 0
+  m_Layer: 21
   m_Name: Virtual Spoke 4
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -182,7 +182,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3984184613322650537}
-  m_Layer: 0
+  m_Layer: 21
   m_Name: Virtual Spoke 2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -214,7 +214,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7964783045944030064}
-  m_Layer: 0
+  m_Layer: 21
   m_Name: Virtual Spoke 7
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -246,7 +246,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 840488361243268419}
-  m_Layer: 0
+  m_Layer: 21
   m_Name: Virtual Spoke 1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -278,7 +278,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5192425809942118711}
-  m_Layer: 0
+  m_Layer: 21
   m_Name: Virtual Spoke 5
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -311,7 +311,8 @@ GameObject:
   m_Component:
   - component: {fileID: 4288576969513140186}
   - component: {fileID: 2362237235945894716}
-  m_Layer: 0
+  - component: {fileID: 8467879455301592091}
+  m_Layer: 20
   m_Name: 2in Omni 14mm Hex
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -352,12 +353,12 @@ ArticulationBody:
   m_Enabled: 1
   serializedVersion: 5
   m_Mass: 0.034
-  m_ParentAnchorPosition: {x: 0, y: 0, z: 0}
-  m_ParentAnchorRotation: {x: 0, y: 0, z: 0.7071068, w: 0.7071068}
+  m_ParentAnchorPosition: {x: -0.035950005, y: 0, z: -0.062267303}
+  m_ParentAnchorRotation: {x: 0, y: 0.49999994, z: 0, w: -0.8660254}
   m_AnchorPosition: {x: 0, y: 0, z: 0}
-  m_AnchorRotation: {x: 0, y: 0, z: 0.7071068, w: 0.7071068}
+  m_AnchorRotation: {x: 0, y: 0.70710677, z: 0, w: 0.70710677}
   m_MatchAnchors: 1
-  m_ArticulationJointType: 0
+  m_ArticulationJointType: 2
   m_LinearX: 2
   m_LinearY: 2
   m_LinearZ: 2
@@ -367,12 +368,12 @@ ArticulationBody:
   m_XDrive:
     lowerLimit: 0
     upperLimit: 0
-    stiffness: 0
-    damping: 0
+    stiffness: 10
+    damping: 1000
     forceLimit: 3.4028235e+38
     target: 0
     targetVelocity: 0
-    driveType: 0
+    driveType: 3
   m_YDrive:
     lowerLimit: 0
     upperLimit: 0
@@ -391,23 +392,39 @@ ArticulationBody:
     target: 0
     targetVelocity: 0
     driveType: 0
-  m_LinearDamping: 0.05
-  m_AngularDamping: 0.05
-  m_JointFriction: 0.05
+  m_LinearDamping: 0
+  m_AngularDamping: 0
+  m_JointFriction: 0
   m_CenterOfMass: {x: 0, y: 0, z: 0}
-  m_InertiaTensor: {x: 0.000002365622, y: 0.000002365622, z: 0.00000431825}
+  m_InertiaTensor: {x: 0.000002365622, y: 0.000002365622, z: 0.000000331825}
   m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
   m_ExcludeLayers:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 2097152
   m_ImplicitCom: 0
   m_ImplicitTensor: 0
   m_Immovable: 0
   m_UseGravity: 1
   m_CollisionDetectionMode: 0
+--- !u!114 &8467879455301592091
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5105299951841042410}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8ded925f1af29c171ab41237d10cdbe4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxWheelSpeedRpm: 1000
+  wheelRadius: 0.0254
+  accelerationRpmPerSec: 100
+  decelerationRpmPerSec: 10000
 --- !u!1 &6364600241985510719
 GameObject:
   m_ObjectHideFlags: 0
@@ -417,7 +434,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8350136447102512693}
-  m_Layer: 0
+  m_Layer: 21
   m_Name: Virtual Spoke 6
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -449,7 +466,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2646014785759860619}
-  m_Layer: 0
+  m_Layer: 21
   m_Name: Virtual Spoke 3
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -552,6 +569,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: 2in Omni Roller
       objectReference: {fileID: 0}
+    - target: {fileID: 5584504393520092257, guid: 597331e0c4c4cd7b392239a19401812b, type: 3}
+      propertyPath: m_Layer
+      value: 21
+      objectReference: {fileID: 0}
+    - target: {fileID: 5765924774070127864, guid: 597331e0c4c4cd7b392239a19401812b, type: 3}
+      propertyPath: m_ConnectedArticulationBody
+      value: 
+      objectReference: {fileID: 2362237235945894716}
     - target: {fileID: 9203251142087720736, guid: 597331e0c4c4cd7b392239a19401812b, type: 3}
       propertyPath: m_ParentAnchorPosition.x
       value: 0
@@ -658,6 +683,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: 2in Omni Roller
       objectReference: {fileID: 0}
+    - target: {fileID: 5584504393520092257, guid: 597331e0c4c4cd7b392239a19401812b, type: 3}
+      propertyPath: m_Layer
+      value: 21
+      objectReference: {fileID: 0}
+    - target: {fileID: 5765924774070127864, guid: 597331e0c4c4cd7b392239a19401812b, type: 3}
+      propertyPath: m_ConnectedArticulationBody
+      value: 
+      objectReference: {fileID: 2362237235945894716}
     - target: {fileID: 9203251142087720736, guid: 597331e0c4c4cd7b392239a19401812b, type: 3}
       propertyPath: m_ParentAnchorPosition.x
       value: 0
@@ -760,6 +793,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: 2in Omni Roller
       objectReference: {fileID: 0}
+    - target: {fileID: 5584504393520092257, guid: 597331e0c4c4cd7b392239a19401812b, type: 3}
+      propertyPath: m_Layer
+      value: 21
+      objectReference: {fileID: 0}
+    - target: {fileID: 5765924774070127864, guid: 597331e0c4c4cd7b392239a19401812b, type: 3}
+      propertyPath: m_ConnectedArticulationBody
+      value: 
+      objectReference: {fileID: 2362237235945894716}
     - target: {fileID: 9203251142087720736, guid: 597331e0c4c4cd7b392239a19401812b, type: 3}
       propertyPath: m_ParentAnchorPosition.x
       value: 0
@@ -866,6 +907,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: 2in Omni Roller
       objectReference: {fileID: 0}
+    - target: {fileID: 5584504393520092257, guid: 597331e0c4c4cd7b392239a19401812b, type: 3}
+      propertyPath: m_Layer
+      value: 21
+      objectReference: {fileID: 0}
+    - target: {fileID: 5765924774070127864, guid: 597331e0c4c4cd7b392239a19401812b, type: 3}
+      propertyPath: m_ConnectedArticulationBody
+      value: 
+      objectReference: {fileID: 2362237235945894716}
     - target: {fileID: 9203251142087720736, guid: 597331e0c4c4cd7b392239a19401812b, type: 3}
       propertyPath: m_ParentAnchorPosition.x
       value: -1.110223e-16
@@ -976,6 +1025,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: 2in Omni Roller
       objectReference: {fileID: 0}
+    - target: {fileID: 5584504393520092257, guid: 597331e0c4c4cd7b392239a19401812b, type: 3}
+      propertyPath: m_Layer
+      value: 21
+      objectReference: {fileID: 0}
+    - target: {fileID: 5765924774070127864, guid: 597331e0c4c4cd7b392239a19401812b, type: 3}
+      propertyPath: m_ConnectedArticulationBody
+      value: 
+      objectReference: {fileID: 2362237235945894716}
     - target: {fileID: 9203251142087720736, guid: 597331e0c4c4cd7b392239a19401812b, type: 3}
       propertyPath: m_ParentAnchorPosition.x
       value: 2.646978e-23
@@ -1058,6 +1115,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: 2in Omni Roller
       objectReference: {fileID: 0}
+    - target: {fileID: 5584504393520092257, guid: 597331e0c4c4cd7b392239a19401812b, type: 3}
+      propertyPath: m_Layer
+      value: 21
+      objectReference: {fileID: 0}
+    - target: {fileID: 5765924774070127864, guid: 597331e0c4c4cd7b392239a19401812b, type: 3}
+      propertyPath: m_ConnectedArticulationBody
+      value: 
+      objectReference: {fileID: 2362237235945894716}
     - target: {fileID: 9203251142087720736, guid: 597331e0c4c4cd7b392239a19401812b, type: 3}
       propertyPath: m_ParentAnchorPosition.x
       value: 0
@@ -1168,6 +1233,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: 2in Omni Roller
       objectReference: {fileID: 0}
+    - target: {fileID: 5584504393520092257, guid: 597331e0c4c4cd7b392239a19401812b, type: 3}
+      propertyPath: m_Layer
+      value: 21
+      objectReference: {fileID: 0}
+    - target: {fileID: 5765924774070127864, guid: 597331e0c4c4cd7b392239a19401812b, type: 3}
+      propertyPath: m_ConnectedArticulationBody
+      value: 
+      objectReference: {fileID: 2362237235945894716}
     - target: {fileID: 9203251142087720736, guid: 597331e0c4c4cd7b392239a19401812b, type: 3}
       propertyPath: m_ParentAnchorPosition.x
       value: -2.646978e-23
@@ -1278,6 +1351,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: 2in Omni Roller
       objectReference: {fileID: 0}
+    - target: {fileID: 5584504393520092257, guid: 597331e0c4c4cd7b392239a19401812b, type: 3}
+      propertyPath: m_Layer
+      value: 21
+      objectReference: {fileID: 0}
+    - target: {fileID: 5765924774070127864, guid: 597331e0c4c4cd7b392239a19401812b, type: 3}
+      propertyPath: m_ConnectedArticulationBody
+      value: 
+      objectReference: {fileID: 2362237235945894716}
     - target: {fileID: 9203251142087720736, guid: 597331e0c4c4cd7b392239a19401812b, type: 3}
       propertyPath: m_ParentAnchorPosition.x
       value: 0

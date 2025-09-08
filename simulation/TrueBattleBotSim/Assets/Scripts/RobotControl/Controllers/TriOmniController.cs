@@ -71,9 +71,9 @@ class TriOmniController : MonoBehaviour, ControllerInterface
         float linearYVelocity = (float)twist.linear.y;  // m/s
         float angularVelocity = (float)twist.angular.z;  // rad/s
 
-        float leftSpeed = -1 * linearXVelocity * Mathf.Sin(wheelAngles[0] * Mathf.Deg2Rad) + linearYVelocity * Mathf.Cos(wheelAngles[0] * Mathf.Deg2Rad) + angularVelocity * wheelBaseRadius;
-        float rightSpeed = -1 * linearXVelocity * Mathf.Sin(wheelAngles[1] * Mathf.Deg2Rad) + linearYVelocity * Mathf.Cos(wheelAngles[1] * Mathf.Deg2Rad) + angularVelocity * wheelBaseRadius;
-        float backSpeed = -1 * linearXVelocity * Mathf.Sin(wheelAngles[2] * Mathf.Deg2Rad) + linearYVelocity * Mathf.Cos(wheelAngles[2] * Mathf.Deg2Rad) + angularVelocity * wheelBaseRadius;
+        float leftSpeed = -1 * linearXVelocity * Mathf.Sin(wheelAngles[0] * Mathf.Deg2Rad) + linearYVelocity * Mathf.Cos(wheelAngles[0] * Mathf.Deg2Rad) + -1 * angularVelocity * wheelBaseRadius;
+        float rightSpeed = -1 * linearXVelocity * Mathf.Sin(wheelAngles[1] * Mathf.Deg2Rad) + linearYVelocity * Mathf.Cos(wheelAngles[1] * Mathf.Deg2Rad) + -1 * angularVelocity * wheelBaseRadius;
+        float backSpeed = -1 * linearXVelocity * Mathf.Sin(wheelAngles[2] * Mathf.Deg2Rad) + linearYVelocity * Mathf.Cos(wheelAngles[2] * Mathf.Deg2Rad) + -1 * angularVelocity * wheelBaseRadius;
         if (reverseLeft)
             leftSpeed *= -1;
         if (reverseRight)
