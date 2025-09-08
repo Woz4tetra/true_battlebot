@@ -421,9 +421,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8ded925f1af29c171ab41237d10cdbe4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxWheelSpeedRpm: 1000
+  maxWheelSpeedRpm: 10000
   wheelRadius: 0.0254
-  accelerationRpmPerSec: 100
+  accelerationRpmPerSec: 1000
   decelerationRpmPerSec: 10000
 --- !u!1 &6364600241985510719
 GameObject:

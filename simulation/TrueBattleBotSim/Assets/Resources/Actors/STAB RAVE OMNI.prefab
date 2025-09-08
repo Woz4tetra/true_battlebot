@@ -1620,14 +1620,6 @@ PrefabInstance:
       propertyPath: m_ParentAnchorRotation.y
       value: 0.707107
       objectReference: {fileID: 0}
-    - target: {fileID: 8467879455301592091, guid: 5712e334a4224abf3a40f4d64ff1ef6c, type: 3}
-      propertyPath: maxWheelSpeedRpm
-      value: 10000
-      objectReference: {fileID: 0}
-    - target: {fileID: 8467879455301592091, guid: 5712e334a4224abf3a40f4d64ff1ef6c, type: 3}
-      propertyPath: accelerationRpmPerSec
-      value: 1000
-      objectReference: {fileID: 0}
     - target: {fileID: 8798085840119468072, guid: 5712e334a4224abf3a40f4d64ff1ef6c, type: 3}
       propertyPath: m_ParentAnchorPosition.x
       value: -0.000000004190952
@@ -2048,14 +2040,6 @@ PrefabInstance:
     - target: {fileID: 8395738148826615881, guid: 5712e334a4224abf3a40f4d64ff1ef6c, type: 3}
       propertyPath: m_ParentAnchorRotation.y
       value: 0.707107
-      objectReference: {fileID: 0}
-    - target: {fileID: 8467879455301592091, guid: 5712e334a4224abf3a40f4d64ff1ef6c, type: 3}
-      propertyPath: maxWheelSpeedRpm
-      value: 10000
-      objectReference: {fileID: 0}
-    - target: {fileID: 8467879455301592091, guid: 5712e334a4224abf3a40f4d64ff1ef6c, type: 3}
-      propertyPath: accelerationRpmPerSec
-      value: 1000
       objectReference: {fileID: 0}
     - target: {fileID: 8798085840119468072, guid: 5712e334a4224abf3a40f4d64ff1ef6c, type: 3}
       propertyPath: m_ParentAnchorPosition.x
@@ -2485,14 +2469,6 @@ PrefabInstance:
     - target: {fileID: 8395738148826615881, guid: 5712e334a4224abf3a40f4d64ff1ef6c, type: 3}
       propertyPath: m_ParentAnchorRotation.y
       value: 0.70710695
-      objectReference: {fileID: 0}
-    - target: {fileID: 8467879455301592091, guid: 5712e334a4224abf3a40f4d64ff1ef6c, type: 3}
-      propertyPath: maxWheelSpeedRpm
-      value: 10000
-      objectReference: {fileID: 0}
-    - target: {fileID: 8467879455301592091, guid: 5712e334a4224abf3a40f4d64ff1ef6c, type: 3}
-      propertyPath: accelerationRpmPerSec
-      value: 1000
       objectReference: {fileID: 0}
     - target: {fileID: 8798085840119468072, guid: 5712e334a4224abf3a40f4d64ff1ef6c, type: 3}
       propertyPath: m_ParentAnchorPosition.x
