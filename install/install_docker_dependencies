@@ -31,7 +31,14 @@ echo \
 
 apt-get update
 . /etc/os-release
-if [ "$VERSION_ID" = "22.04" ]; then
+if [ "$VERSION_ID" = "24.04" ]; then
+  apt-get install -y \
+    docker-buildx-plugin=0.27.0-1~ubuntu.24.04~noble \
+    docker-ce-rootless-extras=5:28.4.0-1~ubuntu.24.04~noble \
+    docker-ce=5:28.4.0-1~ubuntu.24.04~noble \
+    docker-ce-cli=5:28.4.0-1~ubuntu.24.04~noble \
+    containerd.io=1.7.27-1
+elif [ "$VERSION_ID" = "22.04" ]; then
   apt-get install -y \
     docker-buildx-plugin=0.24.0-1~ubuntu.22.04~jammy \
     docker-ce-rootless-extras=5:28.2.2-1~ubuntu.22.04~jammy \

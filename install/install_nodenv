@@ -1,71 +1,13 @@
 #!/bin/bash
 set -e
-NODE_VERSION=20.10.0
 
-sudo apt-get install -y build-essential
-if [[ ! -d ~/.nodenv ]]; then
-	echo "installing nodenv..."
-	git clone https://github.com/nodenv/nodenv.git ~/.nodenv
-else
-	echo "updating nodenv..."
-	git -C ~/.nodenv pull
+if [ "$EUID" -ne 0 ]
+    then echo "Please run as root"
+    exit
 fi
 
-# under set -e, don't need &&
-pushd ~/.nodenv/src
-./configure
-make
-# important we come back to the original directory!
-popd
+apt-get install -y npm --no-install-recommends
 
-if [[ -z "$(command -v ~/.nodenv/bin/nodenv)" ]]; then
-	echo "failed to install nodenv"
-	exit 1
-fi
-
-export PATH="${HOME}/.nodenv/bin:${PATH}"
-eval "$(nodenv init -)"
-
-NODENV_ROOT="$(nodenv root)"
-# node-build: Plugin for installing versions of Node
-# nodenv-default-packages: Plugin for auto-installing list of npm packages
-# nodenv-package-rehash: Plugin for auto-rehashing when a global package is installed or uninstalled
-for plugin in nodenv-update node-build nodenv-default-packages nodenv-package-rehash ; do
-	echo "Installing nodenv plugin ${plugin}"
-	if [ ! -d "${NODENV_ROOT}"/plugins/"$plugin" ]; then
-		git clone https://github.com/nodenv/"$plugin".git "${NODENV_ROOT}"/plugins/"$plugin"
-	fi
-done
-
-export PATH="${HOME}/.nodenv/bin:${NODENV_ROOT}/shims:${PATH}"
-
-echo "done installing nodenv."
-
-nodenv update
-nodenv install -s ${NODE_VERSION} || true
-nodenv global ${NODE_VERSION}
-
-npm_path=$(which npm)
-if [ -z ${npm_path} ]; then
-	echo "npm binary not found, installation failed"
-	exit
-fi
-
-npm i -g npm
 npm install -g @devcontainers/cli
-nodenv rehash
 
-ENV_FILE=~/.bashrc
-SET_PATH_CMD="PATH=\"${HOME}/.nodenv/bin:$(nodenv root)/shims:\${PATH}\""
-touch ${ENV_FILE}
-
-
-if ! grep -qF "${SET_PATH_CMD}" ${ENV_FILE}; then
-    echo -e "\n${SET_PATH_CMD}" >> ${ENV_FILE}
-fi
-
-node --version
-npm --version
-npx --version
-
-echo "nodejs and npm installed. Close and reopen your terminal."
+echo "devcontainer CLI installed."
