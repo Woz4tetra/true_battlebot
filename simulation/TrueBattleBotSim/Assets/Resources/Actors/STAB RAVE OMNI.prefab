@@ -1677,6 +1677,10 @@ PrefabInstance:
       value: 0.707107
       objectReference: {fileID: 0}
     - target: {fileID: 8536250138947185616, guid: 5712e334a4224abf3a40f4d64ff1ef6c, type: 3}
+      propertyPath: m_XDrive.driveType
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 8536250138947185616, guid: 5712e334a4224abf3a40f4d64ff1ef6c, type: 3}
       propertyPath: m_ParentAnchorPosition.x
       value: 0.0719
       objectReference: {fileID: 0}
@@ -2169,6 +2173,10 @@ PrefabInstance:
       value: 0.707107
       objectReference: {fileID: 0}
     - target: {fileID: 8536250138947185616, guid: 5712e334a4224abf3a40f4d64ff1ef6c, type: 3}
+      propertyPath: m_XDrive.driveType
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 8536250138947185616, guid: 5712e334a4224abf3a40f4d64ff1ef6c, type: 3}
       propertyPath: m_ParentAnchorPosition.x
       value: -0.03595
       objectReference: {fileID: 0}
@@ -2651,14 +2659,6 @@ PrefabInstance:
     - target: {fileID: 8395738148826615881, guid: 5712e334a4224abf3a40f4d64ff1ef6c, type: 3}
       propertyPath: m_ParentAnchorRotation.y
       value: 0.70710695
-      objectReference: {fileID: 0}
-    - target: {fileID: 8536250138947185616, guid: 5712e334a4224abf3a40f4d64ff1ef6c, type: 3}
-      propertyPath: m_ParentAnchorRotation.w
-      value: -0.99999994
-      objectReference: {fileID: 0}
-    - target: {fileID: 8536250138947185616, guid: 5712e334a4224abf3a40f4d64ff1ef6c, type: 3}
-      propertyPath: m_ParentAnchorRotation.y
-      value: -0.000000059604645
       objectReference: {fileID: 0}
     - target: {fileID: 8798085840119468072, guid: 5712e334a4224abf3a40f4d64ff1ef6c, type: 3}
       propertyPath: m_ParentAnchorPosition.x

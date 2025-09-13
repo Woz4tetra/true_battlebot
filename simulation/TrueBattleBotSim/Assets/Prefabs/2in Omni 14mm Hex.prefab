@@ -154,6 +154,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 378e6d1b0187b89c3bf68fcfbfc08585, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::OmniWheel
+  wheelProperties: {fileID: 0}
 --- !u!171741748 &8536250138947185616
 ArticulationBody:
   m_ObjectHideFlags: 0
@@ -165,7 +166,7 @@ ArticulationBody:
   serializedVersion: 5
   m_Mass: 0.034
   m_ParentAnchorPosition: {x: -0.035950005, y: 0, z: -0.062267303}
-  m_ParentAnchorRotation: {x: 0, y: 0.49999994, z: 0, w: -0.8660254}
+  m_ParentAnchorRotation: {x: 0, y: -0.000000059604645, z: 0, w: -0.99999994}
   m_AnchorPosition: {x: 0, y: 0, z: 0}
   m_AnchorRotation: {x: 0, y: 0.70710677, z: 0, w: 0.70710677}
   m_MatchAnchors: 1
@@ -173,7 +174,7 @@ ArticulationBody:
   m_LinearX: 2
   m_LinearY: 2
   m_LinearZ: 2
-  m_SwingY: 2
+  m_SwingY: 0
   m_SwingZ: 2
   m_Twist: 2
   m_XDrive:
@@ -184,7 +185,7 @@ ArticulationBody:
     forceLimit: 3.4028235e+38
     target: 0
     targetVelocity: 0
-    driveType: 3
+    driveType: 2
   m_YDrive:
     lowerLimit: 0
     upperLimit: 0
