@@ -73,15 +73,15 @@ class TankController : MonoBehaviour, ControllerInterface
         {
             rightWheelSpeed *= -1;
         }
-        leftWheel.setVelocity(leftWheelSpeed);
-        rightWheel.setVelocity(rightWheelSpeed);
+        leftWheel.SetVelocity(leftWheelSpeed);
+        rightWheel.SetVelocity(rightWheelSpeed);
         foreach (Wheel wheel in followLeftWheels)
         {
-            wheel.setVelocity(leftWheelSpeed);
+            wheel.SetVelocity(leftWheelSpeed);
         }
         foreach (Wheel wheel in followRightWheels)
         {
-            wheel.setVelocity(rightWheelSpeed);
+            wheel.SetVelocity(rightWheelSpeed);
         }
     }
 

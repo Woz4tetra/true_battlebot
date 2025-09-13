@@ -10,9 +10,13 @@ class TriOmniController : MonoBehaviour, ControllerInterface
     [SerializeField] string robotName = "";
     [SerializeField] string parentFrame = "map";
 
-    [SerializeField] Wheel leftWheel;
-    [SerializeField] Wheel rightWheel;
-    [SerializeField] Wheel backWheel;
+    [SerializeField] FakeWheelSpinner fakeLeftWheel;
+    [SerializeField] FakeWheelSpinner fakeRightWheel;
+    [SerializeField] FakeWheelSpinner fakeBackWheel;
+
+    [SerializeField] OmniWheel leftWheel;
+    [SerializeField] OmniWheel rightWheel;
+    [SerializeField] OmniWheel backWheel;
 
     [SerializeField] PidConfig linearXPIDConfig;
     [SerializeField] PidConfig linearYPIDConfig;
@@ -81,31 +85,9 @@ class TriOmniController : MonoBehaviour, ControllerInterface
         if (reverseBack)
             backSpeed *= -1;
 
-        leftWheel.setVelocity(leftSpeed);
-        rightWheel.setVelocity(rightSpeed);
-        backWheel.setVelocity(backSpeed);
-    }
-
-    private void ApplyForceToBody(TwistMsg twist)
-    {
-        float linearXVelocity = (float)twist.linear.x;  // m/s
-        float linearYVelocity = (float)twist.linear.y;  // m/s
-        float angularVelocity = (float)twist.angular.z;  // rad/s
-
-        TwistMsg groundTruth = GetGroundTruthVelocity();
-        float groundTruthLinearX = (float)groundTruth.linear.x;  // m/s
-        float groundTruthLinearY = (float)groundTruth.linear.y;  // m/s
-        float groundTruthAngular = (float)groundTruth.angular.z;  // rad/s
-
-        float dx = linearXVelocity - groundTruthLinearX;
-        float dy = linearYVelocity - groundTruthLinearY;
-        float dAngular = angularVelocity - groundTruthAngular;
-
-        // Apply force to the body
-        Vector3 force = new Vector3(dx, 0.0f, dy);
-        Vector3 torque = new Vector3(0.0f, dAngular, 0.0f);
-        body.AddRelativeForce(force, ForceMode.VelocityChange);
-        body.AddRelativeTorque(torque, ForceMode.VelocityChange);
+        fakeLeftWheel.SetVelocity(leftSpeed);
+        fakeRightWheel.SetVelocity(rightSpeed);
+        fakeBackWheel.SetVelocity(backSpeed);
     }
 
     private void updateCommand()
