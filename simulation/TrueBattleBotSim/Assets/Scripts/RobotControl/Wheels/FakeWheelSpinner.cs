@@ -3,11 +3,13 @@ using UnityEngine;
 class FakeWheelSpinner : MonoBehaviour
 {
     [SerializeField] WheelProperties wheelProperties;
+    [SerializeField] Vector3 rotationAxis = Vector3.up;
     private float angularVelocityRadPerSec = 0.0f;
     private float previousAngularVelocity = 0.0f;
 
     void Start()
     {
+        rotationAxis.Normalize();
     }
 
     public void SetVelocity(float groundVelocity)
@@ -28,7 +30,7 @@ class FakeWheelSpinner : MonoBehaviour
         );
 
         // Rotate the wheel visually
-        transform.Rotate(Vector3.up, targetAngularVelocity * Mathf.Rad2Deg * dt, Space.Self);
+        transform.Rotate(rotationAxis, targetAngularVelocity * Mathf.Rad2Deg * dt, Space.Self);
         previousAngularVelocity = targetAngularVelocity;
     }
 }

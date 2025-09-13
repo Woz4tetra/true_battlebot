@@ -1,15 +1,23 @@
 using UnityEngine;
 
-class OmniWheel : MonoBehaviour
+class SwerveWheel : MonoBehaviour
 {
     [SerializeField] WheelProperties wheelProperties;
-    private ArticulationBody body;
+    [SerializeField] private ArticulationBody swerveBody;
+    [SerializeField] private ArticulationBody driveBody;
     private float angularXVelocityRadPerSec = 0.0f;
     private float angularYVelocityRadPerSec = 0.0f;
 
     void Start()
     {
-        body = GetComponent<ArticulationBody>();
+        if (swerveBody == null)
+        {
+            Debug.LogError($"SwerveWheel {gameObject.name} has no swerveBody assigned!");
+        }
+        if (driveBody == null)
+        {
+            Debug.LogError($"SwerveWheel {gameObject.name} has no driveBody assigned!");
+        }
     }
 
     private float GetLimitedVelocity(float groundVelocity)
@@ -29,18 +37,33 @@ class OmniWheel : MonoBehaviour
         angularYVelocityRadPerSec = GetLimitedVelocity(groundVelocity.y);
     }
 
-    void SetDriveVelocity(float velocity, ArticulationDrive drive, float dt)
+    void SetDriveVelocity(float velocity, float dt)
     {
+        ArticulationDrive drive = driveBody.xDrive;
         float targetAngularVelocity = WheelRateLimiter.Limit(
             velocity, drive.targetVelocity, dt, wheelProperties
         );
         drive.targetVelocity = targetAngularVelocity;
+        driveBody.xDrive = drive;
+    }
+
+    void SetDriveDirection(float angleDegrees)
+    {
+        ArticulationDrive drive = swerveBody.xDrive;
+        drive.target = angleDegrees;
+        swerveBody.xDrive = drive;
     }
 
     void FixedUpdate()
     {
         float dt = Time.fixedDeltaTime;
-        // SetDriveVelocity(angularXVelocityRadPerSec, body.xDrive, dt);
-        // SetDriveVelocity(angularYVelocityRadPerSec, body.yDrive, dt);
+        float angle = Mathf.Atan2(angularYVelocityRadPerSec, angularXVelocityRadPerSec) * Mathf.Rad2Deg;
+        if (float.IsNaN(angle))
+        {
+            angle = 0.0f;
+        }
+        float speed = Mathf.Sqrt(angularXVelocityRadPerSec * angularXVelocityRadPerSec + angularYVelocityRadPerSec * angularYVelocityRadPerSec);
+        SetDriveVelocity(speed, dt);
+        SetDriveDirection(angle);
     }
 }

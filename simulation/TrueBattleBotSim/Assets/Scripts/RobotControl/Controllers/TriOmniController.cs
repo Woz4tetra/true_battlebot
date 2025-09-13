@@ -14,9 +14,9 @@ class TriOmniController : MonoBehaviour, ControllerInterface
     [SerializeField] FakeWheelSpinner fakeRightWheel;
     [SerializeField] FakeWheelSpinner fakeBackWheel;
 
-    [SerializeField] OmniWheel leftWheel;
-    [SerializeField] OmniWheel rightWheel;
-    [SerializeField] OmniWheel backWheel;
+    [SerializeField] SwerveWheel leftWheel;
+    [SerializeField] SwerveWheel rightWheel;
+    [SerializeField] SwerveWheel backWheel;
 
     [SerializeField] PidConfig linearXPIDConfig;
     [SerializeField] PidConfig linearYPIDConfig;
@@ -39,9 +39,14 @@ class TriOmniController : MonoBehaviour, ControllerInterface
     TransformFrame frame;
     Matrix4x4 tf_spawnhere_from_body;
     PID linearXPid, linearYPid, angularPid;
+    SwerveWheel[] swerveWheels;
+    bool[] wheelReversals;
 
     public void Start()
     {
+        swerveWheels = new SwerveWheel[] { leftWheel, rightWheel, backWheel };
+        wheelReversals = new bool[] { reverseLeft, reverseRight, reverseBack };
+
         linearXPid = new PID(linearXPIDConfig);
         linearYPid = new PID(linearYPIDConfig);
         angularPid = new PID(angularPIDConfig);
@@ -69,7 +74,8 @@ class TriOmniController : MonoBehaviour, ControllerInterface
         updateCommand();
     }
 
-    private void ApplyWheelSpeeds(TwistMsg twist)
+    // Apply the wheel speeds to the fake wheels as if they were omni wheels
+    private void ApplyFakeWheelSpeeds(TwistMsg twist)
     {
         float linearXVelocity = (float)twist.linear.x;  // m/s
         float linearYVelocity = (float)twist.linear.y;  // m/s
@@ -90,10 +96,39 @@ class TriOmniController : MonoBehaviour, ControllerInterface
         fakeBackWheel.SetVelocity(backSpeed);
     }
 
+    // Apply the wheel speeds to the real omni wheels. They are swerve wheels.
+    private void ApplyRealWheelSpeeds(TwistMsg twist)
+    {
+        float linearXVelocity = (float)twist.linear.x;  // m/s
+        float linearYVelocity = -1 * (float)twist.linear.y;  // m/s
+        float angularVelocity = -1 * (float)twist.angular.z;  // rad/s
+
+        for (int index = 0; index < wheelAngles.Length; index++)
+        {
+            float angleRad = wheelAngles[index] * Mathf.Deg2Rad;
+            // Wheel position vector (assuming wheels are at equal radius from center)
+            float wheelX = wheelBaseRadius * Mathf.Cos(angleRad);
+            float wheelY = wheelBaseRadius * Mathf.Sin(angleRad);
+
+            // The velocity at the wheel is the sum of the robot's linear velocity and the velocity from rotation
+            float vx = linearXVelocity - angularVelocity * wheelY;
+            float vy = linearYVelocity + angularVelocity * wheelX;
+
+            if (wheelReversals[index])
+            {
+                vx *= -1;
+                vy *= -1;
+            }
+
+            swerveWheels[index].SetVelocity(new Vector2(vx, vy));
+        }
+    }
+
     private void updateCommand()
     {
         TwistMsg twist = ComputeControl(setpoint);
-        ApplyWheelSpeeds(twist);
+        ApplyFakeWheelSpeeds(twist);
+        ApplyRealWheelSpeeds(twist);
     }
 
     public OdometryMsg GetGroundTruth()
