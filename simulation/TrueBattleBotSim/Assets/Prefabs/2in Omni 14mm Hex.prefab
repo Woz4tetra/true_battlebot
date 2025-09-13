@@ -153,7 +153,7 @@ ArticulationBody:
   serializedVersion: 5
   m_Mass: 0.034
   m_ParentAnchorPosition: {x: 0, y: 0, z: 0}
-  m_ParentAnchorRotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
+  m_ParentAnchorRotation: {x: 0.70710677, y: 0, z: 0, w: 0.70710677}
   m_AnchorPosition: {x: 0, y: 0, z: 0}
   m_AnchorRotation: {x: 0.70710677, y: 0, z: 0, w: 0.70710677}
   m_MatchAnchors: 1
@@ -195,7 +195,7 @@ ArticulationBody:
   m_AngularDamping: 0
   m_JointFriction: 0
   m_CenterOfMass: {x: 0, y: 0, z: 0}
-  m_InertiaTensor: {x: 0.0000002365622, y: 0.0000002365622, z: 0.0000000331825}
+  m_InertiaTensor: {x: 0.0000001365622, y: 0.0000001365622, z: 0.0000000231825}
   m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
   m_IncludeLayers:
     serializedVersion: 2
