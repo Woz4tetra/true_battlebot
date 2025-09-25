@@ -43,7 +43,7 @@ public class VirtualWeapon : MonoBehaviour
         {
             Debug.Log($"Weapon collided with a target {other.gameObject.name}");
             ApplyForceToOther(gameObject, -transform.up.normalized);
-            ApplyForceToOther(other.gameObject, other.transform.up.normalized);
+            ApplyForceToOther(other.gameObject, transform.up.normalized);
         }
         else
         {
