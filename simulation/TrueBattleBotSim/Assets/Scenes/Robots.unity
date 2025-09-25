@@ -1943,7 +1943,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4859914119972843653, guid: 5bd45563ec35d1d669fbeb2538f27a1c, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5197481732429431235, guid: 5bd45563ec35d1d669fbeb2538f27a1c, type: 3}
       propertyPath: m_ParentAnchorPosition.x

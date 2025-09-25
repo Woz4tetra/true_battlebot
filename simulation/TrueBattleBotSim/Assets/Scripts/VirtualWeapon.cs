@@ -6,11 +6,13 @@ public class VirtualWeapon : MonoBehaviour
     [SerializeField] float collisionCooldown = 0.25f;
     [SerializeField] string[] filterTags = new string[] { };
     float collisionCooldownTimer = 0.0f;
+    GameObject topLevelObject;
 
     // Start is called before the first frame update
     void Start()
     {
         collisionCooldownTimer = 0.0f;
+        topLevelObject = ObjectUtils.GetTopLevelObject(gameObject);
     }
 
     // Update is called once per frame
@@ -21,6 +23,11 @@ public class VirtualWeapon : MonoBehaviour
 
     void OnTriggerEnter(Collider other)
     {
+        if (topLevelObject == ObjectUtils.GetTopLevelObject(other.gameObject))
+        {
+            // Ignore collisions with self
+            return;
+        }
         float timerDelta = Time.realtimeSinceStartup - collisionCooldownTimer;
         if (timerDelta < collisionCooldown)
         {
