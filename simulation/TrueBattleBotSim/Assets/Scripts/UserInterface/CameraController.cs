@@ -177,14 +177,15 @@ public class CameraController : MonoBehaviour
             azimuthAngle = -1 * movement.x * azimuthScale + clickedAzimuthAngle;
             elevationAngle = -1 * movement.y * elevationScale + clickedElevationAngle;
         }
-        distance += -1 * Input.GetAxis("Mouse ScrollWheel") * distanceSpeed * Time.fixedDeltaTime;
+        float dt = Time.unscaledDeltaTime;
+        distance += -1 * Input.GetAxis("Mouse ScrollWheel") * distanceSpeed * dt;
         distance = Mathf.Clamp(distance, distanceLimits.Item1, distanceLimits.Item2);
         elevationAngle = Mathf.Clamp(elevationAngle, elevationLimits.Item1, elevationLimits.Item2);
 
         Matrix4x4 desiredTransform = getDesiredTransform();
         Vector3 desiredPosition = desiredTransform.GetT();
-        Vector3 smoothedPosition = Vector3.Slerp(transform.position, desiredPosition, smoothSpeed * Time.fixedDeltaTime);
-        Quaternion smoothedRotation = Quaternion.Slerp(transform.rotation, desiredTransform.GetR(), smoothSpeed * Time.fixedDeltaTime);
+        Vector3 smoothedPosition = Vector3.Slerp(transform.position, desiredPosition, smoothSpeed * dt);
+        Quaternion smoothedRotation = Quaternion.Slerp(transform.rotation, desiredTransform.GetR(), smoothSpeed * dt);
         transform.SetPositionAndRotation(smoothedPosition, smoothedRotation);
 
         if (DidMiddleMouseUp())

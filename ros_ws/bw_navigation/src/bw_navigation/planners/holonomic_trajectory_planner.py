@@ -19,7 +19,7 @@ from bw_navigation.planners.engines.trajectory_helpers import trajectory_to_msg
 from bw_navigation.planners.planner_interface import PlannerInterface
 from bw_navigation.planners.shared.compute_mirrored_goal import compute_mirrored_state
 from bw_navigation.planners.shared.get_bounded_match_state import get_bounded_match_state
-from bw_navigation.planners.shared.goal_progress import GoalProgress
+from bw_navigation.planners.shared.goal_progress import GoalProgress, compute_feedback_distance
 from bw_navigation.planners.shared.is_in_bounds import is_goal_in_bounds
 from bw_navigation.planners.shared.match_state import MatchState
 
@@ -72,7 +72,7 @@ class HolonomicTrajectoryPlanner(PlannerInterface):
             avoid_robot_names=self.avoid_robot_names,
         )
         if goal_strategy == GoalStrategy.MIRROR_FRIENDLY:
-            mirrored_match_state = compute_mirrored_state(match_state, math.pi / 2)
+            mirrored_match_state = compute_mirrored_state(match_state, math.pi / 2, use_goal_heading=True)
             if is_goal_in_bounds(self.buffer_xy, mirrored_match_state):
                 match_state = mirrored_match_state
             else:
@@ -105,6 +105,7 @@ class HolonomicTrajectoryPlanner(PlannerInterface):
         goal_progress.time_left = total_time - time_from_start
         goal_progress.total_time = total_time
         goal_progress.trajectory = trajectory_msg
+        goal_progress.distance_to_goal = compute_feedback_distance(match_state.controlled_robot, goal_target)
 
         # desired_state = trajectory.sample(time_from_start)
         desired_state = Trajectory.State(

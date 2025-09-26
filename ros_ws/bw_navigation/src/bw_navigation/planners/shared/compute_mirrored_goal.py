@@ -10,21 +10,27 @@ from bw_navigation.planners.shared.goal_target_from_pose import goal_target_from
 from bw_navigation.planners.shared.match_state import MatchState
 
 
-def compute_mirrored_goal(match_state: MatchState, angle_offset: float) -> EstimatedObject:
+def compute_mirrored_goal(match_state: MatchState, angle_offset: float, use_goal_heading: bool) -> EstimatedObject:
     goal_point = match_state.goal_point
+    goal_heading = match_state.controlled_robot_pose.heading(match_state.goal_pose)
     friendly_point = match_state.friendly_robot_point
     relative_friendly_point = friendly_point - goal_point
     relative_friendly_polar = Polar.from_xy(relative_friendly_point)
     mirrored_polar = Polar(relative_friendly_polar.radius, relative_friendly_polar.theta + angle_offset)
     mirrored_point = mirrored_polar.to_xy() + goal_point
-    mirrored_theta = match_state.friendly_robot_pose.theta - angle_offset
-    mirrored_pose = Pose2D(mirrored_point.x, mirrored_point.y, mirrored_theta)
+    if use_goal_heading:
+        goal_theta = goal_heading
+    else:
+        goal_theta = match_state.friendly_robot_pose.theta - angle_offset
+    mirrored_pose = Pose2D(mirrored_point.x, mirrored_point.y, goal_theta)
     return goal_target_from_pose(mirrored_pose, match_state)
 
 
-def compute_mirrored_state(match_state: MatchState, angle_offset: float = math.pi) -> MatchState:
+def compute_mirrored_state(
+    match_state: MatchState, angle_offset: float = math.pi, use_goal_heading: bool = False
+) -> MatchState:
     return MatchState(
-        goal_target=compute_mirrored_goal(match_state, angle_offset),
+        goal_target=compute_mirrored_goal(match_state, angle_offset, use_goal_heading),
         robot_states=match_state.robot_states,
         field_bounds=match_state.field_bounds,
         controlled_robot_name=match_state.controlled_robot_name,
