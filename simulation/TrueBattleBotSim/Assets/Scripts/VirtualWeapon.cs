@@ -3,8 +3,8 @@ using UnityEngine;
 public class VirtualWeapon : MonoBehaviour
 {
     [SerializeField] float forceMagnitude = 10;
+    [SerializeField] float torqueMagnitude = 0.25f;
     [SerializeField] float collisionCooldown = 0.25f;
-    [SerializeField] string[] filterTags = new string[] { };
     float collisionCooldownTimer = 0.0f;
     GameObject topLevelObject;
 
@@ -43,22 +43,19 @@ public class VirtualWeapon : MonoBehaviour
             Debug.Log($"Weapon collided with another weapon {other.gameObject.name}");
             Vector3 this_backwards = -1 * Vector3.Normalize(gameObject.transform.forward + gameObject.transform.right);
             Vector3 other_backwards = -1 * Vector3.Normalize(other.gameObject.transform.forward + other.gameObject.transform.right);
-            ApplyForceToOther(gameObject, 2 * this_backwards);
-            ApplyForceToOther(other.gameObject, 2 * other_backwards);
-        }
-        else if (isTagInFilter(other.gameObject.tag))
-        {
-            Debug.Log($"Weapon collided with a target {other.gameObject.name}");
-            ApplyForceToOther(gameObject, -transform.up.normalized);
-            ApplyForceToOther(other.gameObject, transform.up.normalized);
+            ApplyForceToOther(gameObject, 2 * this_backwards, applyTorque: false);
+            ApplyForceToOther(other.gameObject, 2 * other_backwards, applyTorque: false);
         }
         else
         {
-            Debug.Log($"Ignoring weapon collision with {other.gameObject.tag} {other.gameObject.name}");
+            Debug.Log($"Weapon collided with a target {other.gameObject.name}");
+            Vector3 this_backwards = -1 * Vector3.Normalize(gameObject.transform.forward + gameObject.transform.right);
+            ApplyForceToOther(gameObject, this_backwards, applyTorque: false);
+            ApplyForceToOther(other.gameObject, transform.up.normalized);
         }
     }
 
-    private void ApplyForceToOther(GameObject obj, Vector3 direction)
+    private void ApplyForceToOther(GameObject obj, Vector3 direction, bool applyTorque = true)
     {
         collisionCooldownTimer = Time.realtimeSinceStartup;
         Vector3 force = direction * forceMagnitude;
@@ -67,6 +64,10 @@ public class VirtualWeapon : MonoBehaviour
         {
             force *= body.mass;
             body.AddForce(force, ForceMode.Impulse);
+            if (applyTorque)
+            {
+                body.AddTorque(Random.onUnitSphere * torqueMagnitude, ForceMode.Impulse);
+            }
             return;
         }
         else
@@ -76,21 +77,13 @@ public class VirtualWeapon : MonoBehaviour
             {
                 force *= artBody.mass;
                 artBody.AddForce(force, ForceMode.Impulse);
+                if (applyTorque)
+                {
+                    artBody.AddTorque(Random.onUnitSphere * torqueMagnitude, ForceMode.Impulse);
+                }
                 return;
             }
         }
         Debug.Log($"No rigidbody or articulation body found in tree for {obj.name}");
-    }
-
-    private bool isTagInFilter(string tag)
-    {
-        foreach (string filterTag in filterTags)
-        {
-            if (tag == filterTag)
-            {
-                return true;
-            }
-        }
-        return false;
     }
 }

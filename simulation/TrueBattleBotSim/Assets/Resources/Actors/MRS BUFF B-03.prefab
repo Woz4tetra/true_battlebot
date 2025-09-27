@@ -20356,7 +20356,7 @@ MeshCollider:
     m_Bits: 4294967295
   m_ExcludeLayers:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 1046327
   m_LayerOverridePriority: 0
   m_IsTrigger: 1
   m_ProvidesContacts: 0
@@ -20379,11 +20379,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   forceMagnitude: 5
   collisionCooldown: 0.25
-  filterTags:
-  - Main bot
-  - Mini bot
-  - Enemy bot
-  - Cage
 --- !u!1 &8002819210580528622
 GameObject:
   m_ObjectHideFlags: 0
