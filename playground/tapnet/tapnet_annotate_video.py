@@ -364,23 +364,17 @@ def main() -> None:
     print("Processing video...")
     vc.set(cv2.CAP_PROP_POS_FRAMES, initial_frame)  # Reset to initial frame
 
-    # Initialize query features with selected points on first frame
-    query_features = online_init_apply(
-        frames=model_utils.preprocess_frames(first_frame_squashed[None, None]),
-        points=query_points[None, :],
-    )
-
     for _ in tqdm.tqdm(range(initial_frame, total_frames), desc="Processing frames"):
         # Get both original and cropped frames
         rval_orig, frame_original = get_frame_original(vc, output_width)
         if not rval_orig:
             break
 
-        frame_cropped = squash_frame(frame_original, model_input_size)
+        frame_squared = squash_frame(frame_original, model_input_size)
 
         # Predict tracks for current frame (use cropped frame for model)
         prediction, causal_state = online_predict_apply(
-            frames=model_utils.preprocess_frames(frame_cropped[None, None]),
+            frames=model_utils.preprocess_frames(frame_squared[None, None]),
             features=query_features,
             causal_context=causal_state,
         )
