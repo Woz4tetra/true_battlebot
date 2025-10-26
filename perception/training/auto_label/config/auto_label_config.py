@@ -2,8 +2,11 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
+from typing import Literal
 
 from bw_shared.messages.dataclass_utils import from_dict, to_dict
+
+InterpolatorType = Literal["cotracker_sam2"]
 
 
 @dataclass
@@ -13,6 +16,7 @@ class TrackerConfig:
     cotracker_checkpoint: str = "/home/bwbots/.cache/co-tracker/scaled_offline.pth"
     interpolation_max_length: int = 20
     sam2_batch_size: int = 10
+    interpolator_type: InterpolatorType = "cotracker_sam2"
 
 
 @dataclass

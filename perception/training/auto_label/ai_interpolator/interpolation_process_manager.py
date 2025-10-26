@@ -3,7 +3,8 @@ from threading import Thread
 
 from perception_tools.training.keypoints_config import KeypointsConfig
 
-from auto_label.ai_interpolator.ai_interpolator import AiInterpolator
+from auto_label.ai_interpolator.ai_interpolator_interface import AiInterpolatorInterface
+from auto_label.ai_interpolator.cotracker_sam2_ai_interpolator import CotrackerSam2AiInterpolator
 from auto_label.ai_interpolator.temp_image_manager import TempImageManager
 from auto_label.backend.manual_label_backend import ManualLabelBackend
 from auto_label.config.auto_label_config import AutoLabelConfig
@@ -17,7 +18,12 @@ class InterpolationProcessManager:
         self.config = config
         self.keypoints_config = keypoints_config
         self.manual_label_backend = manual_label_backend
-        self.ai_interpolator = AiInterpolator(self.config.tracker, self.keypoints_config)
+        self.ai_interpolator: AiInterpolatorInterface
+        match self.config.tracker.interpolator_type:
+            case "cotracker_sam2":
+                self.ai_interpolator = CotrackerSam2AiInterpolator(self.config.tracker, self.keypoints_config)
+            case _:
+                raise ValueError(f"Unknown interpolator type: {self.config.tracker.interpolator_type}")
         self.temp_image_manager = TempImageManager(self.config.tracker, self.manual_label_backend)
         self.interpolate_thread: Thread | None = None
 
