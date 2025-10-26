@@ -100,6 +100,16 @@ COPY --chown=1000:1000 \
 RUN bash /opt/${ORGANIZATION}/install/install_sam2.sh
 
 COPY --chown=1000:1000 \
+    ./install/perception/install_tensorflow.sh \
+    /opt/${ORGANIZATION}/install/
+RUN bash /opt/${ORGANIZATION}/install/install_tensorflow.sh
+
+COPY --chown=1000:1000 \
+    ./install/perception/install_tapnet.sh \
+    /opt/${ORGANIZATION}/install/
+RUN bash /opt/${ORGANIZATION}/install/install_tapnet.sh
+
+COPY --chown=1000:1000 \
     ./install/perception/perception-extra-requirements.txt \
     ./install/perception/install_perception_python_extras.sh \
     /opt/${ORGANIZATION}/install/
