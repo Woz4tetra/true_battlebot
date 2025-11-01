@@ -18,7 +18,7 @@
 
 import argparse
 import csv
-from typing import List, Tuple, Optional
+from typing import List, Optional, Tuple
 
 import cv2
 import numpy as np
@@ -38,24 +38,24 @@ def read_video_opencv(video_path: str) -> Tuple[np.ndarray, float]:
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
         raise ValueError(f"Could not open video: {video_path}")
-    
+
     fps = cap.get(cv2.CAP_PROP_FPS)
     frames = []
-    
+
     print("Loading video frames...")
     frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    
+
     with tqdm.tqdm(total=frame_count, desc="Reading frames") as pbar:
         while True:
             ret, frame = cap.read()
             if not ret:
                 break
-            
+
             # Convert BGR to RGB for consistency with original code
             frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             frames.append(frame_rgb)
             pbar.update(1)
-    
+
     cap.release()
     return np.array(frames), fps
 
@@ -64,47 +64,47 @@ def resize_video_opencv(video: np.ndarray, target_size: Tuple[int, int]) -> np.n
     """Resize video using OpenCV."""
     height, width = target_size
     resized_frames = []
-    
+
     print(f"Resizing {len(video)} frames to {width}x{height}...")
     for frame in tqdm.tqdm(video, desc="Resizing frames"):
         resized = cv2.resize(frame, (width, height))
         resized_frames.append(resized)
-    
+
     return np.array(resized_frames)
 
 
 def write_video_opencv(output_path: str, video: np.ndarray, fps: float):
     """Write video using OpenCV."""
     height, width = video.shape[1:3]
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    fourcc = cv2.VideoWriter_fourcc(*"mp4v")
     out = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
-    
+
     print(f"Writing video with {len(video)} frames...")
     for frame in tqdm.tqdm(video, desc="Writing frames"):
         # Convert RGB back to BGR for OpenCV
         frame_bgr = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
         out.write(frame_bgr)
-    
+
     out.release()
 
 
 def load_points_from_csv(csv_path: str) -> List[Tuple[int, int, int]]:
     """
     Load manually labeled points from CSV file.
-    
+
     CSV format: point_id, frame, x, y
     Returns: List of (frame_idx, y, x) tuples
     """
     points = []
-    
-    with open(csv_path, 'r') as csvfile:
+
+    with open(csv_path, "r") as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
-            frame_idx = int(row['frame'])
-            x = int(row['x'])
-            y = int(row['y'])
+            frame_idx = int(row["frame"])
+            x = int(row["x"])
+            y = int(row["y"])
             points.append((frame_idx, y, x))  # Convert to (frame, y, x) format
-    
+
     print(f"Loaded {len(points)} points from {csv_path}")
     return points
 
@@ -493,18 +493,38 @@ def main() -> None:
     if points_csv is not None:
         print(f"Loading points from CSV: {points_csv}")
         detected_points = load_points_from_csv(points_csv)
-        
+
+        # Debug: Show original points
+        print(f"Original video shape: {original_video.shape}")
+        print(f"Processing size: {resize_size}x{resize_size}")
+        if detected_points:
+            sample_point = detected_points[0]
+            print(f"Sample original point: frame={sample_point[0]}, y={sample_point[1]}, x={sample_point[2]}")
+
         # Transform points if video was resized
         if original_video.shape[1:3] != (resize_size, resize_size):
             transformed_points = []
             orig_h, orig_w = original_video.shape[1:3]
+            scale_x = resize_size / orig_w
+            scale_y = resize_size / orig_h
+
+            print(f"Coordinate scaling: x_scale={scale_x:.4f}, y_scale={scale_y:.4f}")
+
             for frame_idx, y, x in detected_points:
                 # Scale coordinates from original to resized dimensions
-                new_x = int(x * resize_size / orig_w)
-                new_y = int(y * resize_size / orig_h)
+                new_x = int(x * scale_x)
+                new_y = int(y * scale_y)
                 transformed_points.append((frame_idx, new_y, new_x))
+
             detected_points = transformed_points
             print(f"Transformed {len(detected_points)} points for resized video")
+
+            # Debug: Show transformed points
+            if detected_points:
+                sample_point = detected_points[0]
+                print(f"Sample transformed point: frame={sample_point[0]}, y={sample_point[1]}, x={sample_point[2]}")
+        else:
+            print("No coordinate transformation needed - video already at processing size")
     else:
         # Detect foreground points automatically
         detected_points = detect_foreground_points(
@@ -553,9 +573,20 @@ def main() -> None:
 
     print("Generating output video...")
 
+    # Debug: Show tracks before transformation
+    if len(tracks) > 0:
+        sample_track = tracks[0, 0]  # First point, first frame
+        print(f"Sample track before coordinate transform: x={sample_track[0]:.2f}, y={sample_track[1]:.2f}")
+
     # Transform coordinates back to original video size if needed
     if original_video.shape[1:3] != (resize_size, resize_size):
+        print(f"Converting coordinates back from {(resize_size, resize_size)} to {original_video.shape[1:3]}")
         tracks = transforms.convert_grid_coordinates(tracks, (resize_size, resize_size), original_video.shape[1:3])
+
+        # Debug: Show tracks after transformation
+        if len(tracks) > 0:
+            sample_track = tracks[0, 0]  # First point, first frame
+            print(f"Sample track after coordinate transform: x={sample_track[0]:.2f}, y={sample_track[1]:.2f}")
 
     # Create visualization
     colormap = viz_utils.get_colors(len(detected_points))
