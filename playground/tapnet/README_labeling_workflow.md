@@ -1,16 +1,15 @@
-# TAPIR Point Labeling & Tracking Tool with Video Trimming
+# TAPIR Point Labeling & Tracking Tool
 
-This improved workflow addresses the limitations of automatic point detection by providing an interactive UI for manual point selection AND video trimming, followed by high-performance TAPIR tracking using OpenCV instead of mediapy.
+This improved workflow addresses the limitations of automatic point detection by providing an interactive UI for manual point selection, followed by high-performance TAPIR tracking using OpenCV instead of mediapy.
 
 ## 🎯 **Key Improvements**
 
-### **Interactive Point Labeling + Video Trimming**
+### **Interactive Point Labeling**
 - **Manual Point Selection**: Click to select the exact points you want to track
-- **Video Trimming**: Select only the relevant portion of your video
-- **Real-time Preview**: See selected points and trim markers overlaid on frames
+- **Real-time Preview**: See selected points overlaid on frames
 - **Multi-frame Support**: Add points at different frames if needed
 - **Easy Editing**: Right-click to remove points, keyboard navigation
-- **Integrated Export**: Outputs trimmed video + adjusted CSV coordinates
+- **Simple Workflow**: One CSV output file for clear tracking
 
 ### **OpenCV Performance**
 - **Faster I/O**: Replaced slow mediapy with OpenCV for 3-5x faster video reading/writing
@@ -18,10 +17,10 @@ This improved workflow addresses the limitations of automatic point detection by
 - **Native Format Support**: Direct support for common video formats
 - **Progress Indicators**: Real-time progress bars for all operations
 
-### **Flexible Workflow**
+### **Simple Workflow**
 - **CSV-Based**: Reuse labeled points across multiple tracking runs
-- **Batch Processing**: Still uses efficient TAPIR batch inference
-- **Coordinate Transformation**: Handles video resizing automatically
+- **Batch Processing**: Uses efficient TAPIR batch inference
+- **Accurate Coordinates**: Direct pixel-perfect point placement
 - **Quality Control**: Manual selection ensures high-quality tracking points
 
 ## 🛠 **Tools Overview**
@@ -37,26 +36,21 @@ python tapnet_point_labeler.py input_video.mp4 --start-time 30.0  # Start at 30 
 - **Right Click**: Remove nearest point (within 20 pixels)
 - **SPACE**: Play/Pause video
 - **A/D**: Previous/Next frame
-- **T**: Toggle trim mode
-- **Left/Right Arrows**: Set trim start/end (in trim mode) or jump ±10 frames
-- **S**: Save points CSV + export trimmed video
-- **E**: Export trimmed video only  
+- **Left/Right Arrows**: Jump ±10 frames
+- **S**: Save points CSV
 - **0-9**: Jump to 0%-90% of video
 - **Q/ESC**: Quit
 
 **Output:** Creates:
-- `{video_name}_trimmed.mp4` - Trimmed video with only relevant frames
-- `{video_name}_trimmed_points.csv` - Points with frame numbers adjusted for trimmed video
+- `{video_name}_points.csv` - Points with frame numbers and coordinates
 
 **CSV Format:**
 ```csv
 point_id,frame,x,y
-0,0,245,156    # Frame 0 in trimmed video
-1,0,312,203    # Frame 0 in trimmed video  
-2,5,180,145    # Frame 5 in trimmed video
+0,245,156,324
+1,245,312,203
+2,250,180,145
 ```
-
-**Coordinate Adjustment:** Frame numbers are automatically adjusted so the trimmed video starts at frame 0.
 
 ### 2. **`tapnet_auto_annotate_video.py`** - Enhanced TAPIR Tracker
 ```bash
@@ -84,9 +78,11 @@ Guides you through the complete process: labeling → tracking
 ### **Step 1: Label Points Interactively**
 ```bash
 python tapnet_point_labeler.py my_video.mp4
+# Optional: Start at specific time
+python tapnet_point_labeler.py my_video.mp4 --start-time 30.0
 ```
 1. Video opens in interactive window
-2. Navigate to first frame where objects appear
+2. Navigate to frame where objects appear clearly
 3. Click on points you want to track (e.g., corners, features, object centers)
 4. Use SPACE to play and check different frames
 5. Add more points at different frames if needed

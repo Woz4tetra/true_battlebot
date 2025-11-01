@@ -41,11 +41,6 @@ class VideoLabeler:
         self.playing = False
         self.window_name = "Video Labeler"
         
-        # Video trimming
-        self.trim_start = 0
-        self.trim_end = self.total_frames - 1
-        self.trim_mode = False
-        
         print(f"Video: {video_path}")
         print(f"Frames: {self.total_frames}, FPS: {self.fps:.2f}")
         print(f"Resolution: {self.frame_width}x{self.frame_height}")
@@ -58,8 +53,8 @@ class VideoLabeler:
         if event == cv2.EVENT_LBUTTONDOWN:
             # Add point at current frame
             self.points.append((self.current_frame, x, y, self.point_counter))
-            self.point_counter += 1
             print(f"Added point {self.point_counter} at frame {self.current_frame}: ({x}, {y})")
+            self.point_counter += 1
             self.draw_frame()
             
         elif event == cv2.EVENT_RBUTTONDOWN:
@@ -114,27 +109,11 @@ class VideoLabeler:
         cv2.putText(display_frame, info_text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
         cv2.putText(display_frame, info_text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 1)
         
-        # Draw trim range info
-        trim_duration = (self.trim_end - self.trim_start) / self.fps
-        trim_info = f"Trim: {self.trim_start}-{self.trim_end} ({trim_duration:.1f}s)"
-        if self.trim_mode:
-            trim_info += " [TRIM MODE - T to toggle]"
-        cv2.putText(display_frame, trim_info, (10, 55), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
-        cv2.putText(display_frame, trim_info, (10, 55), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0) if not self.trim_mode else (0, 255, 255), 1)
-        
-        # Draw trim markers
-        if self.current_frame == self.trim_start:
-            cv2.rectangle(display_frame, (0, 0), (self.frame_width, self.frame_height), (0, 255, 0), 3)
-            cv2.putText(display_frame, "START", (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-        elif self.current_frame == self.trim_end:
-            cv2.rectangle(display_frame, (0, 0), (self.frame_width, self.frame_height), (0, 0, 255), 3)
-            cv2.putText(display_frame, "END", (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-        
         # Draw controls
         controls = [
             "Left Click: Add Point | Right Click: Remove Point",
-            "SPACE: Play/Pause | A/D: Previous/Next Frame | T: Trim Mode",
-            "S: Save & Export Trimmed | E: Export Trimmed Video | Q: Quit",
+            "SPACE: Play/Pause | A/D: Previous/Next Frame | Left/Right: Jump ±10 frames",
+            "S: Save Points CSV | Q: Quit",
             "1-9: Jump to 10%-90% | 0: Jump to start"
         ]
         
@@ -196,41 +175,18 @@ class VideoLabeler:
                 self.load_frame(self.current_frame + 1)
                 self.draw_frame()
                 
-        elif key == ord('t'):  # T - Toggle trim mode
-            self.trim_mode = not self.trim_mode
-            if self.trim_mode:
-                print("Trim mode ON - Left/Right arrow keys set trim start/end")
-            else:
-                print("Trim mode OFF")
-                
-        elif key == ord('s'):  # S - Save CSV and export trimmed video
+        elif key == ord('s'):  # S - Save CSV
             self.save_points()
-            self.export_trimmed_video()
             
-        elif key == ord('e'):  # E - Export trimmed video only
-            self.export_trimmed_video()
-            
-        elif key == 81 or key == 2:  # Left arrow - Set trim start (in trim mode)
-            if self.trim_mode:
-                self.trim_start = self.current_frame
-                print(f"Trim start set to frame {self.trim_start}")
-                self.draw_frame()
-            else:
-                # Regular left arrow behavior (jump back 10 frames)
-                target = max(0, self.current_frame - 10)
-                self.load_frame(target)
-                self.draw_frame()
+        elif key == 81 or key == 2:  # Left arrow - Jump back 10 frames
+            target = max(0, self.current_frame - 10)
+            self.load_frame(target)
+            self.draw_frame()
                 
-        elif key == 83 or key == 3:  # Right arrow - Set trim end (in trim mode)
-            if self.trim_mode:
-                self.trim_end = self.current_frame
-                print(f"Trim end set to frame {self.trim_end}")
-                self.draw_frame()
-            else:
-                # Regular right arrow behavior (jump forward 10 frames)
-                target = min(self.total_frames - 1, self.current_frame + 10)
-                self.load_frame(target)
-                self.draw_frame()
+        elif key == 83 or key == 3:  # Right arrow - Jump forward 10 frames
+            target = min(self.total_frames - 1, self.current_frame + 10)
+            self.load_frame(target)
+            self.draw_frame()
             
         elif key >= ord('0') and key <= ord('9'):  # 0-9 - Jump to percentage
             percent = (key - ord('0')) * 10
@@ -261,124 +217,31 @@ class VideoLabeler:
                 point_groups[point_id] = (frame_idx, x, y)
         
         # Write to CSV
-        with open(csv_path, 'w', newline='') as csvfile:
+        with open(csv_path, "w", newline="") as csvfile:
             writer = csv.writer(csvfile)
-            writer.writerow(['point_id', 'frame', 'x', 'y'])  # Header
+            writer.writerow(["point_id", "frame", "x", "y"])  # Header
             
             for point_id in sorted(point_groups.keys()):
                 frame_idx, x, y = point_groups[point_id]
                 writer.writerow([point_id, frame_idx, x, y])
         
         print(f"Saved {len(point_groups)} points to {csv_path}")
-        
-        # Also save detailed version with all point instances
-        detailed_csv_path = f"{video_name}_points_detailed.csv"
-        with open(detailed_csv_path, 'w', newline='') as csvfile:
-            writer = csv.writer(csvfile)
-            writer.writerow(['point_id', 'frame', 'x', 'y'])  # Header
-            
-            # Sort by point_id, then by frame
-            sorted_points = sorted(self.points, key=lambda p: (p[3], p[0]))
-            for frame_idx, x, y, point_id in sorted_points:
-                writer.writerow([point_id, frame_idx, x, y])
-        
-        print(f"Saved detailed points (all instances) to {detailed_csv_path}")
-    
-    def export_trimmed_video(self):
-        """Export trimmed video with adjusted point coordinates."""
-        if self.trim_start >= self.trim_end:
-            print("Invalid trim range. Start must be less than end.")
-            return
-            
-        # Generate output filename
-        video_name = os.path.splitext(os.path.basename(self.video_path))[0]
-        trimmed_video_path = f"{video_name}_trimmed.mp4"
-        
-        print(f"Exporting trimmed video: frames {self.trim_start}-{self.trim_end}")
-        print(f"Output: {trimmed_video_path}")
-        
-        # Set up video writer
-        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-        out = cv2.VideoWriter(trimmed_video_path, fourcc, self.fps, (self.frame_width, self.frame_height))
-        
-        # Reset capture to start frame
-        self.cap.set(cv2.CAP_PROP_POS_FRAMES, self.trim_start)
-        
-        frames_to_export = self.trim_end - self.trim_start + 1
-        frames_exported = 0
-        
-        print(f"Exporting {frames_to_export} frames...")
-        
-        for frame_idx in range(self.trim_start, self.trim_end + 1):
-            ret, frame = self.cap.read()
-            if not ret:
-                print(f"Warning: Could not read frame {frame_idx}")
-                break
-                
-            out.write(frame)
-            frames_exported += 1
-            
-            # Progress indicator
-            if frames_exported % 30 == 0:  # Every 30 frames
-                progress = frames_exported / frames_to_export * 100
-                print(f"Progress: {progress:.1f}%")
-        
-        out.release()
-        
-        print(f"Exported {frames_exported} frames to {trimmed_video_path}")
-        
-        # Also save adjusted CSV if points exist
-        if self.points:
-            self.save_adjusted_points_csv(trimmed_video_path)
-    
-    def save_adjusted_points_csv(self, trimmed_video_path):
-        """Save CSV with frame numbers adjusted for trimmed video."""
-        # Generate CSV filename based on trimmed video name
-        video_name = os.path.splitext(os.path.basename(trimmed_video_path))[0]
-        csv_path = f"{video_name}_points.csv"
-        
-        # Filter and adjust points
-        adjusted_points = {}
-        for frame_idx, x, y, point_id in self.points:
-            if self.trim_start <= frame_idx <= self.trim_end:
-                # Adjust frame number to be relative to trim start
-                adjusted_frame = frame_idx - self.trim_start
-                if point_id not in adjusted_points:
-                    adjusted_points[point_id] = (adjusted_frame, x, y)
-        
-        if not adjusted_points:
-            print("No points within trim range to save.")
-            return
-            
-        # Write adjusted CSV
-        with open(csv_path, 'w', newline='') as csvfile:
-            writer = csv.writer(csvfile)
-            writer.writerow(['point_id', 'frame', 'x', 'y'])  # Header
-            
-            for point_id in sorted(adjusted_points.keys()):
-                frame_idx, x, y = adjusted_points[point_id]
-                writer.writerow([point_id, frame_idx, x, y])
-        
-        print(f"Saved adjusted points (for trimmed video) to {csv_path}")
-        print(f"Frame numbers adjusted: original range {self.trim_start}-{self.trim_end} → 0-{self.trim_end-self.trim_start}")
     
     def run(self):
         """Main labeling loop."""
-        print("\nStarting video labeler with trimming...")
+        print("\nStarting video labeler...")
         print("Controls:")
         print("  Left Click: Add point at current frame")
         print("  Right Click: Remove nearest point")
         print("  SPACE: Play/Pause video")
         print("  A/D: Previous/Next frame")
-        print("  T: Toggle trim mode")
-        print("  Left/Right arrows: Set trim start/end (in trim mode) or jump ±10 frames")
-        print("  S: Save points CSV + export trimmed video")
-        print("  E: Export trimmed video only")
+        print("  Left/Right arrows: Jump ±10 frames")
+        print("  S: Save points CSV")
         print("  0-9: Jump to 0%-90% of video")
         print("  Q/ESC: Quit")
         print()
         
-        cv2.namedWindow(self.window_name, cv2.WINDOW_NORMAL)
+        cv2.namedWindow(self.window_name, cv2.WINDOW_AUTOSIZE)
         cv2.setMouseCallback(self.window_name, self.mouse_callback)
         
         # Load start frame
