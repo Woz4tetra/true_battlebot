@@ -33,7 +33,7 @@ def load_checkpoint(checkpoint_path):
     return ckpt_state["params"], ckpt_state["state"]
 
 
-def read_video_opencv(video_path: str) -> Tuple[np.ndarray, float]:
+def read_video_opencv(video_path: str, max_frames: Optional[int] = None) -> Tuple[np.ndarray, float]:
     """Read video using OpenCV instead of mediapy for better performance."""
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
@@ -45,8 +45,12 @@ def read_video_opencv(video_path: str) -> Tuple[np.ndarray, float]:
     print("Loading video frames...")
     frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 
+    if max_frames is not None:
+        frame_count = min(frame_count, max_frames)
+        print(f"Limiting to first {max_frames} frames for testing")
+
     with tqdm.tqdm(total=frame_count, desc="Reading frames") as pbar:
-        while True:
+        for i in range(frame_count):
             ret, frame = cap.read()
             if not ret:
                 break
@@ -478,8 +482,10 @@ def main() -> None:
 
     # Load and preprocess video
     print("Loading video...")
-    video, fps = read_video_opencv(video_path)
+    # Limit to 30 frames for debugging
+    video, fps = read_video_opencv(video_path, max_frames=30)
     print(f"Video shape: {video.shape}")
+    original_video_size = video.shape[1:3]
 
     # Resize video for processing
     if video.shape[1] != resize_size or video.shape[2] != resize_size:
@@ -502,9 +508,9 @@ def main() -> None:
             print(f"Sample original point: frame={sample_point[0]}, y={sample_point[1]}, x={sample_point[2]}")
 
         # Transform points if video was resized
-        if original_video.shape[1:3] != (resize_size, resize_size):
+        if original_video_size != (resize_size, resize_size):
             transformed_points = []
-            orig_h, orig_w = original_video.shape[1:3]
+            orig_h, orig_w = original_video_size
             scale_x = resize_size / orig_w
             scale_y = resize_size / orig_h
 
@@ -542,6 +548,11 @@ def main() -> None:
     # Convert detected points to query points format
     query_points = np.array([[t, y, x] for t, y, x in detected_points], dtype=np.float32)
 
+    # Debug: Show query points being sent to TAPIR
+    print("Query points sent to TAPIR (t, y, x format):")
+    for i, (t, y, x) in enumerate(query_points[:3]):  # Show first 3 points
+        print(f"  Point {i}: t={t}, y={y:.1f}, x={x:.1f}")
+
     # Load checkpoint and initialize model
     print("Loading checkpoint...")
     params, state = load_checkpoint(checkpoint_path)
@@ -578,15 +589,29 @@ def main() -> None:
         sample_track = tracks[0, 0]  # First point, first frame
         print(f"Sample track before coordinate transform: x={sample_track[0]:.2f}, y={sample_track[1]:.2f}")
 
+        # Show tracks for first 3 points, first frame
+        print("First few tracks (x, y format):")
+        for i in range(min(3, len(tracks))):
+            track = tracks[i, 0]
+            print(f"  Track {i}: x={track[0]:.1f}, y={track[1]:.1f}")
+
     # Transform coordinates back to original video size if needed
-    if original_video.shape[1:3] != (resize_size, resize_size):
-        print(f"Converting coordinates back from {(resize_size, resize_size)} to {original_video.shape[1:3]}")
-        tracks = transforms.convert_grid_coordinates(tracks, (resize_size, resize_size), original_video.shape[1:3])
+    if original_video_size != (resize_size, resize_size):
+        print(f"Converting coordinates back from {(resize_size, resize_size)} to {original_video_size}")
+        tracks = transforms.convert_grid_coordinates(tracks, (resize_size, resize_size), original_video_size)
 
         # Debug: Show tracks after transformation
         if len(tracks) > 0:
             sample_track = tracks[0, 0]  # First point, first frame
             print(f"Sample track after coordinate transform: x={sample_track[0]:.2f}, y={sample_track[1]:.2f}")
+
+            # Show tracks for first 3 points, first frame
+            print("First few tracks after transformation (x, y format):")
+            for i in range(min(3, len(tracks))):
+                track = tracks[i, 0]
+                print(f"  Track {i}: x={track[0]:.1f}, y={track[1]:.1f}")
+    else:
+        print("No coordinate transformation needed - video already at processing size")
 
     # Create visualization
     colormap = viz_utils.get_colors(len(detected_points))
