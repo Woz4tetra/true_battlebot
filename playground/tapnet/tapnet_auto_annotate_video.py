@@ -117,17 +117,16 @@ def detect_motion_points(
     points = []
 
     for i in range(1, min(len(gray_frames), 5)):  # Check first few frames for motion
-        # Compute optical flow
-        flow = cv2.calcOpticalFlowPyrLK(
-            gray_frames[0], gray_frames[i], None, None, winSize=(15, 15), maxLevel=2
-        )
-
-        # Create motion mask
-        if flow[0] is not None:
-            motion_mag = np.sqrt(flow[0][:, :, 0] ** 2 + flow[0][:, :, 1] ** 2)
-        else:
-            motion_mag = np.zeros_like(gray_frames[0])
-        motion_mask = (motion_mag > 2).astype(np.uint8) * 255
+        # Use frame difference to detect motion areas
+        frame_diff = cv2.absdiff(gray_frames[0], gray_frames[i])
+        
+        # Threshold the difference to create motion mask
+        _, motion_mask = cv2.threshold(frame_diff, 25, 255, cv2.THRESH_BINARY)
+        
+        # Apply morphological operations to clean up the mask
+        kernel = np.ones((5, 5), np.uint8)
+        motion_mask = cv2.morphologyEx(motion_mask, cv2.MORPH_OPEN, kernel)
+        motion_mask = cv2.morphologyEx(motion_mask, cv2.MORPH_CLOSE, kernel)
 
         # Detect corners in motion areas
         corners = cv2.goodFeaturesToTrack(
