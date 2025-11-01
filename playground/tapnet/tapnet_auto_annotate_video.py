@@ -23,11 +23,8 @@ import cv2
 import mediapy as media
 import numpy as np
 import tqdm
-
 from tapnet.models import tapir_model
-from tapnet.utils import model_utils
-from tapnet.utils import transforms
-from tapnet.utils import viz_utils
+from tapnet.utils import model_utils, transforms, viz_utils
 
 
 def load_checkpoint(checkpoint_path):
@@ -59,18 +56,14 @@ def detect_foreground_points(
     print("Detecting foreground points...")
 
     # Convert to grayscale
-    gray_frames = [
-        cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY) for frame in frames[: min(10, len(frames))]
-    ]
+    gray_frames = [cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY) for frame in frames[: min(10, len(frames))]]
 
     detected_points = []
 
     if use_motion and len(gray_frames) > 1:
         # Method 1: Motion-based detection
         print("  Using motion-based detection...")
-        motion_points = detect_motion_points(
-            gray_frames, num_points // 2, quality_level, min_distance
-        )
+        motion_points = detect_motion_points(gray_frames, num_points // 2, quality_level, min_distance)
         detected_points.extend(motion_points)
 
     # Method 2: Corner detection on first frame
@@ -98,9 +91,7 @@ def detect_foreground_points(
     # If still not enough, use grid sampling
     if len(detected_points) < num_points:
         print("  Using grid sampling...")
-        grid_points = sample_grid_points(
-            gray_frames[0], num_points - len(detected_points), detected_points
-        )
+        grid_points = sample_grid_points(gray_frames[0], num_points - len(detected_points), detected_points)
         detected_points.extend(grid_points)
 
     print(f"  Detected {len(detected_points)} points")
@@ -119,10 +110,10 @@ def detect_motion_points(
     for i in range(1, min(len(gray_frames), 5)):  # Check first few frames for motion
         # Use frame difference to detect motion areas
         frame_diff = cv2.absdiff(gray_frames[0], gray_frames[i])
-        
+
         # Threshold the difference to create motion mask
         _, motion_mask = cv2.threshold(frame_diff, 25, 255, cv2.THRESH_BINARY)
-        
+
         # Apply morphological operations to clean up the mask
         kernel = np.ones((5, 5), np.uint8)
         motion_mask = cv2.morphologyEx(motion_mask, cv2.MORPH_OPEN, kernel)
@@ -206,9 +197,7 @@ def detect_edge_points(
     points = []
     if len(edge_points[0]) > 0:
         # Sample points from edges
-        indices = np.random.choice(
-            len(edge_points[0]), min(num_points, len(edge_points[0])), replace=False
-        )
+        indices = np.random.choice(len(edge_points[0]), min(num_points, len(edge_points[0])), replace=False)
         for idx in indices:
             y, x = edge_points[0][idx], edge_points[1][idx]
             # Check minimum distance from existing points
@@ -292,9 +281,7 @@ def batch_inference(
     num_points = query_points.shape[0]
     print(f"  Processing {num_points} points in chunks of {chunk_size}...")
 
-    for chunk_start in tqdm.tqdm(
-        range(0, num_points, chunk_size), desc="Processing point chunks"
-    ):
+    for chunk_start in tqdm.tqdm(range(0, num_points, chunk_size), desc="Processing point chunks"):
         chunk_end = min(chunk_start + chunk_size, num_points)
         chunk_points = query_points[chunk_start:chunk_end]
 
@@ -327,9 +314,7 @@ def batch_inference(
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="Auto-annotate video with TAPIR point tracking"
-    )
+    parser = argparse.ArgumentParser(description="Auto-annotate video with TAPIR point tracking")
     parser.add_argument(
         "video_path",
         type=str,
@@ -494,9 +479,7 @@ def main() -> None:
 
     # Transform coordinates back to original video size if needed
     if original_video.shape[1:3] != (resize_size, resize_size):
-        tracks = transforms.convert_grid_coordinates(
-            tracks, (resize_size, resize_size), original_video.shape[1:3]
-        )
+        tracks = transforms.convert_grid_coordinates(tracks, (resize_size, resize_size), original_video.shape[1:3])
 
     # Create visualization
     colormap = viz_utils.get_colors(len(detected_points))
