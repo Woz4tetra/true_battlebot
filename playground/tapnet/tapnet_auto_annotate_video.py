@@ -482,8 +482,7 @@ def main() -> None:
 
     # Load and preprocess video
     print("Loading video...")
-    # Limit to 30 frames for debugging
-    video, fps = read_video_opencv(video_path, max_frames=30)
+    video, fps = read_video_opencv(video_path)
     print(f"Video shape: {video.shape}")
     original_video_size = video.shape[1:3]
 
