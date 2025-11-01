@@ -212,7 +212,7 @@ def main() -> None:
         "-ch",
         "--checkpoint_path",
         type=str,
-        default="/opt/deepmind/tapnet/tapnet/checkpoints/causal_tapir_checkpoint.npy",
+        default="/opt/deepmind/tapnet/checkpoints/causal_tapir_checkpoint.npy",
         help="Path to the TAPIR checkpoint file.",
     )
     parser.add_argument(
