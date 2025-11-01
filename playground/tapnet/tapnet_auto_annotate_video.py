@@ -24,7 +24,7 @@ import cv2
 import numpy as np
 import tqdm
 from tapnet.models import tapir_model
-from tapnet.utils import model_utils, transforms, viz_utils
+from tapnet.utils import model_utils, viz_utils
 
 
 def load_checkpoint(checkpoint_path):
@@ -598,7 +598,18 @@ def main() -> None:
     # Transform coordinates back to original video size if needed
     if original_video_size != (resize_size, resize_size):
         print(f"Converting coordinates back from {(resize_size, resize_size)} to {original_video_size}")
-        tracks = transforms.convert_grid_coordinates(tracks, (resize_size, resize_size), original_video_size)
+
+        # Manual coordinate scaling instead of using transforms.convert_grid_coordinates
+        # which might have coordinate system issues
+        orig_h, orig_w = original_video_size
+        scale_x = orig_w / resize_size
+        scale_y = orig_h / resize_size
+
+        print(f"Manual scaling: x_scale={scale_x:.4f}, y_scale={scale_y:.4f}")
+
+        # Scale coordinates manually
+        tracks[:, :, 0] *= scale_x  # x coordinates
+        tracks[:, :, 1] *= scale_y  # y coordinates
 
         # Debug: Show tracks after transformation
         if len(tracks) > 0:
@@ -611,9 +622,7 @@ def main() -> None:
                 track = tracks[i, 0]
                 print(f"  Track {i}: x={track[0]:.1f}, y={track[1]:.1f}")
     else:
-        print("No coordinate transformation needed - video already at processing size")
-
-    # Create visualization
+        print("No coordinate transformation needed - video already at processing size")  # Create visualization
     colormap = viz_utils.get_colors(len(detected_points))
     video_viz = viz_utils.paint_point_track(original_video, tracks, visibles, colormap)
 
