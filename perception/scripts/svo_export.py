@@ -20,11 +20,13 @@
 
 import argparse
 import os
+import random
 import sys
 
 import cv2
 import numpy as np
 import pyzed.sl as sl
+import tqdm
 
 
 def progress_bar(percent_done: float, bar_length: int = 50) -> None:
@@ -33,6 +35,12 @@ def progress_bar(percent_done: float, bar_length: int = 50) -> None:
     bar = "=" * done_length + "-" * (bar_length - done_length)
     sys.stdout.write("[%s] %i%s\r" % (bar, percent_done, "%"))
     sys.stdout.flush()
+
+
+def export_avi_to_mp4(input_avi: str, output_mp4: str) -> None:
+    # use ffmpeg to convert avi to mp4
+    command = f"ffmpeg -i {input_avi} -c:v libx264 -crf 23 -preset medium -c:a aac -b:a 192k {output_mp4} -y"
+    os.system(command)
 
 
 def main(opt: argparse.Namespace) -> None:
@@ -52,6 +60,10 @@ def main(opt: argparse.Namespace) -> None:
 
         # Specify SVO path parameter
         init_params = sl.InitParameters()
+        if channel == 2:
+            init_params.depth_mode = sl.DEPTH_MODE.NEURAL_PLUS  # Compute depth for depth channel export
+        else:
+            init_params.depth_mode = sl.DEPTH_MODE.NONE  # No depth computation needed
         init_params.set_from_svo_file(svo_file)
         init_params.svo_real_time_mode = False  # Don't convert in realtime
         init_params.coordinate_units = sl.UNIT.MILLIMETER  # Use milliliter units (for depth measurements)
@@ -77,11 +89,14 @@ def main(opt: argparse.Namespace) -> None:
         # Prepare single image containers
         image = sl.Mat()
 
+        fps = zed.get_camera_information().camera_configuration.fps
+        print(f"SVO frame rate: {fps:.2f} FPS")
+
         # Create video writer with MPEG-4 part 2 codec
         video_writer = cv2.VideoWriter(
             output,
             cv2.VideoWriter_fourcc("M", "4", "S", "2"),  # type: ignore
-            max(zed.get_camera_information().camera_configuration.fps, 100),
+            min(fps, 100),
             (width, height),
         )
         if not video_writer.isOpened():
@@ -95,12 +110,11 @@ def main(opt: argparse.Namespace) -> None:
         print("Converting SVO... Use Ctrl-C to interrupt conversion.\n")
 
         nb_frames = zed.get_svo_number_of_frames()
+        pbar = tqdm.tqdm(total=nb_frames)
 
         while True:
             err = zed.grab(rt_param)
             if err == sl.ERROR_CODE.SUCCESS:
-                svo_position = zed.get_svo_position()
-
                 # Retrieve SVO images
                 if channel == 0:
                     zed.retrieve_image(image, sl.VIEW.LEFT)
@@ -118,17 +132,25 @@ def main(opt: argparse.Namespace) -> None:
                 # Write the RGB image in the video
                 video_writer.write(ocv_image_rgb)
 
-                # Display progress
-                progress_bar((svo_position + 1) / nb_frames * 100, 30)
+                pbar.update(1)
+
             if err == sl.ERROR_CODE.END_OF_SVOFILE_REACHED:
-                progress_bar(100, 30)
                 sys.stdout.write("\nSVO end has been reached. Exiting now.\n")
                 break
+        pbar.close()
 
         # Close the video writer
         video_writer.release()
 
         zed.close()
+
+        # Export to MP4
+        if not opt.skip_mp4:
+            output_mp4 = os.path.splitext(output)[0] + ".mp4"
+            print(f"\nExporting AVI to MP4: {output_mp4}\n")
+            export_avi_to_mp4(output, output_mp4)
+        else:
+            print("Skipping MP4 export.")
 
 
 if __name__ == "__main__":
@@ -140,6 +162,12 @@ if __name__ == "__main__":
         type=str,
         help="Path to output svo. If not specified, the output will be saved in the same folder as the input file.",
         default="",
+    )
+    parser.add_argument(
+        "--skip-mp4",
+        action="store_true",
+        help="Skip exporting to MP4 format and only export to AVI format.",
+        default=False,
     )
     opt = parser.parse_args()
     main(opt)
