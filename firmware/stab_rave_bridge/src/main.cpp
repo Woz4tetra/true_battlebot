@@ -15,7 +15,8 @@ crsf_bridge::radio_data_t *radio_data;
 
 #define LEFT_ESC A2
 #define RIGHT_ESC A3
-#define BACK_ESC MOSI
+#define BACK_ESC A6
+#define LIFTER_SERVO_PIN A7
 
 esc::Esc *left_esc;
 esc::Esc *right_esc;
@@ -69,6 +70,12 @@ void set_led_intensity(float percent)
     led_intensity = (int)(2.35 * min(100.0f, max(-100.0f, percent))) + 20;
 }
 
+int convert_percent_to_servo(float percent)
+{
+    // Convert -100 to 100 percent to 0 to 180 degrees
+    return (int)(0.9 * (percent + 100.0));
+}
+
 void stop_escs()
 {
     left_esc->stop();
@@ -119,15 +126,9 @@ void setup_ota()
 
 void mix_motor_outputs(crsf_bridge::radio_data_t *radio_data, float &left_command, float &right_command, float &back_command)
 {
-    left_command = radio_data->a_percent + radio_data->b_percent;
-    right_command = radio_data->a_percent - radio_data->b_percent;
+    left_command = radio_data->a_percent;
+    right_command = radio_data->b_percent;
     back_command = radio_data->c_percent;
-    float max_command = max(abs(left_command), abs(right_command));
-    if (max_command > 100.0)
-    {
-        left_command = left_command / max_command * 100.0;
-        right_command = right_command / max_command * 100.0;
-    }
 }
 
 void print_telemetry_data(diagnostics_server::telemetry_data_t *telemetry_data)
@@ -136,10 +137,14 @@ void print_telemetry_data(diagnostics_server::telemetry_data_t *telemetry_data)
     MAIN_SERIAL.print(telemetry_data->radio_data.a_percent, 3);
     MAIN_SERIAL.print("\tB: ");
     MAIN_SERIAL.print(telemetry_data->radio_data.b_percent, 3);
+    MAIN_SERIAL.print("\tC: ");
+    MAIN_SERIAL.print(telemetry_data->radio_data.c_percent, 3);
     MAIN_SERIAL.print("\tLeft: ");
     MAIN_SERIAL.print(telemetry_data->left_command, 3);
     MAIN_SERIAL.print("\tRight: ");
     MAIN_SERIAL.print(telemetry_data->right_command, 3);
+    MAIN_SERIAL.print("\tBack: ");
+    MAIN_SERIAL.print(telemetry_data->back_command, 3);
     MAIN_SERIAL.print("\tX: ");
     MAIN_SERIAL.print(telemetry_data->grav_vec.x, 3);
     MAIN_SERIAL.print("\tY: ");
@@ -148,6 +153,8 @@ void print_telemetry_data(diagnostics_server::telemetry_data_t *telemetry_data)
     MAIN_SERIAL.print(telemetry_data->grav_vec.z, 3);
     MAIN_SERIAL.print("\tUpside down: ");
     MAIN_SERIAL.print(telemetry_data->is_upside_down);
+    MAIN_SERIAL.print("\tLifter: ");
+    MAIN_SERIAL.print(telemetry_data->lifter_command);
     MAIN_SERIAL.print("\n");
 }
 
@@ -170,6 +177,7 @@ void setup()
     left_esc->begin();
     right_esc->begin();
     back_esc->begin();
+    lifter_servo.attach(LIFTER_SERVO_PIN, 3);
     delay(500); // Wait for the ESCs to initialize
 
     pixels.begin();
@@ -246,10 +254,12 @@ void loop()
 
     float left_command, right_command, back_command;
     mix_motor_outputs(radio_data, left_command, right_command, back_command);
+    int lifter_angle = convert_percent_to_servo(radio_data->lifter_command);
 
     left_esc->write(left_command);
     right_esc->write(back_command);
     back_esc->write(right_command);
+    lifter_servo.write(lifter_angle);
 
     telemetry_data->radio_data = *radio_data;
     telemetry_data->is_upside_down = is_upside_down;
@@ -258,6 +268,8 @@ void loop()
     telemetry_data->min_grav_vec = *updown->get_min();
     telemetry_data->left_command = left_command;
     telemetry_data->right_command = right_command;
+    telemetry_data->back_command = back_command;
+    telemetry_data->lifter_command = lifter_angle;
 
     if (radio_data->button_state)
         diagnostics->write_telemetry(telemetry_data);

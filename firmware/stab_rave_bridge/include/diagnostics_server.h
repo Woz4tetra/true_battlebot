@@ -13,7 +13,8 @@ namespace diagnostics_server
         crsf_bridge::radio_data_t radio_data;
         bool is_upside_down;
         updown_sensor::vector3_t grav_vec, max_grav_vec, min_grav_vec;
-        float left_command, right_command;
+        float left_command, right_command, back_command;
+        int lifter_command;
     } telemetry_data_t;
 
     class DiagnosticsServer

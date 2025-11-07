@@ -27,7 +27,8 @@ namespace crsf_bridge
     typedef struct radio_data
     {
         float a_percent, b_percent, c_percent;
-        bool armed, lifter_command, connected, button_state;
+        float lifter_command;
+        bool armed, connected, button_state;
         three_state_switch_t flip_switch_state;
     } radio_data_t;
 
