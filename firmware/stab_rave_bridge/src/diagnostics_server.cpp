@@ -33,17 +33,18 @@ void DiagnosticsServer::write_telemetry(telemetry_data_t *telemetry_data)
     doc["button_state"] = telemetry_data->radio_data.button_state;
     doc["flip_switch_state"] = telemetry_data->radio_data.flip_switch_state;
     doc["is_upside_down"] = telemetry_data->is_upside_down;
-    doc["accel"]["x"] = telemetry_data->grav_vec.x;
-    doc["accel"]["y"] = telemetry_data->grav_vec.y;
-    doc["accel"]["z"] = telemetry_data->grav_vec.z;
-    doc["max_accel"]["x"] = telemetry_data->max_grav_vec.x;
-    doc["max_accel"]["y"] = telemetry_data->max_grav_vec.y;
-    doc["max_accel"]["z"] = telemetry_data->max_grav_vec.z;
-    doc["min_accel"]["x"] = telemetry_data->min_grav_vec.x;
-    doc["min_accel"]["y"] = telemetry_data->min_grav_vec.y;
-    doc["min_accel"]["z"] = telemetry_data->min_grav_vec.z;
+    doc["gravity"]["x"] = telemetry_data->grav_vec.x;
+    doc["gravity"]["y"] = telemetry_data->grav_vec.y;
+    doc["gravity"]["z"] = telemetry_data->grav_vec.z;
+    doc["max_gravity"]["x"] = telemetry_data->max_grav_vec.x;
+    doc["max_gravity"]["y"] = telemetry_data->max_grav_vec.y;
+    doc["max_gravity"]["z"] = telemetry_data->max_grav_vec.z;
+    doc["min_gravity"]["x"] = telemetry_data->min_grav_vec.x;
+    doc["min_gravity"]["y"] = telemetry_data->min_grav_vec.y;
+    doc["min_gravity"]["z"] = telemetry_data->min_grav_vec.z;
     doc["left_command"] = telemetry_data->left_command;
     doc["right_command"] = telemetry_data->right_command;
+    doc["back_command"] = telemetry_data->back_command;
     doc["time"] = millis();
     doc["sequence_number"] = sequence_number;
 

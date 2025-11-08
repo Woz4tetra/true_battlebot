@@ -34,6 +34,9 @@ int rainbow_tick = 0, led_intensity = 20;
 
 bool is_loading_firmware = false;
 
+const float WHEEL_ANGLES[3] = {120.0f, 240.0f, 0.0f};
+const float DEG2RAD = M_PI / 180.0;
+
 void set_builtin_led(int value)
 {
     pixels.fill(pixels.Color(value, 0, 0));
@@ -126,9 +129,21 @@ void setup_ota()
 
 void mix_motor_outputs(crsf_bridge::radio_data_t *radio_data, float &left_command, float &right_command, float &back_command)
 {
-    left_command = radio_data->a_percent;
-    right_command = radio_data->b_percent;
-    back_command = radio_data->c_percent;
+    float linear_vx = radio_data->a_percent;
+    float angular_v = radio_data->b_percent;
+    float linear_vy = radio_data->c_percent;
+
+    left_command = linear_vx * sin(WHEEL_ANGLES[0] * DEG2RAD) + linear_vy * cos(WHEEL_ANGLES[0] * DEG2RAD) + angular_v;
+    right_command = linear_vx * sin(WHEEL_ANGLES[1] * DEG2RAD) + linear_vy * cos(WHEEL_ANGLES[1] * DEG2RAD) + angular_v;
+    back_command = linear_vx * sin(WHEEL_ANGLES[2] * DEG2RAD) + linear_vy * cos(WHEEL_ANGLES[2] * DEG2RAD) + angular_v;
+
+    float max_command = max(abs(left_command), max(abs(right_command), abs(back_command)));
+    if (max_command > 100.0)
+    {
+        left_command = left_command / max_command * 100.0;
+        right_command = right_command / max_command * 100.0;
+        back_command = back_command / max_command * 100.0;
+    }
 }
 
 void print_telemetry_data(diagnostics_server::telemetry_data_t *telemetry_data)
@@ -252,8 +267,10 @@ void loop()
     }
 
     if (is_upside_down)
+    {
         radio_data->a_percent *= -1;
-
+        radio_data->c_percent *= -1;
+    }
     float left_command, right_command, back_command;
     mix_motor_outputs(radio_data, left_command, right_command, back_command);
     int lifter_angle = convert_percent_to_servo(radio_data->lifter_command);
