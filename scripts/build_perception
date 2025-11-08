@@ -6,7 +6,8 @@ sudo chown 1000:1000 "${PERCEPTION_BUILD_DIR}"
 
 BUILD_ROOT_DIR=/opt/${ORGANIZATION}/build
 ROS_DEP_MSG_DIR=${BUILD_ROOT_DIR}/ros_msgs
-SOURCE_MSG_DIR=/opt/${ORGANIZATION}/${PROJECT_NAME}/ros_ws/bw_interfaces
+PROJECT_DIR=/opt/${ORGANIZATION}/${PROJECT_NAME}
+SOURCE_MSG_DIR=${PROJECT_DIR}/ros_ws/bw_interfaces
 BUILD_MSG_DIR=${BUILD_ROOT_DIR}/bw_interfaces
 INSTALL_MSG_DIR=/opt/${ORGANIZATION}/${PROJECT_NAME}/perception/packages
 
@@ -30,3 +31,6 @@ rm -rf ${INSTALL_MSG_DIR}/bw_interfaces || true
 sudo -H rospy-build genmsg ${BUILD_MSG_DIR} -s ${ROS_DEP_MSG_DIR} > /dev/null
 cp -r ${BUILD_MSG_DIR}/bw_interfaces ${INSTALL_MSG_DIR}
 echo "Generated messages in ${INSTALL_MSG_DIR}"
+
+# Build recorder C++ module
+${PROJECT_DIR}/perception/recorder/cpp/build.sh
