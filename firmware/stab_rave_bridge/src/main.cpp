@@ -178,7 +178,7 @@ void setup()
     right_esc->begin();
     back_esc->begin();
     lifter_servo.attach(LIFTER_SERVO_PIN, 3);
-    delay(500); // Wait for the ESCs to initialize
+    delay(200); // Wait for the ESCs to initialize
 
     pixels.begin();
     pixels.setBrightness(20);
@@ -186,6 +186,7 @@ void setup()
     for (int count = 0; count < 2; count++)
         pulse_led();
 
+    Wire1.begin();
     updown = new updown_sensor::UpdownSensor();
     if (!updown->begin())
     {
@@ -212,8 +213,9 @@ void loop()
     cycle_rainbow_led(rainbow_tick, led_intensity);
     rainbow_tick = (rainbow_tick + 5) % 255;
 
-    if (radio_data->button_state || is_loading_firmware)
-        ArduinoOTA.handle();
+    ArduinoOTA.handle();
+    if (is_loading_firmware)
+        return;
 
     if (!crsf->update(radio_data))
     {

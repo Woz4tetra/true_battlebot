@@ -1,7 +1,7 @@
 #include <diagnostics_server.h>
 
 using namespace diagnostics_server;
-const char *SSID = "MR-STABS";
+const char *SSID = "STAB-RAVE";
 const char *PASSWORD = "havocbots";
 const char *SEND_IP = "192.168.4.2";
 const int PORT = 4176;

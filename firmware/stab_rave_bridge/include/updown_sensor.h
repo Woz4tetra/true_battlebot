@@ -13,9 +13,10 @@ namespace updown_sensor
         float z;
     } vector3_t;
 
-    const float RIGHT_SIDE_UP_THRESHOLD = -2.0;
-    const float UPSIDE_DOWN_THRESHOLD = -15.0;
+    const float RIGHT_SIDE_UP_THRESHOLD = 1.0;
+    const float UPSIDE_DOWN_THRESHOLD = -1.0;
     const uint32_t RECONNECT_INTERVAL = 1000;
+    const uint32_t SAMPLE_INTERVAL = 100;
 
     class UpdownSensor
     {
@@ -27,6 +28,7 @@ namespace updown_sensor
         vector3_t *min_grav_vec;
         bool is_upside_down = false;
         uint32_t reconnect_timer = 0;
+        uint32_t sample_timer = 0;
         vector3_t *make_unit_vector(float x, float y, float z);
         bool update_sensor(bool radio_connected);
         vector3_t *init_vector3(float x, float y, float z);

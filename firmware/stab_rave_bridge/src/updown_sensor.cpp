@@ -4,7 +4,7 @@ using namespace updown_sensor;
 
 UpdownSensor::UpdownSensor()
 {
-    sensor = new Adafruit_BNO055();
+    sensor = new Adafruit_BNO055(55, 0x28, &Wire1);
     grav_vec = make_unit_vector(0.0, 0.0, -1.0);
     max_grav_vec = init_vector3(0.0, 0.0, 0.0);
     min_grav_vec = init_vector3(0.0, 0.0, 0.0);
@@ -16,7 +16,9 @@ bool UpdownSensor::begin()
         return true;
     if (sensor->begin())
     {
+        delay(1000);
         initialized = true;
+        sensor->setExtCrystalUse(true);
         return true;
     }
     else
@@ -70,9 +72,15 @@ bool UpdownSensor::update_sensor(bool radio_connected)
         }
         return false;
     }
-    sensors_event_t event;
-    uint32_t start_time = millis();
-    sensor->getEvent(&event);
+    uint32_t now = millis();
+    if (now - sample_timer < SAMPLE_INTERVAL)
+    {
+        return false;
+    }
+    sample_timer = now;
+    uint32_t start_time = now;
+    sensors_event_t gravity_data;
+    sensor->getEvent(&gravity_data, Adafruit_BNO055::VECTOR_GRAVITY);
     uint32_t end_time = millis();
 
     if (end_time - start_time > 250)
@@ -81,9 +89,9 @@ bool UpdownSensor::update_sensor(bool radio_connected)
         return false;
     }
 
-    grav_vec->x = event.acceleration.x;
-    grav_vec->y = event.acceleration.y;
-    grav_vec->z = event.acceleration.z;
+    grav_vec->x = gravity_data.acceleration.x;
+    grav_vec->y = gravity_data.acceleration.y;
+    grav_vec->z = gravity_data.acceleration.z;
 
     max_grav_vec->x = max(max_grav_vec->x, grav_vec->x);
     max_grav_vec->y = max(max_grav_vec->y, grav_vec->y);
