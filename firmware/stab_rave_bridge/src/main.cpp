@@ -266,6 +266,8 @@ void loop()
         break;
     }
 
+    updown_sensor::vector3_t *orientation = updown->get_orientation();
+
     if (is_upside_down)
     {
         radio_data->a_percent *= -1;
@@ -289,8 +291,14 @@ void loop()
     telemetry_data->right_command = right_command;
     telemetry_data->back_command = back_command;
     telemetry_data->lifter_command = lifter_angle;
+    telemetry_data->orientation = *orientation;
 
     if (radio_data->button_state)
         diagnostics->write_telemetry(telemetry_data);
     print_telemetry_data(telemetry_data);
+
+    crsf->send_telemetry(
+        orientation->x,
+        orientation->y,
+        orientation->z);
 }

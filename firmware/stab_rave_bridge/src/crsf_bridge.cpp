@@ -72,3 +72,13 @@ bool CrsfBridge::get_button_state(float channel_value)
 {
     return channel_value > MID_CYCLE;
 }
+
+void CrsfBridge::send_telemetry(float roll, float pitch, float yaw)
+{
+    crsf_sensor_attitude_t crsfAttitude = {0};
+    // Values are MSB first (BigEndian)
+    crsfAttitude.roll = htobe16((uint16_t)(roll * DEG2RAD * 10000));
+    crsfAttitude.pitch = htobe16((uint16_t)(pitch * DEG2RAD * 10000));
+    crsfAttitude.yaw = htobe16((uint16_t)(yaw * DEG2RAD * 10000));
+    crsf->queuePacket(CRSF_SYNC_BYTE, CRSF_FRAMETYPE_ATTITUDE, &crsfAttitude, sizeof(crsfAttitude));
+}

@@ -42,6 +42,9 @@ void DiagnosticsServer::write_telemetry(telemetry_data_t *telemetry_data)
     doc["min_gravity"]["x"] = telemetry_data->min_grav_vec.x;
     doc["min_gravity"]["y"] = telemetry_data->min_grav_vec.y;
     doc["min_gravity"]["z"] = telemetry_data->min_grav_vec.z;
+    doc["orientation"]["x"] = telemetry_data->orientation.x;
+    doc["orientation"]["y"] = telemetry_data->orientation.y;
+    doc["orientation"]["z"] = telemetry_data->orientation.z;
     doc["left_command"] = telemetry_data->left_command;
     doc["right_command"] = telemetry_data->right_command;
     doc["back_command"] = telemetry_data->back_command;

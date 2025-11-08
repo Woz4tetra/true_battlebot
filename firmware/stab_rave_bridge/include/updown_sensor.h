@@ -13,8 +13,8 @@ namespace updown_sensor
         float z;
     } vector3_t;
 
-    const float RIGHT_SIDE_UP_THRESHOLD = 1.0;
-    const float UPSIDE_DOWN_THRESHOLD = -1.0;
+    const float RIGHT_SIDE_UP_THRESHOLD = -1.0;
+    const float UPSIDE_DOWN_THRESHOLD = 1.0;
     const uint32_t RECONNECT_INTERVAL = 1000;
     const uint32_t SAMPLE_INTERVAL = 100;
 
@@ -26,6 +26,7 @@ namespace updown_sensor
         vector3_t *grav_vec;
         vector3_t *max_grav_vec;
         vector3_t *min_grav_vec;
+        vector3_t *orientation;
         bool is_upside_down = false;
         uint32_t reconnect_timer = 0;
         uint32_t sample_timer = 0;
@@ -40,5 +41,6 @@ namespace updown_sensor
         vector3_t *get() { return grav_vec; }
         vector3_t *get_max() { return max_grav_vec; }
         vector3_t *get_min() { return min_grav_vec; }
+        vector3_t *get_orientation() { return orientation; }
     };
 }

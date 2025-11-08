@@ -17,6 +17,8 @@ namespace crsf_bridge
     const float DEADZONE_PERCENT = 1.0;
     const float EPSILON_PERCENT = 0.1;
 
+    const float DEG2RAD = M_PI / 180.0;
+
     typedef enum three_state_switch
     {
         DOWN = 0,
@@ -44,5 +46,6 @@ namespace crsf_bridge
         CrsfBridge();
         void begin();
         bool update(radio_data_t *radio_data);
+        void send_telemetry(float roll, float pitch, float yaw);
     };
 }
