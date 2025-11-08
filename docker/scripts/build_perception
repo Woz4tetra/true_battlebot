@@ -8,17 +8,18 @@ cd ${BASE_DIR}/../resources
 PERCEPTION_IMAGE_VERSION=$(${BASE_DIR}/../get_image_tag perception)
 ORGANIZATION=$(${BASE_DIR}/../get_organization)
 PROJECT_NAME=$(${BASE_DIR}/../get_project_name)
+PERCEPTION_BUILD_CONTAINER_NAME=${PROJECT_NAME}_perception_build
 
-VALUE=$(docker volume ls -f name=${PROJECT_NAME}_perception_build)
-if ! echo ${VALUE} | grep -q "${PROJECT_NAME}_perception_build"; then
+VALUE=$(docker volume ls -f name=${PERCEPTION_BUILD_CONTAINER_NAME})
+if ! echo ${VALUE} | grep -q "${PERCEPTION_BUILD_CONTAINER_NAME}"; then
     echo "Creating perception volume"
-    docker volume create ${PROJECT_NAME}_perception_build
+    docker volume create ${PERCEPTION_BUILD_CONTAINER_NAME}
 fi
 
-docker stop build_${PROJECT_NAME}_perception || true
+docker stop ${PERCEPTION_BUILD_CONTAINER_NAME} || true
 docker run \
     --user ${ORGANIZATION} \
-    --name build_${PROJECT_NAME}_perception \
+    --name ${PERCEPTION_BUILD_CONTAINER_NAME} \
     --restart="no" \
     --net="host" \
     --privileged \

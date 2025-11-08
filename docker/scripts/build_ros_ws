@@ -10,11 +10,12 @@ cd ${BASE_DIR}/../resources
 IMAGE_VERSION=$(${BASE_DIR}/../get_image_tag)
 ORGANIZATION=$(${BASE_DIR}/../get_organization)
 PROJECT_NAME=$(${BASE_DIR}/../get_project_name)
+ROS_BUILD_CONTAINER_NAME=${PROJECT_NAME}_build
 
-docker stop build_${PROJECT_NAME} || true
+docker stop ${ROS_BUILD_CONTAINER_NAME} || true
 docker run \
     --user ${ORGANIZATION} \
-    --name build_${PROJECT_NAME} \
+    --name ${ROS_BUILD_CONTAINER_NAME} \
     --restart="no" \
     --net="host" \
     --privileged \
