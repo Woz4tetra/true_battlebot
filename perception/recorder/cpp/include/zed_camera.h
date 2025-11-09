@@ -1,28 +1,34 @@
 #pragma once
 #include <sl/Camera.hpp>
 #include <string>
+#include <future>
+#include <memory>
+#include <memory_resource>
 
 class ZEDCamera
 {
 public:
-    ZEDCamera();
+    ZEDCamera(sl::InitParameters params = sl::InitParameters());
     ~ZEDCamera();
 
     bool open();
-    bool enableStreaming(int port = 30000);
-    bool grab();
-    void disableStreaming();
     void close();
     int getFrameCount() const;
     std::string getLastError() const;
-    sl::Mat retrieveImage();
+    bool startRecording(const std::string &filename);
+    void stopRecording();
 
 private:
-    sl::Camera zed;
-    sl::InitParameters init_parameters;
-    sl::StreamingParameters stream_params;
-    int fcount = 0;
-    std::string last_error;
-    bool is_open = false;
-    bool is_streaming = false;
+    sl::Camera zed_;
+    sl::InitParameters init_parameters_;
+    int fcount_ = 0;
+    std::string last_error_;
+    bool is_open_ = false;
+
+    std::atomic<bool> stop_worker_{false};
+    std::future<void> worker_future_;
+    std::mutex mtx_;
+
+    bool update(sl::Camera *zed);
+    void worker(sl::Camera *zed);
 };

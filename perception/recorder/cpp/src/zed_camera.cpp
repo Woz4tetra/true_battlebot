@@ -4,11 +4,8 @@
 #include <thread>
 #include <chrono>
 
-ZEDCamera::ZEDCamera()
+ZEDCamera::ZEDCamera(sl::InitParameters params) : init_parameters_(params)
 {
-    init_parameters.camera_resolution = sl::RESOLUTION::AUTO;
-    init_parameters.depth_mode = sl::DEPTH_MODE::NONE;
-    init_parameters.sdk_verbose = 1;
 }
 
 ZEDCamera::~ZEDCamera()
@@ -16,80 +13,132 @@ ZEDCamera::~ZEDCamera()
     // Try to safely close resources, but don't fail if SDK is already shutting down
     try
     {
-        if (is_streaming)
-            disableStreaming();
-        if (is_open)
+        if (is_open_)
             close();
     }
-    catch (...)
+    catch (const std::exception &e)
     {
-        // Silently ignore any exceptions during destruction
-        // This prevents crashes during Python shutdown
+        // Print details about the exception
+        std::cerr << "Error occurred during ZEDCamera destruction: " << e.what() << std::endl;
+        std::cerr << "Last error: " << getLastError() << std::endl;
     }
 }
 
-bool ZEDCamera::open()
+bool ZEDCamera::start()
 {
-    auto returned_state = zed.open(init_parameters);
-    if (returned_state != sl::ERROR_CODE::SUCCESS)
+    if (is_open_)
     {
-        last_error = sl::toString(returned_state);
+        std::cerr << "Camera is already open" << std::endl;
         return false;
     }
-    is_open = true;
+    if (worker_future_.valid())
+    {
+        std::cerr << "Worker thread is already running" << std::endl;
+        return false;
+    }
+    std::lock_guard<std::mutex> lock(mtx_);
+
+    stop_worker_.store(false, std::memory_order_release);
+    worker_future_ = std::async(std::launch::async, &ZEDCamera::worker, this, std::move(&zed_));
     return true;
 }
 
-bool ZEDCamera::enableStreaming(int port)
+bool ZEDCamera::update(sl::Camera zed)
 {
-    stream_params.port = port;
-    auto returned_state = zed.enableStreaming(stream_params);
-    if (returned_state != sl::ERROR_CODE::SUCCESS)
-    {
-        last_error = sl::toString(returned_state);
-        return false;
-    }
-    is_streaming = true;
-    return true;
-}
+    std::lock_guard<std::mutex> lock(mtx_);
+    auto res = zed->grab();
 
-bool ZEDCamera::grab()
-{
-    auto res = zed.grab();
     if (res <= sl::ERROR_CODE::SUCCESS)
     {
-        fcount++;
+        fcount_++;
         return true;
     }
-    last_error = sl::toString(res);
+    last_error_ = sl::toString(res);
+
     return false;
 }
 
-void ZEDCamera::disableStreaming()
+void ZEDCamera::worker()
 {
-    zed.disableStreaming();
-    is_streaming = false;
+    sl::Camera zed;
+    open(zed);
+
+    while (!stop_worker_.load(std::memory_order_acquire))
+    {
+        if (!update(zed))
+        {
+            std::cerr << "Error occurred during camera update: " << getLastError() << std::endl;
+            close(zed);
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));
+            // Attempt to reopen
+            open(zed);
+        }
+    }
 }
 
-void ZEDCamera::close()
+void ZEDCamera::open(sl::Camera zed)
+{
+    auto returned_state = zed.open(init_parameters_);
+    if (returned_state != sl::ERROR_CODE::SUCCESS)
+    {
+        last_error_ = sl::toString(returned_state);
+        return false;
+    }
+    is_open_ = true;
+}
+
+void ZEDCamera::close(sl::Camera zed)
 {
     zed.close();
-    is_open = false;
+}
+
+bool ZEDCamera::startRecording(sl::Camera zed, const std::string &filename)
+{
+    sl::RecordingParameters record_params(filename.c_str());
+
+    auto res = zed.enableRecording(record_params);
+
+    if (res != sl::ERROR_CODE::SUCCESS)
+    {
+        last_error_ = sl::toString(res);
+        return false;
+    }
+
+    return true;
+}
+
+void ZEDCamera::stopRecording(sl::Camera zed)
+{
+    zed.disableRecording();
+}
+
+void ZEDCamera::stop()
+{
+    {
+        std::lock_guard<std::mutex> lock(mtx_);
+        is_open_ = false;
+    }
+
+    stop_worker_.store(true, std::memory_order_release);
+    if (worker_future_.valid())
+    {
+        try
+        {
+            worker_future_.get();
+        }
+        catch (...)
+        {
+            // Don't throw exceptions from the destructor
+        }
+    }
 }
 
 int ZEDCamera::getFrameCount() const
 {
-    return fcount;
+    return fcount_;
 }
 
 std::string ZEDCamera::getLastError() const
 {
-    return last_error;
-}
-
-sl::Mat ZEDCamera::retrieveImage()
-{
-    sl::Mat image;
-    zed.retrieveImage(image, sl::VIEW::LEFT);
-    return image;
+    return last_error_;
 }

@@ -37,10 +37,3 @@ make -j$(nproc)
 # Install the project
 echo "Installing project..."
 make install
-
-# Create a symlink for easier importing
-echo "Creating symlink for Python import..."
-cd "${INSTALL_DIR}"
-rm -f recorder_cpp.so || true
-ln -sf recorder_cpp.cpython-*.so recorder_cpp.so
-echo "Created symlink: recorder_cpp.so -> $(ls recorder_cpp.cpython-*.so)"
