@@ -86,3 +86,10 @@ std::string ZEDCamera::getLastError() const
 {
     return last_error;
 }
+
+sl::Mat ZEDCamera::retrieveImage()
+{
+    sl::Mat image;
+    zed.retrieveImage(image, sl::VIEW::LEFT);
+    return image;
+}

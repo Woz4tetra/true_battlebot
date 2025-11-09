@@ -5,17 +5,20 @@ project(recorder_cpp)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# RelWithDebInfo build (required for ZED SDK compatibility)
+set(CMAKE_BUILD_TYPE RelWithDebInfo)
+
 # Find Python using the method nanobind recommends
 find_package(Python COMPONENTS Interpreter Development.Module REQUIRED)
 
-# Download and configure nanobind
+# Download and configure pybind11
 include(FetchContent)
 FetchContent_Declare(
-    nanobind
-    GIT_REPOSITORY https://github.com/wjakob/nanobind.git
-    GIT_TAG        v1.8.0
+    pybind11
+    GIT_REPOSITORY https://github.com/pybind/pybind11.git
+    GIT_TAG        v2.13.6
 )
-FetchContent_MakeAvailable(nanobind)
+FetchContent_MakeAvailable(pybind11)
 
 # Find ZED SDK
 find_package(ZED 5 REQUIRED)
@@ -38,9 +41,9 @@ set(SOURCES
     src/zed_bindings.cpp
 )
 
-# Create nanobind module
+# Create pybind11 module
 
-nanobind_add_module(recorder_cpp ${SOURCES})
+pybind11_add_module(recorder_cpp ${SOURCES})
 
 # Link ZED libraries
 target_link_libraries(recorder_cpp PRIVATE 

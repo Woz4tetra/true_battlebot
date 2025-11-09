@@ -15,6 +15,7 @@ public:
     void close();
     int getFrameCount() const;
     std::string getLastError() const;
+    sl::Mat retrieveImage();
 
 private:
     sl::Camera zed;

@@ -71,5 +71,14 @@ class ZEDCamera:
         """
         ...
 
+    def retrieve_image(self) -> "sl.Mat":
+        """
+        Retrieve the last grabbed image from the camera.
+
+        Returns:
+            The last grabbed image as an sl.Mat object.
+        """
+        ...
+
 # Module version
 __version__: str
