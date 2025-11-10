@@ -24,6 +24,11 @@ class FrSkyTransmitter:
     def open(self) -> None:
         self.device = find_transmitter()
 
+    def fileno(self) -> int:
+        if self.device is None:
+            raise RuntimeError("Device not connected. Call connect() first.")
+        return self.device.fileno()
+
     def _write(self, data: bytes) -> None:
         if self.device is None:
             raise RuntimeError("Device not connected. Call connect() first.")

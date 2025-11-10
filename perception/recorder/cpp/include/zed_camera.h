@@ -1,9 +1,40 @@
+/**
+ * Thread-safe ZED camera wrapper with command queue for recording control
+ *
+ * Usage example:
+ *   ZEDCamera camera(init_params);
+ *   camera.start();  // Starts worker thread
+ *
+ *   // Thread-safe commands - can be called from any thread
+ *   camera.startRecording("output.svo");
+ *   // ... do other work ...
+ *   camera.stopRecording();
+ *
+ *   camera.stop();   // Stops worker thread and closes camera
+ */
 #pragma once
 #include <sl/Camera.hpp>
 #include <string>
 #include <future>
 #include <memory>
 #include <memory_resource>
+#include <queue>
+#include <condition_variable>
+
+enum class CommandType
+{
+    START_RECORDING,
+    STOP_RECORDING
+};
+
+struct Command
+{
+    CommandType type;
+    std::string filename; // Only used for START_RECORDING
+
+    Command(CommandType t) : type(t) {}
+    Command(CommandType t, const std::string &f) : type(t), filename(f) {}
+};
 
 class ZEDCamera
 {
@@ -27,8 +58,16 @@ private:
 
     std::atomic<bool> stop_worker_{false};
     std::future<void> worker_future_;
-    std::mutex mtx_;
+    mutable std::mutex mtx_;
 
-    bool update(sl::Camera *zed);
-    void worker(sl::Camera *zed);
+    // Command queue for thread-safe communication
+    std::queue<Command> command_queue_;
+    std::mutex queue_mtx_;
+    std::condition_variable queue_cv_;
+
+    bool update(sl::Camera &zed);
+    void worker();
+    void processCommand(const Command &cmd, sl::Camera &zed);
+    bool startRecordingInternal(sl::Camera &zed, const std::string &filename);
+    void stopRecordingInternal(sl::Camera &zed);
 };

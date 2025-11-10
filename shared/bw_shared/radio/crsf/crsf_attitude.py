@@ -1,14 +1,15 @@
+from dataclasses import dataclass
+
 from bw_shared.radio.crsf.crsf_frame_type import FrameType
 from bw_shared.radio.crsf.crsf_packet_base import CrsfPacketBase
 
 
+@dataclass
 class CrsfAttitude(CrsfPacketBase):
-    type = FrameType.ATTITUDE
-
-    def __init__(self, roll: float = 0.0, pitch: float = 0.0, yaw: float = 0.0) -> None:
-        self.roll = roll
-        self.pitch = pitch
-        self.yaw = yaw
+    type: FrameType = FrameType.ATTITUDE
+    roll: float = 0.0
+    pitch: float = 0.0
+    yaw: float = 0.0
 
     @classmethod
     def from_bytes(cls, payload: bytes):

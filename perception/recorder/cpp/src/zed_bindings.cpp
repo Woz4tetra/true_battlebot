@@ -8,13 +8,24 @@ PYBIND11_MODULE(recorder_cpp, m)
 {
     m.doc() = "Python bindings for ZEDCamera using pybind11";
 
+    py::enum_<CommandType>(m, "CommandType")
+        .value("START_RECORDING", CommandType::START_RECORDING)
+        .value("STOP_RECORDING", CommandType::STOP_RECORDING)
+        .export_values();
+
+    py::class_<Command>(m, "Command")
+        .def(py::init<CommandType>())
+        .def(py::init<CommandType, const std::string &>())
+        .def_readwrite("type", &Command::type)
+        .def_readwrite("filename", &Command::filename);
+
     py::class_<ZEDCamera>(m, "ZEDCamera")
         .def(py::init<>())
         .def(py::init<const sl::InitParameters &>())
         .def("open", &ZEDCamera::open)
+        .def("close", &ZEDCamera::close)
         .def("start_recording", &ZEDCamera::startRecording)
         .def("stop_recording", &ZEDCamera::stopRecording)
-        .def("close", &ZEDCamera::close)
         .def("get_frame_count", &ZEDCamera::getFrameCount)
         .def("get_last_error", &ZEDCamera::getLastError);
 

@@ -100,5 +100,20 @@ class ZEDCamera:
         """
         ...
 
+    def start_recording(self, file_path: str) -> bool:
+        """
+        Start recording the camera stream to an SVO file.
+
+        Args:
+            file_path: Path to the output SVO file.
+        Returns:
+            True if recording started successfully, False otherwise.
+        """
+        ...
+
+    def stop_recording(self) -> None:
+        """Stop recording the camera stream."""
+        ...
+
 # Module version
 __version__: str
