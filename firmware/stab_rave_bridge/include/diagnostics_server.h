@@ -14,6 +14,7 @@ namespace diagnostics_server
         bool is_upside_down;
         updown_sensor::vector3_t grav_vec, max_grav_vec, min_grav_vec;
         float left_command, right_command, back_command;
+        float left_scaled_command, right_scaled_command, back_scaled_command;
         int lifter_command;
         updown_sensor::vector3_t orientation;
     } telemetry_data_t;

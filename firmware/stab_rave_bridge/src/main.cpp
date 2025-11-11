@@ -13,9 +13,9 @@
 crsf_bridge::CrsfBridge *crsf;
 crsf_bridge::radio_data_t *radio_data;
 
-#define LEFT_ESC A2
-#define RIGHT_ESC A3
-#define BACK_ESC A6
+#define LEFT_ESC A6
+#define RIGHT_ESC A2
+#define BACK_ESC A3
 #define LIFTER_SERVO_PIN A7
 
 esc::Esc *left_esc;
@@ -34,7 +34,7 @@ int rainbow_tick = 0, led_intensity = 20;
 
 bool is_loading_firmware = false;
 
-const float WHEEL_ANGLES[3] = {120.0f, 240.0f, 0.0f};
+const float WHEEL_ANGLES[3] = {240.0f, 0.0f, 120.0f};
 const float DEG2RAD = M_PI / 180.0;
 
 void set_builtin_led(int value)
@@ -129,9 +129,9 @@ void setup_ota()
 
 void mix_motor_outputs(crsf_bridge::radio_data_t *radio_data, float &left_command, float &right_command, float &back_command)
 {
-    float linear_vx = radio_data->a_percent;
+    float linear_vx = -1 * radio_data->a_percent;
     float angular_v = radio_data->b_percent;
-    float linear_vy = radio_data->c_percent;
+    float linear_vy = -1 * radio_data->c_percent;
 
     left_command = linear_vx * sin(WHEEL_ANGLES[0] * DEG2RAD) + linear_vy * cos(WHEEL_ANGLES[0] * DEG2RAD) + angular_v;
     right_command = linear_vx * sin(WHEEL_ANGLES[1] * DEG2RAD) + linear_vy * cos(WHEEL_ANGLES[1] * DEG2RAD) + angular_v;
@@ -288,8 +288,11 @@ void loop()
     telemetry_data->max_grav_vec = *updown->get_max();
     telemetry_data->min_grav_vec = *updown->get_min();
     telemetry_data->left_command = left_command;
-    telemetry_data->right_command = right_command;
-    telemetry_data->back_command = back_command;
+    telemetry_data->right_command = back_command;
+    telemetry_data->back_command = right_command;
+    telemetry_data->left_scaled_command = left_esc->get_command();
+    telemetry_data->right_scaled_command = right_esc->get_command();
+    telemetry_data->back_scaled_command = back_esc->get_command();
     telemetry_data->lifter_command = lifter_angle;
     telemetry_data->orientation = *orientation;
 

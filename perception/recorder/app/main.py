@@ -5,21 +5,22 @@ from datetime import datetime
 from pathlib import Path
 
 from bw_shared.radio.transmitter.frsky import FrSkyTransmitter
-from perception_tools.directories.data_directory import get_data_directory
+from perception_tools.directories.media_directory import get_media_directory
 from recorder_cpp import DEPTH_MODE, RESOLUTION, InitParameters, ZEDCamera
 
 
 class App:
-    def __init__(self, transmitter: FrSkyTransmitter, zed: ZEDCamera, recorder_base_path: Path) -> None:
+    def __init__(self, transmitter: FrSkyTransmitter, zed: ZEDCamera, svo_path: Path, telemetry_path: Path) -> None:
         self.transmitter = transmitter
         self.zed = zed
-        self.recorder_path_svo = recorder_base_path.with_suffix(".svo2")
-        self.recorder_path_transmitter = recorder_base_path.with_suffix(".jsonl")
+        self.svo_path = svo_path
+        self.telemetry_path = telemetry_path
         self.buffer_length = 50
         self.num_packets_written = 0
         self.buffer = []
 
     def write_buffer_data(self, path: Path, data: list[dict]) -> None:
+        path.parent.mkdir(parents=True, exist_ok=True)
         with open(path, "a") as f:
             for entry in data:
                 f.write(json.dumps(entry) + "\n")
@@ -27,9 +28,9 @@ class App:
             print(f"Wrote {self.num_packets_written} transmitter packets to {path}")
 
     def start(self) -> None:
-        self.recorder_path_svo.parent.mkdir(parents=True, exist_ok=True)
-        self.zed.start_recording(str(self.recorder_path_svo))
-        print(f"Starting recording to {self.recorder_path_svo}")
+        self.svo_path.parent.mkdir(parents=True, exist_ok=True)
+        self.zed.start_recording(str(self.svo_path))
+        print(f"Starting recording to {self.svo_path}")
 
     def update(self) -> None:
         packets = self.transmitter.read()
@@ -42,12 +43,12 @@ class App:
             }
             self.buffer.append(entry)
             if len(self.buffer) >= self.buffer_length:
-                self.write_buffer_data(self.recorder_path_transmitter, self.buffer)
+                self.write_buffer_data(self.telemetry_path, self.buffer)
                 self.buffer = []
 
     def stop(self) -> None:
         if self.buffer:
-            self.write_buffer_data(self.recorder_path_transmitter, self.buffer)
+            self.write_buffer_data(self.telemetry_path, self.buffer)
         self.zed.stop_recording()
         print("Recording stopped.")
 
@@ -66,9 +67,11 @@ def main() -> None:
         print("Failed to open camera:", zed.get_last_error())
         exit(1)
 
-    recorder_base_path = get_data_directory() / "recordings" / datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    base_name = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    svo_base_path = get_media_directory() / "svo" / (base_name + ".svo2")
+    telemetry_base_path = get_media_directory() / "telemetry" / (base_name + "_telemetry.jsonl")
 
-    app = App(transmitter, zed, recorder_base_path)
+    app = App(transmitter, zed, svo_base_path, telemetry_base_path)
     app.start()
     transmitter_fileno = transmitter.fileno()
 

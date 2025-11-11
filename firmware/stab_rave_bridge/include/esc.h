@@ -11,7 +11,8 @@ namespace esc
     const int SPREAD_PULSE = 90;
     const int MAX_PULSE = NEUTRAL_ANGLE + SPREAD_PULSE;
     const int MIN_PULSE = NEUTRAL_ANGLE - SPREAD_PULSE;
-    const float DEADZONE_PERCENT = 1.0;
+    const float LOWER_DEADZONE_PERCENT = -6.5;
+    const float UPPER_DEADZONE_PERCENT = 2.5;
 
     class Esc
     {
@@ -19,6 +20,8 @@ namespace esc
         Servo *servo;
         const int pin;
         const int pwm_channel;
+        float command;
+        float apply_uneven_deadzone(float signed_percent);
         int scale_percent_to_pulse(float signed_percent);
         void write_angle(int angle);
 
@@ -27,6 +30,7 @@ namespace esc
         void begin();
         void stop();
         void write(float signed_percent);
+        float get_command();
     };
 
 }

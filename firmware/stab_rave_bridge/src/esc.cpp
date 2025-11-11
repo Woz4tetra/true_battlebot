@@ -15,13 +15,25 @@ void Esc::begin()
 
 void Esc::write(float signed_percent)
 {
-    write_angle(scale_percent_to_pulse(signed_percent));
+    float scaled_percent = apply_uneven_deadzone(signed_percent);
+    command = scaled_percent;
+    int angle = scale_percent_to_pulse(scaled_percent);
+    write_angle(angle);
+}
+
+float Esc::apply_uneven_deadzone(float signed_percent)
+{
+    float scaled_percent;
+    // Scale percent based on uneven deadzone
+    if (signed_percent > 0)
+        scaled_percent = signed_percent + LOWER_DEADZONE_PERCENT;
+    else
+        scaled_percent = signed_percent - UPPER_DEADZONE_PERCENT;
+    return scaled_percent;
 }
 
 int Esc::scale_percent_to_pulse(float signed_percent)
 {
-    if (abs(signed_percent) < DEADZONE_PERCENT)
-        return NEUTRAL_ANGLE;
     float angle = (MAX_PULSE - MIN_PULSE) / 200.0 * (signed_percent + 100.0) + MIN_PULSE;
     return (int)min((float)MAX_ANGLE, max((float)MIN_ANGLE, angle));
 }
@@ -34,4 +46,9 @@ void Esc::stop()
 void Esc::write_angle(int angle)
 {
     servo->write(angle);
+}
+
+float Esc::get_command()
+{
+    return command;
 }

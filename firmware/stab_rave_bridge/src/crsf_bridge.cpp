@@ -20,7 +20,7 @@ bool CrsfBridge::update(radio_data_t *radio_data)
     if (crsf->isLinkUp())
     {
         const crsf_channels_t *channels = crsf->getChannelsPacked();
-        radio_data->a_percent = -1 * scale_channel_to_percent(channels->ch0);
+        radio_data->a_percent = scale_channel_to_percent(channels->ch0);
         radio_data->b_percent = scale_channel_to_percent(channels->ch1);
         radio_data->c_percent = scale_channel_to_percent(channels->ch3);
         radio_data->armed = channels->ch4 > MID_CYCLE;
@@ -51,10 +51,15 @@ float CrsfBridge::scale_channel_to_percent(float channel_value)
         percent = -100.0 / (MID_CYCLE - MIN_CYCLE) * (MID_CYCLE - channel_value);
     else
         percent = 100.0 / (MAX_CYCLE - MID_CYCLE) * (channel_value - MID_CYCLE);
-    if (abs(percent) < EPSILON_PERCENT)
-        percent = 0.0;
-    else if (abs(percent) < DEADZONE_PERCENT)
-        percent = DEADZONE_PERCENT * (percent > 0 ? 1 : -1);
+
+    // Apply deadzone and stretch the percent
+    if (abs(percent) < DEADZONE_PERCENT)
+        return 0.0f;
+    else if (percent > 0)
+        percent = (percent - DEADZONE_PERCENT) / (100.0f - DEADZONE_PERCENT) * 100.0f;
+    else
+        percent = (percent + DEADZONE_PERCENT) / (100.0f - DEADZONE_PERCENT) * 100.0f;
+
     return min(100.0f, max(-100.0f, percent));
 }
 

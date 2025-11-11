@@ -59,7 +59,8 @@ class FrSkyTransmitter:
         if not response:
             return []
 
-        return self.parser.parse(response)
+        excess_bytes, packets = self.parser.parse(response)
+        return packets
 
     def write(self) -> None:
         for command in self.command:

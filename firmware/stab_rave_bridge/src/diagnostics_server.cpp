@@ -48,6 +48,9 @@ void DiagnosticsServer::write_telemetry(telemetry_data_t *telemetry_data)
     doc["left_command"] = telemetry_data->left_command;
     doc["right_command"] = telemetry_data->right_command;
     doc["back_command"] = telemetry_data->back_command;
+    doc["left_scaled_command"] = telemetry_data->left_scaled_command;
+    doc["right_scaled_command"] = telemetry_data->right_scaled_command;
+    doc["back_scaled_command"] = telemetry_data->back_scaled_command;
     doc["time"] = millis();
     doc["sequence_number"] = sequence_number;
 
