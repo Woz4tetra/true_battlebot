@@ -34,8 +34,15 @@ int rainbow_tick = 0, led_intensity = 20;
 
 bool is_loading_firmware = false;
 
-const float WHEEL_ANGLES[3] = {240.0f, 0.0f, 120.0f};
+const float WHEEL_ANGLES[3] = {120.0f, 240.0f, 0.0f};
 const float DEG2RAD = M_PI / 180.0;
+
+const float LIFTER_FULL_UP = 5.0f;
+const float LIFTER_FULL_DOWN = 92.0f;
+const float LIFTER_RAISED_UP = 33.0f;
+const float LIFTER_RAISED_DOWN = 61.0f;
+const float LIFTER_PERCENT_RANGE = 40.0f;
+const float LIFTER_PERCENT_FULL = 90.0f;
 
 void set_builtin_led(int value)
 {
@@ -71,12 +78,6 @@ void cycle_rainbow_led(int tick, int brightness)
 void set_led_intensity(float percent)
 {
     led_intensity = (int)(2.35 * min(100.0f, max(-100.0f, percent))) + 20;
-}
-
-int convert_percent_to_servo(float percent)
-{
-    // Convert -100 to 100 percent to 0 to 180 degrees
-    return (int)(0.9 * (percent + 100.0));
 }
 
 void stop_escs()
@@ -127,15 +128,29 @@ void setup_ota()
     ArduinoOTA.begin();
 }
 
+const float BACK_COMMAND_DEADZONE = 6;
 void mix_motor_outputs(crsf_bridge::radio_data_t *radio_data, float &left_command, float &right_command, float &back_command)
 {
-    float linear_vx = -1 * radio_data->a_percent;
+    float linear_vx = radio_data->a_percent;
     float angular_v = radio_data->b_percent;
     float linear_vy = -1 * radio_data->c_percent;
 
     left_command = linear_vx * sin(WHEEL_ANGLES[0] * DEG2RAD) + linear_vy * cos(WHEEL_ANGLES[0] * DEG2RAD) + angular_v;
     right_command = linear_vx * sin(WHEEL_ANGLES[1] * DEG2RAD) + linear_vy * cos(WHEEL_ANGLES[1] * DEG2RAD) + angular_v;
-    back_command = linear_vx * sin(WHEEL_ANGLES[2] * DEG2RAD) + linear_vy * cos(WHEEL_ANGLES[2] * DEG2RAD) + angular_v;
+    back_command = linear_vx * sin(WHEEL_ANGLES[2] * DEG2RAD) + linear_vy * cos(WHEEL_ANGLES[2] * DEG2RAD);
+    if (abs(back_command) < BACK_COMMAND_DEADZONE)
+    {
+        back_command = 0;
+    }
+    else if (back_command > 0)
+    {
+        back_command -= BACK_COMMAND_DEADZONE;
+    }
+    else
+    {
+        back_command += BACK_COMMAND_DEADZONE;
+    }
+    back_command += angular_v;
 
     float max_command = max(abs(left_command), max(abs(right_command), abs(back_command)));
     if (max_command > 100.0)
@@ -144,6 +159,24 @@ void mix_motor_outputs(crsf_bridge::radio_data_t *radio_data, float &left_comman
         right_command = right_command / max_command * 100.0;
         back_command = back_command / max_command * 100.0;
     }
+}
+
+int mix_lifter_outputs(float lifter_command, bool is_upside_down)
+{
+    int angle_command;
+    if (is_upside_down)
+        lifter_command = -lifter_command;
+    if (abs(lifter_command) > LIFTER_PERCENT_FULL)
+    {
+        angle_command = (lifter_command > 0) ? LIFTER_FULL_UP : LIFTER_FULL_DOWN;
+    }
+    else
+    {
+        float lifter_angle = (LIFTER_RAISED_UP - LIFTER_RAISED_DOWN) * (lifter_command + LIFTER_PERCENT_RANGE) / (LIFTER_PERCENT_RANGE * 2) + LIFTER_RAISED_DOWN;
+        lifter_angle = max(LIFTER_RAISED_UP, min(LIFTER_RAISED_DOWN, lifter_angle));
+        angle_command = (int)lifter_angle;
+    }
+    return angle_command;
 }
 
 void print_telemetry_data(diagnostics_server::telemetry_data_t *telemetry_data)
@@ -220,6 +253,50 @@ void setup()
     setup_ota();
 
     MAIN_SERIAL.println("Setup complete");
+
+    // for (int speed = 0; speed >= -15; speed--)
+    // {
+    //     left_esc->write(speed);
+    //     right_esc->write(-speed);
+    //     back_esc->write(speed);
+    //     delay(100);
+    // }
+    // for (int i = 0; i < 2; i++)
+    // {
+    //     for (int speed = -15; speed <= 15; speed++)
+    //     {
+    //         left_esc->write(speed);
+    //         right_esc->write(-speed);
+    //         back_esc->write(speed);
+    //         delay(100);
+    //     }
+    //     for (int speed = 15; speed >= -15; speed--)
+    //     {
+    //         left_esc->write(speed);
+    //         right_esc->write(-speed);
+    //         back_esc->write(speed);
+    //         delay(100);
+    //     }
+    // }
+    // for (int speed = -15; speed <= 0; speed++)
+    // {
+    //     left_esc->write(speed);
+    //     right_esc->write(-speed);
+    //     back_esc->write(speed);
+    //     delay(100);
+    // }
+
+    // delay(3000);
+
+    // left_esc->write(15.0);
+    // delay(3000);
+    // left_esc->write(0.0);
+    // right_esc->write(15.0);
+    // delay(3000);
+    // right_esc->write(0.0);
+    // back_esc->write(15.0);
+    // delay(3000);
+    // back_esc->write(0.0);
 }
 
 void loop()
@@ -275,11 +352,13 @@ void loop()
     }
     float left_command, right_command, back_command;
     mix_motor_outputs(radio_data, left_command, right_command, back_command);
-    int lifter_angle = convert_percent_to_servo(radio_data->lifter_command);
+
+    float lifter_command = radio_data->lifter_command;
+    int lifter_angle = mix_lifter_outputs(lifter_command, is_upside_down);
 
     left_esc->write(left_command);
-    right_esc->write(back_command);
-    back_esc->write(right_command);
+    right_esc->write(right_command);
+    back_esc->write(back_command);
     lifter_servo.write(lifter_angle);
 
     telemetry_data->radio_data = *radio_data;
@@ -293,7 +372,8 @@ void loop()
     telemetry_data->left_scaled_command = left_esc->get_command();
     telemetry_data->right_scaled_command = right_esc->get_command();
     telemetry_data->back_scaled_command = back_esc->get_command();
-    telemetry_data->lifter_command = lifter_angle;
+    telemetry_data->lifter_angle = lifter_angle;
+    telemetry_data->lifter_command = lifter_command;
     telemetry_data->orientation = *orientation;
 
     if (radio_data->button_state)

@@ -28,7 +28,8 @@ void DiagnosticsServer::write_telemetry(telemetry_data_t *telemetry_data)
     doc["b_percent"] = telemetry_data->radio_data.b_percent;
     doc["c_percent"] = telemetry_data->radio_data.c_percent;
     doc["armed"] = telemetry_data->radio_data.armed;
-    doc["lifter_command"] = telemetry_data->radio_data.lifter_command;
+    doc["lifter_command"] = telemetry_data->lifter_command;
+    doc["lifter_angle"] = telemetry_data->lifter_angle;
     doc["connected"] = telemetry_data->radio_data.connected;
     doc["button_state"] = telemetry_data->radio_data.button_state;
     doc["flip_switch_state"] = telemetry_data->radio_data.flip_switch_state;
