@@ -5,6 +5,7 @@
 #include <esc.h>
 #include <updown_sensor.h>
 #include <diagnostics_server.h>
+#include <pid.h>
 #include <s3servo.h>
 
 #define MAIN_SERIAL Serial
@@ -43,6 +44,12 @@ const float LIFTER_RAISED_UP = 33.0f;
 const float LIFTER_RAISED_DOWN = 61.0f;
 const float LIFTER_PERCENT_RANGE = 40.0f;
 const float LIFTER_PERCENT_FULL = 90.0f;
+
+const float BACK_COMMAND_DEADZONE = 6.0f;
+const float ANGULAR_SCALE = 0.4f;
+uint32_t timer = 0;
+
+pid::Pid *angular_pid;
 
 void set_builtin_led(int value)
 {
@@ -128,15 +135,16 @@ void setup_ota()
     ArduinoOTA.begin();
 }
 
-const float BACK_COMMAND_DEADZONE = 6;
-void mix_motor_outputs(crsf_bridge::radio_data_t *radio_data, float &left_command, float &right_command, float &back_command)
+void mix_motor_outputs(crsf_bridge::radio_data_t *radio_data, float sensed_angular_z, float dt, float &left_command, float &right_command, float &back_command)
 {
     float linear_vx = radio_data->a_percent;
-    float angular_v = radio_data->b_percent;
+    float angular_v = radio_data->b_percent * ANGULAR_SCALE;
     float linear_vy = -1 * radio_data->c_percent;
 
-    left_command = linear_vx * sin(WHEEL_ANGLES[0] * DEG2RAD) + linear_vy * cos(WHEEL_ANGLES[0] * DEG2RAD) + angular_v;
-    right_command = linear_vx * sin(WHEEL_ANGLES[1] * DEG2RAD) + linear_vy * cos(WHEEL_ANGLES[1] * DEG2RAD) + angular_v;
+    float filtered_angular_v = angular_pid->update(angular_v, -1 * sensed_angular_z, dt);
+
+    left_command = linear_vx * sin(WHEEL_ANGLES[0] * DEG2RAD) + linear_vy * cos(WHEEL_ANGLES[0] * DEG2RAD) + filtered_angular_v;
+    right_command = linear_vx * sin(WHEEL_ANGLES[1] * DEG2RAD) + linear_vy * cos(WHEEL_ANGLES[1] * DEG2RAD) + filtered_angular_v;
     back_command = linear_vx * sin(WHEEL_ANGLES[2] * DEG2RAD) + linear_vy * cos(WHEEL_ANGLES[2] * DEG2RAD);
     if (abs(back_command) < BACK_COMMAND_DEADZONE)
     {
@@ -150,7 +158,7 @@ void mix_motor_outputs(crsf_bridge::radio_data_t *radio_data, float &left_comman
     {
         back_command += BACK_COMMAND_DEADZONE;
     }
-    back_command += angular_v;
+    back_command += filtered_angular_v;
 
     float max_command = max(abs(left_command), max(abs(right_command), abs(back_command)));
     if (max_command > 100.0)
@@ -250,60 +258,32 @@ void setup()
     diagnostics->begin();
     telemetry_data = (diagnostics_server::telemetry_data_t *)malloc(sizeof(diagnostics_server::telemetry_data_t));
 
+    pid::PidConfig config;
+    config.kp = 2.0f;
+    config.ki = 0.0f;
+    config.kd = 0.0f;
+    config.kf = 0.0f;
+    angular_pid = new pid::Pid(config);
+
     setup_ota();
 
     MAIN_SERIAL.println("Setup complete");
-
-    // for (int speed = 0; speed >= -15; speed--)
-    // {
-    //     left_esc->write(speed);
-    //     right_esc->write(-speed);
-    //     back_esc->write(speed);
-    //     delay(100);
-    // }
-    // for (int i = 0; i < 2; i++)
-    // {
-    //     for (int speed = -15; speed <= 15; speed++)
-    //     {
-    //         left_esc->write(speed);
-    //         right_esc->write(-speed);
-    //         back_esc->write(speed);
-    //         delay(100);
-    //     }
-    //     for (int speed = 15; speed >= -15; speed--)
-    //     {
-    //         left_esc->write(speed);
-    //         right_esc->write(-speed);
-    //         back_esc->write(speed);
-    //         delay(100);
-    //     }
-    // }
-    // for (int speed = -15; speed <= 0; speed++)
-    // {
-    //     left_esc->write(speed);
-    //     right_esc->write(-speed);
-    //     back_esc->write(speed);
-    //     delay(100);
-    // }
-
-    // delay(3000);
-
-    // left_esc->write(15.0);
-    // delay(3000);
-    // left_esc->write(0.0);
-    // right_esc->write(15.0);
-    // delay(3000);
-    // right_esc->write(0.0);
-    // back_esc->write(15.0);
-    // delay(3000);
-    // back_esc->write(0.0);
 }
 
 void loop()
 {
-    delay(10);
+    uint32_t now = micros();
+    if (now < timer)
+    {
+        // Handle micros() overflow
+        timer = now;
+        return;
+    }
+    float dt = (now - timer) / 1000000.0;
+    timer = now;
+
     cycle_rainbow_led(rainbow_tick, led_intensity);
-    rainbow_tick = (rainbow_tick + 5) % 255;
+    rainbow_tick = (rainbow_tick + 1) % 255;
 
     ArduinoOTA.handle();
     if (is_loading_firmware)
@@ -344,6 +324,7 @@ void loop()
     }
 
     updown_sensor::vector3_t *orientation = updown->get_orientation();
+    updown_sensor::vector3_t *gyro = updown->get_gyro();
 
     if (is_upside_down)
     {
@@ -351,7 +332,7 @@ void loop()
         radio_data->c_percent *= -1;
     }
     float left_command, right_command, back_command;
-    mix_motor_outputs(radio_data, left_command, right_command, back_command);
+    mix_motor_outputs(radio_data, gyro->z, dt, left_command, right_command, back_command);
 
     float lifter_command = radio_data->lifter_command;
     int lifter_angle = mix_lifter_outputs(lifter_command, is_upside_down);
@@ -374,7 +355,9 @@ void loop()
     telemetry_data->back_scaled_command = back_esc->get_command();
     telemetry_data->lifter_angle = lifter_angle;
     telemetry_data->lifter_command = lifter_command;
+    telemetry_data->gyro = *gyro;
     telemetry_data->orientation = *orientation;
+    telemetry_data->dt = dt;
 
     if (radio_data->button_state)
         diagnostics->write_telemetry(telemetry_data);

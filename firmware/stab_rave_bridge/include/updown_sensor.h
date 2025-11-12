@@ -27,6 +27,7 @@ namespace updown_sensor
         vector3_t *max_grav_vec;
         vector3_t *min_grav_vec;
         vector3_t *orientation;
+        vector3_t *gyro_vec;
         bool is_upside_down = false;
         uint32_t reconnect_timer = 0;
         uint32_t sample_timer = 0;
@@ -42,5 +43,6 @@ namespace updown_sensor
         vector3_t *get_max() { return max_grav_vec; }
         vector3_t *get_min() { return min_grav_vec; }
         vector3_t *get_orientation() { return orientation; }
+        vector3_t *get_gyro() { return gyro_vec; }
     };
 }

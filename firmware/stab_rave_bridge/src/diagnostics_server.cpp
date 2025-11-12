@@ -46,12 +46,16 @@ void DiagnosticsServer::write_telemetry(telemetry_data_t *telemetry_data)
     doc["orientation"]["x"] = telemetry_data->orientation.x;
     doc["orientation"]["y"] = telemetry_data->orientation.y;
     doc["orientation"]["z"] = telemetry_data->orientation.z;
+    doc["gyro"]["x"] = telemetry_data->gyro.x;
+    doc["gyro"]["y"] = telemetry_data->gyro.y;
+    doc["gyro"]["z"] = telemetry_data->gyro.z;
     doc["left_command"] = telemetry_data->left_command;
     doc["right_command"] = telemetry_data->right_command;
     doc["back_command"] = telemetry_data->back_command;
     doc["left_scaled_command"] = telemetry_data->left_scaled_command;
     doc["right_scaled_command"] = telemetry_data->right_scaled_command;
     doc["back_scaled_command"] = telemetry_data->back_scaled_command;
+    doc["dt"] = telemetry_data->dt;
     doc["time"] = millis();
     doc["sequence_number"] = sequence_number;
 

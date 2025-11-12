@@ -18,6 +18,8 @@ namespace diagnostics_server
         int lifter_angle;
         float lifter_command;
         updown_sensor::vector3_t orientation;
+        updown_sensor::vector3_t gyro;
+        float dt;
     } telemetry_data_t;
 
     class DiagnosticsServer

@@ -9,6 +9,7 @@ UpdownSensor::UpdownSensor()
     max_grav_vec = init_vector3(0.0, 0.0, 0.0);
     min_grav_vec = init_vector3(0.0, 0.0, 0.0);
     orientation = init_vector3(0.0, 0.0, 0.0);
+    gyro_vec = init_vector3(0.0, 0.0, 0.0);
 }
 
 bool UpdownSensor::begin()
@@ -80,9 +81,10 @@ bool UpdownSensor::update_sensor(bool radio_connected)
     }
     sample_timer = now;
     uint32_t start_time = now;
-    sensors_event_t gravity_data, orientation_data;
+    sensors_event_t gravity_data, orientation_data, gyro_data;
     sensor->getEvent(&gravity_data, Adafruit_BNO055::VECTOR_GRAVITY);
     sensor->getEvent(&orientation_data, Adafruit_BNO055::VECTOR_EULER);
+    sensor->getEvent(&gyro_data, Adafruit_BNO055::VECTOR_GYROSCOPE);
     uint32_t end_time = millis();
 
     if (end_time - start_time > 250)
@@ -106,6 +108,10 @@ bool UpdownSensor::update_sensor(bool radio_connected)
     orientation->x = orientation_data.orientation.x;
     orientation->y = orientation_data.orientation.y;
     orientation->z = orientation_data.orientation.z;
+
+    gyro_vec->x = gyro_data.gyro.x;
+    gyro_vec->y = gyro_data.gyro.y;
+    gyro_vec->z = gyro_data.gyro.z;
 
     return true;
 }
