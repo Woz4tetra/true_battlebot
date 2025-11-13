@@ -42,14 +42,15 @@ const float LIFTER_FULL_UP = 5.0f;
 const float LIFTER_FULL_DOWN = 92.0f;
 const float LIFTER_RAISED_UP = 33.0f;
 const float LIFTER_RAISED_DOWN = 61.0f;
-const float LIFTER_PERCENT_RANGE = 40.0f;
+const float LIFTER_PERCENT_RANGE = 10.0f;
 const float LIFTER_PERCENT_FULL = 90.0f;
 
 const float BACK_COMMAND_DEADZONE = 6.0f;
 const float ANGULAR_SCALE = 0.4f;
 uint32_t timer = 0;
 
-pid::Pid *angular_pid;
+float angle_setpoint = 0.0f;
+pid::Pid *angle_pid;
 
 void set_builtin_led(int value)
 {
@@ -135,13 +136,34 @@ void setup_ota()
     ArduinoOTA.begin();
 }
 
-void mix_motor_outputs(crsf_bridge::radio_data_t *radio_data, float sensed_angular_z, float dt, float &left_command, float &right_command, float &back_command)
+void mix_motor_outputs(crsf_bridge::radio_data_t *radio_data, float sensed_angle_z, float dt, float &left_command, float &right_command, float &back_command)
 {
     float linear_vx = radio_data->a_percent;
     float angular_v = radio_data->b_percent * ANGULAR_SCALE;
     float linear_vy = -1 * radio_data->c_percent;
 
-    float filtered_angular_v = angular_pid->update(angular_v, -1 * sensed_angular_z, dt);
+    static bool was_turning = false;
+    float filtered_angular_v;
+
+    if (fabs(angular_v) > 1.0f)
+    {
+        // Direct angular velocity control when actively turning
+        filtered_angular_v = angular_v;
+        // Update setpoint to current angle to prevent jump when stopping
+        angle_setpoint = sensed_angle_z;
+        was_turning = true;
+    }
+    else
+    {
+        // Reset PID when transitioning from turning to holding
+        if (was_turning)
+        {
+            angle_pid->reset();
+            was_turning = false;
+        }
+        // PID position control when not turning (hold angle)
+        filtered_angular_v = angle_pid->update(angle_setpoint, sensed_angle_z, dt);
+    }
 
     left_command = linear_vx * sin(WHEEL_ANGLES[0] * DEG2RAD) + linear_vy * cos(WHEEL_ANGLES[0] * DEG2RAD) + filtered_angular_v;
     right_command = linear_vx * sin(WHEEL_ANGLES[1] * DEG2RAD) + linear_vy * cos(WHEEL_ANGLES[1] * DEG2RAD) + filtered_angular_v;
@@ -259,11 +281,15 @@ void setup()
     telemetry_data = (diagnostics_server::telemetry_data_t *)malloc(sizeof(diagnostics_server::telemetry_data_t));
 
     pid::PidConfig config;
-    config.kp = 2.0f;
+    config.kp = 0.1f;
     config.ki = 0.0f;
     config.kd = 0.0f;
     config.kf = 0.0f;
-    angular_pid = new pid::Pid(config);
+    config.tolerance = 2.0f; // Stop correcting when within 2 degrees
+    config.continuous = true;
+    config.min_input = -180.0f;
+    config.max_input = 180.0f;
+    angle_pid = new pid::Pid(config);
 
     setup_ota();
 
@@ -326,13 +352,15 @@ void loop()
     updown_sensor::vector3_t *orientation = updown->get_orientation();
     updown_sensor::vector3_t *gyro = updown->get_gyro();
 
+    float angle_z = orientation->x;
+
     if (is_upside_down)
     {
         radio_data->a_percent *= -1;
         radio_data->c_percent *= -1;
     }
     float left_command, right_command, back_command;
-    mix_motor_outputs(radio_data, gyro->z, dt, left_command, right_command, back_command);
+    mix_motor_outputs(radio_data, angle_z, dt, left_command, right_command, back_command);
 
     float lifter_command = radio_data->lifter_command;
     int lifter_angle = mix_lifter_outputs(lifter_command, is_upside_down);

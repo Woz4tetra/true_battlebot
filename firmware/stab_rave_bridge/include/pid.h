@@ -12,6 +12,9 @@ namespace pid
         float i_zone = -1.0; // -1 means no i_zone limit
         float i_max = 0.0;
         float tolerance = 0.0;
+        bool continuous = false;  // Enable continuous angle wrapping
+        float min_input = -180.0; // Minimum input value for continuous mode
+        float max_input = 180.0;  // Maximum input value for continuous mode
     };
 
     class Pid
@@ -31,6 +34,9 @@ namespace pid
          *        limited.
          * tolerance: Error tolerance for which the controller is considered to have reached the
          *           setpoint. Output will be set to zero if the error is within this tolerance.
+         * continuous: Enable continuous input wrapping (for angles)
+         * min_input: Minimum input value for continuous mode (typically -180)
+         * max_input: Maximum input value for continuous mode (typically 180)
          */
         Pid(const PidConfig &config);
 
@@ -57,6 +63,9 @@ namespace pid
         float _calculate_i(float error, float dt);
         float _calculate_d(float error, float dt);
         float _calculate_f(float setpoint);
+        float _wrap_error(float error);
+        float _repeat(float value, float length);
+        float _input_modulus(float value, float min_value, float max_value);
 
         // Configuration parameters
         float kp;
@@ -66,6 +75,9 @@ namespace pid
         float i_zone;
         float i_max;
         float tolerance;
+        bool continuous;
+        float min_input;
+        float max_input;
 
         // State variables
         float i_accum;

@@ -25,9 +25,8 @@ def main() -> None:
                 continue
             decoded_packet = packet.decode("utf-8")
             data = json.loads(decoded_packet)
-            left_command = data.get("left_command", 0.0)
-            gyro_z = data.get("gyro", {}).get("z")
-            print(left_command, gyro_z)
+            angle_z = data.get("orientation", {}).get("x")
+            print(angle_z)
 
     finally:
         udp.close()
