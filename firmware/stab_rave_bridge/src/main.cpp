@@ -46,7 +46,7 @@ const float LIFTER_RAISED_DOWN = 61.0f;
 const float LIFTER_PERCENT_RANGE = 10.0f;
 const float LIFTER_PERCENT_FULL = 90.0f;
 
-const float BACK_COMMAND_DEADZONE = 2.0f;
+const float BACK_COMMAND_DEADZONE = 4.0f;
 const float ANGULAR_SCALE = 0.4f;
 uint32_t timer = 0;
 
@@ -169,6 +169,14 @@ float calculate_linear_scale_factor(float angle_error)
     }
 }
 
+void reset_angle_pid(float sensed_angle_z)
+{
+    angle_pid->reset();
+    angle_setpoint = sensed_angle_z;
+    was_turning = false;
+    cooldown_timer = 0.0f;
+}
+
 void mix_motor_outputs(crsf_bridge::radio_data_t *radio_data, float sensed_angle_z, float dt, float &left_command, float &right_command, float &back_command)
 {
     float linear_vx = radio_data->a_percent;
@@ -198,10 +206,7 @@ void mix_motor_outputs(crsf_bridge::radio_data_t *radio_data, float sensed_angle
             if (cooldown_timer <= 0.0f)
             {
                 // Cooldown period finished, switch to PID control
-                angle_pid->reset();
-                angle_setpoint = sensed_angle_z;
-                was_turning = false;
-                cooldown_timer = 0.0f;
+                reset_angle_pid(sensed_angle_z);
             }
         }
 
@@ -329,8 +334,8 @@ void setup()
     telemetry_data = (diagnostics_server::telemetry_data_t *)malloc(sizeof(diagnostics_server::telemetry_data_t));
 
     pid::PidConfig config;
-    config.kp = 0.12f;
-    config.ki = 0.1f;
+    config.kp = 0.08f;
+    config.ki = 0.01f;
     config.kd = 0.01f;
     config.kf = 0.0f;
     config.tolerance = 2.0f; // Stop correcting when within 2 degrees
@@ -371,16 +376,8 @@ void loop()
         return;
     }
 
-    if (!radio_data->armed)
-    {
-        MAIN_SERIAL.println("Disarmed.");
-        stop_escs();
-        return;
-    }
-
-    set_led_intensity((abs(radio_data->a_percent) + abs(radio_data->b_percent) + abs(radio_data->c_percent)) / 3.0);
-
     bool is_upside_down;
+    bool sensed_upside_down = updown->get_is_upside_down(radio_data->connected);
     switch (radio_data->flip_switch_state)
     {
     case crsf_bridge::UP:
@@ -390,7 +387,7 @@ void loop()
         is_upside_down = false;
         break;
     case crsf_bridge::DOWN:
-        is_upside_down = updown->get_is_upside_down(radio_data->connected);
+        is_upside_down = sensed_upside_down;
         break;
 
     default:
@@ -401,22 +398,33 @@ void loop()
     updown_sensor::vector3_t *orientation = updown->get_orientation();
     updown_sensor::vector3_t *gyro = updown->get_gyro();
 
-    float angle_z = orientation->x;
+    float sensed_angle_z = orientation->x;
+
+    set_led_intensity((abs(radio_data->a_percent) + abs(radio_data->b_percent) + abs(radio_data->c_percent)) / 3.0);
 
     if (is_upside_down)
     {
         radio_data->a_percent *= -1;
     }
     float left_command, right_command, back_command;
-    mix_motor_outputs(radio_data, angle_z, dt, left_command, right_command, back_command);
+    mix_motor_outputs(radio_data, sensed_angle_z, dt, left_command, right_command, back_command);
 
     float lifter_command = radio_data->lifter_command;
     int lifter_angle = mix_lifter_outputs(lifter_command, is_upside_down);
 
-    left_esc->write(left_command);
-    right_esc->write(right_command);
-    back_esc->write(back_command);
-    lifter_servo.write(lifter_angle);
+    if (!radio_data->armed)
+    {
+        MAIN_SERIAL.println("Disarmed.");
+        stop_escs();
+        reset_angle_pid(sensed_angle_z);
+    }
+    else
+    {
+        left_esc->write(left_command);
+        right_esc->write(right_command);
+        back_esc->write(back_command);
+        lifter_servo.write(lifter_angle);
+    }
 
     telemetry_data->radio_data = *radio_data;
     telemetry_data->is_upside_down = is_upside_down;

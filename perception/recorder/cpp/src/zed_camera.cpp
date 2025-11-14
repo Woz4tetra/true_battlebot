@@ -197,12 +197,14 @@ bool ZEDCamera::startRecordingInternal(sl::Camera &zed, const std::string &filen
     }
 
     is_recording_ = true;
+    std::cout << "ZED recording started." << std::endl;
     return true;
 }
 
 void ZEDCamera::stopRecordingInternal(sl::Camera &zed)
 {
     zed.disableRecording();
+    std::cout << "ZED recording stopped." << std::endl;
     is_recording_ = false;
 }
 

@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
 
+from bw_shared.messages.dataclass_utils import from_dict, to_dict
 from bw_shared.radio.crsf.crsf_frame_type import FrameType
 from bw_shared.radio.crsf.crsf_packet_base import CrsfPacketBase
 
@@ -17,3 +20,10 @@ class CrsfAttitude(CrsfPacketBase):
         pitch = int.from_bytes(payload[2:4], "big", signed=True) / 10000
         yaw = int.from_bytes(payload[4:6], "big", signed=True) / 10000
         return cls(roll=roll, pitch=pitch, yaw=yaw)
+
+    @classmethod
+    def from_dict(cls, data: dict) -> CrsfAttitude:
+        return from_dict(cls, data)
+
+    def to_dict(self) -> dict:
+        return to_dict(self)
