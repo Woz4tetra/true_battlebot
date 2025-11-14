@@ -6,6 +6,7 @@
 #include <updown_sensor.h>
 #include <diagnostics_server.h>
 #include <pid.h>
+#include "slew_limiter.h"
 #include <s3servo.h>
 
 #define MAIN_SERIAL Serial
@@ -45,12 +46,18 @@ const float LIFTER_RAISED_DOWN = 61.0f;
 const float LIFTER_PERCENT_RANGE = 10.0f;
 const float LIFTER_PERCENT_FULL = 90.0f;
 
-const float BACK_COMMAND_DEADZONE = 6.0f;
+const float BACK_COMMAND_DEADZONE = 2.0f;
 const float ANGULAR_SCALE = 0.4f;
 uint32_t timer = 0;
 
 float angle_setpoint = 0.0f;
 pid::Pid *angle_pid;
+
+slew_limiter::SlewLimiter *linear_y_slew_limiter;
+
+bool was_turning = false;
+float cooldown_timer = 0.0f;
+const float TURNING_COOLDOWN_TIME = 0.25f; // cooldown after stopping turn
 
 void set_builtin_led(int value)
 {
@@ -136,13 +143,40 @@ void setup_ota()
     ArduinoOTA.begin();
 }
 
+float calculate_linear_scale_factor(float angle_error)
+{
+    const float ANGLE_SCALE_START = 20.0f; // Start reducing linear speed at 20 degrees error
+    const float ANGLE_SCALE_STOP = 90.0f;  // Completely stop linear movement at 90 degrees error
+
+    float abs_error = fabs(angle_error);
+
+    if (abs_error <= ANGLE_SCALE_START)
+    {
+        // No reduction for small errors
+        return 1.0f;
+    }
+    else if (abs_error >= ANGLE_SCALE_STOP)
+    {
+        // Complete stop for large errors
+        return 0.0f;
+    }
+    else
+    {
+        // Linear interpolation between start and stop thresholds
+        float scale_range = ANGLE_SCALE_STOP - ANGLE_SCALE_START;
+        float error_in_range = abs_error - ANGLE_SCALE_START;
+        return 1.0f - (error_in_range / scale_range);
+    }
+}
+
 void mix_motor_outputs(crsf_bridge::radio_data_t *radio_data, float sensed_angle_z, float dt, float &left_command, float &right_command, float &back_command)
 {
     float linear_vx = radio_data->a_percent;
     float angular_v = radio_data->b_percent * ANGULAR_SCALE;
-    float linear_vy = -1 * radio_data->c_percent;
+    float linear_vy_raw = -1 * radio_data->c_percent;
 
-    static bool was_turning = false;
+    float linear_vy = linear_y_slew_limiter->calculate(linear_vy_raw, dt);
+
     float filtered_angular_v;
 
     if (fabs(angular_v) > 1.0f)
@@ -152,17 +186,39 @@ void mix_motor_outputs(crsf_bridge::radio_data_t *radio_data, float sensed_angle
         // Update setpoint to current angle to prevent jump when stopping
         angle_setpoint = sensed_angle_z;
         was_turning = true;
+        cooldown_timer = TURNING_COOLDOWN_TIME; // Reset cooldown timer
     }
     else
     {
-        // Reset PID when transitioning from turning to holding
         if (was_turning)
         {
-            angle_pid->reset();
-            was_turning = false;
+            // We just stopped turning, start cooldown period
+            cooldown_timer -= dt;
+
+            if (cooldown_timer <= 0.0f)
+            {
+                // Cooldown period finished, switch to PID control
+                angle_pid->reset();
+                angle_setpoint = sensed_angle_z;
+                was_turning = false;
+                cooldown_timer = 0.0f;
+            }
         }
-        // PID position control when not turning (hold angle)
-        filtered_angular_v = angle_pid->update(angle_setpoint, sensed_angle_z, dt);
+
+        if (was_turning)
+        {
+            // Still in cooldown period - no angular control (let robot coast)
+            filtered_angular_v = 0.0f;
+        }
+        else
+        {
+            // PID position control when not turning (hold angle)
+            filtered_angular_v = angle_pid->update(angle_setpoint, sensed_angle_z, dt);
+        }
+
+        float angle_error = angle_pid->get_error();
+        float linear_scale_factor = calculate_linear_scale_factor(angle_error);
+        linear_vy *= linear_scale_factor;
     }
 
     left_command = linear_vx * sin(WHEEL_ANGLES[0] * DEG2RAD) + linear_vy * cos(WHEEL_ANGLES[0] * DEG2RAD) + filtered_angular_v;
@@ -181,14 +237,6 @@ void mix_motor_outputs(crsf_bridge::radio_data_t *radio_data, float sensed_angle
         back_command += BACK_COMMAND_DEADZONE;
     }
     back_command += filtered_angular_v;
-
-    float max_command = max(abs(left_command), max(abs(right_command), abs(back_command)));
-    if (max_command > 100.0)
-    {
-        left_command = left_command / max_command * 100.0;
-        right_command = right_command / max_command * 100.0;
-        back_command = back_command / max_command * 100.0;
-    }
 }
 
 int mix_lifter_outputs(float lifter_command, bool is_upside_down)
@@ -281,15 +329,16 @@ void setup()
     telemetry_data = (diagnostics_server::telemetry_data_t *)malloc(sizeof(diagnostics_server::telemetry_data_t));
 
     pid::PidConfig config;
-    config.kp = 0.1f;
-    config.ki = 0.0f;
-    config.kd = 0.0f;
+    config.kp = 0.12f;
+    config.ki = 0.1f;
+    config.kd = 0.01f;
     config.kf = 0.0f;
     config.tolerance = 2.0f; // Stop correcting when within 2 degrees
+    config.i_max = 1000.0f;
     config.continuous = true;
-    config.min_input = -180.0f;
-    config.max_input = 180.0f;
     angle_pid = new pid::Pid(config);
+
+    linear_y_slew_limiter = new slew_limiter::SlewLimiter(30.0f, 1000.0f, 0.0f, 8.0f);
 
     setup_ota();
 
@@ -357,7 +406,6 @@ void loop()
     if (is_upside_down)
     {
         radio_data->a_percent *= -1;
-        radio_data->c_percent *= -1;
     }
     float left_command, right_command, back_command;
     mix_motor_outputs(radio_data, angle_z, dt, left_command, right_command, back_command);

@@ -4,7 +4,7 @@
 namespace pid
 {
     Pid::Pid(const PidConfig &config)
-        : kp(config.kp), ki(config.ki), kd(config.kd), kf(config.kf), i_zone(config.i_zone), i_max(config.i_max), tolerance(config.tolerance), continuous(config.continuous), min_input(config.min_input), max_input(config.max_input), i_accum(0.0), prev_error(0.0), has_prev_error(false)
+        : kp(config.kp), ki(config.ki), kd(config.kd), kf(config.kf), i_zone(config.i_zone), i_max(config.i_max), tolerance(config.tolerance), continuous(config.continuous), min_input(config.min_input), max_input(config.max_input), i_accum(0.0), prev_error(0.0), has_prev_error(false), error(0.0)
     {
     }
 
@@ -12,12 +12,13 @@ namespace pid
     {
         i_accum = 0.0;
         prev_error = 0.0;
+        error = 0.0;
         has_prev_error = false;
     }
 
     float Pid::update(float setpoint, float measurement, float dt)
     {
-        float error = setpoint - measurement;
+        error = setpoint - measurement;
 
         // Handle continuous input (angle wrapping)
         if (continuous)
@@ -154,5 +155,10 @@ namespace pid
         float wrapped = _input_modulus(error + half_range, 0.0f, input_range) - half_range;
 
         return wrapped;
+    }
+
+    float Pid::get_error()
+    {
+        return error;
     }
 }

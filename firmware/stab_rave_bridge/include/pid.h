@@ -58,6 +58,8 @@ namespace pid
          */
         float update(float setpoint, float measurement, float dt);
 
+        float get_error();
+
     private:
         float _calculate_p(float error);
         float _calculate_i(float error, float dt);
@@ -83,5 +85,6 @@ namespace pid
         float i_accum;
         float prev_error;
         bool has_prev_error;
+        float error;
     };
 }
