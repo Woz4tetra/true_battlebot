@@ -163,6 +163,10 @@ void ZEDCamera::processCommand(const Command &cmd, sl::Camera &zed)
 bool ZEDCamera::startRecording(const std::string &filename)
 {
     std::lock_guard<std::mutex> queue_lock(queue_mtx_);
+    if (is_recording_)
+    {
+        return false;
+    }
     command_queue_.emplace(CommandType::START_RECORDING, filename);
     queue_cv_.notify_one();
     return true;
@@ -171,6 +175,10 @@ bool ZEDCamera::startRecording(const std::string &filename)
 void ZEDCamera::stopRecording()
 {
     std::lock_guard<std::mutex> queue_lock(queue_mtx_);
+    if (!is_recording_)
+    {
+        return;
+    }
     command_queue_.emplace(CommandType::STOP_RECORDING);
     queue_cv_.notify_one();
 }
@@ -188,12 +196,14 @@ bool ZEDCamera::startRecordingInternal(sl::Camera &zed, const std::string &filen
         return false;
     }
 
+    is_recording_ = true;
     return true;
 }
 
 void ZEDCamera::stopRecordingInternal(sl::Camera &zed)
 {
     zed.disableRecording();
+    is_recording_ = false;
 }
 
 void ZEDCamera::close()

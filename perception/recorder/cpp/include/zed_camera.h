@@ -55,6 +55,7 @@ private:
     int fcount_ = 0;
     std::string last_error_;
     bool is_open_ = false;
+    bool is_recording_ = false;
 
     std::atomic<bool> stop_worker_{false};
     std::future<void> worker_future_;

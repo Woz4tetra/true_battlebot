@@ -14,12 +14,12 @@ def main() -> None:
     try:
         while True:
             now = time.perf_counter()
-            packets = transmitter.read()
+            transmitter_data = transmitter.read()
 
-            if not packets:
+            if not transmitter_data.crsf_packets:
                 time.sleep(0.001)
                 continue
-            for packet, error in packets:
+            for packet, error in transmitter_data.crsf_packets:
                 if error:
                     print(f"Failed to parse packet: {error}")
                 if isinstance(packet, CrsfBattery):

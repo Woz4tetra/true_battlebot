@@ -100,7 +100,8 @@ class ChannelStreamingParser:
 
         if len(channel_data) != self.channels_per_packet * 2:
             print(
-                f"Invalid channel data length in phase {phase}: {len(channel_data)}, expected {self.channels_per_packet * 2}"
+                f"Invalid channel data length in phase {phase}: {len(channel_data)}, "
+                f"expected {self.channels_per_packet * 2}"
             )
             return None
 

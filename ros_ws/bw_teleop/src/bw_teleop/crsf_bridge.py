@@ -148,12 +148,12 @@ class CrsfBridge:
         return velocity
 
     def get_telemetry(self) -> None:
-        response = self.transmitter.read()
-        if not response:
+        transmitter_data = self.transmitter.read()
+        if not transmitter_data.crsf_packets:
             return
 
         self.header.stamp = rospy.Time.now()
-        for packet, error_msg in response:
+        for packet, error_msg in transmitter_data.crsf_packets:
             if error_msg:
                 rospy.logwarn(f"Failed to parse packet: {error_msg}")
                 continue

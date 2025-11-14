@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import Optional
 
 import serial
@@ -5,6 +6,12 @@ from bw_shared.radio.channels.channels_parser import ChannelStreamingParser
 from bw_shared.radio.crsf.crsf_packet import CrsfPacket
 from bw_shared.radio.crsf.crsf_parser import CrsfParser
 from serial.tools.list_ports import comports
+
+
+@dataclass
+class TransmitterData:
+    crsf_packets: list[tuple[CrsfPacket, str]]
+    channel_updates: list[list[int]]
 
 
 def find_transmitter() -> serial.Serial:
@@ -56,19 +63,16 @@ class FrSkyTransmitter:
     def set_command(self, linear_x: float, angular_z: float) -> None:
         self.command = self._make_command(linear_x, angular_z)
 
-    def read(self) -> list[tuple[CrsfPacket, str]]:
+    def read(self) -> TransmitterData:
         if self.device is None:
             raise RuntimeError("Device not connected. Call connect() first.")
         response = self.device.read_all()
         if not response:
-            return []
+            return TransmitterData([], [])
 
-        packets = []
         packets = self.crsf_parser.parse(response)
         channel_updates = self.channels_parser.process_data(response)
-        for channel in channel_updates:
-            print(channel)
-        return packets
+        return TransmitterData(packets, channel_updates)
 
     def write(self) -> None:
         for command in self.command:
