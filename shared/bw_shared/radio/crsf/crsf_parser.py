@@ -22,13 +22,11 @@ class CrsfParser:
                 return packet_cls.from_bytes(payload), ""
         return None, f"Unsupported command {command}"
 
-    def parse(self, buffer: bytes) -> tuple[bytes, list[PacketResult]]:
+    def parse(self, buffer: bytes) -> list[PacketResult]:
         buffer = self.buffer + buffer
         results: list[PacketResult] = []
-        excess_bytes = b""
         while len(buffer) > 4:
             if buffer[0] not in CRSF_RC_START_BYTES:
-                excess_bytes += bytes([buffer[0]])
                 buffer = buffer[1:]
                 continue
             frame_length = buffer[1]
@@ -44,7 +42,7 @@ class CrsfParser:
                     results.append((packet, error_msg))
             buffer = buffer[frame_length:]
         self.buffer = buffer
-        return excess_bytes, results
+        return results
 
 
 CRSF_RC_START_BYTES = (0x00, 0xEE, 0xEA)

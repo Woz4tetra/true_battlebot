@@ -29,7 +29,7 @@ class App:
 
     def start(self) -> None:
         self.svo_path.parent.mkdir(parents=True, exist_ok=True)
-        self.zed.start_recording(str(self.svo_path))
+        # self.zed.start_recording(str(self.svo_path))
         print(f"Starting recording to {self.svo_path}")
 
     def update(self) -> None:
@@ -49,7 +49,7 @@ class App:
     def stop(self) -> None:
         if self.buffer:
             self.write_buffer_data(self.telemetry_path, self.buffer)
-        self.zed.stop_recording()
+        # self.zed.stop_recording()
         print("Recording stopped.")
 
 
@@ -63,9 +63,9 @@ def main() -> None:
     init_parameters.depth_mode = DEPTH_MODE.NONE
     init_parameters.camera_fps = 30
     zed = ZEDCamera(init_parameters)
-    if not zed.open():
-        print("Failed to open camera:", zed.get_last_error())
-        exit(1)
+    # if not zed.open():
+    #     print("Failed to open camera:", zed.get_last_error())
+    #     exit(1)
 
     base_name = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     svo_base_path = get_media_directory() / "svo" / (base_name + ".svo2")

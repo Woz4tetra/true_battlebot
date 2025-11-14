@@ -1,6 +1,7 @@
 from typing import Optional
 
 import serial
+from bw_shared.radio.channels.channels_parser import ChannelStreamingParser
 from bw_shared.radio.crsf.crsf_packet import CrsfPacket
 from bw_shared.radio.crsf.crsf_parser import CrsfParser
 from serial.tools.list_ports import comports
@@ -19,7 +20,8 @@ class FrSkyTransmitter:
         self.max_command = 1000
         self.min_command = -1000
         self.command = self._make_command(0.0, 0.0)
-        self.parser = CrsfParser()
+        self.crsf_parser = CrsfParser()
+        self.channels_parser = ChannelStreamingParser()
 
     def open(self) -> None:
         self.device = find_transmitter()
@@ -37,8 +39,10 @@ class FrSkyTransmitter:
     def set_telemetry(self, telemetry: bool) -> None:
         if telemetry:
             self._write(b"telemetry on\r\n")
+            self._write(b"channels on\r\n")
         else:
             self._write(b"telemetry off\r\n")
+            self._write(b"channels off\r\n")
 
     def _make_command(self, linear_x: float, angular_z: float) -> tuple[bytes, bytes]:
         linear_value = int(self.max_command * linear_x)
@@ -59,7 +63,11 @@ class FrSkyTransmitter:
         if not response:
             return []
 
-        excess_bytes, packets = self.parser.parse(response)
+        packets = []
+        packets = self.crsf_parser.parse(response)
+        channel_updates = self.channels_parser.process_data(response)
+        for channel in channel_updates:
+            print(channel)
         return packets
 
     def write(self) -> None:
