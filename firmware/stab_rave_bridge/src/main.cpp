@@ -14,6 +14,7 @@
 
 crsf_bridge::CrsfBridge *crsf;
 crsf_bridge::radio_data_t *radio_data;
+crsf_bridge::radio_data_t *prev_radio_data;
 
 #define LEFT_ESC A6
 #define RIGHT_ESC A2
@@ -39,10 +40,10 @@ bool is_loading_firmware = false;
 const float WHEEL_ANGLES[3] = {120.0f, 240.0f, 0.0f};
 const float DEG2RAD = M_PI / 180.0;
 
-const float LIFTER_FULL_UP = 5.0f;
-const float LIFTER_FULL_DOWN = 92.0f;
-const float LIFTER_RAISED_UP = 33.0f;
-const float LIFTER_RAISED_DOWN = 61.0f;
+const float LIFTER_FULL_UP = 30.0f;
+const float LIFTER_FULL_DOWN = 120.0f;
+const float LIFTER_RAISED_UP = 60.0f;
+const float LIFTER_RAISED_DOWN = 90.0f;
 const float LIFTER_PERCENT_RANGE = 10.0f;
 const float LIFTER_PERCENT_FULL = 90.0f;
 
@@ -58,6 +59,9 @@ slew_limiter::SlewLimiter *linear_y_slew_limiter;
 bool was_turning = false;
 float cooldown_timer = 0.0f;
 const float TURNING_COOLDOWN_TIME = 0.25f; // cooldown after stopping turn
+
+uint32_t command_timer = 0;
+const uint32_t COMMAND_TIMEOUT = 5000; // 5 milliseconds
 
 void set_builtin_led(int value)
 {
@@ -181,9 +185,9 @@ void mix_motor_outputs(crsf_bridge::radio_data_t *radio_data, float sensed_angle
 {
     float linear_vx = radio_data->a_percent;
     float angular_v = radio_data->b_percent * ANGULAR_SCALE;
-    float linear_vy_raw = -1 * radio_data->c_percent;
+    float linear_vy = -1 * radio_data->c_percent;
 
-    float linear_vy = linear_y_slew_limiter->calculate(linear_vy_raw, dt);
+    // float linear_vy = linear_y_slew_limiter->calculate(linear_vy_raw, dt);
 
     float filtered_angular_v;
 
@@ -221,14 +225,14 @@ void mix_motor_outputs(crsf_bridge::radio_data_t *radio_data, float sensed_angle
             filtered_angular_v = angle_pid->update(angle_setpoint, sensed_angle_z, dt);
         }
 
-        float angle_error = angle_pid->get_error();
-        float linear_scale_factor = calculate_linear_scale_factor(angle_error);
-        linear_vy *= linear_scale_factor;
+        // float angle_error = angle_pid->get_error();
+        // float linear_scale_factor = calculate_linear_scale_factor(angle_error);
+        // linear_vy *= linear_scale_factor;
     }
 
-    left_command = linear_vx * sin(WHEEL_ANGLES[0] * DEG2RAD) + linear_vy * cos(WHEEL_ANGLES[0] * DEG2RAD) + filtered_angular_v;
-    right_command = linear_vx * sin(WHEEL_ANGLES[1] * DEG2RAD) + linear_vy * cos(WHEEL_ANGLES[1] * DEG2RAD) + filtered_angular_v;
-    back_command = linear_vx * sin(WHEEL_ANGLES[2] * DEG2RAD) + linear_vy * cos(WHEEL_ANGLES[2] * DEG2RAD);
+    left_command = linear_vx * sin(WHEEL_ANGLES[0] * DEG2RAD) + 1.2 * linear_vy * cos(WHEEL_ANGLES[0] * DEG2RAD) + filtered_angular_v;
+    right_command = linear_vx * sin(WHEEL_ANGLES[1] * DEG2RAD) + 1.2 * linear_vy * cos(WHEEL_ANGLES[1] * DEG2RAD) + filtered_angular_v;
+    back_command = linear_vx * sin(WHEEL_ANGLES[2] * DEG2RAD) + 0.8 * linear_vy * cos(WHEEL_ANGLES[2] * DEG2RAD);
     if (abs(back_command) < BACK_COMMAND_DEADZONE)
     {
         back_command = 0;
@@ -289,6 +293,30 @@ void print_telemetry_data(diagnostics_server::telemetry_data_t *telemetry_data)
     MAIN_SERIAL.print("\n");
 }
 
+bool compare_radio_data(const crsf_bridge::radio_data_t *data1, const crsf_bridge::radio_data_t *data2)
+{
+    return (data1->a_percent == data2->a_percent) &&
+           (data1->b_percent == data2->b_percent) &&
+           (data1->c_percent == data2->c_percent) &&
+           (data1->lifter_command == data2->lifter_command) &&
+           (data1->armed == data2->armed) &&
+           (data1->connected == data2->connected) &&
+           (data1->button_state == data2->button_state) &&
+           (data1->flip_switch_state == data2->flip_switch_state);
+}
+
+void copy_radio_data(const crsf_bridge::radio_data_t *src, crsf_bridge::radio_data_t *dest)
+{
+    dest->a_percent = src->a_percent;
+    dest->b_percent = src->b_percent;
+    dest->c_percent = src->c_percent;
+    dest->lifter_command = src->lifter_command;
+    dest->armed = src->armed;
+    dest->connected = src->connected;
+    dest->button_state = src->button_state;
+    dest->flip_switch_state = src->flip_switch_state;
+}
+
 void setup()
 {
     MAIN_SERIAL.begin(115200);
@@ -326,6 +354,7 @@ void setup()
     }
     set_builtin_led(255);
     radio_data = (crsf_bridge::radio_data_t *)malloc(sizeof(crsf_bridge::radio_data_t));
+    prev_radio_data = (crsf_bridge::radio_data_t *)malloc(sizeof(crsf_bridge::radio_data_t));
     crsf = new crsf_bridge::CrsfBridge();
     crsf->begin();
 
@@ -352,15 +381,16 @@ void setup()
 
 void loop()
 {
-    uint32_t now = micros();
-    if (now < timer)
+    uint32_t now_micros = micros();
+    uint32_t now_millis = millis();
+    if (now_micros < timer)
     {
         // Handle micros() overflow
-        timer = now;
+        timer = now_micros;
         return;
     }
-    float dt = (now - timer) / 1000000.0;
-    timer = now;
+    float dt = (now_micros - timer) / 1000000.0;
+    timer = now_micros;
 
     cycle_rainbow_led(rainbow_tick, led_intensity);
     rainbow_tick = (rainbow_tick + 1) % 255;
@@ -372,6 +402,18 @@ void loop()
     if (!crsf->update(radio_data))
     {
         MAIN_SERIAL.println("Disconnected from radio");
+        stop_escs();
+        return;
+    }
+
+    if (!compare_radio_data(radio_data, prev_radio_data))
+    {
+        command_timer = now_millis;
+        copy_radio_data(radio_data, prev_radio_data);
+    }
+    else if (now_millis - command_timer > COMMAND_TIMEOUT)
+    {
+        MAIN_SERIAL.println("Command timeout - stopping motors");
         stop_escs();
         return;
     }

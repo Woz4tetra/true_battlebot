@@ -1,11 +1,11 @@
-FROM nvidia/cuda:12.8.1-cudnn-devel-ubuntu22.04
+FROM nvidia/cuda:13.0.2-cudnn-devel-ubuntu24.04
 
 ARG PROJECT_NAME
 ARG ORGANIZATION
 
 ENV PROJECT_NAME=${PROJECT_NAME}
 ENV ORGANIZATION=${ORGANIZATION}
-ENV PYTHON_INSTALL_VERSION=3.11
+ENV PYTHON_INSTALL_VERSION=3.12
 
 ENV DEBIAN_FRONTEND=noninteractive \
     SHELL=/bin/bash
@@ -25,20 +25,22 @@ ENV USER=${ORGANIZATION}
 ENV HOME=/home/${USER}
 
 RUN mkdir -p /opt/${ORGANIZATION}/install
-COPY --chown=1000:1000 ./install/setup_user.sh /opt/${ORGANIZATION}/install
+COPY --chown=1001:1001 \
+    ./install/perception/setup_user.sh \
+    /opt/${ORGANIZATION}/install
 RUN bash /opt/${ORGANIZATION}/install/setup_user.sh
 
-COPY --chown=1000:1000 ./install/download /usr/bin
+COPY --chown=1001:1001 ./install/download /usr/bin
 
 USER ${USER}
 
-RUN sudo chown -R 1000:1000 /opt/${ORGANIZATION}/
+RUN sudo chown -R 1001:1001 /opt/${ORGANIZATION}/
 
 # ---
 # Basic tools
 # ---
 
-COPY --chown=1000:1000 ./install/install_basic_tools.sh /opt/${ORGANIZATION}/install/
+COPY --chown=1001:1001 ./install/install_basic_tools.sh /opt/${ORGANIZATION}/install/
 RUN bash /opt/${ORGANIZATION}/install/install_basic_tools.sh
 
 # ---
@@ -47,12 +49,12 @@ RUN bash /opt/${ORGANIZATION}/install/install_basic_tools.sh
 
 ENV TZ=America/New_York
 
-COPY --chown=1000:1000 \
-    ./install/install_python.sh \
+COPY --chown=1001:1001 \
+    ./install/perception/install_python.sh \
     /opt/${ORGANIZATION}/install/
 RUN bash /opt/${ORGANIZATION}/install/install_python.sh
 
-COPY --chown=1000:1000 \
+COPY --chown=1001:1001 \
     ./install/perception/install_zed.sh \
     /opt/${ORGANIZATION}/install/
 RUN bash /opt/${ORGANIZATION}/install/install_zed.sh
@@ -61,24 +63,24 @@ RUN bash /opt/${ORGANIZATION}/install/install_zed.sh
 # Basic dependencies
 # ---
 
-COPY --chown=1000:1000 \
-    ./install/install_python_dependencies.sh \
+COPY --chown=1001:1001 \
+    ./install/perception/install_python_dependencies.sh \
     ./install/requirements.txt \
     /opt/${ORGANIZATION}/install/
 RUN bash /opt/${ORGANIZATION}/install/install_python_dependencies.sh
 
-COPY --chown=1000:1000 \
+COPY --chown=1001:1001 \
     ./install/install_apriltag.sh \
     /opt/${ORGANIZATION}/install/
 RUN bash /opt/${ORGANIZATION}/install/install_apriltag.sh
 
-RUN sudo mkdir -p ${HOME}/.local && sudo chown -R 1000:1000 ${HOME}/.local
+RUN sudo mkdir -p ${HOME}/.local && sudo chown -R 1001:1001 ${HOME}/.local
 
 # ---
 # Torch packages
 # ---
 
-COPY --chown=1000:1000 \
+COPY --chown=1001:1001 \
     ./install/perception/perception-requirements.txt \
     ./install/perception/install_python_perception.sh \
     /opt/${ORGANIZATION}/install/
@@ -88,28 +90,28 @@ RUN bash /opt/${ORGANIZATION}/install/install_python_perception.sh
 # Python extra packages
 # ---
 
-COPY --chown=1000:1000 \
+COPY --chown=1001:1001 \
     ./install/perception/ros-requirements.txt \
     ./install/perception/install_python_perception_ros.sh \
     /opt/${ORGANIZATION}/install/
 RUN bash /opt/${ORGANIZATION}/install/install_python_perception_ros.sh
 
-COPY --chown=1000:1000 \
+COPY --chown=1001:1001 \
     ./install/perception/install_sam2.sh \
     /opt/${ORGANIZATION}/install/
 RUN bash /opt/${ORGANIZATION}/install/install_sam2.sh
 
-COPY --chown=1000:1000 \
+COPY --chown=1001:1001 \
     ./install/perception/install_tensorflow.sh \
     /opt/${ORGANIZATION}/install/
 RUN bash /opt/${ORGANIZATION}/install/install_tensorflow.sh
 
-COPY --chown=1000:1000 \
+COPY --chown=1001:1001 \
     ./install/perception/install_tapnet.sh \
     /opt/${ORGANIZATION}/install/
 RUN bash /opt/${ORGANIZATION}/install/install_tapnet.sh
 
-COPY --chown=1000:1000 \
+COPY --chown=1001:1001 \
     ./install/perception/perception-extra-requirements.txt \
     ./install/perception/install_perception_python_extras.sh \
     /opt/${ORGANIZATION}/install/
@@ -134,20 +136,20 @@ ENV PATH=/opt/${ORGANIZATION}/scripts:/opt/${ORGANIZATION}/${PROJECT_NAME}/perce
 # launch environment
 # ---
 
-COPY --chown=1000:1000 \
+COPY --chown=1001:1001 \
     ./install/increase_file_watchers.sh \
     /opt/${ORGANIZATION}/install/
 RUN bash /opt/${ORGANIZATION}/install/increase_file_watchers.sh
 
-COPY --chown=1000:1000 ./install/base_bashrc ${HOME}/.bashrc
-COPY --chown=1000:1000 ./install/perception/perception_bashrc ${HOME}/bashrc_overlay
+COPY --chown=1001:1001 ./install/base_bashrc ${HOME}/.bashrc
+COPY --chown=1001:1001 ./install/perception/perception_bashrc ${HOME}/bashrc_overlay
 RUN cat ${HOME}/bashrc_overlay >> ${HOME}/.bashrc && rm ${HOME}/bashrc_overlay
     
-COPY --chown=1000:1000 \
+COPY --chown=1001:1001 \
     ./launch/perception.sh \
     /opt/${ORGANIZATION}/
 
-COPY --chown=1000:1000 \
+COPY --chown=1001:1001 \
     ./install/perception/make_perception_symlinks.sh \
     /opt/${ORGANIZATION}/install/
 RUN bash /opt/${ORGANIZATION}/install/make_perception_symlinks.sh

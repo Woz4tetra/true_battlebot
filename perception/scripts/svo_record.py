@@ -29,12 +29,12 @@ def main() -> None:
 
     # Enable recording with the filename specified in argument
     recording_params = sl.RecordingParameters()
-    recording_params.compression_mode = sl.SVO_COMPRESSION_MODE.H264
     recording_params.video_filename = output_path
     err = zed.enable_recording(recording_params)
     print(err)
 
     color_image = sl.Mat()
+    point_cloud = sl.Mat()
 
     try:
         while True:
@@ -43,6 +43,9 @@ def main() -> None:
 
             zed.retrieve_image(color_image, sl.VIEW.LEFT)
             color_image_data = color_image.get_data()[..., 0:3]
+            zed.retrieve_measure(point_cloud, sl.MEASURE.XYZBGRA)
+            raw_cloud_data = point_cloud.get_data()
+            print(raw_cloud_data)
 
             cv2.imshow("video", color_image_data)
 

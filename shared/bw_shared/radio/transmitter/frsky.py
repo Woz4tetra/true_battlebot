@@ -47,9 +47,11 @@ class FrSkyTransmitter:
         if telemetry:
             self._write(b"telemetry on\r\n")
             self._write(b"channels on\r\n")
+            self._write(b"luaserial on\r\n")
         else:
             self._write(b"telemetry off\r\n")
             self._write(b"channels off\r\n")
+            self._write(b"luaserial off\r\n")
 
     def _make_command(self, linear_x: float, angular_z: float) -> tuple[bytes, bytes]:
         linear_value = int(self.max_command * linear_x)
@@ -78,6 +80,10 @@ class FrSkyTransmitter:
         for command in self.command:
             if command:
                 self._write(command)
+
+    def send_message(self, message: str) -> None:
+        print(f"Sending message to transmitter: {message}")
+        self._write(f"MSG:{message}\n".encode())
 
     def close(self) -> None:
         if self.device is not None:

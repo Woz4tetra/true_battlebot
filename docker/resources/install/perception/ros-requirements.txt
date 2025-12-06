@@ -1,3 +1,5 @@
+pybind11
+
 --extra-index-url https://woz4tetra.github.io/rospy-simple/
 rospy
 rospy-builder
